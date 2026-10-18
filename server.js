@@ -869,9 +869,69 @@ app.delete('/api/destinations/:id', (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(DASHBOARD_PORT, '0.0.0.0', () => {
+
+// ---- Built-in studio (replaces OBS) ----
+// The studio page (studio.html) draws the scenes on a canvas, records it, and sends the video here over a
+// local websocket. We hand it to ffmpeg, which pushes it into our own RTMP ingest, so the relay works as before.
+const STUDIO_FILE = path.join(DATA_DIR, 'studio.json');
+const ASSET_DIR = path.join(DATA_DIR, 'studio-assets');
+let studio = { scenes: [], current: '', preview: '' };
+try { studio = { ...studio, ...JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) }; } catch {}
+let studioRev = 1;
+function saveStudio() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio)); } catch {} studioRev++; }
+app.get('/api/studio', (req, res) => res.json({ ...studio, rev: studioRev }));
+app.put('/api/studio', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Edit scenes on the church PC' });
+  const b = req.body || {};
+  if (Array.isArray(b.scenes)) studio.scenes = b.scenes.slice(0, 60);
+  if (typeof b.current === 'string') studio.current = b.current;
+  saveStudio();
+  res.json({ ok: true, rev: studioRev });
+});
+app.post('/api/studio/scene', (req, res) => {
+  const name = String((req.body || {}).name || '');
+  if (!studio.scenes.some((s) => s.name === name)) return res.status(404).json({ error: 'No such scene' });
+  studio.current = name; saveStudio();
+  res.json({ ok: true });
+});
+app.put('/api/studio/asset/:name', express.raw({ type: '*/*', limit: '30mb' }), (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Local only' });
+  const n = path.basename(req.params.name).replace(/[^\w.\- ]/g, '_');
+  try { fs.mkdirSync(ASSET_DIR, { recursive: true }); fs.writeFileSync(path.join(ASSET_DIR, n), req.body); } catch (e) { return res.status(500).json({ error: e.message }); }
+  res.json({ ok: true, url: '/api/studio/asset/' + encodeURIComponent(n) });
+});
+app.get('/api/studio/asset/:name', (req, res) => {
+  const f = path.join(ASSET_DIR, path.basename(req.params.name));
+  fs.existsSync(f) ? res.sendFile(f) : res.status(404).end();
+});
+let studioFf = null;
+const studioInfo = { sending: false, error: '' };
+app.get('/api/studio/status', (req, res) => res.json(studioInfo));
+
+const httpServer = app.listen(DASHBOARD_PORT, '0.0.0.0', () => {
   console.log(`\nDashboard:  http://localhost:${DASHBOARD_PORT}`);
   console.log(`In OBS use: Server  rtmp://localhost:${RTMP_PORT}/live   Stream key  obs\n`);
+});
+
+const studioWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });
+httpServer.on('upgrade', (req, sock, head) => {
+  if (!req.url.startsWith('/studio-ingest')) return sock.destroy();
+  if (!isLocal(req)) return sock.destroy();
+  studioWss.handleUpgrade(req, sock, head, (w) => studioWss.emit('connection', w));
+});
+studioWss.on('connection', (w) => {
+  if (studioFf) { try { studioFf.kill('SIGKILL'); } catch {} }
+  const args = ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency', '-pix_fmt', 'yuv420p', '-b:v', '4500k', '-maxrate', '4500k', '-bufsize', '9000k',
+    '-g', '60', '-keyint_min', '60', '-sc_threshold', '0', '-r', '30',
+    '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-f', 'flv', `rtmp://127.0.0.1:${RTMP_PORT}${INGEST_PATH}`];
+  const ff = spawn(FFMPEG, args, { stdio: ['pipe', 'ignore', 'pipe'] });
+  studioFf = ff; studioInfo.sending = true; studioInfo.error = '';
+  ff.stderr.on('data', (d) => { studioInfo.error = String(d).trim().split('\n').pop().slice(0, 200); });
+  ff.stdin.on('error', () => {});
+  ff.on('exit', () => { if (studioFf === ff) { studioFf = null; studioInfo.sending = false; } try { w.close(); } catch {} });
+  w.on('message', (m) => { if (ff.stdin.writable) ff.stdin.write(m); });
+  w.on('close', () => { try { ff.stdin.end(); setTimeout(() => ff.kill('SIGKILL'), 1500); } catch {} });
 });
 
 if (STANDALONE) {

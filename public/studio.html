@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multistream Studio</title>
+<style>
+  :root { --bg:#0f1512; --card:#18201b; --line:#2a352d; --text:#e8efe9; --muted:#93a398; --green:#22c55e; --red:#dc3545; --field:#0b100d; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--line); }
+  header a { color:var(--green); text-decoration:none; font-weight:600; }
+  header h1 { font-size:15px; margin:0; font-weight:600; }
+  .grow { flex:1; }
+  button, select, input { font:inherit; color:var(--text); background:var(--card); border:1px solid var(--line); border-radius:6px; padding:6px 10px; }
+  button { cursor:pointer; } button:hover { border-color:var(--green); }
+  button.go { background:var(--green); color:#04140a; border-color:var(--green); font-weight:700; }
+  button.stop { background:var(--red); border-color:var(--red); color:#fff; font-weight:700; }
+  button.sm { padding:2px 8px; font-size:12px; }
+  .wrap { display:grid; grid-template-columns:220px minmax(0,1fr) 280px; gap:12px; padding:12px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px; }
+  .panel h2 { margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); }
+  #cv { width:100%; aspect-ratio:16/9; background:#000; border:3px solid var(--line); border-radius:8px; display:block; }
+  #cv.live { border-color:var(--red); }
+  .scn, .lyr { display:flex; align-items:center; gap:6px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px; cursor:pointer; background:var(--field); }
+  .scn.on, .lyr.on { border-color:var(--green); }
+  .scn .n, .lyr .n { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .scn .air { font-size:9px; font-weight:700; background:var(--red); padding:0 5px; border-radius:3px; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+  .f { display:grid; grid-template-columns:70px 1fr; gap:6px; align-items:center; margin-bottom:6px; }
+  .f input, .f select { width:100%; }
+  .note { color:var(--muted); font-size:12px; }
+  .stat { font-size:12px; color:var(--muted); } .stat.ok { color:var(--green); } .stat.bad { color:#ff8a8a; }
+  @media (max-width:1000px) { .wrap { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <a href="/">&larr; Dashboard</a><h1>Studio</h1>
+  <span class="stat" id="st"></span><span class="grow"></span>
+  <label class="note">Camera <select id="camSel"></select></label>
+  <label class="note">Audio <select id="micSel"></select></label>
+  <button id="sendBtn" class="go">Start sending</button>
+</header>
+<div class="wrap">
+  <div class="panel"><h2>Scenes</h2><div id="scenes"></div><div class="row"><button id="addScene">+ Scene</button><button id="delScene">Delete</button></div></div>
+  <div><canvas id="cv" width="1280" height="720"></canvas><p class="note" id="hint">Pick a scene on the left to put it on screen. Add things to it on the right. "Start sending" sends this picture into the relay, the same place OBS used to send to.</p></div>
+  <div class="panel"><h2>Items in this scene</h2><div id="layers"></div>
+    <div class="row"><button class="sm" data-add="camera">+ Camera</button><button class="sm" data-add="image">+ Picture</button><button class="sm" data-add="text">+ Text</button><button class="sm" data-add="color">+ Colour</button></div>
+    <div id="props"></div></div>
+</div>
+<input type="file" id="file" accept="image/*" hidden>
+<script>
+const W = 1280, H = 720;
+const $ = (s) => document.querySelector(s);
+const cv = $('#cv'), ctx = cv.getContext('2d');
+let studio = { scenes: [], current: '' };
+let sel = ''; // layer id being edited
+let editName = ''; // scene being edited (the one on screen)
+let saveT = 0;
+const uid = () => Math.random().toString(36).slice(2, 8);
+const cur = () => studio.scenes.find((s) => s.name === studio.current);
+function save() { clearTimeout(saveT); saveT = setTimeout(() => fetch('/api/studio', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(studio) }).catch(() => {}), 300); }
+
+// ---- media ----
+const imgs = new Map(), cams = new Map();
+function getImg(url) { let i = imgs.get(url); if (!i) { i = new Image(); i.src = url; imgs.set(url, i); } return i; }
+async function getCam(id) {
+  const key = id || 'default';
+  let c = cams.get(key);
+  if (c) return c;
+  c = { v: document.createElement('video'), ready: false };
+  c.v.muted = true; c.v.playsInline = true;
+  cams.set(key, c);
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ video: { deviceId: id ? { exact: id } : undefined, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+    c.v.srcObject = st; await c.v.play(); c.ready = true;
+  } catch (e) { c.err = e.message; }
+  return c;
+}
+function drawLayer(l) {
+  ctx.save();
+  if (l.type === 'color') { ctx.fillStyle = l.color || '#000'; ctx.fillRect(l.x, l.y, l.w, l.h); }
+  else if (l.type === 'image' && l.url) { const i = getImg(l.url); if (i.complete && i.naturalWidth) ctx.drawImage(i, l.x, l.y, l.w, l.h); }
+  else if (l.type === 'camera') {
+    const c = cams.get(l.device || 'default');
+    if (!c) getCam(l.device);
+    else if (c.ready && c.v.videoWidth) {
+      const vw = c.v.videoWidth, vh = c.v.videoHeight, s = Math.max(l.w / vw, l.h / vh), sw = l.w / s, sh = l.h / s;
+      ctx.drawImage(c.v, (vw - sw) / 2, (vh - sh) / 2, sw, sh, l.x, l.y, l.w, l.h);
+    } else { ctx.fillStyle = '#222'; ctx.fillRect(l.x, l.y, l.w, l.h); ctx.fillStyle = '#999'; ctx.font = '28px sans-serif'; ctx.fillText(c.err ? 'Camera: ' + c.err : 'Starting camera...', l.x + 20, l.y + 50); }
+  } else if (l.type === 'text') {
+    ctx.fillStyle = l.color || '#fff'; ctx.font = `bold ${l.size || 60}px system-ui, sans-serif`; ctx.textBaseline = 'top';
+    String(l.text || '').split('\n').forEach((t, i) => ctx.fillText(t, l.x, l.y + i * (l.size || 60) * 1.2, l.w));
+  }
+  ctx.restore();
+}
+function frame() {
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+  const s = cur(); if (s) s.layers.forEach(drawLayer);
+}
+setInterval(frame, 1000 / 30); // not requestAnimationFrame, so it keeps running if the window is covered
+
+// ---- scenes UI ----
+function renderScenes() {
+  const box = $('#scenes'); box.textContent = '';
+  studio.scenes.forEach((s) => {
+    const d = document.createElement('div'); d.className = 'scn' + (s.name === studio.current ? ' on' : '');
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = s.name; d.appendChild(n);
+    if (s.name === studio.current) { const a = document.createElement('span'); a.className = 'air'; a.textContent = 'ON AIR'; d.appendChild(a); }
+    d.onclick = () => { studio.current = s.name; sel = ''; save(); renderAll(); };
+    d.ondblclick = () => { const v = prompt('Scene name', s.name); if (v && !studio.scenes.some((x) => x.name === v)) { s.name = v; studio.current = v; save(); renderAll(); } };
+    box.appendChild(d);
+  });
+}
+$('#addScene').onclick = () => {
+  let n = 'Scene ' + (studio.scenes.length + 1); while (studio.scenes.some((s) => s.name === n)) n += '+';
+  studio.scenes.push({ name: n, layers: [] }); studio.current = n; save(); renderAll();
+};
+$('#delScene').onclick = () => { const s = cur(); if (!s || !confirm('Delete scene "' + s.name + '"?')) return; studio.scenes = studio.scenes.filter((x) => x !== s); studio.current = (studio.scenes[0] || {}).name || ''; save(); renderAll(); };
+function renderLayers() {
+  const s = cur(), box = $('#layers'); box.textContent = '';
+  if (!s) { box.textContent = 'Add a scene first.'; $('#props').textContent = ''; return; }
+  s.layers.forEach((l, i) => {
+    const d = document.createElement('div'); d.className = 'lyr' + (l.id === sel ? ' on' : '');
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = l.type + (l.type === 'text' ? ': ' + (l.text || '').slice(0, 14) : '');
+    const up = document.createElement('button'); up.className = 'sm'; up.textContent = '↑'; up.title = 'Move up (in front)'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
+    const x = document.createElement('button'); x.className = 'sm'; x.textContent = '×'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
+    d.append(n, up, x); d.onclick = () => { sel = l.id; renderLayers(); };
+    box.prepend(d);
+  });
+  renderProps();
+}
+function field(label, el) { const d = document.createElement('div'); d.className = 'f'; const l = document.createElement('label'); l.textContent = label; d.append(l, el); return d; }
+function renderProps() {
+  const box = $('#props'); box.textContent = '';
+  const s = cur(), l = s && s.layers.find((x) => x.id === sel); if (!l) return;
+  const num = (k) => { const i = document.createElement('input'); i.type = 'number'; i.value = Math.round(l[k] || 0); i.oninput = () => { l[k] = Number(i.value); save(); }; return i; };
+  box.append(field('Left', num('x')), field('Top', num('y')), field('Width', num('w')), field('Height', num('h')));
+  const fit = document.createElement('button'); fit.textContent = 'Fill whole screen'; fit.onclick = () => { Object.assign(l, { x: 0, y: 0, w: W, h: H }); save(); renderProps(); };
+  box.append(fit);
+  if (l.type === 'color' || l.type === 'text') { const c = document.createElement('input'); c.type = 'color'; c.value = l.color || '#ffffff'; c.oninput = () => { l.color = c.value; save(); }; box.append(field('Colour', c)); }
+  if (l.type === 'text') {
+    const t = document.createElement('textarea'); t.rows = 3; t.value = l.text || ''; t.style.cssText = 'width:100%;background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:6px'; t.oninput = () => { l.text = t.value; save(); };
+    const z = document.createElement('input'); z.type = 'number'; z.value = l.size || 60; z.oninput = () => { l.size = Number(z.value); save(); };
+    box.append(field('Words', t), field('Size', z));
+  }
+  if (l.type === 'camera') { const sl = $('#camSel').cloneNode(true); sl.id = ''; sl.value = l.device || ''; sl.onchange = () => { l.device = sl.value; save(); }; box.append(field('Camera', sl)); }
+  if (l.type === 'image') { const b = document.createElement('button'); b.textContent = 'Choose picture...'; b.onclick = () => pickImage(l); box.append(b); }
+}
+function pickImage(l) {
+  const f = $('#file'); f.value = ''; f.onchange = async () => {
+    const file = f.files[0]; if (!file) return;
+    const r = await fetch('/api/studio/asset/' + encodeURIComponent(uid() + '-' + file.name), { method: 'PUT', body: file }).then((x) => x.json());
+    if (r.url) { l.url = r.url; save(); renderLayers(); }
+  }; f.click();
+}
+document.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
+  const s = cur(); if (!s) return;
+  const t = b.dataset.add, l = { id: uid(), type: t, x: 0, y: 0, w: W, h: H };
+  if (t === 'text') Object.assign(l, { text: 'Welcome', size: 80, color: '#ffffff', x: 80, y: 560, w: 1100, h: 120 });
+  if (t === 'color') l.color = '#0b3d1e';
+  if (t === 'camera') l.device = $('#camSel').value || '';
+  s.layers.push(l); sel = l.id; save(); renderLayers();
+  if (t === 'image') pickImage(l);
+});
+function renderAll() { renderScenes(); renderLayers(); }
+
+// ---- devices ----
+async function loadDevices() {
+  try { const t = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); t.getTracks().forEach((x) => x.stop()); } catch {}
+  const d = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+  const fill = (sel, kind, none) => { sel.textContent = ''; if (none) sel.add(new Option(none, '')); d.filter((x) => x.kind === kind).forEach((x) => sel.add(new Option(x.label || x.kind, x.deviceId))); };
+  fill($('#camSel'), 'videoinput', 'Default camera'); fill($('#micSel'), 'audioinput', 'No audio');
+  try { const m = localStorage.getItem('ms_mic'); if (m && [...$('#micSel').options].some((o) => o.value === m)) $('#micSel').value = m; } catch {}
+}
+$('#micSel').onchange = () => { try { localStorage.setItem('ms_mic', $('#micSel').value); } catch {} };
+
+// ---- sending ----
+let rec = null, wsOut = null, actx = null;
+async function startSend() {
+  const vs = cv.captureStream(30);
+  const out = new MediaStream(vs.getVideoTracks());
+  const mic = $('#micSel').value;
+  if (mic) {
+    try {
+      const ms = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: mic }, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+      actx = new AudioContext(); const dst = actx.createMediaStreamDestination(); actx.createMediaStreamSource(ms).connect(dst);
+      dst.stream.getAudioTracks().forEach((t) => out.addTrack(t));
+    } catch (e) { $('#st').textContent = 'Audio failed: ' + e.message; }
+  }
+  wsOut = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/studio-ingest');
+  wsOut.binaryType = 'arraybuffer';
+  wsOut.onopen = () => {
+    const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
+    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: 6000000 });
+    rec.ondataavailable = async (e) => { if (e.data.size && wsOut && wsOut.readyState === 1) wsOut.send(await e.data.arrayBuffer()); };
+    rec.start(250);
+    $('#sendBtn').textContent = 'Stop sending'; $('#sendBtn').className = 'stop'; cv.classList.add('live');
+  };
+  wsOut.onclose = () => stopSend();
+}
+function stopSend() {
+  try { rec && rec.state !== 'inactive' && rec.stop(); } catch {}
+  try { wsOut && wsOut.close(); } catch {}
+  try { actx && actx.close(); } catch {}
+  rec = wsOut = actx = null;
+  $('#sendBtn').textContent = 'Start sending'; $('#sendBtn').className = 'go'; cv.classList.remove('live');
+}
+$('#sendBtn').onclick = () => (rec ? stopSend() : startSend());
+
+// ---- load + follow the phone/dashboard (they change the current scene on the server) ----
+async function poll() {
+  try {
+    const s = await fetch('/api/studio').then((r) => r.json());
+    if (s.current !== studio.current && s.scenes.some((x) => x.name === s.current)) { studio.current = s.current; renderAll(); }
+    const e = await fetch('/api/studio/status').then((r) => r.json());
+    $('#st').textContent = rec ? (e.sending ? 'Sending to the relay' : 'Connecting...') + (e.error ? ' - ' + e.error : '') : ''; $('#st').className = 'stat ' + (e.error ? 'bad' : 'ok');
+  } catch {}
+}
+(async () => {
+  studio = await fetch('/api/studio').then((r) => r.json());
+  if (!studio.scenes.length) {
+    studio.scenes = [{ name: 'Welcome', layers: [{ id: uid(), type: 'color', color: '#0b3d1e', x: 0, y: 0, w: W, h: H }, { id: uid(), type: 'text', text: 'Welcome', size: 120, color: '#ffffff', x: 80, y: 280, w: 1100, h: 160 }] }];
+    studio.current = 'Welcome'; save();
+  }
+  if (!cur()) studio.current = studio.scenes[0].name;
+  renderAll(); loadDevices(); setInterval(poll, 1500);
+})();
+</script>
+</body>
+</html>
