@@ -791,6 +791,27 @@ app.get('/api/obs/thumbs', async (req, res) => {
   const w = Math.min(400, Math.max(80, Number((req.query || {}).w) || 160));
   res.json(await obsThumbs(w));
 });
+let shotCache = {};
+async function obsShot(name, w) {
+  const key = name + '|' + w;
+  const c = shotCache[key];
+  if (c && Date.now() - c.at < 200) return c.img;
+  const r = await obsRequest('GetSourceScreenshot', { sourceName: name, imageFormat: 'jpg', imageWidth: w, imageHeight: Math.round((w * 9) / 16), imageCompressionQuality: 45 });
+  shotCache[key] = { at: Date.now(), img: r.imageData };
+  return r.imageData;
+}
+app.get('/api/obs/shots', async (req, res) => {
+  if (!obsState.connected) return res.json({});
+  const q = req.query || {};
+  const w = Math.min(960, Math.max(160, Number(q.w) || 640));
+  const out = {};
+  for (const k of ['a', 'b']) {
+    const name = String(q[k] || '');
+    if (!name || !obsState.scenes.includes(name)) continue;
+    try { out[k] = await obsShot(name, w); } catch {}
+  }
+  res.json(out);
+});
 const toDb = (m) => (m > 0 ? Math.max(-100, 20 * Math.log10(m)) : -100);
 app.get('/api/obs/levels', (req, res) => {
   obsLastLevelPoll = Date.now();
