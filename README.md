@@ -73,3 +73,14 @@ The password is saved only on the church computer and is never sent to the phone
 
 ## Appearance and accessibility
 Press **Access** in the right-hand menu. You can pick a dark, light or system theme, choose the main colour (or type your own), make text bigger, turn on high contrast, use colour-blind friendly colours, make buttons bigger, and stop animations. Changes show straight away. Press **Save changes** to keep them, or **Cancel** to go back. Choices are saved on each device (the phone and the church computer are separate). **Reset all** puts everything back to the default.
+
+## Studio (replaces OBS)
+
+Menu next to the title, then Studio (on the church PC only). It opens in its own window.
+
+- **Import OBS scenes:** in OBS choose Scene Collection, then Export. In the Studio press "Import OBS scenes..." and pick that file. Pictures and videos are read from the same paths OBS used, so run this on the church PC.
+- **Sources:** camera and capture cards, pictures, video files (with sound), screen capture, web pages (like the lyrics page), phone camera over Wi-Fi (DroidCam), text and colours.
+- **Sound:** every input has a volume, mute and level meter. Tick which scenes each input is heard in.
+- **Send:** "Start sending" sends the ON AIR picture and the sound into the relay, the same place OBS sent to.
+- **Control Room:** the Engine box picks Studio or OBS. Automatic uses the Studio when it is open, otherwise OBS. In Studio mode you can also switch items such as lowerthirds on and off from the Control Room (works on the phone too).
+- OBS is untouched and stays as the backup.
