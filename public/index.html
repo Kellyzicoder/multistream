@@ -1,0 +1,1195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multistream</title>
+<style>
+  :root {
+    --bg:#0c110e; --card:#141b17; --card2:#1d2721; --field:#0e1410; --line:#25322a;
+    --text:#eef4f0; --muted:#92a39a; --blue:#22c55e; --link:#4ade80;
+    --green:#4ade80; --red:#f0545b; --amber:#f5b942;
+    --onblue:#05130a; --glow:rgba(34,197,94,.13);
+    --btn:#1f2b24; --btn2:#273529; --btn3:#2c3b32; --rule:#1f2a23; --rule2:#18211b; --chip:#233028; --track:#34463b; --soft:#cdd9d2;
+    --errbg:#3a1d20; --errline:#7a2f33; --errsvg:#ffb3b6; --errlink:#fff; --kfline:#6b5316; --kfbg:#2a2310; --kffg:#f3d98a;
+    --badtxt:#ff8a90; --lockbg:#3a2d12; --lockfg:#ffd479; color-scheme:dark;
+  }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body {
+    margin:0; background:var(--bg) radial-gradient(900px 380px at 12% -8%, var(--glow), transparent) no-repeat; color:var(--text);
+    font-family:Inter,"SF Pro Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif; font-size:13px; -webkit-font-smoothing:antialiased;
+  }
+  button, input { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  svg { display:block; }
+
+  /* accessibility and appearance (saved on each device) */
+  :focus-visible { outline:3px solid #ffd479; outline-offset:2px; }
+  html.t-light {
+    color-scheme:light;
+    --bg:#eef1ef; --card:#fff; --card2:#f0f3f1; --field:#fff; --line:#d5ddd8; --text:#14201a; --muted:#566660; --green:#15803d; --red:#d6333b; --amber:#a86a00;
+    --glow:transparent; --btn:#e4eae6; --btn2:#d6dfd9; --btn3:#c3cfc8; --rule:#e2e8e4; --rule2:#e8eeea; --chip:#e4eae6; --track:#b3c0b9; --soft:#33433a;
+    --errbg:#fde8e9; --errline:#f0a3a7; --errsvg:#c0242c; --errlink:#7a1015; --kfline:#e5c76b; --kfbg:#fff6d6; --kffg:#6b5316; --badtxt:#c0242c; --lockbg:#fff1c9; --lockfg:#7a5200;
+  }
+  html.a-large { zoom:1.15; } html.a-xlarge { zoom:1.3; }
+  html.a-contrast { --bg:#000; --card:#0a0a0a; --card2:#1a1a1a; --field:#000; --line:#8a8a8a; --text:#fff; --muted:#d6d6d6; --btn3:#8a8a8a; --glow:transparent; }
+  html.a-contrast.t-light { --bg:#fff; --card:#fff; --card2:#f2f2f2; --field:#fff; --line:#000; --text:#000; --muted:#222; --btn3:#555; }
+  html.a-contrast .b2, html.a-contrast .bt { outline:1px solid var(--line); }
+  html.a-cb { --green:#56b4e9; --red:#ff8a1e; --amber:#f0e442; }
+  html.a-bigbtn button, html.a-bigbtn .bt, html.a-bigbtn .b2 { min-height:44px; min-width:44px; }
+  html.a-nomotion *, html.a-nomotion *::before, html.a-nomotion *::after { animation:none !important; transition:none !important; }
+  .accm { width:min(660px,100%); max-height:calc(100vh - 40px); overflow:auto; }
+  .accm .head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .arow { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); gap:16px; padding:16px 0; border-top:1px solid var(--rule); align-items:start; }
+  .arow:first-of-type { border-top:1px solid var(--rule); margin-top:12px; }
+  .arow .lb { font-size:13px; font-weight:600; color:var(--text); margin:0; }
+  .arow .ds { font-size:12px; color:var(--muted); margin:2px 0 0; }
+  .arow .ctl { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .arow .ctl.end { justify-content:flex-start; }
+  .opt { display:flex; flex-wrap:wrap; gap:6px; }
+  .opt button { border:1px solid var(--line); background:transparent; border-radius:4px; padding:8px 12px; font-size:12px; color:var(--text); }
+  .opt button[aria-pressed="true"] { background:var(--blue); color:var(--onblue); border-color:var(--blue); font-weight:600; }
+  .sws { display:flex; flex-wrap:wrap; gap:10px; width:100%; }
+  .sws button { width:28px; height:28px; border-radius:50%; border:0; padding:0; box-shadow:inset 0 0 0 1px rgba(128,128,128,.4); }
+  .sws button[aria-pressed="true"] { box-shadow:0 0 0 2px var(--card), 0 0 0 4px var(--text); }
+  .cust { display:flex; align-items:center; gap:8px; width:100%; font-size:12px; color:var(--muted); }
+  .cust .hx { display:flex; align-items:center; border:1px solid var(--line); border-radius:4px; background:var(--field); padding:0 8px; color:var(--text); }
+  .cust .hx input { border:0; background:transparent; width:78px; padding:7px 4px; outline:none; text-transform:uppercase; }
+  .cust input[type=color] { width:30px; height:30px; padding:0; border:0; border-radius:50%; background:none; cursor:pointer; }
+  .themes { display:flex; gap:10px; flex-wrap:wrap; }
+  .themes button { border:0; background:transparent; padding:0; text-align:left; font-size:12px; font-weight:500; color:var(--text); }
+  .themes .tp { display:block; width:84px; height:58px; border-radius:8px; border:2px solid var(--line); overflow:hidden; margin-bottom:6px; position:relative; }
+  .themes button[aria-pressed="true"] .tp { border-color:var(--blue); box-shadow:0 0 0 2px var(--blue); }
+  .tp i { position:absolute; display:block; border-radius:2px; }
+  .tp.l { background:#f4f6f5; } .tp.l i.s { left:0; top:0; bottom:0; width:26%; background:#fff; border-right:1px solid #dde3df; } .tp.l i.a { left:32%; right:8%; top:12px; height:6px; background:#c9d2cd; } .tp.l i.b { left:32%; right:8%; top:26px; bottom:8px; background:#fff; border:1px solid #dde3df; }
+  .tp.d { background:#0c110e; } .tp.d i.s { left:0; top:0; bottom:0; width:26%; background:#141b17; } .tp.d i.a { left:32%; right:8%; top:12px; height:6px; background:#34463b; } .tp.d i.b { left:32%; right:8%; top:26px; bottom:8px; background:#1d2721; }
+  .tp.sy { background:linear-gradient(90deg,#f4f6f5 50%,#0c110e 50%); } .tp.sy i.a { left:32%; right:8%; top:12px; height:6px; background:#8a948f; } .tp.sy i.b { left:32%; right:8%; top:26px; bottom:8px; background:rgba(128,128,128,.35); }
+  .accm .fb { justify-content:flex-end; margin-top:14px; padding-top:14px; border-top:1px solid var(--rule); }
+  .accm .fb .lk { margin-right:auto; background:transparent; color:var(--muted); text-decoration:underline; }
+  @media (max-width:560px) { .arow { grid-template-columns:1fr; gap:10px; } }
+
+  /* OBS scenes */
+  .scn { margin-top:14px; text-align:left; }
+  .scn-h { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+  .scn-h h2 { margin:0; font-size:13px; font-weight:600; }
+  .scn-h .st { font-size:11px; color:var(--muted); }
+  .scn-h .st.ok { color:var(--green); }
+  .scn-h .grow { flex:1; }
+  .scn-tools { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .scn-tools .opt button { padding:5px 9px; font-size:11px; }
+  .tiles { display:grid; gap:8px; grid-template-columns:repeat(auto-fill, minmax(min(var(--tw,120px), 46%), 1fr)); }
+  .stage-in.wide { display:flex; flex-direction:column; }
+  .stage-in.wide #liveView { display:contents; }
+  .stage-in.wide .scn, .stage-in.wide .aud { order:1; }
+  .stage-in.wide #liveView .bar, .stage-in.wide #liveView .kfnote, .stage-in.wide #liveView .spark { order:2; }
+  .tile { position:relative; border:2px solid var(--line); background:var(--field); border-radius:6px; padding:0; overflow:hidden; text-align:left; color:var(--text); }
+  .tile .im { display:block; width:100%; aspect-ratio:16/9; background:#0a0f0c; object-fit:cover; }
+  .tile.noimg .im { display:none; }
+  .tile .nm { display:block; padding:6px 8px; font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tile.noimg .nm { padding:12px 10px; }
+  .tile[aria-pressed="true"] { border-color:var(--red); }
+  .tile[aria-pressed="true"] .nm::before { content:"ON AIR"; display:inline-block; margin-right:6px; padding:0 5px; border-radius:3px; background:var(--red); color:#fff; font-size:9px; font-weight:700; letter-spacing:.4px; }
+  .tile:hover { border-color:var(--blue); }
+  .tile[aria-pressed="true"]:hover { border-color:var(--red); }
+
+  /* audio levels */
+  .aud { margin-top:14px; text-align:left; }
+  .aud .scn-h { margin-bottom:6px; }
+  .arows { background:var(--field); border:1px solid var(--line); border-radius:6px; padding:4px 12px; }
+  .ar { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,2fr) 58px; align-items:center; gap:10px; padding:7px 0; border-top:1px solid var(--rule); font-size:12px; }
+  .ar:first-child { border-top:0; }
+  .ar .an { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ar .an em { font-style:normal; margin-left:6px; padding:0 5px; border-radius:3px; background:var(--red); color:#fff; font-size:9px; font-weight:700; letter-spacing:.4px; }
+  .ar .mt { position:relative; height:10px; border-radius:5px; overflow:hidden; background:linear-gradient(90deg, var(--green) 0 66%, var(--amber) 66% 85%, var(--red) 85% 100%); }
+  .ar .cv { position:absolute; top:0; right:0; bottom:0; width:100%; background:var(--btn); }
+  .ar .pk { position:absolute; top:0; bottom:0; width:2px; background:var(--text); left:0; }
+  .ar .db { text-align:right; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .ar.mute .mt { opacity:.35; } .ar.mute .an { color:var(--muted); }
+  .aud .empty { padding:14px 0; border:0; margin:0; }
+
+  /* top bar */
+  .top { height:56px; display:flex; align-items:center; gap:12px; padding:0 20px; border-bottom:1px solid var(--rule2); }
+  .top .home { width:22px; height:22px; color:var(--blue); }
+  .top .ttl { font-size:14px; font-weight:500; display:flex; align-items:center; gap:8px; }
+  .top .ttl svg { width:14px; height:14px; color:var(--muted); }
+
+  /* three columns: stage | channels | menu */
+  .app { display:grid; grid-template-columns:minmax(0,1fr) 340px 68px; gap:12px; padding:14px; height:calc(100% - 56px); min-height:620px; }
+  .card { background:var(--card); border-radius:8px; }
+
+  /* ---------- stage (left) ---------- */
+  .stage { position:relative; display:flex; justify-content:center; align-items:flex-start; padding:64px 24px 24px; overflow:auto; }
+  .chip { position:absolute; top:16px; left:16px; display:inline-flex; align-items:center; gap:6px; background:var(--card2); border-radius:4px; padding:5px 9px; font-size:10px; font-weight:600; letter-spacing:.6px; }
+  .chip.live { background:var(--red); color:#fff; }
+  .chip.live::before { content:""; width:6px; height:6px; border-radius:50%; background:#fff; animation:pulse 1.4s infinite; }
+  @keyframes pulse { 50% { opacity:.3; } }
+  .stage-in { width:100%; max-width:440px; text-align:center; }
+  .stage h1 { margin:0; font-size:22px; font-weight:600; letter-spacing:-.2px; }
+  .stage .lead { margin:8px 0 0; color:var(--muted); font-size:13px; }
+  .tabs { display:inline-flex; margin:20px 0 18px; background:var(--field); border-radius:6px; padding:3px; }
+  .tabs span { padding:7px 22px; border-radius:4px; font-weight:500; font-size:12px; background:var(--chip); }
+  .fld { text-align:left; margin-bottom:14px; }
+  .fld label { display:block; color:var(--muted); font-size:12px; margin-bottom:6px; }
+  .inp { display:flex; border:1px solid var(--btn3); border-radius:4px; background:var(--field); overflow:hidden; }
+  .inp input { flex:1; min-width:0; border:0; background:transparent; padding:10px 12px; font-size:13px; color:var(--soft); outline:none; }
+  .inp button { width:44px; border:0; border-left:1px solid var(--btn3); background:transparent; color:var(--soft); display:grid; place-items:center; }
+  .inp button:hover { background:var(--rule2); }
+  .inp button svg { width:16px; height:16px; }
+  .how { margin-top:22px; }
+  .how a { color:var(--link); font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; text-decoration:none; }
+  .how a:hover { text-decoration:underline; }
+  .how a svg { width:18px; height:18px; }
+  .steps { display:none; text-align:left; margin:14px auto 0; background:var(--field); border:1px solid var(--line); border-radius:6px; padding:12px 18px; color:var(--soft); font-size:12px; line-height:1.7; }
+  .steps ol { margin:0; padding-left:20px; }
+  .steps code { background:var(--rule); padding:1px 5px; border-radius:3px; font-size:11px; }
+
+  /* ---------- channels (middle) ---------- */
+  .channels { display:flex; flex-direction:column; min-height:0; }
+  .ch-head { display:flex; justify-content:space-between; align-items:center; padding:14px 16px 12px; border-bottom:1px solid var(--rule); }
+  .ch-head b { font-size:14px; font-weight:600; }
+  .ch-head span { color:var(--muted); font-size:12px; }
+  .ch-body { padding:14px 16px 16px; overflow:auto; flex:1; }
+  .btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .bt { background:var(--btn); border:0; border-radius:6px; padding:10px 10px; font-size:12px; font-weight:500; display:flex; gap:8px; align-items:center; justify-content:center; }
+  .bt:hover:not(:disabled) { background:var(--btn2); }
+  .bt:disabled { opacity:.45; cursor:not-allowed; }
+  .bt svg { width:15px; height:15px; }
+  .meta { display:flex; justify-content:space-between; align-items:center; margin:16px 0 4px; color:var(--muted); font-size:12px; }
+  .meta b { color:var(--text); font-weight:500; }
+  .meta .all { display:flex; gap:12px; align-items:center; }
+  .meta .all a { color:var(--muted); cursor:pointer; }
+  .meta .all a:hover { color:var(--text); }
+  .meta .all i { width:1px; height:14px; background:var(--track); }
+
+  .ch { display:flex; gap:12px; padding:13px 0; border-top:1px solid var(--rule); }
+  .av { position:relative; flex:none; width:44px; height:44px; border-radius:50%; background:var(--btn3); display:grid; place-items:center; font-size:15px; font-weight:500; color:#d5e2da; }
+  .bd { position:absolute; right:-3px; bottom:-3px; width:19px; height:19px; border-radius:50%; border:2px solid var(--card); display:grid; place-items:center; font-size:9px; font-weight:700; color:#fff; line-height:1; }
+  .bd.fb { background:#1877f2; } .bd.yt { background:#ff0000; } .bd.ig { background:linear-gradient(45deg,#f9a825,#e1306c,#7b3fe4); }
+  .bd.tt { background:#000; } .bd.x { background:#000; border-color:var(--card); } .bd.other { background:#4a4a52; }
+  .cmain { flex:1; min-width:0; }
+  .l1 { display:flex; align-items:center; gap:12px; }
+  .nm { flex:1; min-width:0; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .edit { color:var(--muted); font-size:12px; cursor:pointer; }
+  .edit:hover { color:var(--text); }
+  .sub { color:var(--muted); font-size:12px; margin-top:3px; word-break:break-word; }
+  .stt { display:flex; align-items:center; gap:6px; margin-top:5px; color:var(--muted); font-size:12px; }
+  .stt i { width:7px; height:7px; border-radius:50%; background:#52625a; }
+  .stt.live { color:var(--green); } .stt.live i { background:var(--green); }
+  .stt.starting { color:var(--amber); } .stt.starting i { background:var(--amber); }
+  .stt.error { color:var(--red); } .stt.error i { background:var(--red); }
+
+  .sw { position:relative; display:inline-block; width:36px; height:20px; flex:none; }
+  .sw input { opacity:0; position:absolute; inset:0; width:100%; height:100%; margin:0; cursor:pointer; z-index:2; }
+  .sw span { position:absolute; inset:0; border-radius:999px; background:var(--track); transition:background .15s; }
+  .sw span::after { content:""; position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:#fff; transition:transform .15s; }
+  .sw input:checked + span { background:var(--blue); }
+  .sw input:checked + span::after { transform:translateX(16px); }
+
+  .err { margin:0 0 14px; border:1px solid var(--errline); background:var(--errbg); border-radius:4px; padding:9px 11px; font-size:12px; display:flex; gap:8px; align-items:flex-start; }
+  .err svg { flex:none; width:15px; height:15px; margin-top:1px; color:var(--errsvg); }
+  .err a { color:var(--errlink); text-decoration:underline; cursor:pointer; }
+  .empty { color:var(--muted); padding:26px 0; text-align:center; border-top:1px solid var(--rule); margin-top:6px; }
+
+  /* edit form + modal */
+  .form { padding:18px 0; border-top:1px solid var(--rule); }
+  .form .ft { font-weight:600; font-size:14px; margin-bottom:6px; }
+  .form label { display:block; font-size:12px; color:var(--muted); margin:10px 0 5px; }
+  .form input.t { width:100%; padding:9px 11px; border-radius:4px; border:1px solid var(--btn3); background:var(--field); font-size:13px; outline:none; }
+  .form input.t:focus { border-color:var(--blue); }
+  .form .fb { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; align-items:center; }
+  #lockBtn { touch-action:none; user-select:none; -webkit-user-select:none; }
+  #lockBtn.on { background:var(--lockbg); color:var(--lockfg); }
+  .b2 { border:0; border-radius:4px; padding:8px 14px; background:var(--btn); font-size:12px; font-weight:500; }
+  .b2:hover { background:var(--btn3); }
+  .b2.pri { background:var(--blue); color:var(--onblue); font-weight:600; }
+  .b2.pri:hover { filter:brightness(1.1); }
+  .b2.del { margin-left:auto; background:transparent; color:var(--badtxt); }
+  .b2.del:hover { background:var(--errbg); }
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); display:none; place-items:center; z-index:50; padding:20px; }
+  .overlay.open { display:grid; }
+  .modal { width:min(460px,100%); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:20px; }
+  .modal .form { border:0; padding:0; }
+  .modal h3 { margin:0 0 4px; font-size:16px; }
+  .modal p { margin:0 0 6px; color:var(--muted); font-size:12px; }
+
+  /* ---------- side menu (right) ---------- */
+  .rail { padding:8px 6px; display:flex; flex-direction:column; gap:6px; align-self:start; }
+  .ri { display:flex; flex-direction:column; align-items:center; gap:4px; padding:9px 2px; border-radius:6px; color:var(--muted); font-size:10px; border:0; background:transparent; }
+  .ri svg { width:18px; height:18px; }
+  .ri.on { background:var(--btn); color:var(--text); }
+  .ri.on svg { color:var(--blue); }
+  .ri:not(:disabled):hover { color:var(--text); }
+  .ri:disabled { opacity:.55; cursor:not-allowed; }
+
+  /* live view: preview + signal numbers */
+  [hidden] { display:none !important; }
+  .stage.live { padding:14px; align-items:flex-start; }
+  .stage-in.wide { max-width:none; text-align:left; }
+  .grow { flex:1; }
+  .pv-ov { position:absolute; left:10px; top:10px; display:flex; gap:6px; z-index:2; }
+  .ov { display:inline-flex; align-items:center; gap:6px; background:rgba(0,0,0,.62); color:#fff; font-size:11px; font-weight:600; padding:4px 8px; border-radius:4px; font-variant-numeric:tabular-nums; }
+  .ov.live { background:var(--red); letter-spacing:.5px; }
+  .ov.live::before { content:""; width:6px; height:6px; border-radius:50%; background:#fff; animation:pulse 1.4s infinite; }
+  .bar { display:flex; flex-wrap:wrap; margin-top:10px; background:var(--field); border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .bi { flex:1 1 118px; padding:10px 14px; border-right:1px solid var(--line); min-width:0; }
+  .bi:last-child { border-right:0; }
+  .bi b { display:block; height:20px; line-height:20px; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bi span { display:block; margin-top:3px; font-size:11px; color:var(--muted); }
+  .bi b.good { display:inline-block; background:rgba(34,197,94,.16); color:var(--green); font-size:11px; letter-spacing:.5px; text-transform:uppercase; padding:0 8px; border-radius:4px; }
+  .bi b.wait { color:var(--amber); } .bi b.bad { color:var(--red); }
+  .bi.warn b { color:var(--amber); }
+  .kfnote { margin:8px 0 0; padding:9px 12px; border:1px solid var(--kfline); background:var(--kfbg); color:var(--kffg); border-radius:6px; font-size:12px; line-height:1.5; }
+  .stage-in.wide .lead { margin-top:6px; font-size:13px; }
+  .pv-box { position:relative; margin:0 auto; width:min(100%, calc((100vh - 345px) * 16 / 9)); background:#000; border-radius:6px; overflow:hidden; aspect-ratio:16/9; }
+  .pv-box video { width:100%; height:100%; object-fit:contain; background:#000; display:block; }
+  .pv-msg { position:absolute; inset:0; display:grid; place-items:center; color:#92a39a; font-size:12px; background:#0a0f0c; }
+  .pv-ctl { display:flex; align-items:center; gap:12px; margin-top:8px; color:var(--muted); font-size:12px; }
+  .spark { margin-top:8px; padding-top:6px; background:var(--field); border:1px solid var(--line); border-radius:6px; padding:8px 11px 6px; text-align:left; }
+  .spark svg { width:100%; height:30px; display:block; }
+  .spark small { color:var(--muted); font-size:11px; }
+
+  .rrow { display:flex; justify-content:space-between; align-items:center; margin:14px 0 2px; font-size:13px; }
+  .addr { margin-top:12px; background:var(--field); border:1px solid var(--line); border-radius:6px; padding:9px 11px; font-size:12px; color:var(--muted); }
+  .addr code { display:block; color:var(--link); font-size:13px; margin-top:4px; user-select:all; }
+  .note { font-size:12px; color:var(--muted); margin:10px 0 0; }
+  .note.bad { color:var(--badtxt); }
+  @media (max-width:600px) {
+    .top { padding:0 14px; }
+    .app { padding:8px; gap:8px; min-height:0; }
+    .stage { padding:52px 12px 16px; }
+    .stage-in.wide .lead { font-size:12px; }
+    .ri { padding:8px 2px; }
+  }
+  @media (max-width:1000px) {
+    .app { grid-template-columns:minmax(0,1fr); height:auto; }
+    .rail { flex-direction:row; justify-content:center; order:-1; }
+    .ri { flex:1; }
+    .stage { padding-top:60px; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <svg class="home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+  <div class="ttl">Multistream
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+  </div>
+</header>
+
+<div class="app">
+  <!-- left: connect your encoder -->
+  <main class="card stage">
+    <span class="chip" id="chip">OFFLINE</span>
+    <div class="stage-in" id="stageIn">
+     <div id="offlineView">
+      <h1 id="h1">Connect your encoder</h1>
+      <p class="lead" id="lead">Copy &amp; paste links into your streaming software.</p>
+
+      <div class="tabs"><span>RTMP</span></div>
+
+      <div class="fld">
+        <label>RTMP URL</label>
+        <div class="inp"><input id="srv" readonly value="rtmp://localhost:1935/live"><button data-copy="srv" title="Copy" aria-label="Copy URL"></button></div>
+      </div>
+      <div class="fld">
+        <label>Stream key</label>
+        <div class="inp"><input id="skey" readonly value="obs"><button data-copy="skey" title="Copy" aria-label="Copy key"></button></div>
+      </div>
+
+      <div class="how">
+        <a id="howLink">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor"/></svg>
+          Explore how to connect OBS
+        </a>
+        <div class="steps" id="steps">
+          <ol>
+            <li>In OBS open <b>Settings → Stream</b>.</li>
+            <li>Set <b>Service</b> to <code>Custom</code>.</li>
+            <li>Paste the <b>RTMP URL</b> into <b>Server</b> and the <b>Stream key</b> above.</li>
+            <li>Click <b>Start Streaming</b> in OBS.</li>
+            <li>On Facebook and Instagram, press <b>Go live</b> on their page.</li>
+          </ol>
+        </div>
+      </div>
+     </div>
+
+     <!-- shown while OBS is sending video -->
+     <div id="liveView" hidden>
+      <div class="pv-box">
+        <video id="pv" muted autoplay playsinline></video>
+        <div class="pv-msg" id="pvMsg">Preview is off</div>
+        <div class="pv-ov"><span class="ov live">LIVE</span><span class="ov" id="ovTime">00:00:00</span></div>
+      </div>
+      <div class="pv-ctl"><span id="lvLead"></span><span class="grow"></span><span>Preview (no sound)</span>
+        <label class="sw"><input type="checkbox" id="pvSwitch" checked><span></span></label>
+      </div>
+
+      <div class="bar">
+        <div class="bi"><b>RTMP</b><span>Stream</span></div>
+        <div class="bi"><b id="sgHealth">…</b><span>Health</span></div>
+        <div class="bi"><b id="sgRes">…</b><span id="sgResL">Resolution</span></div>
+        <div class="bi"><b id="sgRate">…</b><span>Bitrate</span></div>
+        <div class="bi"><b id="sgFps">…</b><span>Frame rate</span></div>
+        <div class="bi" id="kfBox"><b id="sgKey">…</b><span>Keyframe interval</span></div>
+        <div class="bi"><b id="sgAudio">…</b><span>Audio</span></div>
+      </div>
+      <p class="kfnote" id="kfNote" hidden>Facebook and YouTube want a keyframe every 2 seconds (4 at most). In OBS: Settings → Output → Streaming → Keyframe Interval → 2.</p>
+      <div class="spark">
+        <svg viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><polyline id="sparkLine" fill="none" stroke="#4ade80" stroke-width="2" vector-effect="non-scaling-stroke" points=""/></svg>
+        <small id="sparkNote">Bitrate, last minute</small>
+      </div>
+     </div>
+    
+     <!-- OBS scenes -->
+     <section class="scn" id="scn" aria-label="OBS scenes">
+      <div class="scn-h">
+        <h2>OBS scenes</h2><span class="st" id="scnSt"></span><span class="grow"></span>
+        <div class="scn-tools">
+          <div class="opt" id="scnSize" role="group" aria-label="Tile size">
+            <button type="button" data-v="s">Small</button><button type="button" data-v="m">Medium</button><button type="button" data-v="l">Large</button>
+          </div>
+          <span class="st">Pictures</span><label class="sw"><input type="checkbox" id="scnPics" aria-label="Show scene pictures"><span></span></label>
+          <button class="b2" id="obsCfgBtn" type="button">Connect OBS</button>
+        </div>
+      </div>
+      <div class="tiles" id="tiles"></div>
+     </section>
+
+     <!-- OBS audio levels -->
+     <section class="aud" id="aud" aria-label="OBS audio levels" hidden>
+      <div class="scn-h">
+        <h2>Audio levels</h2><span class="grow"></span>
+        <span class="st">Show</span><label class="sw"><input type="checkbox" id="audOn" aria-label="Show audio levels"><span></span></label>
+      </div>
+      <div class="arows" id="arows"></div>
+     </section>
+</div>
+  </main>
+
+  <!-- middle: your channels -->
+  <aside class="card channels">
+    <div class="ch-head"><b>Your Channels</b></div>
+    <div class="ch-body">
+      <div class="btns">
+        <button class="bt" id="addBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add Channel
+        </button>
+        <button class="bt" disabled title="Coming soon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/></svg>Update Titles
+        </button>
+        <button class="bt" id="fbBtn" title="Add the Facebook Page ID and token">Facebook Page</button>
+        <button class="bt" id="lockBtn" title="Hold to unlock the Go live buttons">Locked: hold to unlock</button>
+        <button class="bt" id="fbLive" disabled title="Start OBS streaming first, and add the Facebook Page">Go live on Facebook</button>
+        <button class="bt" id="ytBtn" title="Connect the YouTube account">YouTube</button>
+        <button class="bt" id="ytLive" disabled title="Start OBS streaming first, and connect YouTube">Go live on YouTube</button>
+      </div>
+      <label class="note" style="display:block;margin:6px 0"><input type="checkbox" id="fbTest" checked> Test mode (not shown to the public)</label>
+      <p class="note" id="fbNote" hidden></p>
+      <div class="meta">
+        <span id="count"><b>0 of 0</b> active</span>
+        <span class="all">Toggle all <a id="allOff">OFF</a><i></i><a id="allOn">ON</a></span>
+      </div>
+      <div id="list"></div>
+    </div>
+  </aside>
+
+  <!-- right: side menu -->
+  <nav class="card rail">
+    <button class="ri on">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M7.8 8.2a6 6 0 0 0 0 7.6M16.2 8.2a6 6 0 0 1 0 7.6"/><path d="M4.8 5.2a10 10 0 0 0 0 13.6M19.2 5.2a10 10 0 0 1 0 13.6"/></svg>Channels
+    </button>
+    <button class="ri" disabled title="Coming soon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>Chat
+    </button>
+    <button class="ri" id="accBtn" title="Accessibility: text size, contrast, colours">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5M12 15l-3.5 5.5M12 15l3.5 5.5"/></svg>Access
+    </button>
+    <button class="ri" id="setBtn" title="Control from phone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings
+    </button>
+  </nav>
+</div>
+
+<!-- add channel -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3>Add Channel</h3>
+    <p>Paste the stream URL and key from the platform.</p>
+    <div class="form">
+      <label>Name (for example Facebook, YouTube or TikTok)</label>
+      <input class="t" id="n-name" type="text" placeholder="YouTube">
+      <label>Stream URL</label>
+      <input class="t" id="n-url" type="text" placeholder="rtmps://...">
+      <label>Stream key</label>
+      <input class="t" id="n-key" type="password" placeholder="Paste the key">
+      <div class="fb">
+        <button class="b2 pri" id="add">Add</button>
+        <button class="b2" id="addCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- facebook page -->
+<div class="overlay" id="fbOverlay">
+  <div class="modal">
+    <h3>Facebook Page</h3>
+    <p>Paste the Page ID and the Page access token from the Graph API Explorer. The token is saved only on this computer.</p>
+    <div class="form">
+      <label>Page ID</label>
+      <input class="t" id="fb-page" type="text" placeholder="Numbers only">
+      <label>Page access token</label>
+      <input class="t" id="fb-token" type="password" placeholder="Paste the token">
+      <p class="note" id="fb-saved"></p>
+      <p class="note" id="fb-msg"></p>
+      <div class="fb">
+        <button class="b2 pri" id="fb-save">Save</button>
+        <button class="b2" id="fb-close">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- youtube -->
+<div class="overlay" id="ytOverlay">
+  <div class="modal">
+    <h3>YouTube</h3>
+    <p>Choose the file you downloaded from Google, then sign in with the church YouTube account. The file and the login are saved only on this computer.</p>
+    <div class="form">
+      <label>1. File from Google (the .json file)</label>
+      <input class="t" id="yt-file" type="file" accept=".json,application/json">
+      <label>2. Sign in</label>
+      <button class="b2 pri" id="yt-connect" type="button">Connect YouTube</button>
+      <p class="note" id="yt-status"></p>
+      <p class="note" id="yt-msg"></p>
+      <div class="fb">
+        <button class="b2" id="yt-close">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OBS connection -->
+<div class="overlay" id="obsOverlay">
+  <div class="modal" role="dialog" aria-labelledby="obsTitle">
+    <h3 id="obsTitle">Connect OBS</h3>
+    <p>This lets Multistream show your scenes and switch them. In OBS, open <b>Tools → WebSocket Server Settings</b>, tick <b>Enable WebSocket server</b>, and set a password. Then type the same password here.</p>
+    <div class="form">
+      <div class="rrow"><span>Connect to OBS</span><label class="sw"><input type="checkbox" id="obsOn" aria-label="Connect to OBS"><span></span></label></div>
+      <label for="obsPort">Port (OBS shows 4455)</label>
+      <input class="t" id="obsPort" inputmode="numeric" placeholder="4455">
+      <label for="obsPw">Password</label>
+      <input class="t" id="obsPw" type="password" placeholder="Leave empty to keep the saved password" autocomplete="new-password">
+      <p class="note" id="obsMsg"></p>
+      <div class="fb">
+        <button class="b2 pri" id="obsSave" type="button">Save</button>
+        <button class="b2" id="obsClose" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- accessibility -->
+<div class="overlay" id="accOverlay">
+  <div class="modal accm" role="dialog" aria-labelledby="accTitle">
+    <h3 id="accTitle">Appearance and accessibility</h3>
+    <p>Changes show straight away. Press Save changes to keep them. They are saved on this device only, so the phone and the church computer each have their own.</p>
+
+    <div class="arow"><div><p class="lb" id="l-th">Interface theme</p><p class="ds">Dark, light, or match this device.</p></div>
+      <div class="themes" id="themes" role="group" aria-labelledby="l-th">
+        <button type="button" data-v="system"><span class="tp sy"><i class="a"></i><i class="b"></i></span>System</button>
+        <button type="button" data-v="light"><span class="tp l"><i class="s"></i><i class="a"></i><i class="b"></i></span>Light</button>
+        <button type="button" data-v="dark"><span class="tp d"><i class="s"></i><i class="a"></i><i class="b"></i></span>Dark</button>
+      </div></div>
+
+    <div class="arow"><div><p class="lb" id="l-col">Main colour</p><p class="ds">Pick one, or type your own.</p></div>
+      <div class="ctl"><div class="sws" id="sws" role="group" aria-labelledby="l-col"></div>
+        <div class="cust"><span>Custom colour:</span><span class="hx">#<input id="accHex" maxlength="6" placeholder="22C55E" aria-label="Custom colour, 6 letters or numbers"></span><input type="color" id="accPick" aria-label="Pick a colour"></div></div></div>
+
+    <div class="arow"><div><p class="lb" id="l-size">Text size</p><p class="ds">Make everything bigger.</p></div>
+      <div class="opt" data-key="size" role="group" aria-labelledby="l-size">
+        <button data-v="" type="button">Normal</button><button data-v="large" type="button">Large</button><button data-v="xlarge" type="button">Extra large</button></div></div>
+
+    <div class="arow"><div><p class="lb">High contrast</p><p class="ds">Stronger text and borders.</p></div>
+      <div class="ctl"><label class="sw"><input type="checkbox" data-key="contrast" aria-label="High contrast"><span></span></label></div></div>
+
+    <div class="arow"><div><p class="lb">Colour-blind friendly colours</p><p class="ds">Blue and orange instead of green and red.</p></div>
+      <div class="ctl"><label class="sw"><input type="checkbox" data-key="cb" aria-label="Colour-blind friendly colours"><span></span></label></div></div>
+
+    <div class="arow"><div><p class="lb">Bigger buttons</p><p class="ds">Easier to tap on a phone.</p></div>
+      <div class="ctl"><label class="sw"><input type="checkbox" data-key="bigbtn" aria-label="Bigger buttons"><span></span></label></div></div>
+
+    <div class="arow"><div><p class="lb">Stop animations</p><p class="ds">Turns off the pulsing LIVE dot.</p></div>
+      <div class="ctl"><label class="sw"><input type="checkbox" data-key="nomotion" aria-label="Stop animations"><span></span></label></div></div>
+
+    <div class="form"><div class="fb">
+      <button class="b2 lk" id="accReset" type="button">Reset all</button>
+      <button class="b2" id="accCancel" type="button">Cancel</button>
+      <button class="b2 pri" id="accSave" type="button">Save changes</button>
+    </div></div>
+  </div>
+</div>
+
+<!-- control from phone -->
+<div class="overlay" id="remOverlay">
+  <div class="modal">
+    <h3>Control from phone</h3>
+    <p>Open this dashboard on a phone or another computer that is on the same Wi-Fi.</p>
+    <div class="form">
+      <div class="rrow"><span>Allow other devices</span><label class="sw"><input type="checkbox" id="remOn"><span></span></label></div>
+      <label>Password (at least 6 characters)</label>
+      <input class="t" id="remPw" type="password" placeholder="Type a password" autocomplete="new-password">
+      <div class="addr" id="remAddr" hidden></div>
+      <p class="note" id="remMsg"></p>
+      <div class="fb">
+        <button class="b2 pri" id="remSave">Save</button>
+        <button class="b2" id="remClose">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/vendor/flv.min.js"></script>
+<script>
+const $ = (s) => document.querySelector(s);
+const api = (url, method = 'GET', body) =>
+  fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then((r) => r.json());
+
+const editing = new Set(); // ids with an open edit form, so polling does not wipe what you type
+let last = { obsLive: false, destinations: [] };
+
+const COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
+const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>';
+const WARN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5M12 16.5v.1"/></svg>';
+
+document.querySelectorAll('[data-copy]').forEach((b) => (b.innerHTML = COPY_ICON));
+
+function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+function initials(name) {
+  const w = String(name).trim().split(/\s+/).filter(Boolean);
+  return (w.length > 1 ? w[0][0] + w[1][0] : (w[0] || '?')[0]).toUpperCase();
+}
+function platform(name) {
+  const n = String(name).toLowerCase();
+  if (/facebook|^fb\b|\bfb\b/.test(n)) return { c: 'fb', t: 'f' };
+  if (/youtube|\byt\b/.test(n)) return { c: 'yt', t: '▶' };
+  if (/instagram|\big\b|\binsta/.test(n)) return { c: 'ig', t: 'IG' };
+  if (/tiktok/.test(n)) return { c: 'tt', t: '♪' };
+  if (/^x$|\bx\b|twitter/.test(n)) return { c: 'x', t: 'X' };
+  return { c: 'other', t: '' };
+}
+
+function statusOf(d) {
+  const s = d.status.state;
+  if (!d.enabled) return { cls: '', text: 'Off' };
+  if (s === 'live') {
+    const st = d.stats;
+    if (st && st.speed != null && st.speed < 0.9) return { cls: 'starting', text: 'Slow connection, falling behind' };
+    return { cls: 'live', text: st && st.kbps > 0 ? 'Live · ' + fmtRate(st.kbps) : 'Live' };
+  }
+  if (s === 'starting') return { cls: 'starting', text: 'Starting…' };
+  if (s === 'error') return { cls: 'error', text: 'Problem' };
+  return { cls: '', text: d.hasKey ? 'Offline' : 'Needs a stream key' };
+}
+
+function rowHTML(d) {
+  const st = statusOf(d), p = platform(d.name);
+  const showErr = d.enabled && d.status.state === 'error';
+  const needsKey = /URL and key/i.test(d.status.message || '');
+  const errBox = showErr ? `
+    <div class="err">${WARN_ICON}<div>${esc(d.status.message || 'Something went wrong')}
+      · ${needsKey ? '<a data-act="edit">Add now</a>' : '<a data-act="restart">Restart</a>'}</div></div>` : '';
+  return `
+    <div class="ch" data-id="${d.id}">
+      <div class="av">${esc(initials(d.name))}<span class="bd ${p.c}">${p.t}</span></div>
+      <div class="cmain">
+        <div class="l1">
+          <span class="nm">${esc(d.name)}</span>
+          <span class="edit" data-act="edit">Edit</span>
+          <label class="sw"><input type="checkbox" data-act="toggle" ${d.enabled ? 'checked' : ''}><span></span></label>
+        </div>
+        <div class="sub">${d.hasKey ? 'Stream key saved, ends in ' + esc(d.keyEnd) : 'No stream key yet'}</div>
+        <div class="stt ${st.cls}"><i></i>${st.text}</div>
+      </div>
+    </div>${errBox}`;
+}
+
+// ---------- signal numbers ----------
+const CODEC = { h264: 'H.264', hevc: 'H.265', aac: 'AAC', mp3: 'MP3', opus: 'Opus', vp9: 'VP9', av1: 'AV1' };
+function fmtRate(k) { return k >= 1000 ? (k / 1000).toFixed(1) + ' Mbps' : k + ' kbps'; }
+function fmtTime(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const p = (x) => String(x).padStart(2, '0');
+  return `${p(Math.floor(s / 3600))}:${p(Math.floor((s % 3600) / 60))}:${p(s % 60)}`;
+}
+function setSig(id, text, cls) { const el = $(id); el.textContent = text; el.className = cls || ''; }
+
+// Health from the incoming bitrate over the last 10 seconds: steady, unsteady, or nothing arriving
+function healthOf(sg, warmingUp) {
+  if (!sg.ok) return warmingUp ? { t: 'Connecting…', c: 'wait' } : { t: 'No signal', c: 'bad' };
+  const h = sg.history.slice(-10);
+  const avg = h.reduce((a, c) => a + c, 0) / (h.length || 1);
+  const dips = h.filter((v) => v < avg * 0.4).length;
+  return dips ? { t: 'Unsteady', c: 'wait' } : { t: 'Excellent', c: 'good' };
+}
+
+function renderSignal(state) {
+  if (!state.obsLive) return;
+  const sg = state.signal;
+  const warmingUp = Date.now() - sg.startedAt < 5000;
+  const hl = healthOf(sg, warmingUp);
+  setSig('#sgHealth', hl.t, hl.c);
+  setSig('#sgRate', sg.kbps ? fmtRate(sg.kbps) : '—');
+  const v = sg.video;
+  setSig('#sgRes', v && v.width && v.height ? `${v.width}×${v.height}` : '—');
+  $('#sgResL').textContent = v && v.codec ? `Resolution · ${CODEC[v.codec] || v.codec}` : 'Resolution';
+  setSig('#sgFps', v && v.fps ? `${v.fps} fps` : '—');
+  const a = sg.audio;
+  setSig('#sgAudio', a ? [CODEC[a.codec] || a.codec, a.rate ? `${a.rate / 1000} kHz` : null].filter(Boolean).join(' · ') : '—');
+  // keyframe interval: more than 4 seconds is too long for Facebook and YouTube
+  const kf = sg.keyframe;
+  const tooLong = kf != null && kf > 4.05;
+  setSig('#sgKey', kf == null ? '—' : (tooLong ? '⚠ ' : '') + kf.toFixed(1) + ' sec');
+  $('#kfBox').classList.toggle('warn', tooLong);
+  $('#kfNote').hidden = !tooLong;
+  $('#ovTime').textContent = sg.startedAt ? fmtTime(Date.now() - sg.startedAt) : '00:00:00';
+
+  // small line graph of the bitrate over the last minute
+  const h = sg.history;
+  if (h.length > 1) {
+    const max = Math.max(...h, 1);
+    const step = 300 / (h.length - 1);
+    $('#sparkLine').setAttribute('points', h.map((val, i) => `${(i * step).toFixed(1)},${(58 - (val / max) * 54).toFixed(1)}`).join(' '));
+    $('#sparkNote').textContent = `Bitrate, last minute (highest ${fmtRate(max)})`;
+  }
+}
+setInterval(() => { if (last.obsLive && last.signal && last.signal.startedAt) $('#ovTime').textContent = fmtTime(Date.now() - last.signal.startedAt); }, 1000);
+
+// ---------- video preview ----------
+// The window plays the same stream OBS sends. It is only decoded for display, never re-encoded.
+let player = null;
+try { $('#pvSwitch').checked = localStorage.getItem('previewOn') !== '0'; } catch {}
+
+function setPreviewMsg(text) { const m = $('#pvMsg'); m.textContent = text; m.hidden = !text; }
+
+function startPreview() {
+  if (player) return;
+  if (!window.flvjs || !flvjs.isSupported()) { setPreviewMsg('Preview is not available (video player not loaded). Run npm install.'); return; }
+  const i = last.ingest;
+  setPreviewMsg('Starting preview…');
+  player = flvjs.createPlayer(
+    { type: 'flv', isLive: true, url: `http://${location.hostname}:${i.httpPort}${i.path}.flv` },
+    { enableWorker: false, enableStashBuffer: false, stashInitialSize: 128, lazyLoad: false, autoCleanupSourceBuffer: true }
+  );
+  player.attachMediaElement($('#pv'));
+  player.on(flvjs.Events.ERROR, () => stopPreview(true)); // the next refresh starts it again
+  player.load();
+  const p = player.play();
+  if (p && p.catch) p.catch(() => {});
+}
+
+function stopPreview(keepMessage) {
+  if (player) {
+    try { player.pause(); player.unload(); player.detachMediaElement(); player.destroy(); } catch {}
+    player = null;
+  }
+  if (!keepMessage) setPreviewMsg($('#pvSwitch').checked ? '' : 'Preview is off');
+}
+
+function syncPreview() {
+  if (last.obsLive && $('#pvSwitch').checked) startPreview();
+  else stopPreview();
+}
+
+$('#pv').addEventListener('playing', () => setPreviewMsg(''));
+$('#pvSwitch').addEventListener('change', () => {
+  try { localStorage.setItem('previewOn', $('#pvSwitch').checked ? '1' : '0'); } catch {}
+  syncPreview();
+});
+// keep the preview close to live: if it falls behind, jump forward
+setInterval(() => {
+  const v = $('#pv');
+  if (player && v.buffered.length) {
+    const end = v.buffered.end(v.buffered.length - 1);
+    if (end - v.currentTime > 3) v.currentTime = end - 0.3;
+  }
+}, 2000);
+
+function render(state) {
+  last = state;
+  const live = state.obsLive;
+  const n = state.destinations.filter((d) => d.enabled).length;
+  const nLive = state.destinations.filter((d) => d.enabled && d.status.state === 'live').length;
+
+  // on a phone, "localhost" would mean the phone itself, so show this computer's address instead
+  const host = location.hostname;
+  $('#srv').value = ['localhost', '127.0.0.1'].includes(host) ? state.ingest.server : state.ingest.server.replace('localhost', host);
+  $('#skey').value = state.ingest.key;
+  const chip = $('#chip');
+  chip.textContent = live ? 'LIVE' : 'OFFLINE';
+  chip.className = 'chip' + (live ? ' live' : '');
+  chip.hidden = live; // while live, LIVE and the timer sit on the video
+  document.querySelector('.stage').classList.toggle('live', live);
+  $('#offlineView').hidden = live;
+  $('#liveView').hidden = !live;
+  $('#stageIn').classList.toggle('wide', live);
+  $('#lvLead').textContent = `Your stream is going to ${nLive} of ${n} active channel${n === 1 ? '' : 's'}.`;
+  renderSignal(state);
+  syncPreview();
+  $('#count').innerHTML = `<b>${n} of ${state.destinations.length}</b> active`;
+
+  if (editing.size) return; // do not redraw while an edit form is open
+  $('#list').innerHTML = state.destinations.length
+    ? state.destinations.map(rowHTML).join('')
+    : '<div class="empty">No channels yet. Click Add Channel.</div>';
+}
+
+function openEdit(rowEl, d) {
+  editing.add(d.id);
+  // remove the red box that follows the row, if there is one
+  if (rowEl.nextElementSibling && rowEl.nextElementSibling.classList.contains('err')) rowEl.nextElementSibling.remove();
+  rowEl.outerHTML = `
+    <div class="form" id="edit-${d.id}">
+      <div class="ft">Edit ${esc(d.name)}</div>
+      <label>Name</label><input class="t e-name" type="text" value="${esc(d.name)}">
+      <label>Stream URL</label><input class="t e-url" type="text" value="${esc(d.url)}" placeholder="rtmps://...">
+      <label>Stream key (leave empty to keep the saved one)</label><input class="t e-key" type="password" placeholder="Paste a new key">
+      <div class="fb">
+        <button class="b2 pri" data-save="${d.id}">Save</button>
+        <button class="b2" data-cancel="${d.id}">Cancel</button>
+        <button class="b2" data-restart="${d.id}">Restart</button>
+        <button class="b2 del" data-delete="${d.id}">Delete</button>
+      </div>
+    </div>`;
+}
+
+$('#list').addEventListener('click', async (e) => {
+  const t = e.target;
+  const saveId = t.dataset.save, cancelId = t.dataset.cancel, restartId = t.dataset.restart, deleteId = t.dataset.delete;
+  if (saveId) {
+    const f = document.getElementById('edit-' + saveId);
+    await api('/api/destinations/' + saveId, 'PUT', {
+      name: f.querySelector('.e-name').value,
+      url: f.querySelector('.e-url').value.trim(),
+      key: f.querySelector('.e-key').value.trim(),
+    });
+    editing.delete(saveId);
+    return refresh();
+  }
+  if (cancelId) { editing.delete(cancelId); return refresh(); }
+  if (restartId) { await api('/api/destinations/' + restartId + '/restart', 'POST'); editing.delete(restartId); return refresh(); }
+  if (deleteId) {
+    const d = last.destinations.find((x) => x.id === deleteId);
+    if (!confirm('Delete ' + (d ? d.name : 'this channel') + '?')) return;
+    await api('/api/destinations/' + deleteId, 'DELETE');
+    editing.delete(deleteId);
+    return refresh();
+  }
+
+  const act = t.dataset.act;
+  if (!act) return;
+  const rowEl = t.closest('.ch') || (t.closest('.err') && t.closest('.err').previousElementSibling);
+  if (!rowEl || !rowEl.dataset.id) return;
+  const d = last.destinations.find((x) => x.id === rowEl.dataset.id);
+  if (!d) return;
+  if (act === 'toggle') await api('/api/destinations/' + d.id, 'PUT', { enabled: t.checked });
+  if (act === 'restart') await api('/api/destinations/' + d.id + '/restart', 'POST');
+  if (act === 'edit') return openEdit(rowEl, d);
+  refresh();
+});
+
+// toggle all on / off
+async function setAll(enabled) {
+  await Promise.all(last.destinations.map((d) => api('/api/destinations/' + d.id, 'PUT', { enabled })));
+  refresh();
+}
+$('#allOn').onclick = () => setAll(true);
+$('#allOff').onclick = () => setAll(false);
+
+// add channel dialog
+const overlay = $('#overlay');
+$('#addBtn').onclick = () => { overlay.classList.add('open'); $('#n-name').focus(); };
+$('#addCancel').onclick = () => overlay.classList.remove('open');
+overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
+$('#add').onclick = async () => {
+  const name = $('#n-name').value.trim();
+  if (!name) return alert('Please type a name');
+  await api('/api/destinations', 'POST', { name, url: $('#n-url').value.trim(), key: $('#n-key').value.trim() });
+  $('#n-name').value = $('#n-url').value = $('#n-key').value = '';
+  overlay.classList.remove('open');
+  refresh();
+};
+
+// control from phone
+const remOverlay = $('#remOverlay');
+function showRemote(v) {
+  $('#remOn').checked = v.enabled;
+  $('#remPw').placeholder = v.hasPassword ? 'Leave empty to keep the saved password' : 'Type a password';
+  const a = $('#remAddr');
+  a.hidden = !(v.enabled && v.addresses.length);
+  a.innerHTML = 'On the phone, open this address in the browser:' + v.addresses.map((x) => `<code>${esc(x)}</code>`).join('');
+}
+function remNote(text, bad) { const n = $('#remMsg'); n.textContent = text; n.className = 'note' + (bad ? ' bad' : ''); }
+$('#setBtn').onclick = async () => {
+  remOverlay.classList.add('open');
+  remNote('');
+  $('#remPw').value = '';
+  const v = await api('/api/remote');
+  if (v.error) { remNote(v.error, true); return; }
+  showRemote(v);
+};
+$('#remClose').onclick = () => remOverlay.classList.remove('open');
+remOverlay.addEventListener('click', (e) => { if (e.target === remOverlay) remOverlay.classList.remove('open'); });
+$('#remSave').onclick = async () => {
+  const body = { enabled: $('#remOn').checked };
+  if ($('#remPw').value) body.password = $('#remPw').value;
+  const v = await api('/api/remote', 'PUT', body);
+  if (v.error) { remNote(v.error, true); return; }
+  $('#remPw').value = '';
+  showRemote(v);
+  remNote(v.enabled ? 'Saved. Other devices can log in with the password.' : 'Saved. Other devices are blocked.');
+};
+
+// copy buttons
+document.querySelectorAll('[data-copy]').forEach((b) => {
+  b.onclick = async () => {
+    const v = document.getElementById(b.dataset.copy).value;
+    try { await navigator.clipboard.writeText(v); }
+    catch { const i = document.getElementById(b.dataset.copy); i.select(); document.execCommand('copy'); }
+    b.innerHTML = CHECK_ICON;
+    setTimeout(() => (b.innerHTML = COPY_ICON), 1200);
+  };
+});
+
+// how to connect OBS
+$('#howLink').onclick = () => {
+  const s = $('#steps');
+  s.style.display = s.style.display === 'block' ? 'none' : 'block';
+};
+
+// Facebook Page
+// OBS scenes
+let obsInfo = null;
+const SCN_W = { s: 120, m: 200, l: 280 };
+let scn = { size: 's', pics: true };
+try { scn = { ...scn, ...(JSON.parse(localStorage.getItem('ms_scenes') || '{}') || {}) }; } catch {}
+function saveScn() { try { localStorage.setItem('ms_scenes', JSON.stringify(scn)); } catch {} }
+function renderScn() {
+  const o = obsInfo;
+  renderAud();
+  document.querySelectorAll('#scnSize button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === scn.size)));
+  $('#scnPics').checked = scn.pics;
+  $('#tiles').style.setProperty('--tw', SCN_W[scn.size] + 'px');
+  const st = $('#scnSt');
+  if (!o || !o.enabled) { st.textContent = 'Not connected'; st.className = 'st'; $('#tiles').textContent = ''; $('#tiles').dataset.key = ''; return; }
+  st.textContent = o.connected ? 'Connected to OBS' : (o.error || 'Connecting...');
+  st.className = 'st' + (o.connected ? ' ok' : '');
+  const key = o.scenes.join('\n') + '|' + scn.pics;
+  const box = $('#tiles');
+  if (box.dataset.key !== key) {
+    box.dataset.key = key;
+    box.textContent = '';
+    o.scenes.forEach((name) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'tile' + (scn.pics ? '' : ' noimg'); b.dataset.n = name;
+      const im = document.createElement('img'); im.className = 'im'; im.alt = ''; im.draggable = false;
+      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = name;
+      b.append(im, nm);
+      b.onclick = async () => {
+        const r = await api('/api/obs/scene', 'POST', { name });
+        if (r.error) { st.textContent = r.error; st.className = 'st'; }
+        else if (obsInfo) { obsInfo.current = name; renderScn(); }
+        refresh();
+      };
+      box.appendChild(b);
+    });
+  }
+  box.querySelectorAll('.tile').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.n === o.current)));
+}
+let thumbBusy = false;
+async function pollThumbs() {
+  if (thumbBusy || !scn.pics || !obsInfo || !obsInfo.connected || document.hidden) return;
+  thumbBusy = true;
+  try {
+    const d = await api('/api/obs/thumbs?w=' + Math.round(SCN_W[scn.size] * 1.3));
+    document.querySelectorAll('#tiles .tile').forEach((b) => { const u = d[b.dataset.n]; if (u) b.querySelector('img').src = u; });
+  } catch {}
+  thumbBusy = false;
+}
+setInterval(pollThumbs, 1500);
+document.querySelectorAll('#scnSize button').forEach((b) => { b.onclick = () => { scn.size = b.dataset.v; saveScn(); renderScn(); pollThumbs(); }; });
+$('#scnPics').onchange = (e) => { scn.pics = e.target.checked; saveScn(); renderScn(); pollThumbs(); };
+// Audio levels (read only). Meters are only requested while this panel is showing.
+let audOn = true;
+try { audOn = JSON.parse(localStorage.getItem('ms_audio') || 'true'); } catch {}
+const rowsEl = $('#arows');
+const dbPct = (d) => Math.max(0, Math.min(100, ((d + 60) / 60) * 100));
+let audBusy = false;
+function renderAud() {
+  const box = $('#aud');
+  const show = Boolean(obsInfo && obsInfo.enabled && obsInfo.connected);
+  box.hidden = !show;
+  $('#audOn').checked = audOn;
+  if (!audOn || !show) rowsEl.hidden = true; else rowsEl.hidden = false;
+}
+async function pollAud() {
+  if (audBusy || !audOn || !obsInfo || !obsInfo.connected || document.hidden) return;
+  audBusy = true;
+  try {
+    const r = await api('/api/obs/levels');
+    const names = Object.keys(r.levels || {}).sort();
+    if (rowsEl.dataset.key !== names.join('\n')) {
+      rowsEl.dataset.key = names.join('\n');
+      rowsEl.textContent = '';
+      if (!names.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = 'No audio found in OBS yet.'; rowsEl.appendChild(p); }
+      names.forEach((n) => {
+        const row = document.createElement('div'); row.className = 'ar'; row.dataset.n = n;
+        row.innerHTML = '<span class="an"></span><span class="mt" role="meter" aria-valuemin="-60" aria-valuemax="0"><i class="cv"></i><i class="pk"></i></span><span class="db"></span>';
+        row.querySelector('.an').textContent = n;
+        row.querySelector('.mt').setAttribute('aria-label', n + ' level');
+        rowsEl.appendChild(row);
+      });
+    }
+    rowsEl.querySelectorAll('.ar').forEach((row) => {
+      const v = r.levels[row.dataset.n];
+      if (!v) return;
+      const muted = Boolean(r.muted && r.muted[row.dataset.n]);
+      row.classList.toggle('mute', muted);
+      const an = row.querySelector('.an');
+      if (muted && !an.querySelector('em')) an.insertAdjacentHTML('beforeend', '<em>MUTED</em>');
+      if (!muted && an.querySelector('em')) an.querySelector('em').remove();
+      row.querySelector('.cv').style.width = (100 - dbPct(v.mag)) + '%';
+      row.querySelector('.pk').style.left = 'calc(' + dbPct(v.peak) + '% - 2px)';
+      row.querySelector('.mt').setAttribute('aria-valuenow', String(Math.max(-60, Math.round(v.mag))));
+      row.querySelector('.db').textContent = v.mag <= -60 ? '-inf' : v.mag.toFixed(0) + ' dB';
+    });
+  } catch {}
+  audBusy = false;
+}
+setInterval(pollAud, 200);
+$('#audOn').onchange = (e) => { audOn = e.target.checked; try { localStorage.setItem('ms_audio', JSON.stringify(audOn)); } catch {} renderAud(); };
+
+const obsOverlay = $('#obsOverlay');
+$('#obsCfgBtn').onclick = async () => {
+  const o = await api('/api/obs');
+  $('#obsOn').checked = o.enabled; $('#obsPort').value = o.port || 4455; $('#obsPw').value = '';
+  $('#obsPw').placeholder = o.hasPassword ? 'Password saved. Leave empty to keep it' : 'Type the OBS password';
+  $('#obsMsg').textContent = o.connected ? 'Connected to OBS.' : (o.enabled ? o.error : '');
+  $('#obsMsg').className = 'note' + (o.enabled && !o.connected ? ' bad' : '');
+  obsOverlay.classList.add('open');
+};
+$('#obsClose').onclick = () => obsOverlay.classList.remove('open');
+obsOverlay.addEventListener('click', (e) => { if (e.target === obsOverlay) obsOverlay.classList.remove('open'); });
+$('#obsSave').onclick = async () => {
+  const msg = $('#obsMsg');
+  const body = { enabled: $('#obsOn').checked, port: $('#obsPort').value.trim() || 4455 };
+  if ($('#obsPw').value) body.password = $('#obsPw').value;
+  const r = await api('/api/obs', 'PUT', body);
+  if (r.error) { msg.textContent = r.error; msg.className = 'note bad'; return; }
+  $('#obsPw').value = '';
+  msg.textContent = r.enabled ? 'Saved. Connecting...' : 'Saved. OBS control is off.'; msg.className = 'note';
+  setTimeout(async () => { const o = await api('/api/obs'); obsInfo = o; renderScn(); if (o.enabled) { msg.textContent = o.connected ? 'Connected to OBS.' : o.error; msg.className = 'note' + (o.connected ? '' : ' bad'); } }, 1500);
+};
+renderScn();
+
+// Appearance and accessibility: saved in this browser only
+const SWATCHES = ['#22c55e', '#14b8a6', '#3b9eff', '#6366f1', '#a78bfa', '#fb923c', '#eab308'];
+const OLD_ACCENT = { blue: '#3b9eff', purple: '#a78bfa', orange: '#fb923c' };
+const root = document.documentElement;
+let acc = {};
+try { acc = JSON.parse(localStorage.getItem('ms_access') || '{}') || {}; } catch {}
+if (OLD_ACCENT[acc.accent]) acc.accent = OLD_ACCENT[acc.accent];
+let draft = { ...acc };
+const mix = (hex, to, t) => {
+  const n = (i) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  return '#' + [0, 1, 2].map((i) => Math.round(n(i) * (1 - t) + to * t).toString(16).padStart(2, '0')).join('');
+};
+const lum = (hex) => {
+  const c = [0, 1, 2].map((i) => { const v = parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+const validHex = (s) => /^#[0-9a-fA-F]{6}$/.test(s);
+const darkQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+function applyAcc(a) {
+  const cl = root.classList;
+  [...cl].filter((c) => c.startsWith('a-') || c === 't-light').forEach((c) => cl.remove(c));
+  const theme = a.theme || 'system';
+  const light = theme === 'light' || (theme === 'system' && darkQuery && !darkQuery.matches);
+  if (light) cl.add('t-light');
+  if (a.size) cl.add('a-' + a.size);
+  if (a.contrast) cl.add('a-contrast');
+  if (a.cb) cl.add('a-cb');
+  if (a.bigbtn) cl.add('a-bigbtn');
+  if (a.nomotion) cl.add('a-nomotion');
+  if (validHex(a.accent || '')) {
+    root.style.setProperty('--blue', a.accent);
+    root.style.setProperty('--link', light ? mix(a.accent, 0, 0.35) : mix(a.accent, 255, 0.25));
+    root.style.setProperty('--onblue', lum(a.accent) > 0.3 ? '#05130a' : '#ffffff');
+  } else ['--blue', '--link', '--onblue'].forEach((k) => root.style.removeProperty(k));
+}
+function syncAcc() {
+  const d = draft;
+  document.querySelectorAll('#themes button').forEach((b) => b.setAttribute('aria-pressed', String((d.theme || 'system') === b.dataset.v)));
+  document.querySelectorAll('#accOverlay .opt').forEach((g) => g.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((d[g.dataset.key] || '') === b.dataset.v))));
+  document.querySelectorAll('#accOverlay input[type=checkbox][data-key]').forEach((i) => { i.checked = Boolean(d[i.dataset.key]); });
+  const cur = (d.accent || '').toLowerCase();
+  document.querySelectorAll('#sws button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === (cur || SWATCHES[0]))));
+  $('#accHex').value = (d.accent || SWATCHES[0]).slice(1).toUpperCase();
+  $('#accPick').value = validHex(d.accent || '') ? d.accent : SWATCHES[0];
+}
+function changeAcc(k, v) { draft[k] = v; applyAcc(draft); syncAcc(); }
+SWATCHES.forEach((c) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.dataset.v = c; b.style.background = c; b.setAttribute('aria-label', 'Colour ' + c);
+  b.onclick = () => changeAcc('accent', c === SWATCHES[0] ? '' : c);
+  $('#sws').appendChild(b);
+});
+document.querySelectorAll('#themes button').forEach((b) => { b.onclick = () => changeAcc('theme', b.dataset.v); });
+document.querySelectorAll('#accOverlay .opt button').forEach((b) => { b.onclick = () => changeAcc(b.parentElement.dataset.key, b.dataset.v); });
+document.querySelectorAll('#accOverlay input[type=checkbox][data-key]').forEach((i) => { i.onchange = () => changeAcc(i.dataset.key, i.checked ? 'on' : ''); });
+$('#accHex').oninput = (e) => { const v = '#' + e.target.value.replace(/[^0-9a-fA-F]/g, '').slice(0, 6); if (validHex(v)) { draft.accent = v.toLowerCase(); applyAcc(draft); const old = e.target.value; syncAcc(); e.target.value = old; } };
+$('#accPick').oninput = (e) => changeAcc('accent', e.target.value);
+$('#accReset').onclick = () => { draft = {}; applyAcc(draft); syncAcc(); };
+const accOverlay = $('#accOverlay');
+function closeAcc(save) {
+  if (save) { acc = { ...draft }; try { localStorage.setItem('ms_access', JSON.stringify(acc)); } catch {} }
+  else { draft = { ...acc }; applyAcc(acc); }
+  accOverlay.classList.remove('open');
+}
+$('#accBtn').onclick = () => { draft = { ...acc }; syncAcc(); accOverlay.classList.add('open'); };
+$('#accSave').onclick = () => closeAcc(true);
+$('#accCancel').onclick = () => closeAcc(false);
+accOverlay.addEventListener('click', (e) => { if (e.target === accOverlay) closeAcc(false); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && accOverlay.classList.contains('open')) closeAcc(false); });
+if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener('change', () => { if (!accOverlay.classList.contains('open')) applyAcc(acc); });
+applyAcc(acc);
+
+// Go live lock: hold the button for 1.5 seconds. Unlocked for 15 seconds, one use.
+let unlocked = false, holdTimer = null;
+function renderLock(left) {
+  if (holdTimer) return;
+  unlocked = left > 0;
+  const b = $('#lockBtn');
+  b.textContent = unlocked ? `Unlocked: ${left}s (press Go live)` : 'Locked: hold to unlock';
+  b.classList.toggle('on', unlocked);
+}
+(() => {
+  const b = document.getElementById('lockBtn');
+  const start = (e) => {
+    e.preventDefault();
+    if (unlocked) return;
+    b.textContent = 'Keep holding...';
+    holdTimer = setTimeout(async () => {
+      holdTimer = null;
+      const r = await api('/api/golive/unlock', 'POST');
+      renderLock(r.unlockLeft || 0);
+      refresh();
+    }, 1500);
+  };
+  const stop = () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; renderLock(0); } };
+  b.addEventListener('pointerdown', start);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => b.addEventListener(ev, stop));
+  b.addEventListener('contextmenu', (e) => e.preventDefault());
+  b.onclick = async () => { if (unlocked) { await api('/api/golive/lock', 'POST'); renderLock(0); refresh(); } };
+})();
+
+const fbOverlay = $('#fbOverlay');
+function fbNoteSet(id, text, bad) { const n = $(id); n.textContent = text; n.hidden = !text; n.className = 'note' + (bad ? ' bad' : ''); }
+function renderFb(fbState, live) {
+  const ready = Boolean(fbState && fbState.hasToken && fbState.pageId);
+  $('#fbLive').disabled = !(live && ready && unlocked);
+  $('#fbLive').title = !live ? 'Start OBS streaming first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
+}
+$('#fbBtn').onclick = async () => {
+  const s = await api('/api/facebook');
+  $('#fb-page').value = s.pageId || '';
+  $('#fb-token').value = '';
+  fbNoteSet('#fb-saved', s.hasToken ? `Saved: ${s.pageName || 'Page ' + s.pageId} (token ends ${s.tokenEnd})` : 'No Page saved yet.', false);
+  fbNoteSet('#fb-msg', '', false);
+  fbOverlay.classList.add('open');
+};
+$('#fb-close').onclick = () => fbOverlay.classList.remove('open');
+fbOverlay.addEventListener('click', (e) => { if (e.target === fbOverlay) fbOverlay.classList.remove('open'); });
+$('#fb-save').onclick = async () => {
+  fbNoteSet('#fb-msg', 'Checking with Facebook...', false);
+  const r = await api('/api/facebook', 'PUT', { pageId: $('#fb-page').value.trim(), token: $('#fb-token').value.trim() });
+  if (r.error) return fbNoteSet('#fb-msg', r.error, true);
+  $('#fb-token').value = '';
+  fbNoteSet('#fb-msg', 'Saved.', false);
+  fbNoteSet('#fb-saved', `Saved: ${r.pageName || 'Page ' + r.pageId} (token ends ${r.tokenEnd})`, false);
+  refresh();
+};
+$('#fbLive').onclick = async () => {
+  const btn = $('#fbLive');
+  btn.disabled = true;
+  btn.textContent = 'Going live...';
+  const test = $('#fbTest').checked;
+  if (!test && !confirm('Test mode is off. This will go live publicly on the Facebook Page. Continue?')) {
+    btn.textContent = 'Go live on Facebook';
+    return refresh();
+  }
+  const r = await api('/api/facebook/live', 'POST', { test });
+  btn.textContent = 'Go live on Facebook';
+  if (r.error) alert(r.error);
+  refresh();
+};
+
+// YouTube
+const ytOverlay = $('#ytOverlay');
+function ytNote(id, text, bad) { const n = $(id); n.textContent = text; n.hidden = !text; n.className = 'note' + (bad ? ' bad' : ''); }
+function ytStatusText(s) {
+  if (s.connected) return `Connected${s.channelTitle ? ': ' + s.channelTitle : ''}.`;
+  return s.hasClient ? 'File added. Click Connect YouTube to sign in.' : 'No file added yet.';
+}
+function renderYt(ytState, live) {
+  $('#ytLive').disabled = !(live && ytState && ytState.connected && unlocked);
+  $('#ytLive').title = !live ? 'Start OBS streaming first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
+  if (ytOverlay.classList.contains('open') && ytState) ytNote('#yt-status', ytStatusText(ytState), false);
+}
+$('#ytBtn').onclick = async () => {
+  ytNote('#yt-status', ytStatusText(await api('/api/youtube')), false);
+  ytNote('#yt-msg', '', false);
+  ytOverlay.classList.add('open');
+};
+$('#yt-close').onclick = () => ytOverlay.classList.remove('open');
+ytOverlay.addEventListener('click', (e) => { if (e.target === ytOverlay) ytOverlay.classList.remove('open'); });
+$('#yt-file').onchange = async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  let file;
+  try { file = JSON.parse(await f.text()); } catch { return ytNote('#yt-msg', 'That file could not be read. Choose the .json file from Google.', true); }
+  const r = await api('/api/youtube/client', 'PUT', { file });
+  e.target.value = '';
+  if (r.error) return ytNote('#yt-msg', r.error, true);
+  ytNote('#yt-msg', 'File added.', false);
+  ytNote('#yt-status', ytStatusText(r), false);
+};
+$('#yt-connect').onclick = async () => {
+  const r = await api('/api/youtube/login');
+  if (r.error) return ytNote('#yt-msg', r.error, true);
+  window.open(r.url, '_blank');
+  ytNote('#yt-msg', 'Finish the sign-in in your browser. Choose the church YouTube account. Then come back here.', false);
+};
+$('#ytLive').onclick = async () => {
+  const btn = $('#ytLive');
+  btn.disabled = true;
+  btn.textContent = 'Going live...';
+  const test = $('#fbTest').checked;
+  if (!test && !confirm('Test mode is off. This will go live publicly on YouTube. Continue?')) {
+    btn.textContent = 'Go live on YouTube';
+    return refresh();
+  }
+  const r = await api('/api/youtube/live', 'POST', { test });
+  btn.textContent = 'Go live on YouTube';
+  if (r.error) alert(r.error);
+  refresh();
+};
+
+async function refresh() { try { const s = await api('/api/state'); render(s); renderLock(s.unlockLeft || 0); renderFb(s.facebook, s.obsLive); renderYt(s.youtube, s.obsLive); obsInfo = s.obs; renderScn(); } catch {} }
+refresh();
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>
