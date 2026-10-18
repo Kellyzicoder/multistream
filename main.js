@@ -1,6 +1,6 @@
 // Desktop app (Windows + Mac). Opens a window around the dashboard and runs the relay inside it.
 
-const { app, BrowserWindow, dialog, shell } = require('electron');
+const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session } = require('electron');
 const net = require('net');
 const path = require('path');
 
@@ -37,7 +37,7 @@ function createWindow() {
     title: 'Multistream',
     autoHideMenuBar: true,
     backgroundColor: '#eaf1fb',
-    webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false },
+    webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
   win.webContents.session.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'mediaKeySystem', 'display-capture'].includes(perm)));
   win.loadURL(`http://127.0.0.1:${DASHBOARD_PORT}`);
@@ -47,6 +47,47 @@ function createWindow() {
     return { action: 'deny' };
   });
   win.on('closed', () => { win = null; });
+}
+
+
+// ---- Studio helpers ----
+let studioWin = null;
+ipcMain.handle('ms-open-studio', () => {
+  if (studioWin) { studioWin.focus(); return; }
+  studioWin = new BrowserWindow({
+    width: 1400, height: 860, title: 'Multistream Studio', autoHideMenuBar: true, backgroundColor: '#0f1512',
+    webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
+  });
+  studioWin.webContents.session.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'display-capture'].includes(perm)));
+  studioWin.loadURL(`http://127.0.0.1:${DASHBOARD_PORT}/studio.html`);
+  studioWin.on('closed', () => { studioWin = null; browsers.forEach((b) => b.destroy()); browsers.clear(); });
+});
+// A web page (like the lyrics page) is drawn off-screen. We pass each new picture of it to the studio page.
+const browsers = new Map();
+ipcMain.handle('ms-browser-open', (e, id, url, w, h) => {
+  if (browsers.has(id)) return;
+  if (!/^https?:\/\//i.test(String(url))) return;
+  const b = new BrowserWindow({ show: false, width: w || 1920, height: h || 1080, transparent: true, frame: false, webPreferences: { offscreen: true, backgroundThrottling: false } });
+  b.webContents.setFrameRate(15);
+  b.webContents.on('paint', (ev, dirty, image) => {
+    const size = image.getSize();
+    if (!e.sender.isDestroyed()) e.sender.send('ms-frame', id, size.width, size.height, image.toBitmap());
+  });
+  b.webContents.setAudioMuted(false);
+  b.loadURL(String(url)).catch(() => {});
+  browsers.set(id, b);
+});
+ipcMain.handle('ms-browser-close', (e, id) => { const b = browsers.get(id); if (b) { b.destroy(); browsers.delete(id); } });
+// choosing which screen to capture (for the screen with the lyrics)
+let pickedScreen = '';
+ipcMain.handle('ms-screens', async () => (await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } })).map((s) => ({ id: s.id, name: s.name })));
+ipcMain.handle('ms-pick-screen', (e, id) => { pickedScreen = String(id || ''); });
+function setupScreenCapture(ses) {
+  ses.setDisplayMediaRequestHandler(async (req, cb) => {
+    const list = await desktopCapturer.getSources({ types: ['screen'] });
+    const pick = list.find((s) => s.id === pickedScreen) || list[0];
+    cb(pick ? { video: pick } : {});
+  });
 }
 
 async function start() {
@@ -74,6 +115,7 @@ async function start() {
     app.quit();
     return;
   }
+  setupScreenCapture(session.defaultSession);
   createWindow();
 }
 

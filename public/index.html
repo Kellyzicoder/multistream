@@ -134,6 +134,8 @@
   .cr-grid .tile.pv { border-color:var(--green); }
   .cr-grid .tile.pv .nm::after { content:"PREVIEW"; display:inline-block; margin-left:6px; padding:0 5px; border-radius:3px; background:var(--green); color:#04140a; font-size:9px; font-weight:700; letter-spacing:.4px; }
   .cr-aud { margin-top:12px; }
+  .cr-itembox { margin-top:12px; } .cr-itembox h2 { font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
+  .cr-items { display:flex; flex-wrap:wrap; gap:8px; } .cr-item { border:2px solid var(--line); background:var(--field); color:var(--text); border-radius:8px; padding:10px 14px; font-size:13px; font-weight:600; } .cr-item[aria-pressed=true] { border-color:var(--green); }
   @media (max-width:800px) { .cr-top { grid-template-columns:1fr 1fr; } .cr-take { grid-column:1 / -1; order:3; } .cr-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
 
   [hidden] { display:none !important; }
@@ -451,6 +453,7 @@
 <div class="cr" id="crView" hidden>
   <div class="cr-bar">
     <h1>Control Room</h1><span class="st" id="crSt"></span><span class="grow" style="flex:1"></span>
+    <label class="st" for="crEng">Engine</label> <select id="crEng" aria-label="What the Control Room controls"><option value="auto">Automatic</option><option value="studio">Studio</option><option value="obs">OBS</option></select>
     <div class="opt" id="crMode" role="group" aria-label="How a scene goes on air">
       <button type="button" data-v="take">Preview, then Take</button><button type="button" data-v="direct">Direct</button>
     </div>
@@ -462,6 +465,7 @@
   </div>
   <div class="cr-grid" id="crTiles"></div>
   <div class="cr-aud" id="crAudio"></div>
+  <div class="cr-itembox" id="crItems" hidden></div>
 </div>
 
 <!-- add channel -->
@@ -1053,6 +1057,7 @@ let crMode = 'take';
 let crPrev = '';
 try { crMode = (JSON.parse(localStorage.getItem('ms_cr') || '{}') || {}).mode || 'take'; } catch {}
 const pageMenu = $('#pageMenu');
+if (!(window.msNative || ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname))) { const m = pageMenu.querySelector('[data-page=studio]'); if (m) m.remove(); } // the Studio runs on the church PC only
 function closeMenu() { pageMenu.hidden = true; $('#pageBtn').setAttribute('aria-expanded', 'false'); }
 $('#pageBtn').onclick = () => { const open = pageMenu.hidden; pageMenu.hidden = !open; $('#pageBtn').setAttribute('aria-expanded', String(open)); if (open) pageMenu.querySelector('button').focus(); };
 document.addEventListener('click', (e) => { if (!e.target.closest('.pgw')) closeMenu(); });
@@ -1064,7 +1069,7 @@ pageMenu.addEventListener('keydown', (e) => {
   else if (e.key === 'Escape') { closeMenu(); $('#pageBtn').focus(); }
 });
 function showPage(p) {
-  if (p === 'studio') { location.href = '/studio.html'; return; }
+  if (p === 'studio') { closeMenu(); if (window.msNative) window.msNative.openStudio(); else window.open('/studio.html', '_blank'); return; }
   page = p === 'cr' ? 'cr' : 'dash';
   $('.app').hidden = page === 'cr';
   $('#crView').hidden = page !== 'cr';
@@ -1079,64 +1084,105 @@ function showPage(p) {
   pollThumbs();
 }
 pageMenu.querySelectorAll('button').forEach((b) => { b.onclick = () => { showPage(b.dataset.page); $('#pageBtn').focus(); }; });
-function crTake() {
-  if (!crPrev || !obsInfo || crPrev === obsInfo.current) return;
-  const name = crPrev;
-  api('/api/obs/scene', 'POST', { name }).then((r) => { if (!r.error && obsInfo) { obsInfo.current = name; crPrev = ''; renderCr(); } refresh(); });
+// Which engine the Control Room drives: the built-in Studio, or OBS (the fallback).
+let crEng = 'auto';
+try { crEng = (JSON.parse(localStorage.getItem('ms_cr') || '{}') || {}).eng || 'auto'; } catch {}
+let stu = { alive: false, scenes: [], current: '', shots: {} };
+function engine() { return crEng === 'auto' ? (stu.alive ? 'studio' : 'obs') : crEng; }
+function saveCr() { try { localStorage.setItem('ms_cr', JSON.stringify({ mode: crMode, eng: crEng })); } catch {} }
+function crData() {
+  if (engine() === 'studio') return { on: true, ok: stu.alive, msg: stu.alive ? 'Studio is running' : 'The Studio is not open. On the church PC open the menu, then Studio.', scenes: stu.scenes.map((s) => s.name), current: stu.current };
+  const o = obsInfo;
+  if (!o || !o.enabled) return { on: false, msg: 'OBS is not connected. Use Dashboard, then Connect OBS.', scenes: [], current: '' };
+  return { on: true, ok: o.connected, msg: o.connected ? 'Connected to OBS' : (o.error || 'Connecting...'), scenes: o.scenes, current: o.current };
 }
+async function crSetScene(name) {
+  if (engine() === 'studio') { const r = await api('/api/studio/scene', 'POST', { name }); if (!r.error) stu.current = name; }
+  else { const r = await api('/api/obs/scene', 'POST', { name }); if (!r.error && obsInfo) obsInfo.current = name; }
+  crPrev = ''; if (engine() === 'studio') api('/api/studio/preview', 'POST', { name: '' }); renderCr(); refresh();
+}
+function crPreview(name) { crPrev = name; if (engine() === 'studio') api('/api/studio/preview', 'POST', { name }); renderCr(); }
+function crTake() { const d = crData(); if (!crPrev || crPrev === d.current) return; crSetScene(crPrev); }
 $('#crTake').onclick = crTake;
-document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => { crMode = b.dataset.v; crPrev = ''; try { localStorage.setItem('ms_cr', JSON.stringify({ mode: crMode })); } catch {} renderCr(); }; });
+document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => { crMode = b.dataset.v; crPrev = ''; saveCr(); renderCr(); }; });
+$('#crEng').value = crEng;
+$('#crEng').onchange = (e) => { crEng = e.target.value; crPrev = ''; saveCr(); $('#crTiles').dataset.key = ''; renderCr(); };
 function renderCr() {
   if (page !== 'cr') return;
-  const o = obsInfo;
+  const d = crData();
   document.querySelectorAll('#crMode button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === crMode)));
   const st = $('#crSt');
-  if (!o || !o.enabled) { st.textContent = 'OBS is not connected. Use Dashboard, then Connect OBS.'; st.className = 'st'; $('#crTiles').textContent = ''; $('#crTiles').dataset.key = ''; return; }
-  st.textContent = o.connected ? 'Connected to OBS' : (o.error || 'Connecting...'); st.className = 'st' + (o.connected ? ' ok' : '');
-  if (crPrev && !o.scenes.includes(crPrev)) crPrev = '';
+  st.textContent = d.msg + (d.on ? ' (' + (engine() === 'studio' ? 'Studio' : 'OBS') + ')' : ''); st.className = 'st' + (d.ok ? ' ok' : '');
   const box = $('#crTiles');
-  const key = o.scenes.join('\n');
+  if (!d.on) { box.textContent = ''; box.dataset.key = ''; return; }
+  if (crPrev && !d.scenes.includes(crPrev)) crPrev = '';
+  const key = engine() + '\n' + d.scenes.join('\n');
   if (box.dataset.key !== key) {
     box.dataset.key = key; box.textContent = '';
-    o.scenes.forEach((name) => {
+    d.scenes.forEach((name) => {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'tile'; b.dataset.n = name;
       const im = document.createElement('img'); im.className = 'im'; im.alt = ''; im.draggable = false;
       const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = name;
       b.append(im, nm);
-      b.onclick = async () => {
-        if (crMode === 'direct') {
-          const r = await api('/api/obs/scene', 'POST', { name });
-          if (!r.error && obsInfo) obsInfo.current = name;
-          renderCr(); refresh();
-        } else { crPrev = name === o.current ? '' : name; renderCr(); }
+      b.onclick = () => {
+        const cur = crData().current;
+        if (crMode === 'direct') crSetScene(name); else crPreview(name === cur ? '' : name);
       };
       box.appendChild(b);
     });
   }
   box.querySelectorAll('.tile').forEach((b) => {
-    b.setAttribute('aria-pressed', String(b.dataset.n === o.current));
+    b.setAttribute('aria-pressed', String(b.dataset.n === d.current));
     b.classList.toggle('pv', b.dataset.n === crPrev);
+    if (engine() === 'studio') { const u = (stu.shots.thumbs || {})[b.dataset.n]; if (u && b.querySelector('img').src !== u) b.querySelector('img').src = u; }
   });
-  $('#crProgL').textContent = 'PROGRAM: ' + (o.current || '');
-  const pv = crPrev || o.current || '';
-  $('#crPrevL').textContent = (crPrev ? 'PREVIEW: ' : 'PREVIEW (same as program): ') + pv;
-  $('#crTake').disabled = !(crMode === 'take' && crPrev && crPrev !== o.current);
+  $('#crProgL').textContent = 'PROGRAM: ' + (d.current || '');
+  $('#crPrevL').textContent = (crPrev ? 'PREVIEW: ' : 'PREVIEW (same as program): ') + (crPrev || d.current || '');
+  $('#crTake').disabled = !(crMode === 'take' && crPrev && crPrev !== d.current);
   $('#crTake').hidden = crMode !== 'take';
+  renderCrItems();
+}
+// items you can switch on and off while a scene is on air (lowerthirds, the lyrics page...), Studio only
+function renderCrItems() {
+  const box = $('#crItems'); const s = engine() === 'studio' && stu.scenes.find((x) => x.name === stu.current);
+  if (!s) { box.hidden = true; return; }
+  const items = s.layers.filter((l) => !l.locked && l.type !== 'camera' && l.type !== 'color');
+  const key = s.name + '|' + items.map((l) => l.id + (l.visible !== false)).join();
+  if (box.dataset.key === key) return;
+  box.dataset.key = key; box.textContent = ''; box.hidden = !items.length;
+  if (!items.length) return;
+  const h = document.createElement('h2'); h.textContent = 'On screen now: ' + s.name; box.appendChild(h);
+  const wrap = document.createElement('div'); wrap.className = 'cr-items';
+  items.slice().reverse().forEach((l) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'cr-item'; b.setAttribute('aria-pressed', String(l.visible !== false));
+    b.textContent = (l.visible !== false ? 'Showing: ' : 'Hidden: ') + (l.name || l.type);
+    b.onclick = async () => { const v = !(l.visible !== false); l.visible = v; box.dataset.key = ''; renderCrItems(); await api('/api/studio/layer', 'POST', { scene: s.name, id: l.id, visible: v }); };
+    wrap.appendChild(b);
+  });
+  box.appendChild(wrap);
 }
 let crBusy = false;
 async function pollCr() {
-  if (page !== 'cr' || crBusy || document.hidden || !obsInfo || !obsInfo.connected) return;
+  if (page !== 'cr' || crBusy || document.hidden) return;
   crBusy = true;
   try {
-    const a = obsInfo.current; const b = crPrev || obsInfo.current;
-    const d = await api('/api/obs/shots?a=' + encodeURIComponent(a) + '&b=' + encodeURIComponent(b) + '&w=640');
-    if (d.a) $('#crProg').src = d.a;
-    if (d.b) $('#crPrev').src = d.b;
+    const sh = await api('/api/studio/shots'); stu.alive = !!sh.alive; stu.shots = sh;
+    if (stu.alive || crEng === 'studio') { const s = await api('/api/studio'); stu.scenes = s.scenes || []; stu.current = s.current || ''; }
+    if (engine() === 'studio') {
+      if (sh.prog) $('#crProg').src = sh.prog;
+      if (sh.pv || sh.prog) $('#crPrev').src = crPrev ? (sh.pv || sh.prog) : sh.prog;
+    } else if (obsInfo && obsInfo.connected) {
+      const a = obsInfo.current; const b = crPrev || obsInfo.current;
+      const d = await api('/api/obs/shots?a=' + encodeURIComponent(a) + '&b=' + encodeURIComponent(b) + '&w=640');
+      if (d.a) $('#crProg').src = d.a;
+      if (d.b) $('#crPrev').src = d.b;
+    }
+    renderCr();
   } catch {}
   crBusy = false;
 }
-setInterval(pollCr, 300);
+setInterval(pollCr, 400);
 if (location.hash === '#control-room') setTimeout(() => showPage('cr'), 0);
 window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' ? 'cr' : 'dash'));
 
