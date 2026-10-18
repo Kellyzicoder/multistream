@@ -1,0 +1,46 @@
+{
+  "name": "multistream",
+  "version": "1.0.0",
+  "description": "Send one OBS stream to Facebook, YouTube, Instagram (and more) at the same time",
+  "main": "main.js",
+  "author": "Kelvin Mensah",
+  "scripts": {
+    "start": "node server.js",
+    "app": "electron .",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ffmpeg-static": "^5.2.0",
+    "flv.js": "^1.6.2",
+    "node-media-server": "^2.7.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.multistream.app",
+    "productName": "Multistream",
+    "files": [
+      "main.js",
+      "server.js",
+      "stats.js",
+      "public/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/ffmpeg-static/**"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "artifactName": "Multistream-Setup.exe"
+    },
+    "mac": {
+      "target": "dmg"
+    }
+  }
+}
