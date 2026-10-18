@@ -37,8 +37,9 @@ function createWindow() {
     title: 'Multistream',
     autoHideMenuBar: true,
     backgroundColor: '#eaf1fb',
-    webPreferences: { contextIsolation: true, nodeIntegration: false },
+    webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false },
   });
+  win.webContents.session.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'mediaKeySystem', 'display-capture'].includes(perm)));
   win.loadURL(`http://127.0.0.1:${DASHBOARD_PORT}`);
   // links that leave the dashboard open in the normal browser
   win.webContents.setWindowOpenHandler(({ url }) => {

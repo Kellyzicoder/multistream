@@ -307,6 +307,7 @@
     </button>
     <div class="pgm" id="pageMenu" role="menu" hidden>
       <button type="button" role="menuitem" data-page="dash">Dashboard<small>Channels, Go live, stream health</small></button>
+      <button type="button" role="menuitem" data-page="studio">Studio<small>Built-in studio, no OBS needed (new)</small></button>
       <button type="button" role="menuitem" data-page="cr">Control Room<small>Multiview: preview, program and scenes</small></button>
     </div>
   </div>
@@ -1063,6 +1064,7 @@ pageMenu.addEventListener('keydown', (e) => {
   else if (e.key === 'Escape') { closeMenu(); $('#pageBtn').focus(); }
 });
 function showPage(p) {
+  if (p === 'studio') { location.href = '/studio.html'; return; }
   page = p === 'cr' ? 'cr' : 'dash';
   $('.app').hidden = page === 'cr';
   $('#crView').hidden = page !== 'cr';
