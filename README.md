@@ -84,3 +84,7 @@ Menu next to the title, then Studio (on the church PC only). It opens in its own
 - **Send:** "Start sending" sends the ON AIR picture and the sound into the relay, the same place OBS sent to.
 - **Control Room:** the Engine box picks Studio or OBS. Automatic uses the Studio when it is open, otherwise OBS. In Studio mode you can also switch items such as lowerthirds on and off from the Control Room (works on the phone too).
 - OBS is untouched and stays as the backup.
+
+## Mac install
+
+The app is not signed with a paid Apple account. Open the .dmg, drag Multistream to Applications, then right-click the app and choose Open (once). If macOS says the app is "damaged", run this once in Terminal: `xattr -cr /Applications/Multistream.app`

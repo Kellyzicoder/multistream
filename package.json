@@ -55,6 +55,7 @@
         "NSCameraUsageDescription": "Multistream uses cameras and capture cards in the Studio.",
         "NSMicrophoneUsageDescription": "Multistream uses audio inputs (like the mixing desk) in the Studio."
       }
-    }
+    },
+    "afterPack": "adhoc-sign.js"
   }
 }
