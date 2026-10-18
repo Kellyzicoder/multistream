@@ -288,7 +288,7 @@ function loginPage(error) {
 
 // ---- dashboard + API ----
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '8mb' }));
 app.use(express.urlencoded({ extended: false }));
 
 // every request from another device must be allowed and logged in. This computer is always allowed.
@@ -875,7 +875,7 @@ app.delete('/api/destinations/:id', (req, res) => {
 // local websocket. We hand it to ffmpeg, which pushes it into our own RTMP ingest, so the relay works as before.
 const STUDIO_FILE = path.join(DATA_DIR, 'studio.json');
 const ASSET_DIR = path.join(DATA_DIR, 'studio-assets');
-let studio = { scenes: [], current: '', preview: '' };
+let studio = { scenes: [], current: '', preview: '', audio: [] };
 try { studio = { ...studio, ...JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) }; } catch {}
 let studioRev = 1;
 function saveStudio() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio)); } catch {} studioRev++; }
@@ -884,6 +884,7 @@ app.put('/api/studio', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Edit scenes on the church PC' });
   const b = req.body || {};
   if (Array.isArray(b.scenes)) studio.scenes = b.scenes.slice(0, 60);
+  if (Array.isArray(b.audio)) studio.audio = b.audio.slice(0, 40);
   if (typeof b.current === 'string') studio.current = b.current;
   saveStudio();
   res.json({ ok: true, rev: studioRev });
@@ -892,6 +893,14 @@ app.post('/api/studio/scene', (req, res) => {
   const name = String((req.body || {}).name || '');
   if (!studio.scenes.some((s) => s.name === name)) return res.status(404).json({ error: 'No such scene' });
   studio.current = name; saveStudio();
+  res.json({ ok: true });
+});
+app.post('/api/studio/layer', (req, res) => {
+  const b = req.body || {};
+  const sc = studio.scenes.find((x) => x.name === b.scene);
+  const l = sc && sc.layers.find((x) => x.id === b.id);
+  if (!l) return res.status(404).json({ error: 'No such item' });
+  l.visible = !!b.visible; saveStudio();
   res.json({ ok: true });
 });
 app.put('/api/studio/asset/:name', express.raw({ type: '*/*', limit: '30mb' }), (req, res) => {
@@ -904,6 +913,36 @@ app.get('/api/studio/asset/:name', (req, res) => {
   const f = path.join(ASSET_DIR, path.basename(req.params.name));
   fs.existsSync(f) ? res.sendFile(f) : res.status(404).end();
 });
+
+// local files named in an imported OBS scene file (pictures and videos). Only this PC can ask for them.
+const MEDIA_EXT = /\.(png|jpe?g|gif|webp|bmp|mp4|m4v|mov|webm|mkv)$/i;
+app.get('/api/studio/file', (req, res) => {
+  if (!isLocal(req)) return res.status(403).end();
+  const p = String((req.query || {}).p || '');
+  if (!path.isAbsolute(p) || !MEDIA_EXT.test(p) || !fs.existsSync(p)) return res.status(404).end();
+  res.sendFile(p, { dotfiles: 'allow' });
+});
+// phone-camera apps (DroidCam) serve a picture over Wi-Fi. We pass it through so the page may draw it.
+app.get('/api/studio/ipcam', (req, res) => {
+  if (!isLocal(req)) return res.status(403).end();
+  let u; try { u = new URL(String((req.query || {}).url || '')); } catch { return res.status(400).end(); }
+  const h = u.hostname;
+  const lan = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h);
+  if (u.protocol !== 'http:' || !lan) return res.status(400).json({ error: 'Only http addresses on your own network' });
+  const r = require('http').get(u, (up) => { res.writeHead(up.statusCode || 200, { 'Content-Type': up.headers['content-type'] || 'image/jpeg' }); up.pipe(res); });
+  r.on('error', () => { try { res.status(502).end(); } catch {} });
+  req.on('close', () => r.destroy());
+});
+// pictures of the scenes, drawn by the studio page and shown in the Control Room
+let studioShots = { at: 0, prog: '', pv: '', thumbs: {} };
+app.put('/api/studio/shots', (req, res) => {
+  if (!isLocal(req)) return res.status(403).end();
+  const b = req.body || {};
+  studioShots = { at: Date.now(), prog: String(b.prog || ''), pv: String(b.pv || ''), thumbs: b.thumbs && typeof b.thumbs === 'object' ? b.thumbs : studioShots.thumbs };
+  res.json({ ok: true });
+});
+app.get('/api/studio/shots', (req, res) => res.json({ alive: Date.now() - studioShots.at < 5000, prog: studioShots.prog, pv: studioShots.pv, thumbs: studioShots.thumbs }));
+app.post('/api/studio/preview', (req, res) => { studio.preview = String((req.body || {}).name || ''); studioRev++; res.json({ ok: true }); });
 let studioFf = null;
 const studioInfo = { sending: false, error: '' };
 app.get('/api/studio/status', (req, res) => res.json(studioInfo));
@@ -922,7 +961,7 @@ httpServer.on('upgrade', (req, sock, head) => {
 studioWss.on('connection', (w) => {
   if (studioFf) { try { studioFf.kill('SIGKILL'); } catch {} }
   const args = ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0',
-    '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency', '-pix_fmt', 'yuv420p', '-b:v', '4500k', '-maxrate', '4500k', '-bufsize', '9000k',
+    '-vf', 'scale=1280:720', '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency', '-pix_fmt', 'yuv420p', '-b:v', '4500k', '-maxrate', '4500k', '-bufsize', '9000k',
     '-g', '60', '-keyint_min', '60', '-sc_threshold', '0', '-r', '30',
     '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-f', 'flv', `rtmp://127.0.0.1:${RTMP_PORT}${INGEST_PATH}`];
   const ff = spawn(FFMPEG, args, { stdio: ['pipe', 'ignore', 'pipe'] });

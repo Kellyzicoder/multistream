@@ -9,192 +9,493 @@
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
   body { margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  header { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--line); }
+  header { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
   header a { color:var(--green); text-decoration:none; font-weight:600; }
   header h1 { font-size:15px; margin:0; font-weight:600; }
   .grow { flex:1; }
-  button, select, input { font:inherit; color:var(--text); background:var(--card); border:1px solid var(--line); border-radius:6px; padding:6px 10px; }
+  button, select, input, textarea { font:inherit; color:var(--text); background:var(--card); border:1px solid var(--line); border-radius:6px; padding:6px 10px; }
   button { cursor:pointer; } button:hover { border-color:var(--green); }
   button.go { background:var(--green); color:#04140a; border-color:var(--green); font-weight:700; }
   button.stop { background:var(--red); border-color:var(--red); color:#fff; font-weight:700; }
   button.sm { padding:2px 8px; font-size:12px; }
-  .wrap { display:grid; grid-template-columns:220px minmax(0,1fr) 280px; gap:12px; padding:12px; }
-  .panel { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px; }
+  button.on { border-color:var(--red); color:#fff; background:#5a1d24; }
+  .wrap { display:grid; grid-template-columns:250px minmax(0,1fr) 300px; gap:12px; padding:12px; align-items:start; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px; margin-bottom:12px; }
   .panel h2 { margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); }
-  #cv { width:100%; aspect-ratio:16/9; background:#000; border:3px solid var(--line); border-radius:8px; display:block; }
+  canvas.v { width:100%; aspect-ratio:16/9; background:#000; border:3px solid var(--line); border-radius:8px; display:block; }
   #cv.live { border-color:var(--red); }
+  #ev { border-color:var(--green); }
+  .lab { font-size:12px; font-weight:700; letter-spacing:.5px; margin:6px 0 4px; color:var(--muted); }
   .scn, .lyr { display:flex; align-items:center; gap:6px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; margin-bottom:6px; cursor:pointer; background:var(--field); }
   .scn.on, .lyr.on { border-color:var(--green); }
   .scn .n, .lyr .n { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .scn .air { font-size:9px; font-weight:700; background:var(--red); padding:0 5px; border-radius:3px; }
+  .air { font-size:9px; font-weight:700; background:var(--red); padding:0 5px; border-radius:3px; }
   .row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
   .f { display:grid; grid-template-columns:70px 1fr; gap:6px; align-items:center; margin-bottom:6px; }
-  .f input, .f select { width:100%; }
+  .f input, .f select, .f textarea { width:100%; }
   .note { color:var(--muted); font-size:12px; }
   .stat { font-size:12px; color:var(--muted); } .stat.ok { color:var(--green); } .stat.bad { color:#ff8a8a; }
-  @media (max-width:1000px) { .wrap { grid-template-columns:1fr; } }
+  .au { border:1px solid var(--line); border-radius:6px; padding:6px 8px; margin-bottom:6px; background:var(--field); }
+  .au.off { opacity:.55; }
+  .au .t { display:flex; gap:6px; align-items:center; }
+  .au .t .n { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+  .au input[type=range] { width:100%; padding:0; }
+  .au select { width:100%; font-size:12px; padding:2px 4px; margin-top:4px; }
+  .mt { height:6px; border-radius:3px; background:#1d2a21; overflow:hidden; margin:4px 0; }
+  .mt i { display:block; height:100%; width:0; background:linear-gradient(90deg,#22c55e 0 66%,#f59e0b 66% 85%,#dc3545 85% 100%); background-size:100vw 100%; }
+  @media (max-width:1100px) { .wrap { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
 <header>
   <a href="/">&larr; Dashboard</a><h1>Studio</h1>
   <span class="stat" id="st"></span><span class="grow"></span>
-  <label class="note">Camera <select id="camSel"></select></label>
-  <label class="note">Audio <select id="micSel"></select></label>
+  <button id="impBtn" title="Copy your scenes from OBS: in OBS choose Scene Collection, then Export">Import OBS scenes...</button>
   <button id="sendBtn" class="go">Start sending</button>
 </header>
 <div class="wrap">
-  <div class="panel"><h2>Scenes</h2><div id="scenes"></div><div class="row"><button id="addScene">+ Scene</button><button id="delScene">Delete</button></div></div>
-  <div><canvas id="cv" width="1280" height="720"></canvas><p class="note" id="hint">Pick a scene on the left to put it on screen. Add things to it on the right. "Start sending" sends this picture into the relay, the same place OBS used to send to.</p></div>
-  <div class="panel"><h2>Items in this scene</h2><div id="layers"></div>
-    <div class="row"><button class="sm" data-add="camera">+ Camera</button><button class="sm" data-add="image">+ Picture</button><button class="sm" data-add="text">+ Text</button><button class="sm" data-add="color">+ Colour</button></div>
-    <div id="props"></div></div>
+  <div>
+    <div class="panel"><h2>Scenes</h2><div id="scenes"></div><div class="row"><button id="addScene">+ Scene</button><button id="delScene">Delete</button></div>
+      <p class="note">Click a scene to edit it. "Air" puts it on screen (and into the stream).</p></div>
+    <div class="panel"><h2>Sound</h2><div id="audio"></div><div class="row"><button id="addAudio" class="sm">+ Sound input</button></div>
+      <p class="note" id="audNote"></p></div>
+  </div>
+  <div>
+    <div class="lab">ON AIR (what viewers see) <span id="airName"></span></div>
+    <canvas id="cv" class="v" width="1280" height="720"></canvas>
+    <div class="lab">EDITING: <span id="editName"></span></div>
+    <canvas id="ev" class="v" width="960" height="540"></canvas>
+    <p class="note" id="hint">"Start sending" sends the ON AIR picture and the sound into the relay, the same place OBS sent to.</p>
+  </div>
+  <div>
+    <div class="panel"><h2>Items in this scene</h2><div id="layers"></div>
+      <div class="row"><button class="sm" data-add="camera">+ Camera</button><button class="sm" data-add="image">+ Picture</button><button class="sm" data-add="video">+ Video</button><button class="sm" data-add="text">+ Text</button><button class="sm" data-add="color">+ Colour</button><button class="sm" data-add="screen">+ Screen</button><button class="sm" data-add="browser">+ Web page</button><button class="sm" data-add="ipcam">+ Phone camera</button></div>
+    </div>
+    <div class="panel" id="propsBox" hidden><h2>Item settings</h2><div id="props"></div></div>
+  </div>
 </div>
-<input type="file" id="file" accept="image/*" hidden>
+<input type="file" id="file" hidden>
 <script>
-const W = 1280, H = 720;
+const SW = 1920, SH = 1080;           // the size scenes are drawn in (same as OBS)
+const PW = 1280, PH = 720;            // the size sent out
 const $ = (s) => document.querySelector(s);
-const cv = $('#cv'), ctx = cv.getContext('2d');
-let studio = { scenes: [], current: '' };
-let sel = ''; // layer id being edited
-let editName = ''; // scene being edited (the one on screen)
-let saveT = 0;
+const cv = $('#cv'), ctx = cv.getContext('2d'), ev = $('#ev'), ectx = ev.getContext('2d');
+let studio = { scenes: [], audio: [], current: '' };
+let editing = '';        // scene being edited
+let sel = '';            // layer being edited
+let saveT = 0, lastRev = 0, dirtyCurrent = false, serverPreview = '';
 const uid = () => Math.random().toString(36).slice(2, 8);
-const cur = () => studio.scenes.find((s) => s.name === studio.current);
-function save() { clearTimeout(saveT); saveT = setTimeout(() => fetch('/api/studio', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(studio) }).catch(() => {}), 300); }
+const byName = (n) => studio.scenes.find((s) => s.name === n);
+const sceneOf = (n) => byName(n);
+function save() {
+  clearTimeout(saveT);
+  saveT = setTimeout(async () => {
+    saveT = 0;
+    const body = { scenes: studio.scenes, audio: studio.audio };
+    if (dirtyCurrent) { body.current = studio.current; dirtyCurrent = false; }
+    try { const r = await fetch('/api/studio', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); if (r.rev) lastRev = r.rev; } catch {}
+  }, 300);
+}
+function setCurrent(name) { studio.current = name; dirtyCurrent = true; save(); renderAll(); }
 
-// ---- media ----
-const imgs = new Map(), cams = new Map();
-function getImg(url) { let i = imgs.get(url); if (!i) { i = new Image(); i.src = url; imgs.set(url, i); } return i; }
-async function getCam(id) {
-  const key = id || 'default';
-  let c = cams.get(key);
-  if (c) return c;
+// ---------------- media ----------------
+const devices = { video: [], audio: [] };
+const imgs = new Map();
+function fileUrl(l) { return l.file ? '/api/studio/file?p=' + encodeURIComponent(l.file) : (l.url || ''); }
+function getImg(url) { let i = imgs.get(url); if (!i) { i = new Image(); i.onerror = () => { i.bad = true; }; i.src = url; imgs.set(url, i); } return i; }
+const cams = new Map();
+function pickDevice(kind, label, id) {
+  const list = devices[kind];
+  if (id && list.some((d) => d.deviceId === id)) return id;
+  if (label) { const d = list.find((x) => x.label.toLowerCase().includes(String(label).toLowerCase())); if (d) return d.deviceId; }
+  return '';
+}
+function getCam(l) {
+  const key = (l.label || '') + '|' + (l.device || '');
+  let c = cams.get(key); if (c) return c;
   c = { v: document.createElement('video'), ready: false };
-  c.v.muted = true; c.v.playsInline = true;
-  cams.set(key, c);
-  try {
-    const st = await navigator.mediaDevices.getUserMedia({ video: { deviceId: id ? { exact: id } : undefined, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
-    c.v.srcObject = st; await c.v.play(); c.ready = true;
-  } catch (e) { c.err = e.message; }
+  c.v.muted = true; c.v.playsInline = true; cams.set(key, c);
+  const id = pickDevice('video', l.label, l.device);
+  if (!id && l.label && devices.video.length) { c.err = 'Camera "' + l.label + '" not found'; return c; }
+  navigator.mediaDevices.getUserMedia({ video: { deviceId: id ? { exact: id } : undefined, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false })
+    .then(async (st) => { c.v.srcObject = st; await c.v.play(); c.ready = true; })
+    .catch((e) => { c.err = e.message; });
   return c;
 }
-function drawLayer(l) {
-  ctx.save();
-  if (l.type === 'color') { ctx.fillStyle = l.color || '#000'; ctx.fillRect(l.x, l.y, l.w, l.h); }
-  else if (l.type === 'image' && l.url) { const i = getImg(l.url); if (i.complete && i.naturalWidth) ctx.drawImage(i, l.x, l.y, l.w, l.h); }
-  else if (l.type === 'camera') {
-    const c = cams.get(l.device || 'default');
-    if (!c) getCam(l.device);
-    else if (c.ready && c.v.videoWidth) {
-      const vw = c.v.videoWidth, vh = c.v.videoHeight, s = Math.max(l.w / vw, l.h / vh), sw = l.w / s, sh = l.h / s;
-      ctx.drawImage(c.v, (vw - sw) / 2, (vh - sh) / 2, sw, sh, l.x, l.y, l.w, l.h);
-    } else { ctx.fillStyle = '#222'; ctx.fillRect(l.x, l.y, l.w, l.h); ctx.fillStyle = '#999'; ctx.font = '28px sans-serif'; ctx.fillText(c.err ? 'Camera: ' + c.err : 'Starting camera...', l.x + 20, l.y + 50); }
-  } else if (l.type === 'text') {
-    ctx.fillStyle = l.color || '#fff'; ctx.font = `bold ${l.size || 60}px system-ui, sans-serif`; ctx.textBaseline = 'top';
-    String(l.text || '').split('\n').forEach((t, i) => ctx.fillText(t, l.x, l.y + i * (l.size || 60) * 1.2, l.w));
-  }
-  ctx.restore();
+const screens = new Map();
+function getScreen(l) {
+  let c = screens.get(l.display || 'screen'); if (c) return c;
+  c = { v: document.createElement('video'), ready: false }; c.v.muted = true; screens.set(l.display || 'screen', c);
+  (async () => {
+    try {
+      if (window.msNative) await window.msNative.pickScreen(l.display || '');
+      const st = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: false });
+      c.v.srcObject = st; await c.v.play(); c.ready = true;
+    } catch (e) { c.err = e.message; }
+  })();
+  return c;
+}
+const vids = new Map();   // layer id -> { el, gain, active }
+const vgate = {};         // layer id -> gain node
+function getVid(l) {
+  let c = vids.get(l.id); if (c) return c;
+  if (!actx) ensureAudio();
+  const el = document.createElement('video');
+  el.preload = 'metadata'; el.loop = l.loop !== false; el.playsInline = true; el.src = fileUrl(l);
+  el.onerror = () => { c.bad = true; };
+  c = { el, active: false, bad: false }; vids.set(l.id, c);
+  if (actx) { const g = actx.createGain(); g.gain.value = 0; try { actx.createMediaElementSource(el).connect(g); g.connect(master); c.gain = g; } catch {} }
+  return c;
+}
+const boards = new Map();  // browser sources: id -> canvas the desktop app draws into
+function getBoard(l) {
+  const key = l.url + '|' + (l.bw || SW) + 'x' + (l.bh || SH);
+  let b = boards.get(key); if (b) return b;
+  b = { c: document.createElement('canvas'), ready: false }; boards.set(key, b);
+  if (window.msNative) window.msNative.browserOpen(key, l.url, l.bw || SW, l.bh || SH);
+  return b;
+}
+if (window.msNative) window.msNative.onFrame((id, w, h, buf) => {
+  const b = boards.get(id); if (!b) return;
+  if (b.c.width !== w || b.c.height !== h) { b.c.width = w; b.c.height = h; }
+  const src = new Uint8ClampedArray(buf.buffer ? buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) : buf);
+  for (let i = 0; i < src.length; i += 4) { const r = src[i + 2]; src[i + 2] = src[i]; src[i] = r; }
+  b.c.getContext('2d').putImageData(new ImageData(src, w, h), 0, 0); b.ready = true;
+});
+const ipcams = new Map();
+function getIpcam(l) {
+  let i = ipcams.get(l.url); if (i) return i;
+  i = new Image(); i.src = '/api/studio/ipcam?url=' + encodeURIComponent(l.url || ''); ipcams.set(l.url, i); return i;
+}
+
+// ---------------- drawing ----------------
+function place(l, sw, sh) {
+  const sx = l.sx || 1, sy = l.sy || 1;
+  if (l.fit === 'natural') return [l.x, l.y, sw * sx, sh * sy];
+  const w = l.w || SW, h = l.h || SH;
+  if (l.fit === 'fit') { const k = Math.min(w / sw, h / sh); const dw = sw * k, dh = sh * k; return [l.x + (w - dw) / 2, l.y + (h - dh) / 2, dw, dh]; }
+  return [l.x, l.y, w, h];
+}
+function note(c, l, msg) {
+  const w = l.w || SW, h = l.h || SH;
+  c.fillStyle = '#20272300'; c.fillStyle = '#1b231e'; c.fillRect(l.x, l.y, Math.min(w, 900), Math.min(h, 140));
+  c.fillStyle = '#9fb3a5'; c.font = '28px system-ui, sans-serif'; c.textBaseline = 'top';
+  c.fillText(msg, l.x + 16, l.y + 16, Math.min(w, 900) - 32);
+}
+function drawLayer(c, l, live) {
+  if (l.visible === false) return;
+  c.save();
+  try {
+    if (l.type === 'color') { c.fillStyle = l.color || '#000'; c.fillRect(l.x, l.y, l.w || SW, l.h || SH); }
+    else if (l.type === 'text') {
+      c.fillStyle = l.color || '#fff'; c.font = `bold ${l.size || 60}px system-ui, sans-serif`; c.textBaseline = 'top';
+      String(l.text || '').split('\n').forEach((t, i) => c.fillText(t, l.x, l.y + i * (l.size || 60) * 1.2, l.w || SW));
+    } else if (l.type === 'image') {
+      const i = getImg(fileUrl(l));
+      if (i.complete && i.naturalWidth) { const [x, y, w, h] = place(l, i.naturalWidth, i.naturalHeight); c.drawImage(i, x, y, w, h); }
+      else if (i.bad) note(c, l, 'Picture not found: ' + (l.file || l.url || l.name));
+    } else if (l.type === 'video') {
+      const v = getVid(l);
+      if (v.bad) note(c, l, 'Video not found: ' + (l.file || l.url || l.name));
+      else if (v.el.readyState >= 2 && v.el.videoWidth) { const [x, y, w, h] = place(l, v.el.videoWidth, v.el.videoHeight); c.drawImage(v.el, x, y, w, h); }
+    } else if (l.type === 'camera') {
+      const cm = getCam(l);
+      if (cm.ready && cm.v.videoWidth) { const [x, y, w, h] = place(l, cm.v.videoWidth, cm.v.videoHeight); c.drawImage(cm.v, x, y, w, h); }
+      else note(c, l, cm.err ? 'Camera: ' + cm.err : 'Starting camera...');
+    } else if (l.type === 'screen') {
+      const sc = getScreen(l);
+      if (sc.ready && sc.v.videoWidth) { const [x, y, w, h] = place(l, sc.v.videoWidth, sc.v.videoHeight); c.drawImage(sc.v, x, y, w, h); }
+      else note(c, l, sc.err ? 'Screen: ' + sc.err : 'Starting screen capture...');
+    } else if (l.type === 'browser') {
+      if (!window.msNative) { note(c, l, 'Web pages need the Multistream desktop app'); }
+      else { const b = getBoard(l); if (b.ready) { const [x, y, w, h] = place(l, b.c.width, b.c.height); c.drawImage(b.c, x, y, w, h); } }
+    } else if (l.type === 'ipcam') {
+      const i = getIpcam(l);
+      if (i.complete && i.naturalWidth) { const [x, y, w, h] = place(l, i.naturalWidth, i.naturalHeight); c.drawImage(i, x, y, w, h); }
+      else note(c, l, 'Phone camera: waiting for ' + (l.url || 'an address'));
+    }
+  } catch {}
+  c.restore();
+}
+function drawScene(c, scene, k, live) {
+  c.save(); c.setTransform(k, 0, 0, k, 0, 0);
+  c.fillStyle = '#000'; c.fillRect(0, 0, SW, SH);
+  if (scene) scene.layers.forEach((l) => drawLayer(c, l, live));
+  c.restore();
 }
 function frame() {
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
-  const s = cur(); if (s) s.layers.forEach(drawLayer);
+  drawScene(ctx, byName(studio.current), PW / SW, true);
 }
 setInterval(frame, 1000 / 30); // not requestAnimationFrame, so it keeps running if the window is covered
+setInterval(() => { drawScene(ectx, byName(editing), ev.width / SW, false); }, 100);
 
-// ---- scenes UI ----
+// videos play only while their scene is on air (or shown in a preview); each restarts when its scene goes on air
+function updateVideos() {
+  const live = byName(studio.current), pv = byName(serverPreview), ed = byName(editing);
+  const want = new Set();
+  [live, pv, ed].forEach((s) => s && s.layers.forEach((l) => { if (l.type === 'video' && l.visible !== false) want.add(l.id); }));
+  const onAir = new Set(); if (live) live.layers.forEach((l) => { if (l.type === 'video' && l.visible !== false) onAir.add(l.id); });
+  studio.scenes.forEach((s) => s.layers.forEach((l) => {
+    if (l.type !== 'video') return;
+    if (!want.has(l.id) && !vids.has(l.id)) return;
+    const c = getVid(l);
+    if (c.gain) c.gain.gain.setTargetAtTime(onAir.has(l.id) && !l.muted ? (l.vol == null ? 1 : l.vol) : 0, actx.currentTime, 0.02);
+    if (want.has(l.id)) {
+      if (c.el.paused) { if (onAir.has(l.id) && !c.active && l.restart !== false) c.el.currentTime = 0; c.el.play().catch(() => {}); }
+      c.active = onAir.has(l.id);
+    } else if (!c.el.paused) { c.el.pause(); c.active = false; }
+  }));
+}
+setInterval(updateVideos, 300);
+
+// ---------------- sound ----------------
+let actx = null, master = null, dest = null;
+const asrc = new Map();   // audio source id -> { gain, gate, an, stream }
+const streams = new Map(); // device id -> MediaStream
+function ensureAudio() {
+  if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
+  actx = new AudioContext(); master = actx.createGain(); dest = actx.createMediaStreamDestination(); master.connect(dest);
+  syncAudio();
+}
+async function openStream(id) {
+  const key = id || 'default'; if (streams.has(key)) return streams.get(key);
+  const p = navigator.mediaDevices.getUserMedia({ audio: { deviceId: id ? { exact: id } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+  streams.set(key, p); return p;
+}
+async function syncAudio() {
+  if (!actx) return;
+  for (const a of studio.audio) {
+    let n = asrc.get(a.id);
+    if (!n || n.dev !== (a.device || '') + '|' + (a.label || '')) {
+      if (n) { try { n.node.disconnect(); n.gain.disconnect(); } catch {} }
+      n = { dev: (a.device || '') + '|' + (a.label || ''), gain: actx.createGain(), gate: actx.createGain(), an: actx.createAnalyser() };
+      n.an.fftSize = 512; n.gain.connect(n.an); n.gain.connect(n.gate); n.gate.connect(master); n.gate.gain.value = 0;
+      asrc.set(a.id, n);
+      const id = pickDevice('audio', a.label, a.device);
+      try { const st = await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.gain); n.err = ''; } catch (e) { n.err = e.message; }
+    }
+    n.gain.gain.setTargetAtTime(a.muted ? 0 : (a.vol == null ? 1 : a.vol), actx.currentTime, 0.02);
+  }
+  gateAudio();
+}
+function gateAudio() {
+  if (!actx) return;
+  const s = byName(studio.current), on = new Set((s && s.audio) || []);
+  asrc.forEach((n, id) => n.gate.gain.setTargetAtTime(on.has(id) ? 1 : 0, actx.currentTime, 0.02));
+}
+const dB = (v) => (v <= 0.0001 ? -60 : Math.max(-60, 20 * Math.log10(v)));
+function renderAudio() {
+  const box = $('#audio'); box.textContent = '';
+  const s = byName(editing), on = new Set((s && s.audio) || []);
+  studio.audio.forEach((a) => {
+    const d = document.createElement('div'); d.className = 'au' + (on.has(a.id) ? '' : ' off'); d.dataset.id = a.id;
+    const t = document.createElement('div'); t.className = 't';
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = a.name; n.title = a.name;
+    const inScene = document.createElement('input'); inScene.type = 'checkbox'; inScene.checked = on.has(a.id); inScene.title = 'Heard in the scene being edited';
+    inScene.onchange = () => { const sc = byName(editing); if (!sc) return; sc.audio = sc.audio || []; if (inScene.checked) { if (!sc.audio.includes(a.id)) sc.audio.push(a.id); } else sc.audio = sc.audio.filter((x) => x !== a.id); save(); gateAudio(); renderAudio(); };
+    const m = document.createElement('button'); m.className = 'sm' + (a.muted ? ' on' : ''); m.textContent = a.muted ? 'Muted' : 'Mute';
+    m.onclick = () => { a.muted = !a.muted; save(); syncAudio(); renderAudio(); };
+    t.append(inScene, n, m);
+    const r = document.createElement('input'); r.type = 'range'; r.min = -60; r.max = 12; r.step = 0.5; r.value = dB(a.vol == null ? 1 : a.vol); r.title = Math.round(r.value) + ' dB';
+    r.oninput = () => { a.vol = r.value <= -60 ? 0 : Math.pow(10, r.value / 20); r.title = Math.round(r.value) + ' dB'; save(); syncAudio(); };
+    const mt = document.createElement('div'); mt.className = 'mt'; mt.innerHTML = '<i></i>';
+    const sl = document.createElement('select');
+    sl.add(new Option('Default input', ''));
+    devices.audio.forEach((x) => sl.add(new Option(x.label || 'Input', x.deviceId)));
+    sl.value = pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
+    d.append(t, mt, r, sl); box.appendChild(d);
+  });
+  $('#audNote').textContent = studio.audio.length ? 'Tick a box to hear that input in the scene you are editing.' : 'No sound inputs yet.';
+}
+$('#addAudio').onclick = () => { studio.audio.push({ id: uid(), name: 'Sound ' + (studio.audio.length + 1), device: '', label: '', vol: 1, muted: false }); const s = byName(editing); if (s) (s.audio = s.audio || []).push(studio.audio[studio.audio.length - 1].id); save(); renderAudio(); syncAudio(); };
+const buf = new Float32Array(512);
+setInterval(() => {
+  document.querySelectorAll('#audio .au').forEach((d) => {
+    const n = asrc.get(d.dataset.id); const bar = d.querySelector('.mt i'); if (!bar) return;
+    if (!n) { bar.style.width = '0'; return; }
+    n.an.getFloatTimeDomainData(buf); let pk = 0; for (let i = 0; i < buf.length; i++) pk = Math.max(pk, Math.abs(buf[i]));
+    bar.style.width = Math.max(0, Math.min(100, (dB(pk) + 60) / 60 * 100)) + '%';
+  });
+}, 80);
+
+// ---------------- scenes UI ----------------
 function renderScenes() {
   const box = $('#scenes'); box.textContent = '';
   studio.scenes.forEach((s) => {
-    const d = document.createElement('div'); d.className = 'scn' + (s.name === studio.current ? ' on' : '');
+    const d = document.createElement('div'); d.className = 'scn' + (s.name === editing ? ' on' : '');
     const n = document.createElement('span'); n.className = 'n'; n.textContent = s.name; d.appendChild(n);
     if (s.name === studio.current) { const a = document.createElement('span'); a.className = 'air'; a.textContent = 'ON AIR'; d.appendChild(a); }
-    d.onclick = () => { studio.current = s.name; sel = ''; save(); renderAll(); };
-    d.ondblclick = () => { const v = prompt('Scene name', s.name); if (v && !studio.scenes.some((x) => x.name === v)) { s.name = v; studio.current = v; save(); renderAll(); } };
+    else { const b = document.createElement('button'); b.className = 'sm'; b.textContent = 'Air'; b.title = 'Put this scene on air'; b.onclick = (e) => { e.stopPropagation(); setCurrent(s.name); }; d.appendChild(b); }
+    d.onclick = () => { editing = s.name; sel = ''; renderAll(); };
+    d.ondblclick = () => { const v = prompt('Scene name', s.name); if (v && !studio.scenes.some((x) => x.name === v)) { if (studio.current === s.name) { studio.current = v; dirtyCurrent = true; } s.name = v; editing = v; save(); renderAll(); } };
     box.appendChild(d);
   });
 }
 $('#addScene').onclick = () => {
   let n = 'Scene ' + (studio.scenes.length + 1); while (studio.scenes.some((s) => s.name === n)) n += '+';
-  studio.scenes.push({ name: n, layers: [] }); studio.current = n; save(); renderAll();
+  studio.scenes.push({ name: n, layers: [], audio: studio.audio.map((a) => a.id) }); editing = n; if (!studio.current) { studio.current = n; dirtyCurrent = true; } save(); renderAll();
 };
-$('#delScene').onclick = () => { const s = cur(); if (!s || !confirm('Delete scene "' + s.name + '"?')) return; studio.scenes = studio.scenes.filter((x) => x !== s); studio.current = (studio.scenes[0] || {}).name || ''; save(); renderAll(); };
+$('#delScene').onclick = () => {
+  const s = byName(editing); if (!s || !confirm('Delete scene "' + s.name + '"?')) return;
+  studio.scenes = studio.scenes.filter((x) => x !== s);
+  if (studio.current === s.name) { studio.current = (studio.scenes[0] || {}).name || ''; dirtyCurrent = true; }
+  editing = studio.current; save(); renderAll();
+};
+const ICON = { camera: 'Camera', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera' };
 function renderLayers() {
-  const s = cur(), box = $('#layers'); box.textContent = '';
-  if (!s) { box.textContent = 'Add a scene first.'; $('#props').textContent = ''; return; }
-  s.layers.forEach((l, i) => {
+  const s = byName(editing), box = $('#layers'); box.textContent = '';
+  $('#editName').textContent = editing; $('#airName').textContent = studio.current ? '- ' + studio.current : '';
+  if (!s) { box.textContent = 'Add a scene first.'; $('#propsBox').hidden = true; return; }
+  for (let i = s.layers.length - 1; i >= 0; i--) {
+    const l = s.layers[i];
     const d = document.createElement('div'); d.className = 'lyr' + (l.id === sel ? ' on' : '');
-    const n = document.createElement('span'); n.className = 'n'; n.textContent = l.type + (l.type === 'text' ? ': ' + (l.text || '').slice(0, 14) : '');
-    const up = document.createElement('button'); up.className = 'sm'; up.textContent = '↑'; up.title = 'Move up (in front)'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
-    const x = document.createElement('button'); x.className = 'sm'; x.textContent = '×'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
-    d.append(n, up, x); d.onclick = () => { sel = l.id; renderLayers(); };
-    box.prepend(d);
-  });
+    const eye = document.createElement('input'); eye.type = 'checkbox'; eye.checked = l.visible !== false; eye.title = 'Show or hide'; eye.onclick = (e) => e.stopPropagation(); eye.onchange = () => { l.visible = eye.checked; save(); };
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = (l.name || ICON[l.type] || l.type) + (l.locked ? ' (locked)' : ''); n.title = n.textContent;
+    const up = document.createElement('button'); up.className = 'sm'; up.textContent = '\u2191'; up.title = 'Move in front'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
+    const x = document.createElement('button'); x.className = 'sm'; x.textContent = '\u00d7'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
+    d.append(eye, n, up, x); d.onclick = () => { sel = l.id; renderLayers(); };
+    box.appendChild(d);
+  }
   renderProps();
 }
 function field(label, el) { const d = document.createElement('div'); d.className = 'f'; const l = document.createElement('label'); l.textContent = label; d.append(l, el); return d; }
 function renderProps() {
   const box = $('#props'); box.textContent = '';
-  const s = cur(), l = s && s.layers.find((x) => x.id === sel); if (!l) return;
-  const num = (k) => { const i = document.createElement('input'); i.type = 'number'; i.value = Math.round(l[k] || 0); i.oninput = () => { l[k] = Number(i.value); save(); }; return i; };
-  box.append(field('Left', num('x')), field('Top', num('y')), field('Width', num('w')), field('Height', num('h')));
-  const fit = document.createElement('button'); fit.textContent = 'Fill whole screen'; fit.onclick = () => { Object.assign(l, { x: 0, y: 0, w: W, h: H }); save(); renderProps(); };
-  box.append(fit);
+  const s = byName(editing), l = s && s.layers.find((x) => x.id === sel);
+  $('#propsBox').hidden = !l; if (!l) return;
+  const inp = (k, type) => { const i = document.createElement('input'); i.type = type || 'text'; i.value = l[k] == null ? '' : l[k]; i.oninput = () => { l[k] = type === 'number' ? Number(i.value) : i.value; save(); }; return i; };
+  box.append(field('Name', inp('name')));
+  box.append(field('Left', inp('x', 'number')), field('Top', inp('y', 'number')));
+  const fit = document.createElement('select'); [['stretch', 'Fill the box'], ['fit', 'Fit in the box'], ['natural', 'Own size']].forEach(([v, t]) => fit.add(new Option(t, v)));
+  fit.value = l.fit || 'stretch'; fit.onchange = () => { l.fit = fit.value; save(); renderProps(); }; box.append(field('Size', fit));
+  if ((l.fit || 'stretch') === 'natural') { const sc = inp('sx', 'number'); sc.step = 0.05; sc.value = l.sx || 1; sc.oninput = () => { l.sx = l.sy = Number(sc.value); save(); }; box.append(field('Scale', sc)); }
+  else box.append(field('Width', inp('w', 'number')), field('Height', inp('h', 'number')));
   if (l.type === 'color' || l.type === 'text') { const c = document.createElement('input'); c.type = 'color'; c.value = l.color || '#ffffff'; c.oninput = () => { l.color = c.value; save(); }; box.append(field('Colour', c)); }
   if (l.type === 'text') {
-    const t = document.createElement('textarea'); t.rows = 3; t.value = l.text || ''; t.style.cssText = 'width:100%;background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:6px'; t.oninput = () => { l.text = t.value; save(); };
-    const z = document.createElement('input'); z.type = 'number'; z.value = l.size || 60; z.oninput = () => { l.size = Number(z.value); save(); };
-    box.append(field('Words', t), field('Size', z));
+    const t = document.createElement('textarea'); t.rows = 3; t.value = l.text || ''; t.oninput = () => { l.text = t.value; save(); };
+    box.append(field('Words', t), field('Size', inp('size', 'number')));
   }
-  if (l.type === 'camera') { const sl = $('#camSel').cloneNode(true); sl.id = ''; sl.value = l.device || ''; sl.onchange = () => { l.device = sl.value; save(); }; box.append(field('Camera', sl)); }
-  if (l.type === 'image') { const b = document.createElement('button'); b.textContent = 'Choose picture...'; b.onclick = () => pickImage(l); box.append(b); }
+  if (l.type === 'camera') {
+    const sl = document.createElement('select'); sl.add(new Option('Default camera', ''));
+    devices.video.forEach((x) => sl.add(new Option(x.label || 'Camera', x.deviceId)));
+    sl.value = pickDevice('video', l.label, l.device); sl.onchange = () => { l.device = sl.value; l.label = ''; save(); }; box.append(field('Camera', sl));
+  }
+  if (l.type === 'image' || l.type === 'video') {
+    const p = inp('file'); p.placeholder = 'C:/path/to/file'; p.title = 'The file path on this computer'; box.append(field('File', p));
+    const b = document.createElement('button'); b.textContent = 'Upload a file instead...'; b.onclick = () => pickFile(l); box.append(b);
+  }
+  if (l.type === 'video') {
+    const lp = document.createElement('input'); lp.type = 'checkbox'; lp.checked = l.loop !== false; lp.onchange = () => { l.loop = lp.checked; const v = vids.get(l.id); if (v) v.el.loop = lp.checked; save(); };
+    const mu = document.createElement('input'); mu.type = 'checkbox'; mu.checked = !!l.muted; mu.onchange = () => { l.muted = mu.checked; save(); };
+    box.append(field('Repeat', lp), field('Mute its sound', mu));
+  }
+  if (l.type === 'browser' || l.type === 'ipcam') { const u = inp('url'); u.placeholder = 'http://...'; box.append(field('Address', u)); }
+  if (l.type === 'screen') {
+    const sl = document.createElement('select'); sl.add(new Option('First screen', ''));
+    if (window.msNative) window.msNative.screens().then((list) => { list.forEach((x) => sl.add(new Option(x.name, x.id))); sl.value = l.display || ''; });
+    sl.onchange = () => { l.display = sl.value; screens.delete(''); save(); }; box.append(field('Screen', sl));
+  }
 }
-function pickImage(l) {
-  const f = $('#file'); f.value = ''; f.onchange = async () => {
+function pickFile(l) {
+  const f = $('#file'); f.value = ''; f.accept = l.type === 'video' ? 'video/*' : 'image/*';
+  f.onchange = async () => {
     const file = f.files[0]; if (!file) return;
     const r = await fetch('/api/studio/asset/' + encodeURIComponent(uid() + '-' + file.name), { method: 'PUT', body: file }).then((x) => x.json());
-    if (r.url) { l.url = r.url; save(); renderLayers(); }
+    if (r.url) { l.url = r.url; l.file = ''; save(); renderLayers(); }
   }; f.click();
 }
 document.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
-  const s = cur(); if (!s) return;
-  const t = b.dataset.add, l = { id: uid(), type: t, x: 0, y: 0, w: W, h: H };
-  if (t === 'text') Object.assign(l, { text: 'Welcome', size: 80, color: '#ffffff', x: 80, y: 560, w: 1100, h: 120 });
+  const s = byName(editing); if (!s) return;
+  const t = b.dataset.add, l = { id: uid(), type: t, x: 0, y: 0, w: SW, h: SH, fit: 'stretch', visible: true };
+  if (t === 'text') Object.assign(l, { text: 'Welcome', size: 110, color: '#ffffff', x: 120, y: 800, w: 1600, h: 160 });
   if (t === 'color') l.color = '#0b3d1e';
-  if (t === 'camera') l.device = $('#camSel').value || '';
+  if (t === 'browser') { l.url = 'http://'; l.bw = SW; l.bh = SH; }
+  if (t === 'ipcam') { l.url = 'http://192.168.0.0:4747/video'; l.fit = 'fit'; }
+  if (t === 'video' || t === 'image') l.fit = 'fit';
   s.layers.push(l); sel = l.id; save(); renderLayers();
-  if (t === 'image') pickImage(l);
+  if (t === 'image' || t === 'video') $('#propsBox').scrollIntoView();
 });
-function renderAll() { renderScenes(); renderLayers(); }
+function renderAll() { renderScenes(); renderLayers(); renderAudio(); updateVideos(); gateAudio(); }
 
-// ---- devices ----
+// ---------------- import from OBS ----------------
+function importObs(j) {
+  const srcs = new Map((j.sources || []).map((s) => [s.uuid, s]));
+  const groups = new Map((j.groups || []).map((g) => [g.uuid, g]));
+  const AUDIO = /^(wasapi_input_capture|wasapi_output_capture|coreaudio_input_capture|coreaudio_output_capture|pulse_input_capture|pulse_output_capture|alsa_input_capture)$/;
+  const audio = []; const aId = new Map();
+  (j.sources || []).forEach((s) => {
+    if (!AUDIO.test(s.id)) return;
+    const wing = String((s.settings || {}).device_id || '').includes('720a4ef2');
+    const a = { id: uid(), name: s.name, device: '', label: wing ? 'WING' : '', vol: s.volume == null ? 1 : s.volume, muted: !!s.muted };
+    audio.push(a); aId.set(s.uuid, a.id);
+  });
+  const kindOf = (id) => ({ image_source: 'image', ffmpeg_source: 'video', dshow_input: 'camera', av_capture_input: 'camera', v4l2_input: 'camera', monitor_capture: 'screen', display_capture: 'screen', screen_capture: 'screen', browser_source: 'browser', droidcam_obs: 'ipcam', color_source: 'color', color_source_v3: 'color', text_gdiplus: 'text', text_gdiplus_v3: 'text' }[id]);
+  const scenes = [];
+  const order = (j.scene_order || []).map((x) => x.name);
+  (j.sources || []).filter((s) => s.id === 'scene').sort((a, b) => (order.indexOf(a.name) + 1 || 999) - (order.indexOf(b.name) + 1 || 999)).forEach((sc) => {
+    const scene = { name: sc.name, layers: [], audio: [] }; const seen = new Set();
+    const add = (it, parentVisible, parentGroup) => {
+      if (it.group_item_backup) return;
+      const key = it.source_uuid; if (seen.has(key)) return;
+      const grp = groups.get(it.source_uuid);
+      const vis = it.visible !== false && parentVisible;
+      if (grp) { seen.add(key); (grp.settings.items || []).forEach((g) => add(g, vis, grp)); return; }
+      const s = srcs.get(it.source_uuid); if (!s) return;
+      seen.add(key);
+      if (AUDIO.test(s.id)) { if (vis && aId.has(s.uuid)) scene.audio.push(aId.get(s.uuid)); return; }
+      const st = s.settings || {}; const kind = kindOf(s.id);
+      const l = { id: uid(), name: it.name, type: kind || 'text', visible: vis, locked: !!it.locked, x: it.pos.x, y: it.pos.y, sx: it.scale.x, sy: it.scale.y };
+      const bt = it.bounds_type;
+      if (bt && it.bounds && it.bounds.x > 0) { l.fit = bt === 1 ? 'stretch' : 'fit'; l.w = it.bounds.x; l.h = it.bounds.y; } else l.fit = 'natural';
+      if (!kind) { l.text = 'Not supported yet: ' + s.id + ' (' + it.name + ')'; l.size = 40; l.color = '#ffcc00'; l.fit = 'stretch'; l.w = 1200; l.h = 80; }
+      if (kind === 'image') l.file = st.file || '';
+      if (kind === 'video') { l.file = st.local_file || ''; l.loop = st.looping !== false; l.restart = st.restart_on_activate !== false; l.muted = !!s.muted; l.vol = s.volume == null ? 1 : s.volume; }
+      if (kind === 'camera') { l.label = String(st.video_device_id || '').split(':')[0]; l.device = ''; }
+      if (kind === 'screen') l.display = '';
+      if (kind === 'browser') { l.url = st.url || ''; l.bw = st.width || 1920; l.bh = st.height || 1080; }
+      if (kind === 'ipcam') { l.url = 'http://' + (st.cur_dev_ip || st.wifi_ip || '192.168.0.0') + ':4747/video'; }
+      if (kind === 'color') { l.color = '#000000'; l.fit = 'stretch'; l.w = st.width || SW; l.h = st.height || SH; }
+      scene.layers.push(l);
+    };
+    (sc.settings.items || []).forEach((it) => add(it, true));
+    scenes.push(scene);
+  });
+  return { scenes, audio, current: j.current_program_scene || (scenes[0] || {}).name || '' };
+}
+$('#impBtn').onclick = () => {
+  const f = $('#file'); f.value = ''; f.accept = '.json,application/json';
+  f.onchange = async () => {
+    const file = f.files[0]; if (!file) return;
+    let r; try { r = importObs(JSON.parse(await file.text())); } catch (e) { alert('That file could not be read as an OBS scene file.'); return; }
+    if (!r.scenes.length) { alert('No scenes found in that file.'); return; }
+    if (studio.scenes.length > 1 && !confirm('This replaces your current studio scenes with ' + r.scenes.length + ' scenes from OBS. Continue?')) return;
+    studio.scenes = r.scenes; studio.audio = r.audio; studio.current = r.current; dirtyCurrent = true; editing = r.current; sel = '';
+    asrc.forEach((n) => { try { n.node && n.node.disconnect(); n.gain.disconnect(); n.gate.disconnect(); } catch {} }); asrc.clear();
+    save(); renderAll(); syncAudio();
+    $('#st').textContent = 'Imported ' + r.scenes.length + ' scenes and ' + r.audio.length + ' sound inputs. Check the pictures and the sound inputs.';
+  }; f.click();
+};
+
+// ---------------- devices ----------------
 async function loadDevices() {
   try { const t = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); t.getTracks().forEach((x) => x.stop()); } catch {}
   const d = await navigator.mediaDevices.enumerateDevices().catch(() => []);
-  const fill = (sel, kind, none) => { sel.textContent = ''; if (none) sel.add(new Option(none, '')); d.filter((x) => x.kind === kind).forEach((x) => sel.add(new Option(x.label || x.kind, x.deviceId))); };
-  fill($('#camSel'), 'videoinput', 'Default camera'); fill($('#micSel'), 'audioinput', 'No audio');
-  try { const m = localStorage.getItem('ms_mic'); if (m && [...$('#micSel').options].some((o) => o.value === m)) $('#micSel').value = m; } catch {}
+  devices.video = d.filter((x) => x.kind === 'videoinput'); devices.audio = d.filter((x) => x.kind === 'audioinput');
+  cams.forEach((c, k) => { if (!c.ready) cams.delete(k); });
+  renderAudio(); syncAudio();
 }
-$('#micSel').onchange = () => { try { localStorage.setItem('ms_mic', $('#micSel').value); } catch {} };
 
-// ---- sending ----
-let rec = null, wsOut = null, actx = null;
+// ---------------- sending ----------------
+let rec = null, wsOut = null;
 async function startSend() {
-  const vs = cv.captureStream(30);
-  const out = new MediaStream(vs.getVideoTracks());
-  const mic = $('#micSel').value;
-  if (mic) {
-    try {
-      const ms = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: mic }, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-      actx = new AudioContext(); const dst = actx.createMediaStreamDestination(); actx.createMediaStreamSource(ms).connect(dst);
-      dst.stream.getAudioTracks().forEach((t) => out.addTrack(t));
-    } catch (e) { $('#st').textContent = 'Audio failed: ' + e.message; }
-  }
+  ensureAudio(); await syncAudio();
+  const out = new MediaStream(cv.captureStream(30).getVideoTracks());
+  dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
   wsOut = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/studio-ingest');
   wsOut.binaryType = 'arraybuffer';
   wsOut.onopen = () => {
     const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
-    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: 6000000 });
+    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: 5000000, audioBitsPerSecond: 128000 });
     rec.ondataavailable = async (e) => { if (e.data.size && wsOut && wsOut.readyState === 1) wsOut.send(await e.data.arrayBuffer()); };
     rec.start(250);
     $('#sendBtn').textContent = 'Stop sending'; $('#sendBtn').className = 'stop'; cv.classList.add('live');
@@ -204,29 +505,57 @@ async function startSend() {
 function stopSend() {
   try { rec && rec.state !== 'inactive' && rec.stop(); } catch {}
   try { wsOut && wsOut.close(); } catch {}
-  try { actx && actx.close(); } catch {}
-  rec = wsOut = actx = null;
+  rec = wsOut = null;
   $('#sendBtn').textContent = 'Start sending'; $('#sendBtn').className = 'go'; cv.classList.remove('live');
 }
 $('#sendBtn').onclick = () => (rec ? stopSend() : startSend());
+document.addEventListener('click', () => ensureAudio(), { once: true });
 
-// ---- load + follow the phone/dashboard (they change the current scene on the server) ----
+// ---------------- follow the phone / Control Room, and give it pictures ----------------
 async function poll() {
   try {
     const s = await fetch('/api/studio').then((r) => r.json());
-    if (s.current !== studio.current && s.scenes.some((x) => x.name === s.current)) { studio.current = s.current; renderAll(); }
+    serverPreview = s.preview || '';
+    if (s.rev !== lastRev && !saveT) {
+      const wasEditing = editing;
+      studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '' }; lastRev = s.rev;
+      editing = byName(wasEditing) ? wasEditing : studio.current;
+      renderAll();
+    }
     const e = await fetch('/api/studio/status').then((r) => r.json());
-    $('#st').textContent = rec ? (e.sending ? 'Sending to the relay' : 'Connecting...') + (e.error ? ' - ' + e.error : '') : ''; $('#st').className = 'stat ' + (e.error ? 'bad' : 'ok');
+    if (rec) { $('#st').textContent = (e.sending ? 'Sending to the relay' : 'Connecting...') + (e.error ? ' - ' + e.error : ''); $('#st').className = 'stat ' + (e.error ? 'bad' : 'ok'); }
   } catch {}
 }
+const small = document.createElement('canvas'); small.width = 640; small.height = 360;
+const sctx = small.getContext('2d');
+const tiny = document.createElement('canvas'); tiny.width = 320; tiny.height = 180; const tctx = tiny.getContext('2d');
+let thumbs = {}, thumbAt = 0, shotBusy = false;
+async function shots() {
+  if (shotBusy) return; shotBusy = true;
+  try {
+    drawScene(sctx, byName(studio.current), 640 / SW, true); const prog = small.toDataURL('image/jpeg', 0.55);
+    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 640 / SW, false); pv = small.toDataURL('image/jpeg', 0.55); }
+    const body = { prog, pv };
+    if (Date.now() - thumbAt > 3000) {
+      thumbAt = Date.now(); thumbs = {};
+      studio.scenes.forEach((s) => { drawScene(tctx, s, 320 / SW, false); thumbs[s.name] = tiny.toDataURL('image/jpeg', 0.5); });
+      body.thumbs = thumbs;
+    }
+    await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  } catch {}
+  shotBusy = false;
+}
 (async () => {
-  studio = await fetch('/api/studio').then((r) => r.json());
+  studio = await fetch('/api/studio').then((r) => r.json()); lastRev = studio.rev;
+  studio.audio = studio.audio || [];
   if (!studio.scenes.length) {
-    studio.scenes = [{ name: 'Welcome', layers: [{ id: uid(), type: 'color', color: '#0b3d1e', x: 0, y: 0, w: W, h: H }, { id: uid(), type: 'text', text: 'Welcome', size: 120, color: '#ffffff', x: 80, y: 280, w: 1100, h: 160 }] }];
-    studio.current = 'Welcome'; save();
+    studio.scenes = [{ name: 'Welcome', audio: [], layers: [{ id: uid(), type: 'color', color: '#0b3d1e', x: 0, y: 0, w: SW, h: SH, fit: 'stretch', visible: true }, { id: uid(), type: 'text', text: 'Welcome', size: 180, color: '#ffffff', x: 120, y: 420, w: 1600, h: 240, fit: 'stretch', visible: true }] }];
+    studio.current = 'Welcome'; dirtyCurrent = true; save();
   }
-  if (!cur()) studio.current = studio.scenes[0].name;
-  renderAll(); loadDevices(); setInterval(poll, 1500);
+  if (!byName(studio.current)) { studio.current = studio.scenes[0].name; dirtyCurrent = true; }
+  editing = studio.current;
+  renderAll(); await loadDevices(); ensureAudio();
+  setInterval(poll, 700); setInterval(shots, 400);
 })();
 </script>
 </body>

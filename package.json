@@ -25,6 +25,7 @@
     "productName": "Multistream",
     "files": [
       "main.js",
+      "preload.js",
       "server.js",
       "stats.js",
       "public/**/*",
@@ -49,7 +50,11 @@
     },
     "mac": {
       "target": "dmg",
-      "category": "public.app-category.video"
+      "category": "public.app-category.video",
+      "extendInfo": {
+        "NSCameraUsageDescription": "Multistream uses cameras and capture cards in the Studio.",
+        "NSMicrophoneUsageDescription": "Multistream uses audio inputs (like the mixing desk) in the Studio."
+      }
     }
   }
 }
