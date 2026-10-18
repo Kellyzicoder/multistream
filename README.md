@@ -73,3 +73,7 @@ The password is saved only on the church computer and is never sent to the phone
 
 ## Appearance and accessibility
 Press **Access** in the right-hand menu. You can pick a dark, light or system theme, choose the main colour (or type your own), make text bigger, turn on high contrast, use colour-blind friendly colours, make buttons bigger, and stop animations. Changes show straight away. Press **Save changes** to keep them, or **Cancel** to go back. Choices are saved on each device (the phone and the church computer are separate). **Reset all** puts everything back to the default.
+
+## Control Room
+
+Use the page switcher next to the title (Dashboard / Control Room). The Control Room shows Preview and Program side by side, a grid of all OBS scenes, and the audio meters. Tap a scene to preview it, then press TAKE to put it on air. Switch to Direct mode to go live on a single tap.

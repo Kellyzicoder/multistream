@@ -108,6 +108,35 @@
   .ar.mute .mt { opacity:.35; } .ar.mute .an { color:var(--muted); }
   .aud .empty { padding:14px 0; border:0; margin:0; }
 
+  .pgw { position:relative; }
+  .top button.ttl { background:transparent; border:0; color:var(--text); padding:6px 8px; margin-left:-8px; border-radius:6px; font-size:14px; font-weight:500; display:flex; align-items:center; gap:8px; }
+  .top button.ttl:hover { background:var(--btn); }
+  .pgm { position:absolute; top:100%; left:-8px; margin-top:4px; min-width:260px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px; z-index:60; box-shadow:0 8px 24px rgba(0,0,0,.35); }
+  .pgm button { display:block; width:100%; text-align:left; background:transparent; border:0; border-radius:6px; padding:9px 10px; font-size:13px; font-weight:500; color:var(--text); }
+  .pgm button small { display:block; font-weight:400; font-size:11px; color:var(--muted); margin-top:2px; }
+  .pgm button:hover { background:var(--btn); }
+  .pgm button[aria-current="page"] { background:var(--btn); box-shadow:inset 3px 0 0 var(--blue); }
+  /* control room */
+  .cr { padding:14px; max-width:1500px; margin:0 auto; }
+  .cr-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .cr-bar h1 { margin:0; font-size:16px; font-weight:600; }
+  .cr-bar .st { font-size:12px; color:var(--muted); } .cr-bar .st.ok { color:var(--green); }
+  .cr-top { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:12px; align-items:center; }
+  .cr-pane { position:relative; background:#000; border-radius:8px; overflow:hidden; aspect-ratio:16/9; border:3px solid var(--line); }
+  .cr-pane img { width:100%; height:100%; object-fit:cover; display:block; background:#0a0f0c; }
+  .cr-pane.prev { border-color:var(--green); } .cr-pane.prog { border-color:var(--red); }
+  .cr-lab { position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,.7); color:#fff; font-size:12px; font-weight:700; letter-spacing:.4px; padding:3px 8px; border-radius:4px; max-width:calc(100% - 16px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cr-take { min-width:120px; padding:22px 16px; border:0; border-radius:10px; background:var(--red); color:#fff; font-size:16px; font-weight:800; letter-spacing:.8px; }
+  .cr-take:disabled { background:var(--btn); color:var(--muted); }
+  .cr-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin-top:12px; }
+  .cr-grid .tile { }
+  .cr-grid .tile .nm { font-size:13px; }
+  .cr-grid .tile.pv { border-color:var(--green); }
+  .cr-grid .tile.pv .nm::after { content:"PREVIEW"; display:inline-block; margin-left:6px; padding:0 5px; border-radius:3px; background:var(--green); color:#04140a; font-size:9px; font-weight:700; letter-spacing:.4px; }
+  .cr-aud { margin-top:12px; }
+  @media (max-width:800px) { .cr-top { grid-template-columns:1fr 1fr; } .cr-take { grid-column:1 / -1; order:3; } .cr-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+
+  [hidden] { display:none !important; }
   /* top bar */
   .top { height:56px; display:flex; align-items:center; gap:12px; padding:0 20px; border-bottom:1px solid var(--rule2); }
   .top .home { width:22px; height:22px; color:var(--blue); }
@@ -271,9 +300,15 @@
 </head>
 <body>
 <header class="top">
-  <svg class="home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
-  <div class="ttl">Multistream
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+  <svg class="home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+  <div class="pgw">
+    <button class="ttl" id="pageBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="pageMenu"><span id="pageName">Dashboard</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="pgm" id="pageMenu" role="menu" hidden>
+      <button type="button" role="menuitem" data-page="dash">Dashboard<small>Channels, Go live, stream health</small></button>
+      <button type="button" role="menuitem" data-page="cr">Control Room<small>Multiview: preview, program and scenes</small></button>
+    </div>
   </div>
 </header>
 
@@ -409,6 +444,23 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings
     </button>
   </nav>
+</div>
+
+<!-- control room -->
+<div class="cr" id="crView" hidden>
+  <div class="cr-bar">
+    <h1>Control Room</h1><span class="st" id="crSt"></span><span class="grow" style="flex:1"></span>
+    <div class="opt" id="crMode" role="group" aria-label="How a scene goes on air">
+      <button type="button" data-v="take">Preview, then Take</button><button type="button" data-v="direct">Direct</button>
+    </div>
+  </div>
+  <div class="cr-top">
+    <div class="cr-pane prev"><img id="crPrev" alt="Preview scene" draggable="false"><span class="cr-lab" id="crPrevL">PREVIEW</span></div>
+    <button class="cr-take" id="crTake" type="button" disabled>TAKE</button>
+    <div class="cr-pane prog"><img id="crProg" alt="Program scene, on air" draggable="false"><span class="cr-lab" id="crProgL">PROGRAM</span></div>
+  </div>
+  <div class="cr-grid" id="crTiles"></div>
+  <div class="cr-aud" id="crAudio"></div>
 </div>
 
 <!-- add channel -->
@@ -910,11 +962,11 @@ function renderScn() {
 }
 let thumbBusy = false;
 async function pollThumbs() {
-  if (thumbBusy || !scn.pics || !obsInfo || !obsInfo.connected || document.hidden) return;
+  if (thumbBusy || (!scn.pics && page !== 'cr') || !obsInfo || !obsInfo.connected || document.hidden) return;
   thumbBusy = true;
   try {
     const d = await api('/api/obs/thumbs?w=' + Math.round(SCN_W[scn.size] * 1.3));
-    document.querySelectorAll('#tiles .tile').forEach((b) => { const u = d[b.dataset.n]; if (u) b.querySelector('img').src = u; });
+    document.querySelectorAll('#tiles .tile, #crTiles .tile').forEach((b) => { const u = d[b.dataset.n]; if (u) b.querySelector('img').src = u; });
   } catch {}
   thumbBusy = false;
 }
@@ -993,6 +1045,98 @@ $('#obsSave').onclick = async () => {
   setTimeout(async () => { const o = await api('/api/obs'); obsInfo = o; renderScn(); if (o.enabled) { msg.textContent = o.connected ? 'Connected to OBS.' : o.error; msg.className = 'note' + (o.connected ? '' : ' bad'); } }, 1500);
 };
 renderScn();
+
+// Control Room (multiview) and the page switcher
+let page = 'dash';
+let crMode = 'take';
+let crPrev = '';
+try { crMode = (JSON.parse(localStorage.getItem('ms_cr') || '{}') || {}).mode || 'take'; } catch {}
+const pageMenu = $('#pageMenu');
+function closeMenu() { pageMenu.hidden = true; $('#pageBtn').setAttribute('aria-expanded', 'false'); }
+$('#pageBtn').onclick = () => { const open = pageMenu.hidden; pageMenu.hidden = !open; $('#pageBtn').setAttribute('aria-expanded', String(open)); if (open) pageMenu.querySelector('button').focus(); };
+document.addEventListener('click', (e) => { if (!e.target.closest('.pgw')) closeMenu(); });
+pageMenu.addEventListener('keydown', (e) => {
+  const items = [...pageMenu.querySelectorAll('button')];
+  const i = items.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i + items.length - 1) % items.length].focus(); }
+  else if (e.key === 'Escape') { closeMenu(); $('#pageBtn').focus(); }
+});
+function showPage(p) {
+  page = p === 'cr' ? 'cr' : 'dash';
+  $('.app').hidden = page === 'cr';
+  $('#crView').hidden = page !== 'cr';
+  $('#pageName').textContent = page === 'cr' ? 'Control Room' : 'Dashboard';
+  pageMenu.querySelectorAll('button').forEach((b) => { if (b.dataset.page === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  const aud = $('#aud');
+  if (page === 'cr') $('#crAudio').appendChild(aud);
+  else $('#scn').after(aud);
+  try { history.replaceState(null, '', page === 'cr' ? '#control-room' : location.pathname + location.search); } catch {}
+  closeMenu();
+  renderCr();
+  pollThumbs();
+}
+pageMenu.querySelectorAll('button').forEach((b) => { b.onclick = () => { showPage(b.dataset.page); $('#pageBtn').focus(); }; });
+function crTake() {
+  if (!crPrev || !obsInfo || crPrev === obsInfo.current) return;
+  const name = crPrev;
+  api('/api/obs/scene', 'POST', { name }).then((r) => { if (!r.error && obsInfo) { obsInfo.current = name; crPrev = ''; renderCr(); } refresh(); });
+}
+$('#crTake').onclick = crTake;
+document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => { crMode = b.dataset.v; crPrev = ''; try { localStorage.setItem('ms_cr', JSON.stringify({ mode: crMode })); } catch {} renderCr(); }; });
+function renderCr() {
+  if (page !== 'cr') return;
+  const o = obsInfo;
+  document.querySelectorAll('#crMode button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === crMode)));
+  const st = $('#crSt');
+  if (!o || !o.enabled) { st.textContent = 'OBS is not connected. Use Dashboard, then Connect OBS.'; st.className = 'st'; $('#crTiles').textContent = ''; $('#crTiles').dataset.key = ''; return; }
+  st.textContent = o.connected ? 'Connected to OBS' : (o.error || 'Connecting...'); st.className = 'st' + (o.connected ? ' ok' : '');
+  if (crPrev && !o.scenes.includes(crPrev)) crPrev = '';
+  const box = $('#crTiles');
+  const key = o.scenes.join('\n');
+  if (box.dataset.key !== key) {
+    box.dataset.key = key; box.textContent = '';
+    o.scenes.forEach((name) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'tile'; b.dataset.n = name;
+      const im = document.createElement('img'); im.className = 'im'; im.alt = ''; im.draggable = false;
+      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = name;
+      b.append(im, nm);
+      b.onclick = async () => {
+        if (crMode === 'direct') {
+          const r = await api('/api/obs/scene', 'POST', { name });
+          if (!r.error && obsInfo) obsInfo.current = name;
+          renderCr(); refresh();
+        } else { crPrev = name === o.current ? '' : name; renderCr(); }
+      };
+      box.appendChild(b);
+    });
+  }
+  box.querySelectorAll('.tile').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.n === o.current));
+    b.classList.toggle('pv', b.dataset.n === crPrev);
+  });
+  $('#crProgL').textContent = 'PROGRAM: ' + (o.current || '');
+  const pv = crPrev || o.current || '';
+  $('#crPrevL').textContent = (crPrev ? 'PREVIEW: ' : 'PREVIEW (same as program): ') + pv;
+  $('#crTake').disabled = !(crMode === 'take' && crPrev && crPrev !== o.current);
+  $('#crTake').hidden = crMode !== 'take';
+}
+let crBusy = false;
+async function pollCr() {
+  if (page !== 'cr' || crBusy || document.hidden || !obsInfo || !obsInfo.connected) return;
+  crBusy = true;
+  try {
+    const a = obsInfo.current; const b = crPrev || obsInfo.current;
+    const d = await api('/api/obs/shots?a=' + encodeURIComponent(a) + '&b=' + encodeURIComponent(b) + '&w=640');
+    if (d.a) $('#crProg').src = d.a;
+    if (d.b) $('#crPrev').src = d.b;
+  } catch {}
+  crBusy = false;
+}
+setInterval(pollCr, 300);
+if (location.hash === '#control-room') setTimeout(() => showPage('cr'), 0);
+window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' ? 'cr' : 'dash'));
 
 // Appearance and accessibility: saved in this browser only
 const SWATCHES = ['#22c55e', '#14b8a6', '#3b9eff', '#6366f1', '#a78bfa', '#fb923c', '#eab308'];
@@ -1187,7 +1331,7 @@ $('#ytLive').onclick = async () => {
   refresh();
 };
 
-async function refresh() { try { const s = await api('/api/state'); render(s); renderLock(s.unlockLeft || 0); renderFb(s.facebook, s.obsLive); renderYt(s.youtube, s.obsLive); obsInfo = s.obs; renderScn(); } catch {} }
+async function refresh() { try { const s = await api('/api/state'); render(s); renderLock(s.unlockLeft || 0); renderFb(s.facebook, s.obsLive); renderYt(s.youtube, s.obsLive); obsInfo = s.obs; renderScn(); renderCr(); } catch {} }
 refresh();
 setInterval(refresh, 2000);
 </script>
