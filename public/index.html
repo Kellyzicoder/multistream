@@ -133,6 +133,7 @@
   .cr-grid .tile .nm { font-size:13px; }
   .cr-grid .tile.pv { border-color:var(--green); }
   .cr-grid .tile.pv .nm::after { content:"PREVIEW"; display:inline-block; margin-left:6px; padding:0 5px; border-radius:3px; background:var(--green); color:#04140a; font-size:9px; font-weight:700; letter-spacing:.4px; }
+  .cr-pop { border:1px solid var(--line); background:var(--btn); color:var(--text); border-radius:6px; padding:6px 10px; font-size:12px; font-weight:600; }
   .cr-aud { margin-top:12px; }
   .cr-itembox { margin-top:12px; } .cr-itembox h2 { font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
   .cr-items { display:flex; flex-wrap:wrap; gap:8px; } .cr-item { border:2px solid var(--line); background:var(--field); color:var(--text); border-radius:8px; padding:10px 14px; font-size:13px; font-weight:600; } .cr-item[aria-pressed=true] { border-color:var(--green); }
@@ -453,7 +454,7 @@
 <div class="cr" id="crView" hidden>
   <div class="cr-bar">
     <h1>Control Room</h1><span class="st" id="crSt"></span><span class="grow" style="flex:1"></span>
-    <label class="st" for="crEng">Engine</label> <select id="crEng" aria-label="What the Control Room controls"><option value="auto">Automatic</option><option value="studio">Studio</option><option value="obs">OBS</option></select>
+    <button type="button" id="crPop" class="cr-pop">Open in its own window</button> <label class="st" for="crEng">Engine</label> <select id="crEng" aria-label="What the Control Room controls"><option value="auto">Automatic</option><option value="studio">Studio</option><option value="obs">OBS</option></select>
     <div class="opt" id="crMode" role="group" aria-label="How a scene goes on air">
       <button type="button" data-v="take">Preview, then Take</button><button type="button" data-v="direct">Direct</button>
     </div>
@@ -1104,6 +1105,7 @@ async function crSetScene(name) {
 function crPreview(name) { crPrev = name; if (engine() === 'studio') api('/api/studio/preview', 'POST', { name }); renderCr(); }
 function crTake() { const d = crData(); if (!crPrev || crPrev === d.current) return; crSetScene(crPrev); }
 $('#crTake').onclick = crTake;
+$('#crPop').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); showPage('dash'); };
 document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => { crMode = b.dataset.v; crPrev = ''; saveCr(); renderCr(); }; });
 $('#crEng').value = crEng;
 $('#crEng').onchange = (e) => { crEng = e.target.value; crPrev = ''; saveCr(); $('#crTiles').dataset.key = ''; renderCr(); };

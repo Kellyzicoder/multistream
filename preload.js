@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 const frameCbs = new Set();
 ipcRenderer.on('ms-frame', (e, id, w, h, buf) => frameCbs.forEach((cb) => cb(id, w, h, buf)));
 contextBridge.exposeInMainWorld('msNative', {
+  openControlRoom: () => ipcRenderer.invoke('ms-open-cr'),
   openStudio: () => ipcRenderer.invoke('ms-open-studio'),
   browserOpen: (id, url, w, h) => ipcRenderer.invoke('ms-browser-open', id, url, w, h),
   browserClose: (id) => ipcRenderer.invoke('ms-browser-close', id),

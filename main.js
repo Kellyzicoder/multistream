@@ -62,6 +62,14 @@ ipcMain.handle('ms-open-studio', () => {
   studioWin.loadURL(`http://127.0.0.1:${DASHBOARD_PORT}/studio.html`);
   studioWin.on('closed', () => { studioWin = null; browsers.forEach((b) => b.destroy()); browsers.clear(); });
 });
+let crWin = null;
+ipcMain.handle('ms-open-cr', () => {
+  if (crWin) { crWin.focus(); return; }
+  crWin = new BrowserWindow({ width: 1280, height: 800, title: 'Multistream Control Room', autoHideMenuBar: true, backgroundColor: '#eaf1fb',
+    webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') } });
+  crWin.loadURL(`http://127.0.0.1:${DASHBOARD_PORT}/#control-room`);
+  crWin.on('closed', () => { crWin = null; });
+});
 // A web page (like the lyrics page) is drawn off-screen. We pass each new picture of it to the studio page.
 const browsers = new Map();
 ipcMain.handle('ms-browser-open', (e, id, url, w, h) => {
