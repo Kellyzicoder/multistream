@@ -1,0 +1,62 @@
+name: Build apps
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: Windows
+            args: --win --x64
+            files: dist/Multistream-Setup.exe
+          - os: macos-latest
+            name: Mac
+            args: --mac --x64 --arm64
+            files: dist/Multistream-Mac-*.dmg
+          - os: ubuntu-latest
+            name: Linux
+            args: --linux --x64
+            files: dist/Multistream-Linux.AppImage
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: npm install
+      - name: Build
+        run: npx electron-builder ${{ matrix.args }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Keep the installer from this run
+        uses: actions/upload-artifact@v4
+        with:
+          name: Multistream-${{ matrix.name }}
+          path: ${{ matrix.files }}
+
+  release:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Publish a download link
+        run: |
+          ls -l out
+          gh release delete latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+          gh release create latest out/* --repo "$GITHUB_REPOSITORY" --title "Multistream (latest)" --notes "Windows: Multistream-Setup.exe. Mac: Multistream-Mac-arm64.dmg (M1 and newer) or Multistream-Mac-x64.dmg (Intel). Linux: Multistream-Linux.AppImage."
+        env:
+          GH_TOKEN: ${{ github.token }}
