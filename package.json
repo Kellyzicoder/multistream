@@ -39,8 +39,17 @@
     "nsis": {
       "artifactName": "Multistream-Setup.exe"
     },
+    "dmg": {
+      "artifactName": "Multistream-Mac-${arch}.dmg"
+    },
+    "linux": {
+      "target": "AppImage",
+      "artifactName": "Multistream-Linux.AppImage",
+      "category": "AudioVideo"
+    },
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "category": "public.app-category.video"
     }
   }
 }
