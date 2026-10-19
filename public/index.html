@@ -608,9 +608,10 @@
 </div>
 
 <script src="/vendor/flv.min.js"></script>
+<script src="/demo.js"></script>
 <script>
 const $ = (s) => document.querySelector(s);
-const api = (url, method = 'GET', body) =>
+const api = (url, method = 'GET', body) => window.DEMO ? window.demoApi(url, method) :
   fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then((r) => r.json());
 
 const editing = new Set(); // ids with an open edit form, so polling does not wipe what you type
@@ -733,7 +734,7 @@ function setPreviewMsg(text) { const m = $('#pvMsg'); m.textContent = text; m.hi
 
 function startPreview() {
   if (player) return;
-  if (!window.flvjs || !flvjs.isSupported()) { setPreviewMsg('Preview is not available (video player not loaded). Run npm install.'); return; }
+  if (!window.flvjs || !flvjs.isSupported()) { setPreviewMsg(window.DEMO ? 'Demo preview. The live video shows in the real app.' : 'Preview is not available (video player not loaded). Run npm install.'); return; }
   const i = last.ingest;
   setPreviewMsg('Starting preview…');
   player = flvjs.createPlayer(
