@@ -88,3 +88,7 @@ Menu next to the title, then Studio (on the church PC only). It opens in its own
 ## Mac install
 
 The app is not signed with a paid Apple account. Open the .dmg, drag Multistream to Applications, then right-click the app and choose Open (once). If macOS says the app is "damaged", run this once in Terminal: `xattr -cr /Applications/Multistream.app`
+
+## Vercel preview
+
+The Vercel link is a demo only: it shows the pages with sample data. The real app runs on the church PC, because it needs ffmpeg and a video port that Vercel does not have.
