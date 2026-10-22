@@ -387,7 +387,6 @@ app.get('/api/state', (req, res) => {
     facebook: fbView(),
     youtube: ytView(),
     obs: obsView(),
-    unlockLeft: Math.max(0, Math.ceil((goLiveUnlockUntil - Date.now()) / 1000)),
   });
 });
 
@@ -432,23 +431,8 @@ app.put('/api/facebook', async (req, res) => {
   }
 });
 
-// Go live lock: a person must hold the unlock button first. It lasts 15 seconds and works once.
-let goLiveUnlockUntil = 0;
-const UNLOCK_MS = 15000;
-app.post('/api/golive/unlock', (req, res) => {
-  goLiveUnlockUntil = Date.now() + UNLOCK_MS;
-  res.json({ unlockLeft: UNLOCK_MS / 1000 });
-});
-app.post('/api/golive/lock', (req, res) => { goLiveUnlockUntil = 0; res.json({ unlockLeft: 0 }); });
-function useUnlock(res) {
-  if (Date.now() > goLiveUnlockUntil) { res.status(403).json({ error: 'Locked. Hold the lock button to unlock first.' }); return false; }
-  goLiveUnlockUntil = 0;
-  return true;
-}
-
 app.post('/api/facebook/live', async (req, res) => {
   if (!obsLive) return res.status(400).json({ error: 'Start streaming in OBS first' });
-  if (!useUnlock(res)) return;
   if (!fb.token || !fb.pageId) return res.status(400).json({ error: 'Add the Facebook Page first' });
   const d = fbDestination();
   if (!d) return res.status(400).json({ error: 'Add a channel named Facebook first' });
@@ -580,7 +564,6 @@ app.get('/api/youtube/callback', async (req, res) => {
 
 app.post('/api/youtube/live', async (req, res) => {
   if (!obsLive) return res.status(400).json({ error: 'Start streaming in OBS first' });
-  if (!useUnlock(res)) return;
   if (!yt.refreshToken) return res.status(400).json({ error: 'Connect YouTube first' });
   const d = ytDestination();
   if (!d) return res.status(400).json({ error: 'Add a channel named YouTube first' });

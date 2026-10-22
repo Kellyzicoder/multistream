@@ -6,31 +6,35 @@
 <title>Multistream</title>
 <style>
   :root {
-    --bg:#0c110e; --card:#141b17; --card2:#1d2721; --field:#0e1410; --line:#25322a;
-    --text:#eef4f0; --muted:#92a39a; --blue:#22c55e; --link:#4ade80;
-    --green:#4ade80; --red:#f0545b; --amber:#f5b942;
-    --onblue:#05130a; --glow:rgba(34,197,94,.13);
-    --btn:#1f2b24; --btn2:#273529; --btn3:#2c3b32; --rule:#1f2a23; --rule2:#18211b; --chip:#233028; --track:#34463b; --soft:#cdd9d2;
-    --errbg:#3a1d20; --errline:#7a2f33; --errsvg:#ffb3b6; --errlink:#fff; --kfline:#6b5316; --kfbg:#2a2310; --kffg:#f3d98a;
-    --badtxt:#ff8a90; --lockbg:#3a2d12; --lockfg:#ffd479; color-scheme:dark;
+    --bg:#07090b; --card:#0c1013; --card2:#131a20; --field:#090c0f; --line:#1b242b;
+    --text:#e8eef1; --muted:#7a8890; --blue:#22c55e; --link:#5ee08f;
+    --green:#34d27b; --red:#ff4d5a; --amber:#f5b942;
+    --onblue:#04130a; --glow:rgba(34,197,94,.10);
+    --btn:#141b21; --btn2:#1b252c; --btn3:#2a363f; --rule:#161e24; --rule2:#12191e; --chip:#18222a; --track:#2b3841; --soft:#c5d0d6;
+    --errbg:#2f1a1d; --errline:#6b2a2f; --errsvg:#ffb3b6; --errlink:#fff; --kfline:#5c4814; --kfbg:#221d0e; --kffg:#f3d98a;
+    --badtxt:#ff8a90; color-scheme:dark;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
   }
   * { box-sizing:border-box; }
   html, body { height:100%; }
   body {
-    margin:0; background:var(--bg) radial-gradient(900px 380px at 12% -8%, var(--glow), transparent) no-repeat; color:var(--text);
-    font-family:Inter,"SF Pro Text","Segoe UI",system-ui,-apple-system,Roboto,sans-serif; font-size:13px; -webkit-font-smoothing:antialiased;
+    margin:0; color:var(--text);
+    background:radial-gradient(900px 460px at 88% -12%, var(--glow), transparent 62%), radial-gradient(700px 420px at -6% 112%, var(--glow), transparent 62%), var(--bg);
+    background-attachment:fixed;
+    font-family:Inter,"SF Pro Text","Segoe UI Variable","Segoe UI",system-ui,-apple-system,Roboto,sans-serif; font-size:13px; -webkit-font-smoothing:antialiased;
   }
-  button, input { font:inherit; color:inherit; }
+  button, input, select { font:inherit; color:inherit; }
   button { cursor:pointer; }
   svg { display:block; }
+  [hidden] { display:none !important; }
 
   /* accessibility and appearance (saved on each device) */
   :focus-visible { outline:3px solid #ffd479; outline-offset:2px; }
   html.t-light {
     color-scheme:light;
-    --bg:#eef1ef; --card:#fff; --card2:#f0f3f1; --field:#fff; --line:#d5ddd8; --text:#14201a; --muted:#566660; --green:#15803d; --red:#d6333b; --amber:#a86a00;
-    --glow:transparent; --btn:#e4eae6; --btn2:#d6dfd9; --btn3:#c3cfc8; --rule:#e2e8e4; --rule2:#e8eeea; --chip:#e4eae6; --track:#b3c0b9; --soft:#33433a;
-    --errbg:#fde8e9; --errline:#f0a3a7; --errsvg:#c0242c; --errlink:#7a1015; --kfline:#e5c76b; --kfbg:#fff6d6; --kffg:#6b5316; --badtxt:#c0242c; --lockbg:#fff1c9; --lockfg:#7a5200;
+    --bg:#f2f5f4; --card:#fff; --card2:#eef2f0; --field:#f7f9f8; --line:#d9e0dc; --text:#13201a; --muted:#5b6b64; --green:#15803d; --red:#d6333b; --amber:#a86a00;
+    --glow:rgba(34,197,94,.07); --btn:#e8eeea; --btn2:#dce5df; --btn3:#c6d2cb; --rule:#e5ebe7; --rule2:#e9eeeb; --chip:#e4eae6; --track:#b9c6bf; --soft:#33433a;
+    --errbg:#fde8e9; --errline:#f0a3a7; --errsvg:#c0242c; --errlink:#7a1015; --kfline:#e5c76b; --kfbg:#fff6d6; --kffg:#6b5316; --badtxt:#c0242c;
   }
   html.a-large { zoom:1.15; } html.a-xlarge { zoom:1.3; }
   html.a-contrast { --bg:#000; --card:#0a0a0a; --card2:#1a1a1a; --field:#000; --line:#8a8a8a; --text:#fff; --muted:#d6d6d6; --btn3:#8a8a8a; --glow:transparent; }
@@ -69,262 +73,283 @@
   .accm .fb .lk { margin-right:auto; background:transparent; color:var(--muted); text-decoration:underline; }
   @media (max-width:560px) { .arow { grid-template-columns:1fr; gap:10px; } }
 
-  /* OBS scenes */
-  .scn { margin-top:14px; text-align:left; }
-  .scn-h { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
-  .scn-h h2 { margin:0; font-size:13px; font-weight:600; }
-  .scn-h .st { font-size:11px; color:var(--muted); }
-  .scn-h .st.ok { color:var(--green); }
-  .scn-h .grow { flex:1; }
-  .scn-tools { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-  .scn-tools .opt button { padding:5px 9px; font-size:11px; }
-  .tiles { display:grid; gap:8px; grid-template-columns:repeat(auto-fill, minmax(min(var(--tw,120px), 46%), 1fr)); }
-  .stage-in.wide { display:flex; flex-direction:column; }
+  /* ---------- header ---------- */
+  .top { height:60px; display:flex; align-items:center; gap:14px; padding:0 22px; border-bottom:1px solid var(--rule2); position:relative; z-index:5; }
+  .brand { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; letter-spacing:.3px; }
+  .brand svg { width:22px; height:22px; color:var(--blue); filter:drop-shadow(0 0 8px var(--glow)); }
+  .seg { display:inline-flex; padding:3px; border:1px solid var(--line); border-radius:999px; background:var(--field); margin-left:10px; }
+  .seg button { white-space:nowrap; border:0; background:transparent; color:var(--muted); padding:6px 16px; border-radius:999px; font-size:12px; font-weight:500; }
+  .seg button:hover { color:var(--text); }
+  .seg button[aria-current="page"] { background:var(--btn2); color:var(--text); }
+  .sp { flex:1; }
+  .chip { display:inline-flex; align-items:center; gap:8px; padding:6px 13px; border:1px solid var(--line); border-radius:999px; font-size:10px; font-weight:600; letter-spacing:1.4px; color:var(--muted); background:var(--field); }
+  .chip::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--track); }
+  .chip.live { color:var(--red); border-color:rgba(255,77,90,.45); }
+  .chip.live::before { background:var(--red); box-shadow:0 0 10px var(--red); animation:pulse 1.4s infinite; }
+  @keyframes pulse { 50% { opacity:.35; } }
+  .ib { display:inline-flex; align-items:center; gap:7px; border:1px solid transparent; background:transparent; color:var(--muted); border-radius:999px; padding:7px 12px; font-size:12px; font-weight:500; }
+  .ib svg { width:16px; height:16px; }
+  .ib:hover { color:var(--text); background:var(--btn); }
+
+  /* ---------- layout ---------- */
+  .app { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:18px; padding:18px 22px 22px; height:calc(100% - 60px); min-height:560px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; }
+  .stage { position:relative; display:flex; justify-content:center; align-items:flex-start; padding:0 6px; overflow:auto; }
+  .stage-in { width:100%; max-width:760px; text-align:center; }
+  #offlineView { max-width:460px; margin:0 auto; }
+  .side { display:flex; flex-direction:column; gap:14px; min-height:0; overflow:auto; }
+  .sec-t { font-size:10.5px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+  .grow { flex:1; }
+
+  /* ---------- offline view ---------- */
+  .ring { position:relative; width:68px; height:68px; margin:9vh auto 26px; border-radius:50%; border:1px solid var(--blue); box-shadow:0 0 34px var(--glow), inset 0 0 22px var(--glow); }
+  .ring::before, .ring::after { content:""; position:absolute; inset:-1px; border-radius:50%; border:1px solid var(--blue); opacity:0; animation:ripple 3s infinite; }
+  .ring::after { animation-delay:1.5s; }
+  .ring i { position:absolute; left:50%; top:50%; width:8px; height:8px; margin:-4px 0 0 -4px; border-radius:50%; background:var(--blue); box-shadow:0 0 14px var(--blue); }
+  @keyframes ripple { 0% { transform:scale(1); opacity:.5; } 100% { transform:scale(2.1); opacity:0; } }
+  .stage h1 { margin:0; font-size:26px; font-weight:300; letter-spacing:-.4px; }
+  .stage .lead { margin:10px 0 0; color:var(--muted); font-size:13px; line-height:1.5; }
+  .fld { text-align:left; margin-top:16px; }
+  .fld label { display:block; color:var(--muted); font-size:10.5px; font-weight:600; letter-spacing:1.3px; text-transform:uppercase; margin-bottom:7px; }
+  .inp { display:flex; border:1px solid var(--line); border-radius:12px; background:var(--field); overflow:hidden; }
+  .inp input { flex:1; min-width:0; border:0; background:transparent; padding:12px 14px; font-size:13px; font-family:var(--mono); color:var(--soft); outline:none; }
+  .inp button { width:46px; border:0; border-left:1px solid var(--line); background:transparent; color:var(--muted); display:grid; place-items:center; }
+  .inp button:hover { background:var(--btn); color:var(--text); }
+  .inp button svg { width:16px; height:16px; }
+  .how { margin-top:24px; }
+  .how a { color:var(--link); font-size:12.5px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; text-decoration:none; }
+  .how a:hover { text-decoration:underline; }
+  .how a svg { width:16px; height:16px; }
+  .steps { display:none; text-align:left; margin:14px auto 0; background:var(--field); border:1px solid var(--line); border-radius:12px; padding:14px 20px; color:var(--soft); font-size:12px; line-height:1.8; }
+  .steps ol { margin:0; padding-left:20px; }
+  .steps code { background:var(--rule); padding:1px 6px; border-radius:4px; font-size:11px; }
+
+  /* ---------- live view ---------- */
+  .stage.live { padding:0 2px; }
+  .stage-in.wide { max-width:none; text-align:left; display:flex; flex-direction:column; }
   .stage-in.wide #liveView { display:contents; }
   .stage-in.wide .scn, .stage-in.wide .aud { order:1; }
   .stage-in.wide #liveView .bar, .stage-in.wide #liveView .kfnote, .stage-in.wide #liveView .spark { order:2; }
-  .tile { position:relative; border:2px solid var(--line); background:var(--field); border-radius:6px; padding:0; overflow:hidden; text-align:left; color:var(--text); }
-  .tile .im { display:block; width:100%; aspect-ratio:16/9; background:#0a0f0c; object-fit:cover; }
+  .pv-box { position:relative; margin:0 auto; width:min(100%, calc((100vh - 400px) * 16 / 9)); background:#000; border-radius:16px; overflow:hidden; aspect-ratio:16/9; border:1px solid var(--line); box-shadow:0 0 60px var(--glow); }
+  .pv-box video { width:100%; height:100%; object-fit:contain; background:#000; display:block; }
+  .pv-msg { position:absolute; inset:0; display:grid; place-items:center; color:var(--muted); font-size:12px; background:#05080a; }
+  .pv-ov { position:absolute; left:14px; top:14px; display:flex; gap:6px; z-index:2; }
+  .ov { display:inline-flex; align-items:center; gap:6px; background:rgba(0,0,0,.55); backdrop-filter:blur(6px); color:#fff; font-size:11px; font-weight:600; padding:5px 10px; border-radius:999px; font-variant-numeric:tabular-nums; letter-spacing:.4px; }
+  .ov.live { background:var(--red); letter-spacing:1px; }
+  .ov.live::before { content:""; width:6px; height:6px; border-radius:50%; background:#fff; animation:pulse 1.4s infinite; }
+  .pv-ctl { display:flex; align-items:center; gap:12px; margin-top:10px; color:var(--muted); font-size:12px; }
+  .bar { display:flex; flex-wrap:wrap; gap:0; margin-top:12px; border:1px solid var(--line); border-radius:14px; background:var(--card); overflow:hidden; }
+  .bi { flex:1 1 110px; padding:11px 16px; min-width:0; display:flex; flex-direction:column-reverse; gap:3px; border-right:1px solid var(--rule); }
+  .bi:last-child { border-right:0; }
+  .bi span { font-size:10px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); }
+  .bi b { display:block; height:20px; line-height:20px; font-size:15px; font-weight:500; font-family:var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bi b.good { color:var(--green); } .bi b.wait { color:var(--amber); } .bi b.bad { color:var(--red); }
+  .bi.warn b { color:var(--amber); }
+  .kfnote { margin:10px 0 0; padding:10px 14px; border:1px solid var(--kfline); background:var(--kfbg); color:var(--kffg); border-radius:12px; font-size:12px; line-height:1.5; }
+  .spark { margin-top:10px; padding:10px 14px 8px; background:var(--card); border:1px solid var(--line); border-radius:14px; text-align:left; }
+  .spark svg { width:100%; height:30px; display:block; }
+  .spark small { color:var(--muted); font-size:11px; }
+
+  /* ---------- OBS scenes ---------- */
+  .scn { margin-top:18px; text-align:left; }
+  .scn-h { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .scn-h h2 { margin:0; font-size:10.5px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+  .scn-h .st { font-size:11px; color:var(--muted); }
+  .scn-h .st.ok { color:var(--green); }
+  .scn-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .view { position:relative; }
+  .view summary { list-style:none; cursor:pointer; border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:11px; color:var(--muted); }
+  .view summary::-webkit-details-marker { display:none; }
+  .view summary:hover, .view[open] summary { color:var(--text); background:var(--btn); }
+  .viewbox { position:absolute; right:0; top:calc(100% + 6px); z-index:20; min-width:240px; background:var(--card2); border:1px solid var(--line); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:12px; box-shadow:0 18px 50px rgba(0,0,0,.45); }
+  .viewbox .row { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:12px; color:var(--soft); }
+  .tiles { display:grid; gap:10px; grid-template-columns:repeat(auto-fill, minmax(min(var(--tw,120px), 46%), 1fr)); }
+  .tile { position:relative; border:1px solid var(--line); background:var(--field); border-radius:12px; padding:0; overflow:hidden; text-align:left; color:var(--text); transition:border-color .15s, box-shadow .15s; }
+  .tile .im { display:block; width:100%; aspect-ratio:16/9; background:#05080a; object-fit:cover; }
   .tile.noimg .im { display:none; }
-  .tile .nm { display:block; padding:6px 8px; font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .tile.noimg .nm { padding:12px 10px; }
-  .tile[aria-pressed="true"] { border-color:var(--red); }
-  .tile[aria-pressed="true"] .nm::before { content:"ON AIR"; display:inline-block; margin-right:6px; padding:0 5px; border-radius:3px; background:var(--red); color:#fff; font-size:9px; font-weight:700; letter-spacing:.4px; }
+  .tile .nm { display:block; padding:7px 10px; font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tile.noimg .nm { padding:14px 12px; }
+  .tile[aria-pressed="true"] { border-color:var(--red); box-shadow:0 0 0 1px var(--red), 0 0 26px rgba(255,77,90,.18); }
+  .tile[aria-pressed="true"] .nm::before { content:"ON AIR"; display:inline-block; margin-right:7px; padding:1px 6px; border-radius:999px; background:var(--red); color:#fff; font-size:9px; font-weight:700; letter-spacing:.8px; }
   .tile:hover { border-color:var(--blue); }
   .tile[aria-pressed="true"]:hover { border-color:var(--red); }
 
   /* audio levels */
-  .aud { margin-top:14px; text-align:left; }
-  .aud .scn-h { margin-bottom:6px; }
-  .arows { background:var(--field); border:1px solid var(--line); border-radius:6px; padding:4px 12px; }
-  .ar { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,2fr) 58px; align-items:center; gap:10px; padding:7px 0; border-top:1px solid var(--rule); font-size:12px; }
+  .aud { margin-top:18px; text-align:left; }
+  .aud .scn-h { margin-bottom:8px; }
+  .arows { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:4px 14px; }
+  .ar { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,2fr) 58px; align-items:center; gap:12px; padding:8px 0; border-top:1px solid var(--rule); font-size:12px; }
   .ar:first-child { border-top:0; }
   .ar .an { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ar .an em { font-style:normal; margin-left:6px; padding:0 5px; border-radius:3px; background:var(--red); color:#fff; font-size:9px; font-weight:700; letter-spacing:.4px; }
-  .ar .mt { position:relative; height:10px; border-radius:5px; overflow:hidden; background:linear-gradient(90deg, var(--green) 0 66%, var(--amber) 66% 85%, var(--red) 85% 100%); }
-  .ar .cv { position:absolute; top:0; right:0; bottom:0; width:100%; background:var(--btn); }
+  .ar .an em { font-style:normal; margin-left:6px; padding:1px 6px; border-radius:999px; background:var(--red); color:#fff; font-size:9px; font-weight:700; letter-spacing:.6px; }
+  .ar .mt { position:relative; height:6px; border-radius:3px; overflow:hidden; background:linear-gradient(90deg, var(--green) 0 66%, var(--amber) 66% 85%, var(--red) 85% 100%); }
+  .ar .cv { position:absolute; top:0; right:0; bottom:0; width:100%; background:var(--btn2); }
   .ar .pk { position:absolute; top:0; bottom:0; width:2px; background:var(--text); left:0; }
-  .ar .db { text-align:right; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .ar .db { text-align:right; color:var(--muted); font-family:var(--mono); font-size:11px; font-variant-numeric:tabular-nums; }
   .ar.mute .mt { opacity:.35; } .ar.mute .an { color:var(--muted); }
   .aud .empty { padding:14px 0; border:0; margin:0; }
 
-  .pgw { position:relative; }
-  .top button.ttl { background:transparent; border:0; color:var(--text); padding:6px 8px; margin-left:-8px; border-radius:6px; font-size:14px; font-weight:500; display:flex; align-items:center; gap:8px; }
-  .top button.ttl:hover { background:var(--btn); }
-  .pgm { position:absolute; top:100%; left:-8px; margin-top:4px; min-width:260px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px; z-index:60; box-shadow:0 8px 24px rgba(0,0,0,.35); }
-  .pgm button { display:block; width:100%; text-align:left; background:transparent; border:0; border-radius:6px; padding:9px 10px; font-size:13px; font-weight:500; color:var(--text); }
-  .pgm button small { display:block; font-weight:400; font-size:11px; color:var(--muted); margin-top:2px; }
-  .pgm button:hover { background:var(--btn); }
-  .pgm button[aria-current="page"] { background:var(--btn); box-shadow:inset 3px 0 0 var(--blue); }
-  /* control room */
-  .cr { padding:14px; max-width:1500px; margin:0 auto; }
-  .cr-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
-  .cr-bar h1 { margin:0; font-size:16px; font-weight:600; }
-  .cr-bar .st { font-size:12px; color:var(--muted); } .cr-bar .st.ok { color:var(--green); }
-  .cr-top { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:12px; align-items:center; }
-  .cr-pane { position:relative; background:#000; border-radius:8px; overflow:hidden; aspect-ratio:16/9; border:3px solid var(--line); }
-  .cr-pane img { width:100%; height:100%; object-fit:cover; display:block; background:#0a0f0c; }
-  .cr-pane.prev { border-color:var(--green); } .cr-pane.prog { border-color:var(--red); }
-  .cr-lab { position:absolute; left:8px; bottom:8px; background:rgba(0,0,0,.7); color:#fff; font-size:12px; font-weight:700; letter-spacing:.4px; padding:3px 8px; border-radius:4px; max-width:calc(100% - 16px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .cr-take { min-width:120px; padding:22px 16px; border:0; border-radius:10px; background:var(--red); color:#fff; font-size:16px; font-weight:800; letter-spacing:.8px; }
-  .cr-take:disabled { background:var(--btn); color:var(--muted); }
-  .cr-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin-top:12px; }
-  .cr-grid .tile { }
-  .cr-grid .tile .nm { font-size:13px; }
-  .cr-grid .tile.pv { border-color:var(--green); }
-  .cr-grid .tile.pv .nm::after { content:"PREVIEW"; display:inline-block; margin-left:6px; padding:0 5px; border-radius:3px; background:var(--green); color:#04140a; font-size:9px; font-weight:700; letter-spacing:.4px; }
-  .cr-pop { border:1px solid var(--line); background:var(--btn); color:var(--text); border-radius:6px; padding:6px 10px; font-size:12px; font-weight:600; }
-  .cr-aud { margin-top:12px; }
-  .cr-itembox { margin-top:12px; } .cr-itembox h2 { font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
-  .cr-items { display:flex; flex-wrap:wrap; gap:8px; } .cr-item { border:2px solid var(--line); background:var(--field); color:var(--text); border-radius:8px; padding:10px 14px; font-size:13px; font-weight:600; } .cr-item[aria-pressed=true] { border-color:var(--green); }
-  @media (max-width:800px) { .cr-top { grid-template-columns:1fr 1fr; } .cr-take { grid-column:1 / -1; order:3; } .cr-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  /* ---------- go live card ---------- */
+  .gl { padding:18px 20px 16px; }
+  .gl .sec-t { display:block; margin-bottom:6px; }
+  .gr { display:flex; align-items:center; gap:12px; padding:14px 0; border-top:1px solid var(--rule); }
+  .gr:first-of-type { border-top:0; }
+  .gr .who { flex:1; min-width:0; }
+  .gr .who b { display:block; font-size:15px; font-weight:600; }
+  .gr .who span { display:block; margin-top:2px; color:var(--muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .go { background:var(--blue); color:var(--onblue); border:0; border-radius:999px; padding:10px 20px; font-size:13px; font-weight:600; box-shadow:0 0 24px var(--glow); transition:filter .15s; }
+  .go:hover:not(:disabled) { filter:brightness(1.12); }
+  .go:disabled { background:var(--btn); color:var(--muted); box-shadow:none; cursor:not-allowed; }
+  .ghost { background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:999px; padding:7px 13px; font-size:12px; font-weight:500; }
+  .ghost:hover { color:var(--text); background:var(--btn); }
+  .tm { display:flex; align-items:center; gap:12px; margin-top:6px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--field); cursor:pointer; }
+  .tm b { display:block; font-size:13px; font-weight:600; }
+  .tm small { display:block; margin-top:2px; color:var(--muted); font-size:11.5px; line-height:1.4; }
+  .tm.pub small { color:var(--amber); }
+  .hint { margin:10px 2px 0; color:var(--muted); font-size:12px; }
+  .note { font-size:12px; color:var(--muted); margin:10px 0 0; }
+  .note.bad { color:var(--badtxt); }
 
-  [hidden] { display:none !important; }
-  /* top bar */
-  .top { height:56px; display:flex; align-items:center; gap:12px; padding:0 20px; border-bottom:1px solid var(--rule2); }
-  .top .home { width:22px; height:22px; color:var(--blue); }
-  .top .ttl { font-size:14px; font-weight:500; display:flex; align-items:center; gap:8px; }
-  .top .ttl svg { width:14px; height:14px; color:var(--muted); }
-
-  /* three columns: stage | channels | menu */
-  .app { display:grid; grid-template-columns:minmax(0,1fr) 340px 68px; gap:12px; padding:14px; height:calc(100% - 56px); min-height:620px; }
-  .card { background:var(--card); border-radius:8px; }
-
-  /* ---------- stage (left) ---------- */
-  .stage { position:relative; display:flex; justify-content:center; align-items:flex-start; padding:64px 24px 24px; overflow:auto; }
-  .chip { position:absolute; top:16px; left:16px; display:inline-flex; align-items:center; gap:6px; background:var(--card2); border-radius:4px; padding:5px 9px; font-size:10px; font-weight:600; letter-spacing:.6px; }
-  .chip.live { background:var(--red); color:#fff; }
-  .chip.live::before { content:""; width:6px; height:6px; border-radius:50%; background:#fff; animation:pulse 1.4s infinite; }
-  @keyframes pulse { 50% { opacity:.3; } }
-  .stage-in { width:100%; max-width:440px; text-align:center; }
-  .stage h1 { margin:0; font-size:22px; font-weight:600; letter-spacing:-.2px; }
-  .stage .lead { margin:8px 0 0; color:var(--muted); font-size:13px; }
-  .tabs { display:inline-flex; margin:20px 0 18px; background:var(--field); border-radius:6px; padding:3px; }
-  .tabs span { padding:7px 22px; border-radius:4px; font-weight:500; font-size:12px; background:var(--chip); }
-  .fld { text-align:left; margin-bottom:14px; }
-  .fld label { display:block; color:var(--muted); font-size:12px; margin-bottom:6px; }
-  .inp { display:flex; border:1px solid var(--btn3); border-radius:4px; background:var(--field); overflow:hidden; }
-  .inp input { flex:1; min-width:0; border:0; background:transparent; padding:10px 12px; font-size:13px; color:var(--soft); outline:none; }
-  .inp button { width:44px; border:0; border-left:1px solid var(--btn3); background:transparent; color:var(--soft); display:grid; place-items:center; }
-  .inp button:hover { background:var(--rule2); }
-  .inp button svg { width:16px; height:16px; }
-  .how { margin-top:22px; }
-  .how a { color:var(--link); font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; text-decoration:none; }
-  .how a:hover { text-decoration:underline; }
-  .how a svg { width:18px; height:18px; }
-  .steps { display:none; text-align:left; margin:14px auto 0; background:var(--field); border:1px solid var(--line); border-radius:6px; padding:12px 18px; color:var(--soft); font-size:12px; line-height:1.7; }
-  .steps ol { margin:0; padding-left:20px; }
-  .steps code { background:var(--rule); padding:1px 5px; border-radius:3px; font-size:11px; }
-
-  /* ---------- channels (middle) ---------- */
-  .channels { display:flex; flex-direction:column; min-height:0; }
-  .ch-head { display:flex; justify-content:space-between; align-items:center; padding:14px 16px 12px; border-bottom:1px solid var(--rule); }
-  .ch-head b { font-size:14px; font-weight:600; }
-  .ch-head span { color:var(--muted); font-size:12px; }
-  .ch-body { padding:14px 16px 16px; overflow:auto; flex:1; }
-  .btns { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .bt { background:var(--btn); border:0; border-radius:6px; padding:10px 10px; font-size:12px; font-weight:500; display:flex; gap:8px; align-items:center; justify-content:center; }
-  .bt:hover:not(:disabled) { background:var(--btn2); }
-  .bt:disabled { opacity:.45; cursor:not-allowed; }
-  .bt svg { width:15px; height:15px; }
-  .meta { display:flex; justify-content:space-between; align-items:center; margin:16px 0 4px; color:var(--muted); font-size:12px; }
-  .meta b { color:var(--text); font-weight:500; }
-  .meta .all { display:flex; gap:12px; align-items:center; }
-  .meta .all a { color:var(--muted); cursor:pointer; }
-  .meta .all a:hover { color:var(--text); }
-  .meta .all i { width:1px; height:14px; background:var(--track); }
-
+  /* ---------- channels ---------- */
+  .chs { padding:16px 20px 12px; }
+  .sec-h { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .cnt { color:var(--muted); font-size:12px; } .cnt b { color:var(--text); font-weight:500; }
   .ch { display:flex; gap:12px; padding:13px 0; border-top:1px solid var(--rule); }
-  .av { position:relative; flex:none; width:44px; height:44px; border-radius:50%; background:var(--btn3); display:grid; place-items:center; font-size:15px; font-weight:500; color:#d5e2da; }
-  .bd { position:absolute; right:-3px; bottom:-3px; width:19px; height:19px; border-radius:50%; border:2px solid var(--card); display:grid; place-items:center; font-size:9px; font-weight:700; color:#fff; line-height:1; }
+  .av { position:relative; flex:none; width:38px; height:38px; border-radius:50%; background:var(--btn2); display:grid; place-items:center; font-size:13px; font-weight:500; color:var(--soft); }
+  .bd { position:absolute; right:-3px; bottom:-3px; width:17px; height:17px; border-radius:50%; border:2px solid var(--card); display:grid; place-items:center; font-size:8px; font-weight:700; color:#fff; line-height:1; }
   .bd.fb { background:#1877f2; } .bd.yt { background:#ff0000; } .bd.ig { background:linear-gradient(45deg,#f9a825,#e1306c,#7b3fe4); }
-  .bd.tt { background:#000; } .bd.x { background:#000; border-color:var(--card); } .bd.other { background:#4a4a52; }
+  .bd.tt { background:#000; } .bd.x { background:#000; } .bd.other { background:#4a4a52; }
   .cmain { flex:1; min-width:0; }
   .l1 { display:flex; align-items:center; gap:12px; }
   .nm { flex:1; min-width:0; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .edit { color:var(--muted); font-size:12px; cursor:pointer; }
   .edit:hover { color:var(--text); }
   .sub { color:var(--muted); font-size:12px; margin-top:3px; word-break:break-word; }
-  .stt { display:flex; align-items:center; gap:6px; margin-top:5px; color:var(--muted); font-size:12px; }
-  .stt i { width:7px; height:7px; border-radius:50%; background:#52625a; }
-  .stt.live { color:var(--green); } .stt.live i { background:var(--green); }
+  .stt { display:flex; align-items:center; gap:7px; margin-top:5px; color:var(--muted); font-size:12px; }
+  .stt i { width:7px; height:7px; border-radius:50%; background:var(--track); }
+  .stt.live { color:var(--green); } .stt.live i { background:var(--green); box-shadow:0 0 8px var(--green); }
   .stt.starting { color:var(--amber); } .stt.starting i { background:var(--amber); }
   .stt.error { color:var(--red); } .stt.error i { background:var(--red); }
+  .meta { display:flex; justify-content:flex-end; align-items:center; padding-top:10px; border-top:1px solid var(--rule); color:var(--muted); font-size:12px; }
+  .meta .all { display:flex; gap:10px; align-items:center; }
+  .lnk { background:none; border:0; padding:2px 0; color:var(--muted); font-size:12px; }
+  .lnk:hover { color:var(--text); }
+  .meta .all i { width:1px; height:12px; background:var(--track); }
 
-  .sw { position:relative; display:inline-block; width:36px; height:20px; flex:none; }
+  .sw { position:relative; display:inline-block; width:38px; height:22px; flex:none; }
   .sw input { opacity:0; position:absolute; inset:0; width:100%; height:100%; margin:0; cursor:pointer; z-index:2; }
   .sw span { position:absolute; inset:0; border-radius:999px; background:var(--track); transition:background .15s; }
-  .sw span::after { content:""; position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:#fff; transition:transform .15s; }
-  .sw input:checked + span { background:var(--blue); }
+  .sw span::after { content:""; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform .15s; }
+  .sw input:checked + span { background:var(--blue); box-shadow:0 0 14px var(--glow); }
   .sw input:checked + span::after { transform:translateX(16px); }
 
-  .err { margin:0 0 14px; border:1px solid var(--errline); background:var(--errbg); border-radius:4px; padding:9px 11px; font-size:12px; display:flex; gap:8px; align-items:flex-start; }
+  .err { margin:0 0 12px; border:1px solid var(--errline); background:var(--errbg); border-radius:12px; padding:10px 12px; font-size:12px; display:flex; gap:8px; align-items:flex-start; }
   .err svg { flex:none; width:15px; height:15px; margin-top:1px; color:var(--errsvg); }
   .err a { color:var(--errlink); text-decoration:underline; cursor:pointer; }
-  .empty { color:var(--muted); padding:26px 0; text-align:center; border-top:1px solid var(--rule); margin-top:6px; }
+  .empty { color:var(--muted); padding:22px 0; text-align:center; border-top:1px solid var(--rule); margin-top:6px; }
 
-  /* edit form + modal */
-  .form { padding:18px 0; border-top:1px solid var(--rule); }
+  /* ---------- forms and dialogs ---------- */
+  .form { padding:16px 0; border-top:1px solid var(--rule); }
   .form .ft { font-weight:600; font-size:14px; margin-bottom:6px; }
-  .form label { display:block; font-size:12px; color:var(--muted); margin:10px 0 5px; }
-  .form input.t { width:100%; padding:9px 11px; border-radius:4px; border:1px solid var(--btn3); background:var(--field); font-size:13px; outline:none; }
-  .form input.t:focus { border-color:var(--blue); }
-  .form .fb { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; align-items:center; }
-  #lockBtn { touch-action:none; user-select:none; -webkit-user-select:none; }
-  #lockBtn.on { background:var(--lockbg); color:var(--lockfg); }
-  .b2 { border:0; border-radius:4px; padding:8px 14px; background:var(--btn); font-size:12px; font-weight:500; }
-  .b2:hover { background:var(--btn3); }
-  .b2.pri { background:var(--blue); color:var(--onblue); font-weight:600; }
+  .form label { display:block; font-size:11px; font-weight:600; letter-spacing:.6px; color:var(--muted); margin:12px 0 6px; }
+  .form input.t { width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--line); background:var(--field); font-size:13px; outline:none; }
+  .form input.t:focus { border-color:var(--blue); box-shadow:0 0 0 3px var(--glow); }
+  .form .fb { display:flex; gap:10px; margin-top:18px; flex-wrap:wrap; align-items:center; }
+  .b2 { border:1px solid var(--line); border-radius:999px; padding:9px 18px; background:transparent; font-size:12px; font-weight:500; color:var(--soft); }
+  .b2:hover { background:var(--btn); color:var(--text); }
+  .b2.pri { background:var(--blue); border-color:var(--blue); color:var(--onblue); font-weight:600; }
   .b2.pri:hover { filter:brightness(1.1); }
-  .b2.del { margin-left:auto; background:transparent; color:var(--badtxt); }
+  .b2.del { margin-left:auto; border-color:transparent; color:var(--badtxt); }
   .b2.del:hover { background:var(--errbg); }
-  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); display:none; place-items:center; z-index:50; padding:20px; }
+  .overlay { position:fixed; inset:0; background:rgba(2,4,5,.72); backdrop-filter:blur(6px); display:none; place-items:center; z-index:50; padding:20px; }
   .overlay.open { display:grid; }
-  .modal { width:min(460px,100%); background:var(--card); border:1px solid var(--line); border-radius:8px; padding:20px; }
+  .modal { width:min(470px,100%); background:var(--card); border:1px solid var(--line); border-radius:20px; padding:24px; box-shadow:0 30px 90px rgba(0,0,0,.55); }
   .modal .form { border:0; padding:0; }
-  .modal h3 { margin:0 0 4px; font-size:16px; }
-  .modal p { margin:0 0 6px; color:var(--muted); font-size:12px; }
-
-  /* ---------- side menu (right) ---------- */
-  .rail { padding:8px 6px; display:flex; flex-direction:column; gap:6px; align-self:start; }
-  .ri { display:flex; flex-direction:column; align-items:center; gap:4px; padding:9px 2px; border-radius:6px; color:var(--muted); font-size:10px; border:0; background:transparent; }
-  .ri svg { width:18px; height:18px; }
-  .ri.on { background:var(--btn); color:var(--text); }
-  .ri.on svg { color:var(--blue); }
-  .ri:not(:disabled):hover { color:var(--text); }
-  .ri:disabled { opacity:.55; cursor:not-allowed; }
-
-  /* live view: preview + signal numbers */
-  [hidden] { display:none !important; }
-  .stage.live { padding:14px; align-items:flex-start; }
-  .stage-in.wide { max-width:none; text-align:left; }
-  .grow { flex:1; }
-  .pv-ov { position:absolute; left:10px; top:10px; display:flex; gap:6px; z-index:2; }
-  .ov { display:inline-flex; align-items:center; gap:6px; background:rgba(0,0,0,.62); color:#fff; font-size:11px; font-weight:600; padding:4px 8px; border-radius:4px; font-variant-numeric:tabular-nums; }
-  .ov.live { background:var(--red); letter-spacing:.5px; }
-  .ov.live::before { content:""; width:6px; height:6px; border-radius:50%; background:#fff; animation:pulse 1.4s infinite; }
-  .bar { display:flex; flex-wrap:wrap; margin-top:10px; background:var(--field); border:1px solid var(--line); border-radius:6px; overflow:hidden; }
-  .bi { flex:1 1 118px; padding:10px 14px; border-right:1px solid var(--line); min-width:0; }
-  .bi:last-child { border-right:0; }
-  .bi b { display:block; height:20px; line-height:20px; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .bi span { display:block; margin-top:3px; font-size:11px; color:var(--muted); }
-  .bi b.good { display:inline-block; background:rgba(34,197,94,.16); color:var(--green); font-size:11px; letter-spacing:.5px; text-transform:uppercase; padding:0 8px; border-radius:4px; }
-  .bi b.wait { color:var(--amber); } .bi b.bad { color:var(--red); }
-  .bi.warn b { color:var(--amber); }
-  .kfnote { margin:8px 0 0; padding:9px 12px; border:1px solid var(--kfline); background:var(--kfbg); color:var(--kffg); border-radius:6px; font-size:12px; line-height:1.5; }
-  .stage-in.wide .lead { margin-top:6px; font-size:13px; }
-  .pv-box { position:relative; margin:0 auto; width:min(100%, calc((100vh - 345px) * 16 / 9)); background:#000; border-radius:6px; overflow:hidden; aspect-ratio:16/9; }
-  .pv-box video { width:100%; height:100%; object-fit:contain; background:#000; display:block; }
-  .pv-msg { position:absolute; inset:0; display:grid; place-items:center; color:#92a39a; font-size:12px; background:#0a0f0c; }
-  .pv-ctl { display:flex; align-items:center; gap:12px; margin-top:8px; color:var(--muted); font-size:12px; }
-  .spark { margin-top:8px; padding-top:6px; background:var(--field); border:1px solid var(--line); border-radius:6px; padding:8px 11px 6px; text-align:left; }
-  .spark svg { width:100%; height:30px; display:block; }
-  .spark small { color:var(--muted); font-size:11px; }
-
+  .modal.accm { width:min(660px,100%); }
+  .modal h3 { margin:0 0 6px; font-size:17px; font-weight:600; }
+  .modal p { margin:0 0 6px; color:var(--muted); font-size:12.5px; line-height:1.5; }
   .rrow { display:flex; justify-content:space-between; align-items:center; margin:14px 0 2px; font-size:13px; }
-  .addr { margin-top:12px; background:var(--field); border:1px solid var(--line); border-radius:6px; padding:9px 11px; font-size:12px; color:var(--muted); }
-  .addr code { display:block; color:var(--link); font-size:13px; margin-top:4px; user-select:all; }
-  .note { font-size:12px; color:var(--muted); margin:10px 0 0; }
-  .note.bad { color:var(--badtxt); }
-  @media (max-width:600px) {
-    .top { padding:0 14px; }
-    .app { padding:8px; gap:8px; min-height:0; }
-    .stage { padding:52px 12px 16px; }
-    .stage-in.wide .lead { font-size:12px; }
-    .ri { padding:8px 2px; }
-  }
+  .addr { margin-top:12px; background:var(--field); border:1px solid var(--line); border-radius:12px; padding:10px 13px; font-size:12px; color:var(--muted); }
+  .addr code { display:block; color:var(--link); font-size:13px; margin-top:4px; user-select:all; font-family:var(--mono); }
+  .opt { display:flex; flex-wrap:wrap; gap:6px; }
+  .opt button { border:1px solid var(--line); background:transparent; border-radius:999px; padding:7px 13px; font-size:12px; color:var(--text); }
+  .opt button[aria-pressed="true"] { background:var(--blue); color:var(--onblue); border-color:var(--blue); font-weight:600; }
+  .viewbox .opt button { padding:5px 10px; font-size:11px; }
+
+  /* ---------- Control Room ---------- */
+  .cr { padding:6px 22px 22px; max-width:1500px; margin:0 auto; }
+  .cr-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .cr-bar h1 { margin:0; font-size:10.5px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+  .cr-bar .st { font-size:12px; color:var(--muted); } .cr-bar .st.ok { color:var(--green); }
+  .cr-bar select { background:var(--field); border:1px solid var(--line); border-radius:999px; padding:6px 12px; font-size:12px; }
+  .cr-top { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:16px; align-items:center; }
+  .cr-pane { position:relative; background:#000; border-radius:16px; overflow:hidden; aspect-ratio:16/9; border:1px solid var(--line); }
+  .cr-pane img { width:100%; height:100%; object-fit:cover; display:block; background:#05080a; }
+  .cr-pane.prev { border-color:var(--green); box-shadow:0 0 34px var(--glow); } .cr-pane.prog { border-color:var(--red); box-shadow:0 0 34px rgba(255,77,90,.14); }
+  .cr-lab { position:absolute; left:10px; bottom:10px; background:rgba(0,0,0,.6); backdrop-filter:blur(6px); color:#fff; font-size:11px; font-weight:600; letter-spacing:.8px; padding:4px 10px; border-radius:999px; max-width:calc(100% - 20px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cr-take { min-width:120px; padding:22px 16px; border:0; border-radius:16px; background:var(--red); color:#fff; font-size:15px; font-weight:700; letter-spacing:1.6px; box-shadow:0 0 30px rgba(255,77,90,.25); }
+  .cr-take:disabled { background:var(--btn); color:var(--muted); box-shadow:none; }
+  .cr-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; margin-top:16px; }
+  .cr-grid .tile .nm { font-size:13px; }
+  .cr-grid .tile.pv { border-color:var(--green); box-shadow:0 0 0 1px var(--green); }
+  .cr-grid .tile.pv .nm::after { content:"PREVIEW"; display:inline-block; margin-left:7px; padding:1px 6px; border-radius:999px; background:var(--green); color:#04140a; font-size:9px; font-weight:700; letter-spacing:.8px; }
+  .cr-pop { border:1px solid var(--line); background:transparent; color:var(--muted); border-radius:999px; padding:6px 13px; font-size:12px; font-weight:500; }
+  .cr-pop:hover { color:var(--text); background:var(--btn); }
+  .cr-aud { margin-top:16px; }
+  .cr-itembox { margin-top:16px; } .cr-itembox h2 { font-size:10.5px; margin:0 0 8px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); }
+  .cr-items { display:flex; flex-wrap:wrap; gap:8px; } .cr-item { border:1px solid var(--line); background:var(--field); color:var(--text); border-radius:999px; padding:9px 16px; font-size:13px; font-weight:500; } .cr-item[aria-pressed=true] { border-color:var(--green); box-shadow:0 0 14px var(--glow); }
+  @media (max-width:800px) { .cr-top { grid-template-columns:1fr 1fr; } .cr-take { grid-column:1 / -1; order:3; } .cr-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+
+  /* ---------- narrow screens ---------- */
   @media (max-width:1000px) {
     .app { grid-template-columns:minmax(0,1fr); height:auto; }
-    .rail { flex-direction:row; justify-content:center; order:-1; }
-    .ri { flex:1; }
-    .stage { padding-top:60px; }
+    .side { display:contents; }
+    .gl { order:0; } .stage { order:1; } .chs { order:2; }
+    .stage { overflow:visible; }
+    .pv-box { width:100%; }
+    .ring { margin-top:4vh; }
+  }
+  @media (max-width:700px) {
+    .top { padding:0 14px; gap:8px; }
+    .brand, .ib span { display:none; }
+    .seg { margin-left:0; }
+    .seg button { padding:6px 11px; }
+    .chip { padding:6px 10px; letter-spacing:1px; }
+    .ib { padding:8px; }
+    .app { padding:12px; gap:12px; min-height:0; }
+    .gl, .chs { padding-left:16px; padding-right:16px; }
+    .cr { padding:4px 12px 16px; }
   }
 </style>
 </head>
 <body>
 <header class="top">
-  <svg class="home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
-  <div class="pgw">
-    <button class="ttl" id="pageBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="pageMenu"><span id="pageName">Dashboard</span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-    </button>
-    <div class="pgm" id="pageMenu" role="menu" hidden>
-      <button type="button" role="menuitem" data-page="dash">Dashboard<small>Channels, Go live, stream health</small></button>
-      <button type="button" role="menuitem" data-page="cr">Control Room<small>Multiview: preview, program and scenes</small></button>
-    </div>
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M7.8 8.2a6 6 0 0 0 0 7.6M16.2 8.2a6 6 0 0 1 0 7.6"/><path d="M4.8 5.2a10 10 0 0 0 0 13.6M19.2 5.2a10 10 0 0 1 0 13.6"/></svg>
+    <span>Multistream</span>
   </div>
+  <nav class="seg" id="pageTabs" aria-label="Pages">
+    <button type="button" data-page="dash" aria-current="page">Dashboard</button>
+    <button type="button" data-page="cr">Control Room</button>
+  </nav>
+  <span class="sp"></span>
+  <span class="chip" id="chip">OFFLINE</span>
+  <button class="ib" id="accBtn" type="button" title="Accessibility: text size, contrast, colours">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5M12 15l-3.5 5.5M12 15l3.5 5.5"/></svg><span>Access</span>
+  </button>
+  <button class="ib" id="setBtn" type="button" title="Control from phone">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg><span>Phone</span>
+  </button>
 </header>
 
 <div class="app">
-  <!-- left: connect your encoder -->
-  <main class="card stage">
-    <span class="chip" id="chip">OFFLINE</span>
+  <!-- left: the video, or how to connect -->
+  <main class="stage">
     <div class="stage-in" id="stageIn">
      <div id="offlineView">
-      <h1 id="h1">Connect your encoder</h1>
-      <p class="lead" id="lead">Copy &amp; paste links into your streaming software.</p>
-
-      <div class="tabs"><span>RTMP</span></div>
+      <div class="ring" aria-hidden="true"><i></i></div>
+      <h1 id="h1">Waiting for OBS</h1>
+      <p class="lead" id="lead">Start streaming in OBS. Copy these two into OBS first.</p>
 
       <div class="fld">
         <label>RTMP URL</label>
@@ -338,7 +363,7 @@
       <div class="how">
         <a id="howLink">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor"/></svg>
-          Explore how to connect OBS
+          How to connect OBS
         </a>
         <div class="steps" id="steps">
           <ol>
@@ -360,16 +385,15 @@
         <div class="pv-ov"><span class="ov live">LIVE</span><span class="ov" id="ovTime">00:00:00</span></div>
       </div>
       <div class="pv-ctl"><span id="lvLead"></span><span class="grow"></span><span>Preview (no sound)</span>
-        <label class="sw"><input type="checkbox" id="pvSwitch" checked><span></span></label>
+        <label class="sw"><input type="checkbox" id="pvSwitch" checked aria-label="Show the preview"><span></span></label>
       </div>
 
       <div class="bar">
-        <div class="bi"><b>RTMP</b><span>Stream</span></div>
         <div class="bi"><b id="sgHealth">…</b><span>Health</span></div>
         <div class="bi"><b id="sgRes">…</b><span id="sgResL">Resolution</span></div>
         <div class="bi"><b id="sgRate">…</b><span>Bitrate</span></div>
         <div class="bi"><b id="sgFps">…</b><span>Frame rate</span></div>
-        <div class="bi" id="kfBox"><b id="sgKey">…</b><span>Keyframe interval</span></div>
+        <div class="bi" id="kfBox"><b id="sgKey">…</b><span>Keyframe</span></div>
         <div class="bi"><b id="sgAudio">…</b><span>Audio</span></div>
       </div>
       <p class="kfnote" id="kfNote" hidden>Facebook and YouTube want a keyframe every 2 seconds (4 at most). In OBS: Settings → Output → Streaming → Keyframe Interval → 2.</p>
@@ -378,17 +402,22 @@
         <small id="sparkNote">Bitrate, last minute</small>
       </div>
      </div>
-    
+
      <!-- OBS scenes -->
      <section class="scn" id="scn" aria-label="OBS scenes">
       <div class="scn-h">
-        <h2>OBS scenes</h2><span class="st" id="scnSt"></span><span class="grow"></span>
+        <h2>Scenes</h2><span class="st" id="scnSt"></span><span class="grow"></span>
         <div class="scn-tools">
-          <div class="opt" id="scnSize" role="group" aria-label="Tile size">
-            <button type="button" data-v="s">Small</button><button type="button" data-v="m">Medium</button><button type="button" data-v="l">Large</button>
-          </div>
-          <span class="st">Pictures</span><label class="sw"><input type="checkbox" id="scnPics" aria-label="Show scene pictures"><span></span></label>
-          <button class="b2" id="obsCfgBtn" type="button">Connect OBS</button>
+          <details class="view">
+            <summary>View</summary>
+            <div class="viewbox">
+              <div class="opt" id="scnSize" role="group" aria-label="Tile size">
+                <button type="button" data-v="s">Small</button><button type="button" data-v="m">Medium</button><button type="button" data-v="l">Large</button>
+              </div>
+              <div class="row"><span>Show pictures</span><label class="sw"><input type="checkbox" id="scnPics" aria-label="Show scene pictures"><span></span></label></div>
+            </div>
+          </details>
+          <button class="ghost" id="obsCfgBtn" type="button">Connect OBS</button>
         </div>
       </div>
       <div class="tiles" id="tiles"></div>
@@ -402,57 +431,50 @@
       </div>
       <div class="arows" id="arows"></div>
      </section>
-</div>
+    </div>
   </main>
 
-  <!-- middle: your channels -->
-  <aside class="card channels">
-    <div class="ch-head"><b>Your Channels</b></div>
-    <div class="ch-body">
-      <div class="btns">
-        <button class="bt" id="addBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add Channel
-        </button>
-        <button class="bt" disabled title="Coming soon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/></svg>Update Titles
-        </button>
-        <button class="bt" id="fbBtn" title="Add the Facebook Page ID and token">Facebook Page</button>
-        <button class="bt" id="lockBtn" title="Hold to unlock the Go live buttons">Locked: hold to unlock</button>
-        <button class="bt" id="fbLive" disabled title="Start OBS streaming first, and add the Facebook Page">Go live on Facebook</button>
-        <button class="bt" id="ytBtn" title="Connect the YouTube account">YouTube</button>
-        <button class="bt" id="ytLive" disabled title="Start OBS streaming first, and connect YouTube">Go live on YouTube</button>
+  <!-- right: go live and channels -->
+  <aside class="side">
+    <section class="card gl" aria-label="Go live">
+      <span class="sec-t">Go live</span>
+      <div class="gr">
+        <div class="who"><b>YouTube</b><span id="ytSub">Not connected</span></div>
+        <button class="ghost" id="ytBtn" type="button" title="Connect the YouTube account">Set up</button>
+        <button class="go" id="ytLive" type="button" disabled title="Start OBS streaming first, and connect YouTube">Go live</button>
       </div>
-      <label class="note" style="display:block;margin:6px 0"><input type="checkbox" id="fbTest" checked> Test mode (not shown to the public)</label>
+      <div class="gr">
+        <div class="who"><b>Facebook</b><span id="fbSub">No Page added</span></div>
+        <button class="ghost" id="fbBtn" type="button" title="Add the Facebook Page ID and token">Set up</button>
+        <button class="go" id="fbLive" type="button" disabled title="Start OBS streaming first, and add the Facebook Page">Go live</button>
+      </div>
+      <label class="tm" id="tmBox">
+        <span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span>
+        <span><b>Private test</b><small id="tmState">Only you can see it. Turn this off for the real service.</small></span>
+      </label>
+      <p class="hint" id="glHint"></p>
       <p class="note" id="fbNote" hidden></p>
-      <div class="meta">
-        <span id="count"><b>0 of 0</b> active</span>
-        <span class="all">Toggle all <a id="allOff">OFF</a><i></i><a id="allOn">ON</a></span>
+    </section>
+
+    <section class="card chs" aria-label="Channels">
+      <div class="sec-h">
+        <span class="sec-t">Channels</span>
+        <span class="cnt" id="count"><b>0 of 0</b> active</span>
+        <span class="grow"></span>
+        <button class="ghost" id="addBtn" type="button">+ Add</button>
       </div>
       <div id="list"></div>
-    </div>
+      <div class="meta">
+        <span class="all">Toggle all <button class="lnk" id="allOff" type="button">OFF</button><i></i><button class="lnk" id="allOn" type="button">ON</button></span>
+      </div>
+    </section>
   </aside>
-
-  <!-- right: side menu -->
-  <nav class="card rail">
-    <button class="ri on">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M7.8 8.2a6 6 0 0 0 0 7.6M16.2 8.2a6 6 0 0 1 0 7.6"/><path d="M4.8 5.2a10 10 0 0 0 0 13.6M19.2 5.2a10 10 0 0 1 0 13.6"/></svg>Channels
-    </button>
-    <button class="ri" disabled title="Coming soon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>Chat
-    </button>
-    <button class="ri" id="accBtn" title="Accessibility: text size, contrast, colours">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5M12 15l-3.5 5.5M12 15l3.5 5.5"/></svg>Access
-    </button>
-    <button class="ri" id="setBtn" title="Control from phone">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings
-    </button>
-  </nav>
 </div>
 
 <!-- control room -->
 <div class="cr" id="crView" hidden>
   <div class="cr-bar">
-    <h1>Control Room</h1><span class="st" id="crSt"></span><span class="grow" style="flex:1"></span>
+    <h1>Control Room</h1><span class="st" id="crSt"></span><span class="grow"></span>
     <button type="button" id="crPop" class="cr-pop">Open in its own window</button> <label class="st" for="crEng">Engine</label> <select id="crEng" aria-label="What the Control Room controls"><option value="auto">Automatic</option><option value="studio">Studio</option><option value="obs">OBS</option></select>
     <div class="opt" id="crMode" role="group" aria-label="How a scene goes on air">
       <button type="button" data-v="take">Preview, then Take</button><button type="button" data-v="direct">Direct</button>
@@ -788,11 +810,11 @@ function render(state) {
   const chip = $('#chip');
   chip.textContent = live ? 'LIVE' : 'OFFLINE';
   chip.className = 'chip' + (live ? ' live' : '');
-  chip.hidden = live; // while live, LIVE and the timer sit on the video
   document.querySelector('.stage').classList.toggle('live', live);
   $('#offlineView').hidden = live;
   $('#liveView').hidden = !live;
   $('#stageIn').classList.toggle('wide', live);
+  $('#glHint').textContent = live ? '' : 'Start streaming in OBS first. Then Go live turns on.';
   $('#lvLead').textContent = `Your stream is going to ${nLive} of ${n} active channel${n === 1 ? '' : 's'}.`;
   renderSignal(state);
   syncPreview();
@@ -1057,34 +1079,21 @@ let page = 'dash';
 let crMode = 'take';
 let crPrev = '';
 try { crMode = (JSON.parse(localStorage.getItem('ms_cr') || '{}') || {}).mode || 'take'; } catch {}
-const pageMenu = $('#pageMenu');
-if (!(window.msNative || ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname))) { const m = pageMenu.querySelector('[data-page=studio]'); if (m) m.remove(); } // the Studio runs on the church PC only
-function closeMenu() { pageMenu.hidden = true; $('#pageBtn').setAttribute('aria-expanded', 'false'); }
-$('#pageBtn').onclick = () => { const open = pageMenu.hidden; pageMenu.hidden = !open; $('#pageBtn').setAttribute('aria-expanded', String(open)); if (open) pageMenu.querySelector('button').focus(); };
-document.addEventListener('click', (e) => { if (!e.target.closest('.pgw')) closeMenu(); });
-pageMenu.addEventListener('keydown', (e) => {
-  const items = [...pageMenu.querySelectorAll('button')];
-  const i = items.indexOf(document.activeElement);
-  if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
-  else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i + items.length - 1) % items.length].focus(); }
-  else if (e.key === 'Escape') { closeMenu(); $('#pageBtn').focus(); }
-});
+const pageTabs = document.querySelectorAll('#pageTabs button');
 function showPage(p) {
-  if (p === 'studio') { closeMenu(); if (window.msNative) window.msNative.openStudio(); else window.open('/studio.html', '_blank'); return; }
+  if (p === 'studio') { if (window.msNative) window.msNative.openStudio(); else window.open('/studio.html', '_blank'); return; }
   page = p === 'cr' ? 'cr' : 'dash';
   $('.app').hidden = page === 'cr';
   $('#crView').hidden = page !== 'cr';
-  $('#pageName').textContent = page === 'cr' ? 'Control Room' : 'Dashboard';
-  pageMenu.querySelectorAll('button').forEach((b) => { if (b.dataset.page === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  pageTabs.forEach((b) => { if (b.dataset.page === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   const aud = $('#aud');
   if (page === 'cr') $('#crAudio').appendChild(aud);
   else $('#scn').after(aud);
   try { history.replaceState(null, '', page === 'cr' ? '#control-room' : location.pathname + location.search); } catch {}
-  closeMenu();
   renderCr();
   pollThumbs();
 }
-pageMenu.querySelectorAll('button').forEach((b) => { b.onclick = () => { showPage(b.dataset.page); $('#pageBtn').focus(); }; });
+pageTabs.forEach((b) => { b.onclick = () => showPage(b.dataset.page); });
 // Which engine the Control Room drives: the built-in Studio, or OBS (the fallback).
 let crEng = 'auto';
 try { crEng = (JSON.parse(localStorage.getItem('ms_cr') || '{}') || {}).eng || 'auto'; } catch {}
@@ -1260,41 +1269,21 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && accOverl
 if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener('change', () => { if (!accOverlay.classList.contains('open')) applyAcc(acc); });
 applyAcc(acc);
 
-// Go live lock: hold the button for 1.5 seconds. Unlocked for 15 seconds, one use.
-let unlocked = false, holdTimer = null;
-function renderLock(left) {
-  if (holdTimer) return;
-  unlocked = left > 0;
-  const b = $('#lockBtn');
-  b.textContent = unlocked ? `Unlocked: ${left}s (press Go live)` : 'Locked: hold to unlock';
-  b.classList.toggle('on', unlocked);
+function renderTest() {
+  const t = $('#fbTest').checked;
+  $('#tmBox').classList.toggle('pub', !t);
+  $('#tmState').textContent = t ? 'Only you can see it. Turn this off for the real service.' : 'OFF: everyone can watch when you go live.';
 }
-(() => {
-  const b = document.getElementById('lockBtn');
-  const start = (e) => {
-    e.preventDefault();
-    if (unlocked) return;
-    b.textContent = 'Keep holding...';
-    holdTimer = setTimeout(async () => {
-      holdTimer = null;
-      const r = await api('/api/golive/unlock', 'POST');
-      renderLock(r.unlockLeft || 0);
-      refresh();
-    }, 1500);
-  };
-  const stop = () => { if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; renderLock(0); } };
-  b.addEventListener('pointerdown', start);
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => b.addEventListener(ev, stop));
-  b.addEventListener('contextmenu', (e) => e.preventDefault());
-  b.onclick = async () => { if (unlocked) { await api('/api/golive/lock', 'POST'); renderLock(0); refresh(); } };
-})();
+$('#fbTest').addEventListener('change', renderTest);
+renderTest();
 
 const fbOverlay = $('#fbOverlay');
 function fbNoteSet(id, text, bad) { const n = $(id); n.textContent = text; n.hidden = !text; n.className = 'note' + (bad ? ' bad' : ''); }
 function renderFb(fbState, live) {
   const ready = Boolean(fbState && fbState.hasToken && fbState.pageId);
-  $('#fbLive').disabled = !(live && ready && unlocked);
+  $('#fbLive').disabled = !(live && ready);
   $('#fbLive').title = !live ? 'Start OBS streaming first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
+  $('#fbSub').textContent = ready ? (fbState.pageName || 'Page ' + fbState.pageId) : 'No Page added';
 }
 $('#fbBtn').onclick = async () => {
   const s = await api('/api/facebook');
@@ -1321,11 +1310,11 @@ $('#fbLive').onclick = async () => {
   btn.textContent = 'Going live...';
   const test = $('#fbTest').checked;
   if (!test && !confirm('Test mode is off. This will go live publicly on the Facebook Page. Continue?')) {
-    btn.textContent = 'Go live on Facebook';
+    btn.textContent = 'Go live';
     return refresh();
   }
   const r = await api('/api/facebook/live', 'POST', { test });
-  btn.textContent = 'Go live on Facebook';
+  btn.textContent = 'Go live';
   if (r.error) alert(r.error);
   refresh();
 };
@@ -1338,7 +1327,8 @@ function ytStatusText(s) {
   return s.hasClient ? 'File added. Click Connect YouTube to sign in.' : 'No file added yet.';
 }
 function renderYt(ytState, live) {
-  $('#ytLive').disabled = !(live && ytState && ytState.connected && unlocked);
+  $('#ytLive').disabled = !(live && ytState && ytState.connected);
+  $('#ytSub').textContent = ytState && ytState.connected ? (ytState.channelTitle || 'Connected') : 'Not connected';
   $('#ytLive').title = !live ? 'Start OBS streaming first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
   if (ytOverlay.classList.contains('open') && ytState) ytNote('#yt-status', ytStatusText(ytState), false);
 }
@@ -1372,16 +1362,16 @@ $('#ytLive').onclick = async () => {
   btn.textContent = 'Going live...';
   const test = $('#fbTest').checked;
   if (!test && !confirm('Test mode is off. This will go live publicly on YouTube. Continue?')) {
-    btn.textContent = 'Go live on YouTube';
+    btn.textContent = 'Go live';
     return refresh();
   }
   const r = await api('/api/youtube/live', 'POST', { test });
-  btn.textContent = 'Go live on YouTube';
+  btn.textContent = 'Go live';
   if (r.error) alert(r.error);
   refresh();
 };
 
-async function refresh() { try { const s = await api('/api/state'); render(s); renderLock(s.unlockLeft || 0); renderFb(s.facebook, s.obsLive); renderYt(s.youtube, s.obsLive); obsInfo = s.obs; renderScn(); renderCr(); } catch {} }
+async function refresh() { try { const s = await api('/api/state'); render(s); renderFb(s.facebook, s.obsLive); renderYt(s.youtube, s.obsLive); obsInfo = s.obs; renderScn(); renderCr(); } catch {} }
 refresh();
 setInterval(refresh, 2000);
 </script>
