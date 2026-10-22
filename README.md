@@ -41,6 +41,7 @@ To make a Mac app instead, run the same two commands on a Mac. The file in `dist
    - YouTube: press **Set up** next to YouTube, choose the .json file from Google, then **Connect YouTube** and sign in with the church account. If there is no channel named "YouTube" (or "Facebook") yet, Go live adds it for you.
    - There is no lock. When Private test is off, the app asks "Continue?" once before it goes live in public.
    - From a phone on the same Wi-Fi (**Phone** at the top right) you can press Go live too. The logins stay on the church computer.
+   - **Title and thumbnail:** type the title in the **Title** box (leave it empty to use "Live from FCCHQ" and the date). Press **Choose picture** to pick a PNG or JPG thumbnail (1280×720 is best). The title goes to YouTube and Facebook. The thumbnail goes to YouTube only. The title is remembered. Choose the picture on the church computer. If YouTube refuses the picture, you still go live and the app tells you why.
    - Instagram stays manual: press **Go live** in Instagram.
 
 ## Control it from a phone (same Wi-Fi)
