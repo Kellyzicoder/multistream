@@ -36,16 +36,16 @@ To make a Mac app instead, run the same two commands on a Mac. The file in `dist
 4. Click **Start Streaming** in OBS. The app shows each platform as Live or Problem.
 5. While live, the window shows a large video preview with LIVE and the time on it. Under it is one bar with Health, resolution, bitrate, frame rate, keyframe interval and audio.
    - Keyframe interval should be 2 seconds. Facebook and YouTube say 4 seconds at most. If it is higher, the bar turns amber. In OBS go to Settings → Output → Streaming → Keyframe Interval and set it to 2. The switch under the preview turns the preview off if you want to save a little power.
-6. **Go live on Facebook / YouTube:** start OBS first, then press **Go live on Facebook** or **Go live on YouTube** in the app. Tick **Test mode** first to try it without the public seeing it.
-   - Facebook: press **Facebook Page** once and save the Page ID and token.
-   - YouTube: press **YouTube**, choose the .json file from Google, then **Connect YouTube** and sign in with the church account. Keep a channel named "YouTube" in the list (and one named "Facebook").
-   - **Lock:** the Go live buttons stay grey until you hold **Locked: hold to unlock** for 1.5 seconds. It then unlocks for 15 seconds and works for one press, so nobody goes live by accident.
-   - From a phone on the same Wi-Fi (Settings, Control from phone) you can press Go live too. The logins stay on the church computer.
+6. **Go live:** start OBS first, then press **Go live** next to YouTube or Facebook in the **Go live** box. Leave **Private test** switched on to try it without the public seeing it. Switch it off for the real service.
+   - Facebook: press **Set up** next to Facebook once and save the Page ID and token.
+   - YouTube: press **Set up** next to YouTube, choose the .json file from Google, then **Connect YouTube** and sign in with the church account. Keep a channel named "YouTube" in the list (and one named "Facebook").
+   - There is no lock. When Private test is off, the app asks "Continue?" once before it goes live in public.
+   - From a phone on the same Wi-Fi (**Phone** at the top right) you can press Go live too. The logins stay on the church computer.
    - Instagram stays manual: press **Go live** in Instagram.
 
 ## Control it from a phone (same Wi-Fi)
 
-1. In the app click **Settings** (right side), turn on **Allow other devices** and type a password (at least 6 characters). Click **Save**.
+1. In the app click **Phone** (top right), turn on **Allow other devices** and type a password (at least 6 characters). Click **Save**.
 2. The box shows an address like `http://192.168.1.20:3000`. Open that address in the browser on your phone or another computer on the same Wi-Fi.
 3. Log in with the password. You see the same screen as the app and can switch channels on and off.
 
@@ -72,7 +72,7 @@ To make a Mac app instead, run the same two commands on a Mac. The file in `dist
 The password is saved only on the church computer and is never sent to the phone. Only the church computer can change the OBS connection. A phone that is logged in can switch scenes.
 
 ## Appearance and accessibility
-Press **Access** in the right-hand menu. You can pick a dark, light or system theme, choose the main colour (or type your own), make text bigger, turn on high contrast, use colour-blind friendly colours, make buttons bigger, and stop animations. Changes show straight away. Press **Save changes** to keep them, or **Cancel** to go back. Choices are saved on each device (the phone and the church computer are separate). **Reset all** puts everything back to the default.
+Press **Access** at the top right. You can pick a dark, light or system theme, choose the main colour (or type your own), make text bigger, turn on high contrast, use colour-blind friendly colours, make buttons bigger, and stop animations. Changes show straight away. Press **Save changes** to keep them, or **Cancel** to go back. Choices are saved on each device (the phone and the church computer are separate). **Reset all** puts everything back to the default.
 
 ## Studio (replaces OBS)
 

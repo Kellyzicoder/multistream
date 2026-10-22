@@ -14,7 +14,6 @@ window.demoApi = function (url, method) {
     facebook: { pageId: '1234', pageName: 'FCC Test Page', hasToken: true, tokenEnd: 'demo' },
     youtube: { hasClient: true, connected: true, channelTitle: 'Favourite Child Church - HQ' },
     obs: { enabled: true, host: 'localhost', port: 4455, hasPassword: true, connected: true, error: '', scenes, current: 'Camera' },
-    unlockLeft: 0,
   };
   const p = url.split('?')[0];
   let out;
