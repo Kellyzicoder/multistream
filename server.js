@@ -407,6 +407,13 @@ function fbView() {
 function fbDestination() {
   return destinations.find((d) => /facebook/i.test(d.name));
 }
+// Go live needs a channel to put the new key in. If the person has not added one yet, make it here.
+function addDestination(name) {
+  const d = { id: crypto.randomUUID(), name, url: '', key: '', enabled: true };
+  destinations.push(d);
+  save();
+  return d;
+}
 
 app.get('/api/facebook', (req, res) => {
   res.json(fbView());
@@ -434,8 +441,7 @@ app.put('/api/facebook', async (req, res) => {
 app.post('/api/facebook/live', async (req, res) => {
   if (!obsLive) return res.status(400).json({ error: 'Start streaming in OBS first' });
   if (!fb.token || !fb.pageId) return res.status(400).json({ error: 'Add the Facebook Page first' });
-  const d = fbDestination();
-  if (!d) return res.status(400).json({ error: 'Add a channel named Facebook first' });
+  const d = fbDestination() || addDestination('Facebook');
   const title = String((req.body || {}).title || '').trim() || `Live from FCCHQ ${new Date().toLocaleDateString('en-NZ')}`;
   try {
     const r = await fetch(`${GRAPH}/${fb.pageId}/live_videos`, {
@@ -565,8 +571,7 @@ app.get('/api/youtube/callback', async (req, res) => {
 app.post('/api/youtube/live', async (req, res) => {
   if (!obsLive) return res.status(400).json({ error: 'Start streaming in OBS first' });
   if (!yt.refreshToken) return res.status(400).json({ error: 'Connect YouTube first' });
-  const d = ytDestination();
-  if (!d) return res.status(400).json({ error: 'Add a channel named YouTube first' });
+  const d = ytDestination() || addDestination('YouTube');
   const test = Boolean((req.body || {}).test);
   const title = String((req.body || {}).title || '').trim() || `Live from FCCHQ ${new Date().toLocaleDateString('en-NZ')}`;
   try {
