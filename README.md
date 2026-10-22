@@ -38,7 +38,7 @@ To make a Mac app instead, run the same two commands on a Mac. The file in `dist
    - Keyframe interval should be 2 seconds. Facebook and YouTube say 4 seconds at most. If it is higher, the bar turns amber. In OBS go to Settings → Output → Streaming → Keyframe Interval and set it to 2. The switch under the preview turns the preview off if you want to save a little power.
 6. **Go live:** start OBS first, then press **Go live** next to YouTube or Facebook in the **Go live** box. Leave **Private test** switched on to try it without the public seeing it. Switch it off for the real service.
    - Facebook: press **Set up** next to Facebook once and save the Page ID and token.
-   - YouTube: press **Set up** next to YouTube, choose the .json file from Google, then **Connect YouTube** and sign in with the church account. Keep a channel named "YouTube" in the list (and one named "Facebook").
+   - YouTube: press **Set up** next to YouTube, choose the .json file from Google, then **Connect YouTube** and sign in with the church account. If there is no channel named "YouTube" (or "Facebook") yet, Go live adds it for you.
    - There is no lock. When Private test is off, the app asks "Continue?" once before it goes live in public.
    - From a phone on the same Wi-Fi (**Phone** at the top right) you can press Go live too. The logins stay on the church computer.
    - Instagram stays manual: press **Go live** in Instagram.
