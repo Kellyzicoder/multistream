@@ -202,6 +202,18 @@
   .go:disabled { background:var(--btn); color:var(--muted); box-shadow:none; cursor:not-allowed; }
   .ghost { background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:999px; padding:7px 13px; font-size:12px; font-weight:500; }
   .ghost:hover { color:var(--text); background:var(--btn); }
+  .gt { margin-top:6px; padding:14px 0 4px; border-top:1px solid var(--rule); }
+  .fl { display:block; color:var(--muted); font-size:10.5px; font-weight:600; letter-spacing:1.3px; text-transform:uppercase; margin-bottom:7px; }
+  .t2 { width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--line); background:var(--field); font-size:13px; outline:none; margin-bottom:14px; }
+  .t2:focus { border-color:var(--blue); box-shadow:0 0 0 3px var(--glow); }
+  .th { display:flex; gap:14px; align-items:center; margin-bottom:12px; }
+  .thp { flex:none; width:112px; aspect-ratio:16/9; border:1px dashed var(--btn3); border-radius:10px; background:var(--field); display:grid; place-items:center; overflow:hidden; color:var(--muted); font-size:11px; }
+  .thp img { width:100%; height:100%; object-fit:cover; display:block; }
+  .tha { min-width:0; }
+  .tha .fl { margin-bottom:6px; }
+  .tha small { display:block; margin-top:6px; color:var(--muted); font-size:11px; line-height:1.4; }
+  .tha small.bad { color:var(--badtxt); }
+  .thb { display:flex; align-items:center; gap:10px; }
   .tm { display:flex; align-items:center; gap:12px; margin-top:6px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--field); cursor:pointer; }
   .tm b { display:block; font-size:13px; font-weight:600; }
   .tm small { display:block; margin-top:2px; color:var(--muted); font-size:11.5px; line-height:1.4; }
@@ -447,6 +459,20 @@
         <div class="who"><b>Facebook</b><span id="fbSub">No Page added</span></div>
         <button class="ghost" id="fbBtn" type="button" title="Add the Facebook Page ID and token">Set up</button>
         <button class="go" id="fbLive" type="button" disabled title="Start OBS streaming first, and add the Facebook Page">Go live</button>
+      </div>
+      <div class="gt">
+        <label class="fl" for="glTitle">Title</label>
+        <input class="t2" id="glTitle" type="text" maxlength="100" placeholder="Live from FCCHQ (and the date)" autocomplete="off">
+        <div class="th">
+          <div class="thp"><img id="thImg" alt="Thumbnail" hidden><span id="thNone">No picture</span></div>
+          <div class="tha">
+            <span class="fl">Thumbnail</span>
+            <div class="thb"><button class="ghost" id="thBtn" type="button">Choose picture</button><button class="lnk" id="thClear" type="button" hidden>Remove</button></div>
+            <small>PNG or JPG, best at 1280×720. Sent to YouTube.</small>
+            <small class="bad" id="thMsg" hidden></small>
+            <input type="file" id="thFile" accept="image/png,image/jpeg" hidden>
+          </div>
+        </div>
       </div>
       <label class="tm" id="tmBox">
         <span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span>
@@ -1269,6 +1295,37 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && accOverl
 if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener('change', () => { if (!accOverlay.classList.contains('open')) applyAcc(acc); });
 applyAcc(acc);
 
+// Title and thumbnail for Go live
+let glLoaded = false;
+function thMsg(text) { const m = $('#thMsg'); m.textContent = text; m.hidden = !text; }
+function setThumb(has) {
+  $('#thImg').hidden = !has; $('#thNone').hidden = has; $('#thClear').hidden = !has;
+  if (has) $('#thImg').src = '/api/golive/thumbnail?t=' + Date.now();
+}
+async function loadGl() {
+  try {
+    const g = await api('/api/golive');
+    if (!glLoaded && g && typeof g.title === 'string') $('#glTitle').value = g.title;
+    glLoaded = true;
+    setThumb(Boolean(g && g.hasThumbnail));
+  } catch {}
+}
+$('#thBtn').onclick = () => $('#thFile').click();
+$('#thFile').onchange = async (e) => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  thMsg('');
+  if (window.DEMO) return thMsg('This is a demo. Nothing is saved.');
+  if (!/^image\/(png|jpeg)$/.test(f.type)) return thMsg('Choose a PNG or JPG picture.');
+  if (f.size > 10 * 1024 * 1024) return thMsg('That picture is too big. Keep it under 10 MB.');
+  const r = await fetch('/api/golive/thumbnail', { method: 'PUT', headers: { 'Content-Type': f.type }, body: f }).then((x) => x.json()).catch(() => ({ error: 'Could not save the picture' }));
+  if (r.error) return thMsg(r.error);
+  setThumb(true);
+};
+$('#thClear').onclick = async () => { thMsg(''); if (!window.DEMO) { const r = await api('/api/golive/thumbnail', 'DELETE'); if (r.error) return thMsg(r.error); } setThumb(false); };
+loadGl();
+
 function renderTest() {
   const t = $('#fbTest').checked;
   $('#tmBox').classList.toggle('pub', !t);
@@ -1313,7 +1370,7 @@ $('#fbLive').onclick = async () => {
     btn.textContent = 'Go live';
     return refresh();
   }
-  const r = await api('/api/facebook/live', 'POST', { test });
+  const r = await api('/api/facebook/live', 'POST', { test, title: $('#glTitle').value.trim() });
   btn.textContent = 'Go live';
   if (r.error) alert(r.error);
   refresh();
@@ -1365,9 +1422,10 @@ $('#ytLive').onclick = async () => {
     btn.textContent = 'Go live';
     return refresh();
   }
-  const r = await api('/api/youtube/live', 'POST', { test });
+  const r = await api('/api/youtube/live', 'POST', { test, title: $('#glTitle').value.trim() });
   btn.textContent = 'Go live';
   if (r.error) alert(r.error);
+  else if (r.thumbnailError) alert('You are live, but YouTube did not take the thumbnail: ' + r.thumbnailError);
   refresh();
 };
 

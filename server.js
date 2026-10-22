@@ -390,6 +390,50 @@ app.get('/api/state', (req, res) => {
   });
 });
 
+// ---- Title and thumbnail for Go live ----
+// The title the person typed is remembered. The thumbnail picture is kept in this computer's data folder.
+const GL_FILE = path.join(DATA_DIR, 'golive.json');
+let gl = { title: '' };
+try { gl = { ...gl, ...JSON.parse(fs.readFileSync(GL_FILE, 'utf8')) }; } catch {}
+const THUMBS = { 'image/png': path.join(DATA_DIR, 'thumbnail.png'), 'image/jpeg': path.join(DATA_DIR, 'thumbnail.jpg') };
+function thumbFile() {
+  for (const [type, file] of Object.entries(THUMBS)) if (fs.existsSync(file)) return { type, file };
+  return null;
+}
+function goLiveTitle(req) {
+  const body = req.body || {};
+  const t = String(body.title || '').trim().slice(0, 100); // YouTube allows 100 characters
+  if (typeof body.title === 'string' && t !== gl.title) {
+    gl.title = t;
+    try { fs.writeFileSync(GL_FILE, JSON.stringify(gl, null, 2)); } catch {}
+  }
+  return t || `Live from FCCHQ ${new Date().toLocaleDateString('en-NZ')}`;
+}
+app.get('/api/golive', (req, res) => res.json({ title: gl.title, hasThumbnail: Boolean(thumbFile()) }));
+app.put('/api/golive/thumbnail', express.raw({ type: '*/*', limit: '10mb' }), (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  const b = req.body;
+  const type = Buffer.isBuffer(b) && b.length > 8
+    ? (b.slice(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])) ? 'image/png' : b.slice(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])) ? 'image/jpeg' : '')
+    : '';
+  if (!type) return res.status(400).json({ error: 'Choose a PNG or JPG picture' });
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    for (const f of Object.values(THUMBS)) fs.rmSync(f, { force: true });
+    fs.writeFileSync(THUMBS[type], b);
+  } catch (e) { return res.status(500).json({ error: e.message }); }
+  res.json({ ok: true });
+});
+app.delete('/api/golive/thumbnail', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  for (const f of Object.values(THUMBS)) { try { fs.rmSync(f, { force: true }); } catch {} }
+  res.json({ ok: true });
+});
+app.get('/api/golive/thumbnail', (req, res) => {
+  const t = thumbFile();
+  t ? res.sendFile(t.file) : res.status(404).end();
+});
+
 // ---- Facebook Page: "Go live on Facebook" button ----
 // The Page token is stored only in facebook.json on this computer. It is never sent back to the browser.
 const FB_FILE = path.join(DATA_DIR, 'facebook.json');
@@ -442,7 +486,7 @@ app.post('/api/facebook/live', async (req, res) => {
   if (!obsLive) return res.status(400).json({ error: 'Start streaming in OBS first' });
   if (!fb.token || !fb.pageId) return res.status(400).json({ error: 'Add the Facebook Page first' });
   const d = fbDestination() || addDestination('Facebook');
-  const title = String((req.body || {}).title || '').trim() || `Live from FCCHQ ${new Date().toLocaleDateString('en-NZ')}`;
+  const title = goLiveTitle(req);
   try {
     const r = await fetch(`${GRAPH}/${fb.pageId}/live_videos`, {
       method: 'POST',
@@ -568,12 +612,25 @@ app.get('/api/youtube/callback', async (req, res) => {
   }
 });
 
+async function ytSetThumbnail(videoId) {
+  const t = thumbFile();
+  if (!t) return;
+  const r = await fetch(`https://www.googleapis.com/upload/youtube/v3/thumbnails/set?${new URLSearchParams({ videoId })}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await ytAccessToken()}`, 'Content-Type': t.type },
+    body: fs.readFileSync(t.file),
+  });
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({}));
+    throw new Error((j.error && j.error.message) || 'YouTube did not accept the thumbnail');
+  }
+}
 app.post('/api/youtube/live', async (req, res) => {
   if (!obsLive) return res.status(400).json({ error: 'Start streaming in OBS first' });
   if (!yt.refreshToken) return res.status(400).json({ error: 'Connect YouTube first' });
   const d = ytDestination() || addDestination('YouTube');
   const test = Boolean((req.body || {}).test);
-  const title = String((req.body || {}).title || '').trim() || `Live from FCCHQ ${new Date().toLocaleDateString('en-NZ')}`;
+  const title = goLiveTitle(req);
   try {
     // 1. the stream (the key) that the video is sent to
     const list = await ytApi('GET', 'liveStreams', { part: 'id,cdn', mine: 'true', maxResults: '50' });
@@ -593,6 +650,9 @@ app.post('/api/youtube/live', async (req, res) => {
     });
     // 3. join the broadcast to the stream
     await ytApi('POST', 'liveBroadcasts/bind', { id: b.id, part: 'id,contentDetails', streamId: stream.id });
+    // the picture is optional: if YouTube refuses it, the live video still goes ahead
+    let thumbnailError = '';
+    try { await ytSetThumbnail(b.id); } catch (e) { thumbnailError = e.message; }
     // 4. send the video to that stream
     const info = stream.cdn.ingestionInfo;
     stopDestination(d.id);
@@ -601,7 +661,7 @@ app.post('/api/youtube/live', async (req, res) => {
     d.enabled = true;
     save();
     startDestination(d);
-    res.json({ ok: true, broadcastId: b.id });
+    res.json({ ok: true, broadcastId: b.id, thumbnailError });
   } catch (e) {
     res.status(502).json({ error: e.message });
   }
