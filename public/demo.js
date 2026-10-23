@@ -13,6 +13,7 @@ window.demoApi = function (url, method) {
     destinations: [dest('d1', 'YouTube', 'live', ''), dest('d2', 'Facebook', 'live', ''), dest('d3', 'Instagram', 'off', '')],
     facebook: { pageId: '1234', pageName: 'FCC Test Page', hasToken: true, tokenEnd: 'demo' },
     youtube: { hasClient: true, connected: true, channelTitle: 'Favourite Child Church - HQ' },
+    recording: { on: false, file: '', startedAt: 0, error: '', folder: 'C:\\Users\\church\\Videos\\Multistream', auto: false },
     obs: { enabled: true, host: 'localhost', port: 4455, hasPassword: true, connected: true, error: '', scenes, current: 'Camera' },
   };
   const p = url.split('?')[0];
@@ -26,6 +27,7 @@ window.demoApi = function (url, method) {
   else if (p === '/api/studio') out = { scenes: [], current: '' };
   else if (p === '/api/facebook') out = base.facebook;
   else if (p === '/api/youtube') out = base.youtube;
+  else if (p === '/api/recording') out = { ...base.recording, files: [{ name: 'Multistream 2026-10-18 09-58-02.mkv', size: 2147483648, at: Date.now() - 5 * 86400000 }, { name: 'Multistream 2026-10-11 10-01-40.mkv', size: 1932735283, at: Date.now() - 12 * 86400000 }] };
   else if (p === '/api/remote') out = { enabled: false, hasPassword: false, urls: [] };
   else out = {};
   return Promise.resolve(out);
