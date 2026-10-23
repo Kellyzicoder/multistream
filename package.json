@@ -28,6 +28,7 @@
       "preload.js",
       "server.js",
       "stats.js",
+      "recorder.js",
       "public/**/*",
       "package.json"
     ],

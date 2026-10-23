@@ -10,6 +10,7 @@ const path = require('path');
 const crypto = require('crypto');
 const WebSocket = require('ws');
 const os = require('os');
+const { createRecorder } = require('./recorder');
 const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker } = require('./stats');
 
 const DASHBOARD_PORT = Number(process.env.PORT) || 3000;
@@ -48,6 +49,15 @@ function save() {
   fs.writeFileSync(DATA_FILE, JSON.stringify(destinations, null, 2), { mode: 0o600 });
 }
 save();
+
+// ---- recording ----
+const REC_DIR = process.env.MULTISTREAM_RECORDINGS || path.join(DATA_DIR, 'recordings');
+const REC_FILE = path.join(DATA_DIR, 'recording.json');
+let recCfg = { auto: false };
+try { recCfg = { auto: Boolean(JSON.parse(fs.readFileSync(REC_FILE, 'utf8')).auto) }; } catch {}
+const recorder = createRecorder({ ffmpeg: FFMPEG, input: ['-i', `rtmp://127.0.0.1:${RTMP_PORT}${INGEST_PATH}`], dir: REC_DIR });
+let openFolderHook = null;
+const recView = () => ({ ...recorder.state(), auto: recCfg.auto });
 
 // ---- relay state ----
 let obsLive = false;
@@ -202,6 +212,7 @@ function stopDestination(id, nextState = 'off') {
 
 function stopAll() {
   stopMonitor();
+  recorder.stop();
   for (const d of destinations) stopDestination(d.id);
 }
 
@@ -220,6 +231,7 @@ nms.on('postPublish', (id, streamPath) => {
   setTimeout(() => {
     startMonitor();
     destinations.forEach(startDestination);
+    if (recCfg.auto) recorder.start();
   }, 1000);
 });
 nms.on('donePublish', (id, streamPath) => {
@@ -387,7 +399,31 @@ app.get('/api/state', (req, res) => {
     facebook: fbView(),
     youtube: ytView(),
     obs: obsView(),
+    recording: recView(),
   });
+});
+
+// ---- Recording routes ----
+app.get('/api/recording', (req, res) => res.json({ ...recView(), files: recorder.list() }));
+app.post('/api/recording/start', (req, res) => {
+  if (!obsLive) return res.status(400).json({ error: 'Start streaming in OBS first' });
+  const r = recorder.start();
+  if (r.error) return res.status(500).json({ error: r.error });
+  res.json(recView());
+});
+app.post('/api/recording/stop', async (req, res) => { await recorder.stop(); res.json(recView()); });
+app.put('/api/recording', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  recCfg = { auto: Boolean((req.body || {}).auto) };
+  try { fs.writeFileSync(REC_FILE, JSON.stringify(recCfg)); } catch {}
+  res.json(recView());
+});
+app.post('/api/recording/open', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  try { fs.mkdirSync(REC_DIR, { recursive: true }); } catch {}
+  if (!openFolderHook) return res.json({ error: 'Open this folder yourself: ' + REC_DIR });
+  openFolderHook(REC_DIR);
+  res.json({ ok: true });
 });
 
 // ---- Title and thumbnail for Go live ----
@@ -1029,4 +1065,4 @@ if (STANDALONE) {
 }
 
 // used by the desktop app (main.js)
-module.exports = { stopAll, DASHBOARD_PORT, RTMP_PORT };
+module.exports = { stopAll, DASHBOARD_PORT, RTMP_PORT, setOpenFolder: (fn) => { openFolderHook = fn; } };

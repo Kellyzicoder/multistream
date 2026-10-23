@@ -87,6 +87,14 @@
   .srow input.t:focus { border-color:var(--blue); box-shadow:0 0 0 3px var(--glow); }
   .srow .note { margin:0; flex-basis:100%; }
   .grp .addr { margin:6px 0 8px; }
+  .path { font-family:var(--mono); font-size:12px; color:var(--link); word-break:break-all; flex-basis:100%; user-select:all; }
+  .files { padding:6px 0 10px; }
+  .files .f { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-top:1px solid var(--rule); font-size:12.5px; }
+  .files .f:first-child { border-top:0; }
+  .files .f span { color:var(--muted); white-space:nowrap; }
+  .files .none { color:var(--muted); font-size:12.5px; padding:6px 0; }
+  #recRow { margin-top:14px; }
+  #recBtn.on { background:var(--red); color:#fff; }
   .swin-f { display:flex; justify-content:flex-end; gap:10px; padding:12px 18px; border-top:1px solid var(--rule); }
   .swin-f .b2 { min-width:84px; }
   .swin-f .b2[disabled] { opacity:.45; cursor:default; }
@@ -502,6 +510,10 @@
         <span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span>
         <span><b>Private test</b><small id="tmState">Only you can see it. Turn this off for the real service.</small></span>
       </label>
+      <div class="gr" id="recRow">
+        <div class="who"><b>Recording</b><span id="recSub">Saves a copy on this computer</span></div>
+        <button class="go" id="recBtn" type="button" disabled title="Start OBS streaming first">Record</button>
+      </div>
       <p class="hint" id="glHint"></p>
       <p class="note" id="fbNote" hidden></p>
     </section>
@@ -570,6 +582,7 @@
         <button type="button" role="tab" data-pane="access"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5M12 15l-3.5 5.5M12 15l3.5 5.5"/></svg> Accessibility</button>
         <button type="button" role="tab" data-pane="youtube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg> YouTube</button>
         <button type="button" role="tab" data-pane="facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8.5h2.5V5H14a3.5 3.5 0 0 0-3.5 3.5V11H8v3.5h2.5V21H14v-6.5h2.5L17 11h-3V8.5z"/></svg> Facebook</button>
+        <button type="button" role="tab" data-pane="recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6" fill="currentColor"/></svg> Recording</button>
         <button type="button" role="tab" data-pane="obs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/></svg> OBS</button>
         <button type="button" role="tab" data-pane="phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg> Phone</button>
       </nav>
@@ -630,6 +643,19 @@
               <div class="ctl"><input class="t" id="fb-token" type="password" placeholder="Paste the token" autocomplete="off"></div></div>
             <div class="srow"><p class="lb">Status</p>
               <div class="ctl"><p class="note" id="fb-saved"></p><p class="note" id="fb-msg"></p></div></div>
+          </div>
+        </section>
+
+        <section class="pane" data-pane="recording" role="tabpanel" aria-label="Recording">
+          <div class="grp"><h4>Recording</h4>
+            <p>Saves the video from OBS to a file on this computer while you stream. It is the same picture and sound OBS sends. The file is an .mkv, so it still plays if the power goes out. VLC plays it.</p>
+            <div class="srow"><p class="lb">Record when OBS starts<small>No button to press</small></p>
+              <div class="ctl"><label class="sw"><input type="checkbox" id="recAuto" aria-label="Record when OBS starts"><span></span></label></div></div>
+            <div class="srow"><p class="lb">Saved in</p>
+              <div class="ctl"><code id="recDir" class="path"></code><button class="b2" id="recOpen" type="button">Open folder</button><p class="note" id="recMsg" hidden></p></div></div>
+          </div>
+          <div class="grp"><h4>Recent recordings</h4>
+            <div id="recFiles" class="files"></div>
           </div>
         </section>
 
@@ -1423,9 +1449,9 @@ $('#ytLive').onclick = async () => {
 
 // Settings window: sidebar of sections, OK / Cancel / Apply at the bottom
 const setOverlay = $('#setOverlay');
-const paneLoaders = { youtube: loadYt, facebook: loadFb, obs: loadObs, phone: loadPhone };
-const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, obs: saveObs, phone: savePhone };
-const paneOrder = ['appearance', 'facebook', 'obs', 'phone'];
+const paneLoaders = { youtube: loadYt, facebook: loadFb, obs: loadObs, phone: loadPhone, recording: loadRec };
+const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, obs: saveObs, phone: savePhone, recording: saveRec };
+const paneOrder = ['appearance', 'facebook', 'obs', 'phone', 'recording'];
 let dirty = {};
 let loaded = {};
 let curPane = '';
@@ -1471,12 +1497,50 @@ $('#setOk').onclick = async () => { if (await applySettings()) closeSettings(tru
 $('#setCancel').onclick = () => closeSettings(false);
 $('#setX').onclick = () => closeSettings(false);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && setOverlay.classList.contains('open')) closeSettings(false); });
-[['#fb-page', 'facebook'], ['#fb-token', 'facebook'], ['#obsOn', 'obs'], ['#obsPort', 'obs'], ['#obsPw', 'obs'], ['#remOn', 'phone'], ['#remPw', 'phone']].forEach(([id, k]) => {
+[['#fb-page', 'facebook'], ['#fb-token', 'facebook'], ['#obsOn', 'obs'], ['#obsPort', 'obs'], ['#obsPw', 'obs'], ['#remOn', 'phone'], ['#remPw', 'phone'], ['#recAuto', 'recording']].forEach(([id, k]) => {
   $(id).addEventListener('input', () => setDirty(k));
   $(id).addEventListener('change', () => setDirty(k));
 });
 
-async function refresh() { try { const s = await api('/api/state'); render(s); renderFb(s.facebook, s.obsLive); renderYt(s.youtube, s.obsLive); obsInfo = s.obs; renderScn(); renderCr(); } catch {} }
+// Recording
+const fmtSize = (n) => n >= 1073741824 ? (n / 1073741824).toFixed(1) + ' GB' : Math.max(1, Math.round(n / 1048576)) + ' MB';
+const fmtClock = (ms) => { const t = Math.max(0, Math.floor(ms / 1000)); return [Math.floor(t / 3600), Math.floor(t / 60) % 60, t % 60].map((x) => String(x).padStart(2, '0')).join(':'); };
+function renderRec(rec, live) {
+  rec = rec || {};
+  const b = $('#recBtn');
+  b.classList.toggle('on', Boolean(rec.on));
+  b.textContent = rec.on ? 'Stop' : 'Record';
+  b.disabled = !rec.on && !live;
+  b.title = rec.on ? 'Stop recording' : live ? 'Save a copy of this stream on this computer' : 'Start OBS streaming first';
+  $('#recSub').textContent = rec.on ? 'Recording ' + fmtClock(Date.now() - rec.startedAt) : rec.error ? 'Problem: ' + rec.error : 'Saves a copy on this computer';
+}
+async function loadRec() {
+  const r = await api('/api/recording');
+  $('#recAuto').checked = Boolean(r.auto);
+  $('#recDir').textContent = r.folder || '';
+  const f = $('#recFiles');
+  f.innerHTML = (r.files || []).length ? r.files.map((x) => `<div class="f"><b>${esc(x.name)}</b><span>${fmtSize(x.size)}</span></div>`).join('') : '<p class="none">No recordings yet.</p>';
+  $('#recMsg').hidden = true;
+}
+async function saveRec() {
+  const r = await api('/api/recording', 'PUT', { auto: $('#recAuto').checked });
+  if (r.error) { const m = $('#recMsg'); m.textContent = r.error; m.className = 'note bad'; m.hidden = false; return false; }
+  return true;
+}
+$('#recOpen').onclick = async () => {
+  const r = await api('/api/recording/open', 'POST');
+  const m = $('#recMsg');
+  if (r && r.error) { m.textContent = r.error; m.className = 'note bad'; m.hidden = false; } else m.hidden = true;
+};
+$('#recBtn').onclick = async () => {
+  const b = $('#recBtn'); const on = b.classList.contains('on');
+  b.disabled = true;
+  const r = await api(on ? '/api/recording/stop' : '/api/recording/start', 'POST');
+  if (r && r.error) alert(r.error);
+  refresh();
+};
+
+async function refresh() { try { const s = await api('/api/state'); render(s); renderRec(s.recording, s.obsLive); renderFb(s.facebook, s.obsLive); renderYt(s.youtube, s.obsLive); obsInfo = s.obs; renderScn(); renderCr(); } catch {} }
 refresh();
 setInterval(refresh, 2000);
 </script>

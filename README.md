@@ -93,3 +93,11 @@ The app is not signed with a paid Apple account. Open the .dmg, drag Multistream
 ## Vercel preview
 
 The Vercel link is a demo only: it shows the pages with sample data. The real app runs on the church PC, because it needs ffmpeg and a video port that Vercel does not have.
+
+## Recording
+
+- Press **Record** in the Go live box while OBS is streaming. Press **Stop** when you are done. It saves the same picture and sound OBS sends, to a file on this computer.
+- Files go in the **Videos → Multistream** folder (Settings → Recording shows the exact place and has an **Open folder** button and a list of recent files).
+- The file is an `.mkv`. It still plays if the power goes out. VLC plays it. To get an `.mp4`, open it in VLC or OBS (File → Remux Recordings).
+- Settings → Recording also has **Record when OBS starts**, so no button is needed.
+- It uses almost no computer power because it does not re-encode the video. Check there is enough free disk space: an hour at 4.5 Mbps is about 2 GB.
