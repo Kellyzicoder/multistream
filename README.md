@@ -37,16 +37,16 @@ To make a Mac app instead, run the same two commands on a Mac. The file in `dist
 5. While live, the window shows a large video preview with LIVE and the time on it. Under it is one bar with Health, resolution, bitrate, frame rate, keyframe interval and audio.
    - Keyframe interval should be 2 seconds. Facebook and YouTube say 4 seconds at most. If it is higher, the bar turns amber. In OBS go to Settings → Output → Streaming → Keyframe Interval and set it to 2. The switch under the preview turns the preview off if you want to save a little power.
 6. **Go live:** start OBS first, then press **Go live** next to YouTube or Facebook in the **Go live** box. Leave **Private test** switched on to try it without the public seeing it. Switch it off for the real service.
-   - Facebook: press **Set up** next to Facebook once and save the Page ID and token.
-   - YouTube: press **Set up** next to YouTube, choose the .json file from Google, then **Connect YouTube** and sign in with the church account. If there is no channel named "YouTube" (or "Facebook") yet, Go live adds it for you.
+   - Facebook: press **Set up** next to Facebook (it opens **Settings → Facebook**), type the Page ID and token, then press **OK**.
+   - YouTube: press **Set up** next to YouTube (it opens **Settings → YouTube**), choose the .json file from Google, then **Connect YouTube** and sign in with the church account. If there is no channel named "YouTube" (or "Facebook") yet, Go live adds it for you.
    - There is no lock. When Private test is off, the app asks "Continue?" once before it goes live in public.
-   - From a phone on the same Wi-Fi (**Phone** at the top right) you can press Go live too. The logins stay on the church computer.
+   - From a phone on the same Wi-Fi (set up in **Settings → Phone**) you can press Go live too. The logins stay on the church computer.
    - **Title and thumbnail:** type the title in the **Title** box (leave it empty to use "Live from FCCHQ" and the date). Press **Choose picture** to pick a PNG or JPG thumbnail (1280×720 is best). The title goes to YouTube and Facebook. The thumbnail goes to YouTube only. The title is remembered. Choose the picture on the church computer. If YouTube refuses the picture, you still go live and the app tells you why.
    - Instagram stays manual: press **Go live** in Instagram.
 
 ## Control it from a phone (same Wi-Fi)
 
-1. In the app click **Phone** (top right), turn on **Allow other devices** and type a password (at least 6 characters). Click **Save**.
+1. In the app click **Settings** (top right), open **Phone**, turn on **Allow other devices** and type a password (at least 6 characters). Click **OK**.
 2. The box shows an address like `http://192.168.1.20:3000`. Open that address in the browser on your phone or another computer on the same Wi-Fi.
 3. Log in with the password. You see the same screen as the app and can switch channels on and off.
 
@@ -66,14 +66,14 @@ To make a Mac app instead, run the same two commands on a Mac. The file in `dist
 
 ## OBS scenes (switch scenes from the dashboard or a phone)
 1. In OBS open **Tools → WebSocket Server Settings**. Tick **Enable WebSocket server**, set a password, press OK. (Needs OBS 28 or newer.)
-2. In Multistream press **Connect OBS** (under the preview). Switch **Connect to OBS** on, keep port 4455, type the same password, press Save.
+2. In Multistream press **Connect OBS** (under the preview). Switch **Connect to OBS** on, keep port 4455, type the same password, press **OK**. (**Connect OBS** under the preview opens the same page, **Settings → OBS**.)
 3. Your OBS scenes show as tiles under the preview. Tap a tile to switch to that scene. The red tile marked ON AIR is the scene OBS is showing now.
 4. **Small / Medium / Large** changes the tile size, and **Pictures** turns the little live pictures off if you only want names. These choices are saved on each device.
 5. **Audio levels** show under the tiles: one bar for each sound in OBS (green is fine, orange is loud, red is too loud), with a thin line for the loudest recent peak. A sound that is muted in OBS shows a MUTED tag. These are for watching only. Use the **Show** switch to turn them off. They only run while the page is open, so OBS is not kept busy the rest of the time.
 The password is saved only on the church computer and is never sent to the phone. Only the church computer can change the OBS connection. A phone that is logged in can switch scenes.
 
 ## Appearance and accessibility
-Press **Access** at the top right. You can pick a dark, light or system theme, choose the main colour (or type your own), make text bigger, turn on high contrast, use colour-blind friendly colours, make buttons bigger, and stop animations. Changes show straight away. Press **Save changes** to keep them, or **Cancel** to go back. Choices are saved on each device (the phone and the church computer are separate). **Reset all** puts everything back to the default.
+Press **Settings** at the top right. The left side lists the sections: Appearance, Accessibility, YouTube, Facebook, OBS and Phone. **Appearance** and **Accessibility** let you pick a dark, light or system theme, choose the main colour (or type your own), make text bigger, turn on high contrast, use colour-blind friendly colours, make buttons bigger, and stop animations. Changes show straight away. Press **OK** to save and close, **Apply** to save and stay, or **Cancel** to go back. Choices are saved on each device (the phone and the church computer are separate). **Reset all** puts everything back to the default.
 
 ## Studio (replaces OBS)
 
