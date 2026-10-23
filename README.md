@@ -101,3 +101,11 @@ The Vercel link is a demo only: it shows the pages with sample data. The real ap
 - The file is an `.mkv`. It still plays if the power goes out. VLC plays it. To get an `.mp4`, open it in VLC or OBS (File → Remux Recordings).
 - Settings → Recording also has **Record when OBS starts**, so no button is needed.
 - It uses almost no computer power because it does not re-encode the video. Check there is enough free disk space: an hour at 4.5 Mbps is about 2 GB.
+
+## Chat
+
+- After you press **Go live**, the **Chat** box (right side, under Channels) shows YouTube live chat and Facebook live comments in one list. It also shows on the phone.
+- It only reads. You cannot reply, delete or post from it.
+- YouTube: asked every 6 seconds or slower. Each ask uses 5 of the 10,000 free daily quota units, so about 3,000 units an hour. That is fine for a service of 2 to 3 hours, but it shares the quota with Go live.
+- Facebook: needs a Page token that is allowed to read comments (the same token you pasted for Go live). If Facebook says it is not allowed, the Chat box shows Facebook's message.
+- Chat starts from the Go live button, and stops when OBS stops. It starts empty each time OBS starts.

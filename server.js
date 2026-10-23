@@ -11,6 +11,7 @@ const crypto = require('crypto');
 const WebSocket = require('ws');
 const os = require('os');
 const { createRecorder } = require('./recorder');
+const { createChat } = require('./chat');
 const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker } = require('./stats');
 
 const DASHBOARD_PORT = Number(process.env.PORT) || 3000;
@@ -58,6 +59,18 @@ try { recCfg = { auto: Boolean(JSON.parse(fs.readFileSync(REC_FILE, 'utf8')).aut
 const recorder = createRecorder({ ffmpeg: FFMPEG, input: ['-i', `rtmp://127.0.0.1:${RTMP_PORT}${INGEST_PATH}`], dir: REC_DIR });
 let openFolderHook = null;
 const recView = () => ({ ...recorder.state(), auto: recCfg.auto });
+
+// ---- chat (read only) ----
+const chat = createChat({
+  ytList: ({ liveChatId, pageToken }) => ytApi('GET', 'liveChat/messages', { liveChatId, part: 'snippet,authorDetails', ...(pageToken ? { pageToken } : {}) }),
+  fbList: async ({ videoId }) => {
+    const q = new URLSearchParams({ access_token: fb.token, fields: 'id,message,created_time,from{name}', order: 'reverse_chronological', live_filter: 'no_filter', limit: '50' });
+    const r = await fetch(`${GRAPH}/${videoId}/comments?${q}`);
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error((j.error && j.error.message) || 'Facebook did not answer');
+    return j;
+  },
+});
 
 // ---- relay state ----
 let obsLive = false;
@@ -212,6 +225,7 @@ function stopDestination(id, nextState = 'off') {
 
 function stopAll() {
   stopMonitor();
+  chat.stop();
   recorder.stop();
   for (const d of destinations) stopDestination(d.id);
 }
@@ -227,6 +241,7 @@ nms.on('postPublish', (id, streamPath) => {
   if (streamPath !== INGEST_PATH) return;
   console.log('OBS connected. Starting destinations...');
   obsLive = true;
+  chat.clear();
   // small delay so the first video packets are available before ffmpeg connects
   setTimeout(() => {
     startMonitor();
@@ -403,6 +418,8 @@ app.get('/api/state', (req, res) => {
   });
 });
 
+app.get('/api/chat', (req, res) => res.json(chat.view(req.query.after)));
+
 // ---- Recording routes ----
 app.get('/api/recording', (req, res) => res.json({ ...recView(), files: recorder.list() }));
 app.post('/api/recording/start', (req, res) => {
@@ -541,6 +558,7 @@ app.post('/api/facebook/live', async (req, res) => {
     d.enabled = true;
     save();
     startDestination(d);
+    chat.startFacebook(j.id);
     res.json({ ok: true, liveVideoId: j.id || '' });
   } catch {
     res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' });
@@ -697,6 +715,12 @@ app.post('/api/youtube/live', async (req, res) => {
     d.enabled = true;
     save();
     startDestination(d);
+    // the chat id is on the broadcast. If it was not in the first answer, ask for it.
+    let liveChatId = (b.snippet || {}).liveChatId;
+    if (!liveChatId) {
+      try { liveChatId = (((await ytApi('GET', 'liveBroadcasts', { part: 'snippet', id: b.id })).items || [])[0] || {}).snippet?.liveChatId; } catch {}
+    }
+    chat.startYoutube(liveChatId);
     res.json({ ok: true, broadcastId: b.id, thumbnailError });
   } catch (e) {
     res.status(502).json({ error: e.message });
