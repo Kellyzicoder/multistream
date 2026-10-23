@@ -93,3 +93,10 @@ The app is not signed with a paid Apple account. Open the .dmg, drag Multistream
 ## Vercel preview
 
 The Vercel link is a demo only: it shows the pages with sample data. The real app runs on the church PC, because it needs ffmpeg and a video port that Vercel does not have.
+
+## Updates
+
+- **Windows:** the app checks for a new version a little after it starts, and every 6 hours. It downloads the new version by itself. Then it asks **Restart now** or **Later**. If you press Later, it installs when you close the app. Do not restart while you are live.
+- **Mac and Linux:** the app tells you when a new version is ready and opens the download page. You download it and open it to replace the old one.
+- Every build on `main` gets a version number (1.0.<build number>) and replaces the **latest** release. The apps compare that number with their own.
+- The first time, install this version by hand. Older copies do not know how to update.

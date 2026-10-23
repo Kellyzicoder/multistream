@@ -1,6 +1,6 @@
 // Desktop app (Windows + Mac). Opens a window around the dashboard and runs the relay inside it.
 
-const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session } = require('electron');
+const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, net: electronNet } = require('electron');
 const net = require('net');
 const path = require('path');
 
@@ -98,6 +98,60 @@ function setupScreenCapture(ses) {
   });
 }
 
+// ---- Updates ----
+// Windows: the app downloads the new version by itself and asks to restart.
+// Mac and Linux: the app only tells you a new version is ready and opens the download page.
+const RELEASE_PAGE = 'https://github.com/Kellyzicoder/multistream/releases/tag/latest';
+const VERSION_URL = 'https://github.com/Kellyzicoder/multistream/releases/download/latest/version.json';
+function isNewer(a, b) {
+  const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); }
+  return false;
+}
+let askedVersion = '';
+async function checkDownloadMessage() {
+  try {
+    const r = await electronNet.fetch(VERSION_URL);
+    if (!r.ok) return;
+    const v = String((await r.json()).version || '');
+    if (!v || !isNewer(v, app.getVersion()) || askedVersion === v) return;
+    askedVersion = v;
+    const pick = await dialog.showMessageBox(win || undefined, {
+      type: 'info', buttons: ['Open download page', 'Later'], defaultId: 0, cancelId: 1,
+      title: 'Multistream update',
+      message: 'A new version of Multistream is ready.',
+      detail: `You have ${app.getVersion()}. The new one is ${v}. Download it, then open it to replace this one.`,
+    });
+    if (pick.response === 0) shell.openExternal(RELEASE_PAGE);
+  } catch {}
+}
+function startUpdates() {
+  if (!app.isPackaged) return;
+  if (process.platform === 'win32') {
+    try {
+      const { autoUpdater } = require('electron-updater');
+      autoUpdater.autoDownload = true;
+      autoUpdater.autoInstallOnAppQuit = true;
+      autoUpdater.on('error', () => {});
+      autoUpdater.on('update-downloaded', async (info) => {
+        const pick = await dialog.showMessageBox(win || undefined, {
+          type: 'info', buttons: ['Restart now', 'Later'], defaultId: 0, cancelId: 1,
+          title: 'Multistream update',
+          message: 'A new version of Multistream is ready.',
+          detail: `Version ${info.version} is downloaded. Restart to use it. If you press Later, it installs when you close the app. Do not restart while you are live.`,
+        });
+        if (pick.response === 0) { if (relay) relay.stopAll(); autoUpdater.quitAndInstall(); }
+      });
+      const check = () => autoUpdater.checkForUpdates().catch(() => {});
+      setTimeout(check, 20000);
+      setInterval(check, 6 * 60 * 60 * 1000);
+    } catch {}
+    return;
+  }
+  setTimeout(checkDownloadMessage, 20000);
+  setInterval(checkDownloadMessage, 6 * 60 * 60 * 1000);
+}
+
 async function start() {
   const busy = [];
   if (!(await portFree(DASHBOARD_PORT))) busy.push(`${DASHBOARD_PORT} (dashboard)`);
@@ -125,6 +179,7 @@ async function start() {
   }
   setupScreenCapture(session.defaultSession);
   createWindow();
+  startUpdates();
 }
 
 // only one copy at a time
