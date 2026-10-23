@@ -44,14 +44,6 @@
   html.a-cb { --green:#56b4e9; --red:#ff8a1e; --amber:#f0e442; }
   html.a-bigbtn button, html.a-bigbtn .bt, html.a-bigbtn .b2 { min-height:44px; min-width:44px; }
   html.a-nomotion *, html.a-nomotion *::before, html.a-nomotion *::after { animation:none !important; transition:none !important; }
-  .accm { width:min(660px,100%); max-height:calc(100vh - 40px); overflow:auto; }
-  .accm .head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
-  .arow { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); gap:16px; padding:16px 0; border-top:1px solid var(--rule); align-items:start; }
-  .arow:first-of-type { border-top:1px solid var(--rule); margin-top:12px; }
-  .arow .lb { font-size:13px; font-weight:600; color:var(--text); margin:0; }
-  .arow .ds { font-size:12px; color:var(--muted); margin:2px 0 0; }
-  .arow .ctl { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-  .arow .ctl.end { justify-content:flex-start; }
   .opt { display:flex; flex-wrap:wrap; gap:6px; }
   .opt button { border:1px solid var(--line); background:transparent; border-radius:4px; padding:8px 12px; font-size:12px; color:var(--text); }
   .opt button[aria-pressed="true"] { background:var(--blue); color:var(--onblue); border-color:var(--blue); font-weight:600; }
@@ -70,9 +62,45 @@
   .tp.l { background:#f4f6f5; } .tp.l i.s { left:0; top:0; bottom:0; width:26%; background:#fff; border-right:1px solid #dde3df; } .tp.l i.a { left:32%; right:8%; top:12px; height:6px; background:#c9d2cd; } .tp.l i.b { left:32%; right:8%; top:26px; bottom:8px; background:#fff; border:1px solid #dde3df; }
   .tp.d { background:#0c110e; } .tp.d i.s { left:0; top:0; bottom:0; width:26%; background:#141b17; } .tp.d i.a { left:32%; right:8%; top:12px; height:6px; background:#34463b; } .tp.d i.b { left:32%; right:8%; top:26px; bottom:8px; background:#1d2721; }
   .tp.sy { background:linear-gradient(90deg,#f4f6f5 50%,#0c110e 50%); } .tp.sy i.a { left:32%; right:8%; top:12px; height:6px; background:#8a948f; } .tp.sy i.b { left:32%; right:8%; top:26px; bottom:8px; background:rgba(128,128,128,.35); }
-  .accm .fb { justify-content:flex-end; margin-top:14px; padding-top:14px; border-top:1px solid var(--rule); }
-  .accm .fb .lk { margin-right:auto; background:transparent; color:var(--muted); text-decoration:underline; }
-  @media (max-width:560px) { .arow { grid-template-columns:1fr; gap:10px; } }
+
+  /* ---------- settings window (sidebar + grouped options, like OBS) ---------- */
+  .swin { width:min(900px,100%); height:min(640px,calc(100vh - 40px)); display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:0 30px 90px rgba(0,0,0,.55); overflow:hidden; }
+  .swin-h { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--rule); font-size:14px; font-weight:600; }
+  .swin-x { border:0; background:transparent; color:var(--muted); font-size:20px; line-height:1; padding:4px 8px; border-radius:8px; }
+  .swin-x:hover { background:var(--btn); color:var(--text); }
+  .swin-b { flex:1; display:flex; min-height:0; }
+  .snav { width:200px; flex:none; padding:10px; border-right:1px solid var(--rule); display:flex; flex-direction:column; gap:2px; overflow:auto; }
+  .snav button { display:flex; align-items:center; gap:10px; border:0; background:transparent; color:var(--soft); text-align:left; padding:10px 12px; border-radius:10px; font-size:13px; }
+  .snav button svg { width:16px; height:16px; flex:none; }
+  .snav button:hover { background:var(--btn); color:var(--text); }
+  .snav button[aria-selected="true"] { background:var(--blue); color:var(--onblue); font-weight:600; }
+  .smain { flex:1; min-width:0; overflow:auto; padding:18px 22px 22px; }
+  .pane { display:none; } .pane.on { display:block; }
+  .grp { border:1px solid var(--line); border-radius:12px; padding:2px 16px 8px; margin:0 0 16px; position:relative; }
+  .grp > h4 { margin:0; padding:12px 0 4px; font-size:11px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); }
+  .grp > p { margin:4px 0 8px; color:var(--muted); font-size:12.5px; line-height:1.5; }
+  .srow { display:grid; grid-template-columns:170px minmax(0,1fr); gap:6px 18px; align-items:center; padding:9px 0; }
+  .srow > .lb { text-align:right; font-size:13px; color:var(--soft); margin:0; }
+  .srow > .lb small { display:block; font-size:11px; color:var(--muted); margin-top:2px; }
+  .srow .ctl { display:flex; flex-wrap:wrap; gap:8px; align-items:center; min-width:0; }
+  .srow input.t { width:100%; max-width:340px; padding:9px 12px; border-radius:8px; border:1px solid var(--line); background:var(--field); font-size:13px; outline:none; }
+  .srow input.t:focus { border-color:var(--blue); box-shadow:0 0 0 3px var(--glow); }
+  .srow .note { margin:0; flex-basis:100%; }
+  .grp .addr { margin:6px 0 8px; }
+  .swin-f { display:flex; justify-content:flex-end; gap:10px; padding:12px 18px; border-top:1px solid var(--rule); }
+  .swin-f .b2 { min-width:84px; }
+  .swin-f .b2[disabled] { opacity:.45; cursor:default; }
+  @media (max-width:700px) {
+    #setOverlay { padding:0; }
+    .swin { width:100%; height:100%; border-radius:0; border:0; }
+    .swin-b { flex-direction:column; }
+    .snav { width:auto; flex-direction:row; border-right:0; border-bottom:1px solid var(--rule); padding:8px; gap:4px; }
+    .snav button { flex:none; padding:8px 12px; }
+    .smain { padding:14px 14px 18px; }
+    .srow { grid-template-columns:1fr; }
+    .srow > .lb { text-align:left; }
+    .srow input.t { max-width:none; }
+  }
 
   /* ---------- header ---------- */
   .top { height:60px; display:flex; align-items:center; gap:14px; padding:0 22px; border-bottom:1px solid var(--rule2); position:relative; z-index:5; }
@@ -178,7 +206,6 @@
   /* audio levels */
   .aud { margin-top:18px; text-align:left; }
   .aud .scn-h { margin-bottom:8px; }
-  .arows { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:4px 14px; }
   .ar { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,2fr) 58px; align-items:center; gap:12px; padding:8px 0; border-top:1px solid var(--rule); font-size:12px; }
   .ar:first-child { border-top:0; }
   .ar .an { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -278,7 +305,6 @@
   .overlay.open { display:grid; }
   .modal { width:min(470px,100%); background:var(--card); border:1px solid var(--line); border-radius:20px; padding:24px; box-shadow:0 30px 90px rgba(0,0,0,.55); }
   .modal .form { border:0; padding:0; }
-  .modal.accm { width:min(660px,100%); }
   .modal h3 { margin:0 0 6px; font-size:17px; font-weight:600; }
   .modal p { margin:0 0 6px; color:var(--muted); font-size:12.5px; line-height:1.5; }
   .rrow { display:flex; justify-content:space-between; align-items:center; margin:14px 0 2px; font-size:13px; }
@@ -347,11 +373,8 @@
   </nav>
   <span class="sp"></span>
   <span class="chip" id="chip">OFFLINE</span>
-  <button class="ib" id="accBtn" type="button" title="Accessibility: text size, contrast, colours">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5M12 15l-3.5 5.5M12 15l3.5 5.5"/></svg><span>Access</span>
-  </button>
-  <button class="ib" id="setBtn" type="button" title="Control from phone">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg><span>Phone</span>
+  <button class="ib" id="setBtn" type="button" title="Settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span>
   </button>
 </header>
 
@@ -537,121 +560,110 @@
   </div>
 </div>
 
-<!-- facebook page -->
-<div class="overlay" id="fbOverlay">
-  <div class="modal">
-    <h3>Facebook Page</h3>
-    <p>Paste the Page ID and the Page access token from the Graph API Explorer. The token is saved only on this computer.</p>
-    <div class="form">
-      <label>Page ID</label>
-      <input class="t" id="fb-page" type="text" placeholder="Numbers only">
-      <label>Page access token</label>
-      <input class="t" id="fb-token" type="password" placeholder="Paste the token">
-      <p class="note" id="fb-saved"></p>
-      <p class="note" id="fb-msg"></p>
-      <div class="fb">
-        <button class="b2 pri" id="fb-save">Save</button>
-        <button class="b2" id="fb-close">Close</button>
+<!-- settings window -->
+<div class="overlay" id="setOverlay">
+  <div class="swin" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="swin-h"><span id="setTitle">Settings</span><button class="swin-x" id="setX" type="button" aria-label="Close without saving">×</button></div>
+    <div class="swin-b">
+      <nav class="snav" id="setNav" role="tablist" aria-orientation="vertical" aria-label="Settings sections">
+        <button type="button" role="tab" data-pane="appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg> Appearance</button>
+        <button type="button" role="tab" data-pane="access"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5M12 15l-3.5 5.5M12 15l3.5 5.5"/></svg> Accessibility</button>
+        <button type="button" role="tab" data-pane="youtube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg> YouTube</button>
+        <button type="button" role="tab" data-pane="facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8.5h2.5V5H14a3.5 3.5 0 0 0-3.5 3.5V11H8v3.5h2.5V21H14v-6.5h2.5L17 11h-3V8.5z"/></svg> Facebook</button>
+        <button type="button" role="tab" data-pane="obs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/></svg> OBS</button>
+        <button type="button" role="tab" data-pane="phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg> Phone</button>
+      </nav>
+      <div class="smain">
+
+        <section class="pane" data-pane="appearance" role="tabpanel" aria-label="Appearance">
+          <div class="grp"><h4>Look</h4>
+            <p>Changes show straight away. They are saved on this device only, so the phone and the church computer each have their own.</p>
+            <div class="srow"><p class="lb" id="l-th">Theme</p>
+              <div class="themes" id="themes" role="group" aria-labelledby="l-th">
+                <button type="button" data-v="system"><span class="tp sy"><i class="a"></i><i class="b"></i></span>System</button>
+                <button type="button" data-v="light"><span class="tp l"><i class="s"></i><i class="a"></i><i class="b"></i></span>Light</button>
+                <button type="button" data-v="dark"><span class="tp d"><i class="s"></i><i class="a"></i><i class="b"></i></span>Dark</button>
+              </div></div>
+            <div class="srow"><p class="lb" id="l-col">Main colour</p>
+              <div class="ctl"><div class="sws" id="sws" role="group" aria-labelledby="l-col"></div>
+                <div class="cust"><span>Custom:</span><span class="hx">#<input id="accHex" maxlength="6" placeholder="22C55E" aria-label="Custom colour, 6 letters or numbers"></span><input type="color" id="accPick" aria-label="Pick a colour"></div></div></div>
+          </div>
+        </section>
+
+        <section class="pane" data-pane="access" role="tabpanel" aria-label="Accessibility">
+          <div class="grp"><h4>Reading</h4>
+            <div class="srow"><p class="lb" id="l-size">Text size</p>
+              <div class="opt" data-key="size" role="group" aria-labelledby="l-size">
+                <button data-v="" type="button">Normal</button><button data-v="large" type="button">Large</button><button data-v="xlarge" type="button">Extra large</button></div></div>
+            <div class="srow"><p class="lb">High contrast<small>Stronger text and borders</small></p>
+              <div class="ctl"><label class="sw"><input type="checkbox" data-key="contrast" aria-label="High contrast"><span></span></label></div></div>
+            <div class="srow"><p class="lb">Colour-blind colours<small>Blue and orange, not green and red</small></p>
+              <div class="ctl"><label class="sw"><input type="checkbox" data-key="cb" aria-label="Colour-blind friendly colours"><span></span></label></div></div>
+          </div>
+          <div class="grp"><h4>Using it</h4>
+            <div class="srow"><p class="lb">Bigger buttons<small>Easier to tap on a phone</small></p>
+              <div class="ctl"><label class="sw"><input type="checkbox" data-key="bigbtn" aria-label="Bigger buttons"><span></span></label></div></div>
+            <div class="srow"><p class="lb">Stop animations<small>Turns off the pulsing LIVE dot</small></p>
+              <div class="ctl"><label class="sw"><input type="checkbox" data-key="nomotion" aria-label="Stop animations"><span></span></label></div></div>
+            <div class="srow"><p class="lb"></p><div class="ctl"><button class="b2" id="accReset" type="button">Reset all</button></div></div>
+          </div>
+        </section>
+
+        <section class="pane" data-pane="youtube" role="tabpanel" aria-label="YouTube">
+          <div class="grp"><h4>YouTube account</h4>
+            <p>Choose the file you downloaded from Google, then sign in with the church YouTube account. The file and the login are saved only on this computer.</p>
+            <div class="srow"><label class="lb" for="yt-file">1. File from Google</label>
+              <div class="ctl"><input class="t" id="yt-file" type="file" accept=".json,application/json"></div></div>
+            <div class="srow"><p class="lb">2. Sign in</p>
+              <div class="ctl"><button class="b2 pri" id="yt-connect" type="button">Connect YouTube</button></div></div>
+            <div class="srow"><p class="lb">Status</p>
+              <div class="ctl"><p class="note" id="yt-status"></p><p class="note" id="yt-msg"></p></div></div>
+          </div>
+        </section>
+
+        <section class="pane" data-pane="facebook" role="tabpanel" aria-label="Facebook">
+          <div class="grp"><h4>Facebook Page</h4>
+            <p>Paste the Page ID and the Page access token from the Graph API Explorer. The token is saved only on this computer.</p>
+            <div class="srow"><label class="lb" for="fb-page">Page ID</label>
+              <div class="ctl"><input class="t" id="fb-page" type="text" placeholder="Numbers only"></div></div>
+            <div class="srow"><label class="lb" for="fb-token">Page access token</label>
+              <div class="ctl"><input class="t" id="fb-token" type="password" placeholder="Paste the token" autocomplete="off"></div></div>
+            <div class="srow"><p class="lb">Status</p>
+              <div class="ctl"><p class="note" id="fb-saved"></p><p class="note" id="fb-msg"></p></div></div>
+          </div>
+        </section>
+
+        <section class="pane" data-pane="obs" role="tabpanel" aria-label="OBS">
+          <div class="grp"><h4>Connect to OBS</h4>
+            <p>This lets Multistream show your scenes and switch them. In OBS, open <b>Tools → WebSocket Server Settings</b>, tick <b>Enable WebSocket server</b>, and set a password. Then type the same password here.</p>
+            <div class="srow"><p class="lb">Connect to OBS</p>
+              <div class="ctl"><label class="sw"><input type="checkbox" id="obsOn" aria-label="Connect to OBS"><span></span></label></div></div>
+            <div class="srow"><label class="lb" for="obsPort">Port<small>OBS shows 4455</small></label>
+              <div class="ctl"><input class="t" id="obsPort" inputmode="numeric" placeholder="4455"></div></div>
+            <div class="srow"><label class="lb" for="obsPw">Password</label>
+              <div class="ctl"><input class="t" id="obsPw" type="password" placeholder="Leave empty to keep the saved password" autocomplete="new-password"></div></div>
+            <div class="srow"><p class="lb">Status</p><div class="ctl"><p class="note" id="obsMsg"></p></div></div>
+          </div>
+        </section>
+
+        <section class="pane" data-pane="phone" role="tabpanel" aria-label="Phone">
+          <div class="grp"><h4>Control from phone</h4>
+            <p>Open this dashboard on a phone or another computer that is on the same Wi-Fi.</p>
+            <div class="srow"><p class="lb">Allow other devices</p>
+              <div class="ctl"><label class="sw"><input type="checkbox" id="remOn" aria-label="Allow other devices"><span></span></label></div></div>
+            <div class="srow"><label class="lb" for="remPw">Password<small>At least 6 characters</small></label>
+              <div class="ctl"><input class="t" id="remPw" type="password" placeholder="Type a password" autocomplete="new-password"></div></div>
+            <div class="addr" id="remAddr" hidden></div>
+            <div class="srow"><p class="lb">Status</p><div class="ctl"><p class="note" id="remMsg"></p></div></div>
+          </div>
+        </section>
+
       </div>
     </div>
-  </div>
-</div>
-
-<!-- youtube -->
-<div class="overlay" id="ytOverlay">
-  <div class="modal">
-    <h3>YouTube</h3>
-    <p>Choose the file you downloaded from Google, then sign in with the church YouTube account. The file and the login are saved only on this computer.</p>
-    <div class="form">
-      <label>1. File from Google (the .json file)</label>
-      <input class="t" id="yt-file" type="file" accept=".json,application/json">
-      <label>2. Sign in</label>
-      <button class="b2 pri" id="yt-connect" type="button">Connect YouTube</button>
-      <p class="note" id="yt-status"></p>
-      <p class="note" id="yt-msg"></p>
-      <div class="fb">
-        <button class="b2" id="yt-close">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- OBS connection -->
-<div class="overlay" id="obsOverlay">
-  <div class="modal" role="dialog" aria-labelledby="obsTitle">
-    <h3 id="obsTitle">Connect OBS</h3>
-    <p>This lets Multistream show your scenes and switch them. In OBS, open <b>Tools → WebSocket Server Settings</b>, tick <b>Enable WebSocket server</b>, and set a password. Then type the same password here.</p>
-    <div class="form">
-      <div class="rrow"><span>Connect to OBS</span><label class="sw"><input type="checkbox" id="obsOn" aria-label="Connect to OBS"><span></span></label></div>
-      <label for="obsPort">Port (OBS shows 4455)</label>
-      <input class="t" id="obsPort" inputmode="numeric" placeholder="4455">
-      <label for="obsPw">Password</label>
-      <input class="t" id="obsPw" type="password" placeholder="Leave empty to keep the saved password" autocomplete="new-password">
-      <p class="note" id="obsMsg"></p>
-      <div class="fb">
-        <button class="b2 pri" id="obsSave" type="button">Save</button>
-        <button class="b2" id="obsClose" type="button">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- accessibility -->
-<div class="overlay" id="accOverlay">
-  <div class="modal accm" role="dialog" aria-labelledby="accTitle">
-    <h3 id="accTitle">Appearance and accessibility</h3>
-    <p>Changes show straight away. Press Save changes to keep them. They are saved on this device only, so the phone and the church computer each have their own.</p>
-
-    <div class="arow"><div><p class="lb" id="l-th">Interface theme</p><p class="ds">Dark, light, or match this device.</p></div>
-      <div class="themes" id="themes" role="group" aria-labelledby="l-th">
-        <button type="button" data-v="system"><span class="tp sy"><i class="a"></i><i class="b"></i></span>System</button>
-        <button type="button" data-v="light"><span class="tp l"><i class="s"></i><i class="a"></i><i class="b"></i></span>Light</button>
-        <button type="button" data-v="dark"><span class="tp d"><i class="s"></i><i class="a"></i><i class="b"></i></span>Dark</button>
-      </div></div>
-
-    <div class="arow"><div><p class="lb" id="l-col">Main colour</p><p class="ds">Pick one, or type your own.</p></div>
-      <div class="ctl"><div class="sws" id="sws" role="group" aria-labelledby="l-col"></div>
-        <div class="cust"><span>Custom colour:</span><span class="hx">#<input id="accHex" maxlength="6" placeholder="22C55E" aria-label="Custom colour, 6 letters or numbers"></span><input type="color" id="accPick" aria-label="Pick a colour"></div></div></div>
-
-    <div class="arow"><div><p class="lb" id="l-size">Text size</p><p class="ds">Make everything bigger.</p></div>
-      <div class="opt" data-key="size" role="group" aria-labelledby="l-size">
-        <button data-v="" type="button">Normal</button><button data-v="large" type="button">Large</button><button data-v="xlarge" type="button">Extra large</button></div></div>
-
-    <div class="arow"><div><p class="lb">High contrast</p><p class="ds">Stronger text and borders.</p></div>
-      <div class="ctl"><label class="sw"><input type="checkbox" data-key="contrast" aria-label="High contrast"><span></span></label></div></div>
-
-    <div class="arow"><div><p class="lb">Colour-blind friendly colours</p><p class="ds">Blue and orange instead of green and red.</p></div>
-      <div class="ctl"><label class="sw"><input type="checkbox" data-key="cb" aria-label="Colour-blind friendly colours"><span></span></label></div></div>
-
-    <div class="arow"><div><p class="lb">Bigger buttons</p><p class="ds">Easier to tap on a phone.</p></div>
-      <div class="ctl"><label class="sw"><input type="checkbox" data-key="bigbtn" aria-label="Bigger buttons"><span></span></label></div></div>
-
-    <div class="arow"><div><p class="lb">Stop animations</p><p class="ds">Turns off the pulsing LIVE dot.</p></div>
-      <div class="ctl"><label class="sw"><input type="checkbox" data-key="nomotion" aria-label="Stop animations"><span></span></label></div></div>
-
-    <div class="form"><div class="fb">
-      <button class="b2 lk" id="accReset" type="button">Reset all</button>
-      <button class="b2" id="accCancel" type="button">Cancel</button>
-      <button class="b2 pri" id="accSave" type="button">Save changes</button>
-    </div></div>
-  </div>
-</div>
-
-<!-- control from phone -->
-<div class="overlay" id="remOverlay">
-  <div class="modal">
-    <h3>Control from phone</h3>
-    <p>Open this dashboard on a phone or another computer that is on the same Wi-Fi.</p>
-    <div class="form">
-      <div class="rrow"><span>Allow other devices</span><label class="sw"><input type="checkbox" id="remOn"><span></span></label></div>
-      <label>Password (at least 6 characters)</label>
-      <input class="t" id="remPw" type="password" placeholder="Type a password" autocomplete="new-password">
-      <div class="addr" id="remAddr" hidden></div>
-      <p class="note" id="remMsg"></p>
-      <div class="fb">
-        <button class="b2 pri" id="remSave">Save</button>
-        <button class="b2" id="remClose">Close</button>
-      </div>
+    <div class="swin-f">
+      <button class="b2 pri" id="setOk" type="button">OK</button>
+      <button class="b2" id="setCancel" type="button">Cancel</button>
+      <button class="b2" id="setApply" type="button" disabled>Apply</button>
     </div>
   </div>
 </div>
@@ -930,34 +942,32 @@ $('#add').onclick = async () => {
 };
 
 // control from phone
-const remOverlay = $('#remOverlay');
 function showRemote(v) {
   $('#remOn').checked = v.enabled;
   $('#remPw').placeholder = v.hasPassword ? 'Leave empty to keep the saved password' : 'Type a password';
   const a = $('#remAddr');
-  a.hidden = !(v.enabled && v.addresses.length);
-  a.innerHTML = 'On the phone, open this address in the browser:' + v.addresses.map((x) => `<code>${esc(x)}</code>`).join('');
+  const addrs = v.addresses || v.urls || [];
+  a.hidden = !(v.enabled && addrs.length);
+  a.innerHTML = 'On the phone, open this address in the browser:' + addrs.map((x) => `<code>${esc(x)}</code>`).join('');
 }
 function remNote(text, bad) { const n = $('#remMsg'); n.textContent = text; n.className = 'note' + (bad ? ' bad' : ''); }
-$('#setBtn').onclick = async () => {
-  remOverlay.classList.add('open');
+async function loadPhone() {
   remNote('');
   $('#remPw').value = '';
   const v = await api('/api/remote');
   if (v.error) { remNote(v.error, true); return; }
   showRemote(v);
-};
-$('#remClose').onclick = () => remOverlay.classList.remove('open');
-remOverlay.addEventListener('click', (e) => { if (e.target === remOverlay) remOverlay.classList.remove('open'); });
-$('#remSave').onclick = async () => {
+}
+async function savePhone() {
   const body = { enabled: $('#remOn').checked };
   if ($('#remPw').value) body.password = $('#remPw').value;
   const v = await api('/api/remote', 'PUT', body);
-  if (v.error) { remNote(v.error, true); return; }
+  if (v.error) { remNote(v.error, true); return false; }
   $('#remPw').value = '';
   showRemote(v);
   remNote(v.enabled ? 'Saved. Other devices can log in with the password.' : 'Saved. Other devices are blocked.');
-};
+  return true;
+}
 
 // copy buttons
 document.querySelectorAll('[data-copy]').forEach((b) => {
@@ -1078,27 +1088,24 @@ async function pollAud() {
 setInterval(pollAud, 200);
 $('#audOn').onchange = (e) => { audOn = e.target.checked; try { localStorage.setItem('ms_audio', JSON.stringify(audOn)); } catch {} renderAud(); };
 
-const obsOverlay = $('#obsOverlay');
-$('#obsCfgBtn').onclick = async () => {
+async function loadObs() {
   const o = await api('/api/obs');
   $('#obsOn').checked = o.enabled; $('#obsPort').value = o.port || 4455; $('#obsPw').value = '';
   $('#obsPw').placeholder = o.hasPassword ? 'Password saved. Leave empty to keep it' : 'Type the OBS password';
   $('#obsMsg').textContent = o.connected ? 'Connected to OBS.' : (o.enabled ? o.error : '');
   $('#obsMsg').className = 'note' + (o.enabled && !o.connected ? ' bad' : '');
-  obsOverlay.classList.add('open');
-};
-$('#obsClose').onclick = () => obsOverlay.classList.remove('open');
-obsOverlay.addEventListener('click', (e) => { if (e.target === obsOverlay) obsOverlay.classList.remove('open'); });
-$('#obsSave').onclick = async () => {
+}
+async function saveObs() {
   const msg = $('#obsMsg');
   const body = { enabled: $('#obsOn').checked, port: $('#obsPort').value.trim() || 4455 };
   if ($('#obsPw').value) body.password = $('#obsPw').value;
   const r = await api('/api/obs', 'PUT', body);
-  if (r.error) { msg.textContent = r.error; msg.className = 'note bad'; return; }
+  if (r.error) { msg.textContent = r.error; msg.className = 'note bad'; return false; }
   $('#obsPw').value = '';
   msg.textContent = r.enabled ? 'Saved. Connecting...' : 'Saved. OBS control is off.'; msg.className = 'note';
   setTimeout(async () => { const o = await api('/api/obs'); obsInfo = o; renderScn(); if (o.enabled) { msg.textContent = o.connected ? 'Connected to OBS.' : o.error; msg.className = 'note' + (o.connected ? '' : ' bad'); } }, 1500);
-};
+  return true;
+}
 renderScn();
 
 // Control Room (multiview) and the page switcher
@@ -1262,14 +1269,14 @@ function applyAcc(a) {
 function syncAcc() {
   const d = draft;
   document.querySelectorAll('#themes button').forEach((b) => b.setAttribute('aria-pressed', String((d.theme || 'system') === b.dataset.v)));
-  document.querySelectorAll('#accOverlay .opt').forEach((g) => g.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((d[g.dataset.key] || '') === b.dataset.v))));
-  document.querySelectorAll('#accOverlay input[type=checkbox][data-key]').forEach((i) => { i.checked = Boolean(d[i.dataset.key]); });
+  document.querySelectorAll('#setOverlay .opt').forEach((g) => g.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((d[g.dataset.key] || '') === b.dataset.v))));
+  document.querySelectorAll('#setOverlay input[type=checkbox][data-key]').forEach((i) => { i.checked = Boolean(d[i.dataset.key]); });
   const cur = (d.accent || '').toLowerCase();
   document.querySelectorAll('#sws button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === (cur || SWATCHES[0]))));
   $('#accHex').value = (d.accent || SWATCHES[0]).slice(1).toUpperCase();
   $('#accPick').value = validHex(d.accent || '') ? d.accent : SWATCHES[0];
 }
-function changeAcc(k, v) { draft[k] = v; applyAcc(draft); syncAcc(); }
+function changeAcc(k, v) { draft[k] = v; applyAcc(draft); syncAcc(); if (window.setDirty) setDirty('appearance'); }
 SWATCHES.forEach((c) => {
   const b = document.createElement('button');
   b.type = 'button'; b.dataset.v = c; b.style.background = c; b.setAttribute('aria-label', 'Colour ' + c);
@@ -1277,23 +1284,14 @@ SWATCHES.forEach((c) => {
   $('#sws').appendChild(b);
 });
 document.querySelectorAll('#themes button').forEach((b) => { b.onclick = () => changeAcc('theme', b.dataset.v); });
-document.querySelectorAll('#accOverlay .opt button').forEach((b) => { b.onclick = () => changeAcc(b.parentElement.dataset.key, b.dataset.v); });
-document.querySelectorAll('#accOverlay input[type=checkbox][data-key]').forEach((i) => { i.onchange = () => changeAcc(i.dataset.key, i.checked ? 'on' : ''); });
-$('#accHex').oninput = (e) => { const v = '#' + e.target.value.replace(/[^0-9a-fA-F]/g, '').slice(0, 6); if (validHex(v)) { draft.accent = v.toLowerCase(); applyAcc(draft); const old = e.target.value; syncAcc(); e.target.value = old; } };
+document.querySelectorAll('#setOverlay .opt button').forEach((b) => { b.onclick = () => changeAcc(b.parentElement.dataset.key, b.dataset.v); });
+document.querySelectorAll('#setOverlay input[type=checkbox][data-key]').forEach((i) => { i.onchange = () => changeAcc(i.dataset.key, i.checked ? 'on' : ''); });
+$('#accHex').oninput = (e) => { const v = '#' + e.target.value.replace(/[^0-9a-fA-F]/g, '').slice(0, 6); if (validHex(v)) { draft.accent = v.toLowerCase(); applyAcc(draft); const old = e.target.value; syncAcc(); e.target.value = old; if (window.setDirty) setDirty('appearance'); } };
 $('#accPick').oninput = (e) => changeAcc('accent', e.target.value);
-$('#accReset').onclick = () => { draft = {}; applyAcc(draft); syncAcc(); };
-const accOverlay = $('#accOverlay');
-function closeAcc(save) {
-  if (save) { acc = { ...draft }; try { localStorage.setItem('ms_access', JSON.stringify(acc)); } catch {} }
-  else { draft = { ...acc }; applyAcc(acc); }
-  accOverlay.classList.remove('open');
-}
-$('#accBtn').onclick = () => { draft = { ...acc }; syncAcc(); accOverlay.classList.add('open'); };
-$('#accSave').onclick = () => closeAcc(true);
-$('#accCancel').onclick = () => closeAcc(false);
-accOverlay.addEventListener('click', (e) => { if (e.target === accOverlay) closeAcc(false); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && accOverlay.classList.contains('open')) closeAcc(false); });
-if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener('change', () => { if (!accOverlay.classList.contains('open')) applyAcc(acc); });
+$('#accReset').onclick = () => { draft = {}; applyAcc(draft); syncAcc(); if (window.setDirty) setDirty('appearance'); };
+function saveAcc() { acc = { ...draft }; try { localStorage.setItem('ms_access', JSON.stringify(acc)); } catch {} }
+function undoAcc() { draft = { ...acc }; applyAcc(acc); }
+if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener('change', () => { if (!$('#setOverlay').classList.contains('open')) applyAcc(acc); });
 applyAcc(acc);
 
 // Title and thumbnail for Go live
@@ -1335,7 +1333,6 @@ function renderTest() {
 $('#fbTest').addEventListener('change', renderTest);
 renderTest();
 
-const fbOverlay = $('#fbOverlay');
 function fbNoteSet(id, text, bad) { const n = $(id); n.textContent = text; n.hidden = !text; n.className = 'note' + (bad ? ' bad' : ''); }
 function renderFb(fbState, live) {
   const ready = Boolean(fbState && fbState.hasToken && fbState.pageId);
@@ -1343,25 +1340,23 @@ function renderFb(fbState, live) {
   $('#fbLive').title = !live ? 'Start OBS streaming first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
   $('#fbSub').textContent = ready ? (fbState.pageName || 'Page ' + fbState.pageId) : 'No Page added';
 }
-$('#fbBtn').onclick = async () => {
+async function loadFb() {
   const s = await api('/api/facebook');
   $('#fb-page').value = s.pageId || '';
   $('#fb-token').value = '';
   fbNoteSet('#fb-saved', s.hasToken ? `Saved: ${s.pageName || 'Page ' + s.pageId} (token ends ${s.tokenEnd})` : 'No Page saved yet.', false);
   fbNoteSet('#fb-msg', '', false);
-  fbOverlay.classList.add('open');
-};
-$('#fb-close').onclick = () => fbOverlay.classList.remove('open');
-fbOverlay.addEventListener('click', (e) => { if (e.target === fbOverlay) fbOverlay.classList.remove('open'); });
-$('#fb-save').onclick = async () => {
+}
+async function saveFb() {
   fbNoteSet('#fb-msg', 'Checking with Facebook...', false);
   const r = await api('/api/facebook', 'PUT', { pageId: $('#fb-page').value.trim(), token: $('#fb-token').value.trim() });
-  if (r.error) return fbNoteSet('#fb-msg', r.error, true);
+  if (r.error) { fbNoteSet('#fb-msg', r.error, true); return false; }
   $('#fb-token').value = '';
   fbNoteSet('#fb-msg', 'Saved.', false);
   fbNoteSet('#fb-saved', `Saved: ${r.pageName || 'Page ' + r.pageId} (token ends ${r.tokenEnd})`, false);
   refresh();
-};
+  return true;
+}
 $('#fbLive').onclick = async () => {
   const btn = $('#fbLive');
   btn.disabled = true;
@@ -1378,7 +1373,6 @@ $('#fbLive').onclick = async () => {
 };
 
 // YouTube
-const ytOverlay = $('#ytOverlay');
 function ytNote(id, text, bad) { const n = $(id); n.textContent = text; n.hidden = !text; n.className = 'note' + (bad ? ' bad' : ''); }
 function ytStatusText(s) {
   if (s.connected) return `Connected${s.channelTitle ? ': ' + s.channelTitle : ''}.`;
@@ -1388,15 +1382,12 @@ function renderYt(ytState, live) {
   $('#ytLive').disabled = !(live && ytState && ytState.connected);
   $('#ytSub').textContent = ytState && ytState.connected ? (ytState.channelTitle || 'Connected') : 'Not connected';
   $('#ytLive').title = !live ? 'Start OBS streaming first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
-  if (ytOverlay.classList.contains('open') && ytState) ytNote('#yt-status', ytStatusText(ytState), false);
+  if (settingsPane() === 'youtube' && ytState) ytNote('#yt-status', ytStatusText(ytState), false);
 }
-$('#ytBtn').onclick = async () => {
+async function loadYt() {
   ytNote('#yt-status', ytStatusText(await api('/api/youtube')), false);
   ytNote('#yt-msg', '', false);
-  ytOverlay.classList.add('open');
-};
-$('#yt-close').onclick = () => ytOverlay.classList.remove('open');
-ytOverlay.addEventListener('click', (e) => { if (e.target === ytOverlay) ytOverlay.classList.remove('open'); });
+}
 $('#yt-file').onchange = async (e) => {
   const f = e.target.files[0];
   if (!f) return;
@@ -1429,6 +1420,61 @@ $('#ytLive').onclick = async () => {
   else if (r.thumbnailError) alert('You are live, but YouTube did not take the thumbnail: ' + r.thumbnailError);
   refresh();
 };
+
+// Settings window: sidebar of sections, OK / Cancel / Apply at the bottom
+const setOverlay = $('#setOverlay');
+const paneLoaders = { youtube: loadYt, facebook: loadFb, obs: loadObs, phone: loadPhone };
+const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, obs: saveObs, phone: savePhone };
+const paneOrder = ['appearance', 'facebook', 'obs', 'phone'];
+let dirty = {};
+let loaded = {};
+let curPane = '';
+function settingsPane() { return setOverlay.classList.contains('open') ? curPane : ''; }
+function setDirty(k) { dirty[k] = true; $('#setApply').disabled = false; }
+function showPane(name) {
+  curPane = name;
+  document.querySelectorAll('#setNav button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.pane === name)));
+  document.querySelectorAll('.smain .pane').forEach((p) => p.classList.toggle('on', p.dataset.pane === name));
+  $('.smain').scrollTop = 0;
+  if (paneLoaders[name] && !loaded[name]) { loaded[name] = true; Promise.resolve(paneLoaders[name]()).catch(() => {}); }
+}
+function openSettings(name) {
+  dirty = {}; loaded = {};
+  $('#setApply').disabled = true;
+  draft = { ...acc }; syncAcc();
+  setOverlay.classList.add('open');
+  showPane(name || 'appearance');
+  const first = document.querySelector('#setNav button[aria-selected="true"]');
+  if (first) first.focus();
+}
+function closeSettings(keep) {
+  if (!keep) undoAcc();
+  setOverlay.classList.remove('open');
+}
+async function applySettings() {
+  for (const k of paneOrder) {
+    if (!dirty[k]) continue;
+    const ok = await paneSavers[k]();
+    if (!ok) { showPane(k); return false; }
+    dirty[k] = false;
+  }
+  $('#setApply').disabled = true;
+  return true;
+}
+$('#setNav').addEventListener('click', (e) => { const b = e.target.closest('button[data-pane]'); if (b) showPane(b.dataset.pane); });
+$('#setBtn').onclick = () => openSettings('appearance');
+$('#ytBtn').onclick = () => openSettings('youtube');
+$('#fbBtn').onclick = () => openSettings('facebook');
+$('#obsCfgBtn').onclick = () => openSettings('obs');
+$('#setApply').onclick = async () => { const b = $('#setApply'); b.disabled = true; if (!(await applySettings())) b.disabled = false; };
+$('#setOk').onclick = async () => { if (await applySettings()) closeSettings(true); };
+$('#setCancel').onclick = () => closeSettings(false);
+$('#setX').onclick = () => closeSettings(false);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && setOverlay.classList.contains('open')) closeSettings(false); });
+[['#fb-page', 'facebook'], ['#fb-token', 'facebook'], ['#obsOn', 'obs'], ['#obsPort', 'obs'], ['#obsPw', 'obs'], ['#remOn', 'phone'], ['#remPw', 'phone']].forEach(([id, k]) => {
+  $(id).addEventListener('input', () => setDirty(k));
+  $(id).addEventListener('change', () => setDirty(k));
+});
 
 async function refresh() { try { const s = await api('/api/state'); render(s); renderFb(s.facebook, s.obsLive); renderYt(s.youtube, s.obsLive); obsInfo = s.obs; renderScn(); renderCr(); } catch {} }
 refresh();
