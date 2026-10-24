@@ -14,7 +14,8 @@
     "ffmpeg-static": "^5.2.0",
     "flv.js": "^1.6.2",
     "node-media-server": "^2.7.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "electron-updater": "^6.3.9"
   },
   "devDependencies": {
     "electron": "^33.0.0",
@@ -58,6 +59,14 @@
         "NSMicrophoneUsageDescription": "Multistream uses audio inputs (like the mixing desk) in the Studio."
       }
     },
-    "afterPack": "adhoc-sign.js"
+    "afterPack": "adhoc-sign.js",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Kellyzicoder",
+        "repo": "multistream",
+        "releaseType": "release"
+      }
+    ]
   }
 }

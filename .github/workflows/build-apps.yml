@@ -17,7 +17,10 @@ jobs:
           - os: windows-latest
             name: Windows
             args: --win --x64
-            files: dist/Multistream-Setup.exe
+            files: |
+              dist/Multistream-Setup.exe
+              dist/latest.yml
+              dist/Multistream-Setup.exe.blockmap
           - os: macos-latest
             name: Mac
             args: --mac --x64 --arm64
@@ -32,6 +35,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Number this build (1.0.<run number>) so apps can tell which is newer
+        shell: bash
+        run: npm version "1.0.${{ github.run_number }}" --no-git-tag-version
       - name: Install
         run: npm install
       - name: Build
@@ -55,6 +61,7 @@ jobs:
           merge-multiple: true
       - name: Publish a download link
         run: |
+          echo '{"version":"1.0.${{ github.run_number }}"}' > out/version.json
           ls -l out
           gh release delete latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
           gh release create latest out/* --repo "$GITHUB_REPOSITORY" --title "Multistream (latest)" --notes "Windows: Multistream-Setup.exe. Mac: Multistream-Mac-arm64.dmg (M1 and newer) or Multistream-Mac-x64.dmg (Intel). Linux: Multistream-Linux.AppImage."
