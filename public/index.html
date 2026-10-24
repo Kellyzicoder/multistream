@@ -94,6 +94,13 @@
   .files .f span { color:var(--muted); white-space:nowrap; }
   .files .none { color:var(--muted); font-size:12.5px; padding:6px 0; }
   #recRow { margin-top:14px; }
+  .cht .chat { max-height:300px; overflow:auto; padding:2px 0; }
+  .cht .none { color:var(--muted); font-size:12.5px; line-height:1.5; margin:6px 0; }
+  .cm { display:flex; gap:8px; padding:7px 0; border-top:1px solid var(--rule); font-size:13px; line-height:1.4; overflow-wrap:anywhere; }
+  .cm:first-child { border-top:0; }
+  .cm i { flex:none; width:8px; height:8px; border-radius:50%; margin-top:6px; }
+  .cm i.youtube { background:var(--red); } .cm i.facebook { background:#3b82f6; }
+  .cm b { font-weight:600; margin-right:6px; }
   #recBtn.on { background:var(--red); color:#fff; }
   .swin-f { display:flex; justify-content:flex-end; gap:10px; padding:12px 18px; border-top:1px solid var(--rule); }
   .swin-f .b2 { min-width:84px; }
@@ -259,7 +266,7 @@
   .note.bad { color:var(--badtxt); }
 
   /* ---------- channels ---------- */
-  .chs { padding:16px 20px 12px; }
+  .chs, .cht { padding:16px 20px 12px; }
   .sec-h { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
   .cnt { color:var(--muted); font-size:12px; } .cnt b { color:var(--text); font-weight:500; }
   .ch { display:flex; gap:12px; padding:13px 0; border-top:1px solid var(--rule); }
@@ -351,7 +358,7 @@
   @media (max-width:1000px) {
     .app { grid-template-columns:minmax(0,1fr); height:auto; }
     .side { display:contents; }
-    .gl { order:0; } .stage { order:1; } .chs { order:2; }
+    .gl { order:0; } .stage { order:1; } .chs { order:2; } .cht { order:3; }
     .stage { overflow:visible; }
     .pv-box { width:100%; }
     .ring { margin-top:4vh; }
@@ -364,7 +371,7 @@
     .chip { padding:6px 10px; letter-spacing:1px; }
     .ib { padding:8px; }
     .app { padding:12px; gap:12px; min-height:0; }
-    .gl, .chs { padding-left:16px; padding-right:16px; }
+    .gl, .chs, .cht { padding-left:16px; padding-right:16px; }
     .cr { padding:4px 12px 16px; }
   }
 </style>
@@ -529,6 +536,14 @@
       <div class="meta">
         <span class="all">Toggle all <button class="lnk" id="allOff" type="button">OFF</button><i></i><button class="lnk" id="allOn" type="button">ON</button></span>
       </div>
+    </section>
+    <section class="card cht" aria-label="Chat">
+      <div class="sec-h">
+        <span class="sec-t">Chat</span>
+        <span class="cnt" id="chatCnt"></span>
+      </div>
+      <div class="chat" id="chatList" role="log" aria-live="polite"><p class="none" id="chatNone">Comments from YouTube and Facebook show here after you press Go live. Reading only: you cannot reply from here.</p></div>
+      <p class="note" id="chatSt" hidden></p>
     </section>
   </aside>
 </div>
@@ -1539,6 +1554,33 @@ $('#recBtn').onclick = async () => {
   if (r && r.error) alert(r.error);
   refresh();
 };
+
+// Chat (read only)
+let chatSeq = 0;
+async function pollChat() {
+  try {
+    const r = await api('/api/chat?after=' + chatSeq);
+    if (!r || !Array.isArray(r.items)) return;
+    const box = $('#chatList');
+    if (r.seq < chatSeq) { box.querySelectorAll('.cm').forEach((n) => n.remove()); chatSeq = 0; return pollChat(); }
+    const stick = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+    for (const m of r.items) {
+      const d = document.createElement('div');
+      d.className = 'cm';
+      d.innerHTML = `<i class="${m.source === 'facebook' ? 'facebook' : 'youtube'}" title="${m.source === 'facebook' ? 'Facebook' : 'YouTube'}"></i><div><b>${esc(m.author)}</b>${esc(m.text)}</div>`;
+      box.appendChild(d);
+    }
+    chatSeq = r.seq;
+    const all = box.querySelectorAll('.cm');
+    while (all.length > 200 && box.querySelector('.cm')) box.removeChild(box.querySelector('.cm'));
+    $('#chatNone').hidden = box.querySelectorAll('.cm').length > 0;
+    $('#chatCnt').textContent = box.querySelectorAll('.cm').length ? box.querySelectorAll('.cm').length + ' shown' : '';
+    if (stick) box.scrollTop = box.scrollHeight;
+    const st = [r.status.youtube, r.status.facebook].filter(Boolean).join(' · ');
+    const n = $('#chatSt'); n.textContent = st; n.hidden = !st; n.className = 'note' + (/chat:|comments:/.test(st) && /\(#|error|permission|trying again|ended/i.test(st) ? ' bad' : '');
+  } catch {}
+}
+setInterval(pollChat, 3000);
 
 async function refresh() { try { const s = await api('/api/state'); render(s); renderRec(s.recording, s.obsLive); renderFb(s.facebook, s.obsLive); renderYt(s.youtube, s.obsLive); obsInfo = s.obs; renderScn(); renderCr(); } catch {} }
 refresh();
