@@ -171,7 +171,9 @@ async function start() {
     // where saved destinations and keys live: the user's own app-data folder
     process.env.MULTISTREAM_DATA = path.join(app.getPath('userData'), 'data');
     process.env.FFMPEG_PATH = ffmpegPath();
+    process.env.MULTISTREAM_RECORDINGS = path.join(app.getPath('videos'), 'Multistream');
     relay = require('./server');
+    relay.setOpenFolder((p) => shell.openPath(p));
   } catch (err) {
     dialog.showErrorBox('Multistream cannot start', String(err && err.message ? err.message : err));
     app.quit();

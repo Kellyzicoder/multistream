@@ -29,6 +29,8 @@
       "preload.js",
       "server.js",
       "stats.js",
+      "recorder.js",
+      "chat.js",
       "public/**/*",
       "package.json"
     ],
