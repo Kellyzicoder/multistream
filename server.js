@@ -12,6 +12,7 @@ const WebSocket = require('ws');
 const os = require('os');
 const { createRecorder } = require('./recorder');
 const { createChat } = require('./chat');
+const { runPreflight } = require('./preflight');
 const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker } = require('./stats');
 
 const DASHBOARD_PORT = Number(process.env.PORT) || 3000;
@@ -71,6 +72,9 @@ const chat = createChat({
     return j;
   },
 });
+
+// what is open right now on each site, so the Go live button can turn into End live
+const session = { youtube: '', facebook: '' }; // YouTube broadcast id, Facebook live video id
 
 // ---- relay state ----
 let obsLive = false;
@@ -415,10 +419,65 @@ app.get('/api/state', (req, res) => {
     youtube: ytView(),
     obs: obsView(),
     recording: recView(),
+    session: { youtube: Boolean(session.youtube), facebook: Boolean(session.facebook) },
   });
 });
 
 app.get('/api/chat', (req, res) => res.json(chat.view(req.query.after)));
+
+// ---- End live (the button that turns Go live back off) ----
+app.post('/api/youtube/end', async (req, res) => {
+  if (!session.youtube) return res.status(400).json({ error: 'There is no YouTube live to end' });
+  // Stop sending first. Even if YouTube does not confirm, it ends the video by itself soon after the video stops.
+  const d = ytDestination();
+  if (d) stopDestination(d.id);
+  chat.stopYoutube();
+  let warning = '';
+  try {
+    await ytApi('POST', 'liveBroadcasts/transition', { broadcastStatus: 'complete', id: session.youtube, part: 'status' });
+  } catch (e) {
+    if (!/already|complete|invalid transition|redundant/i.test(e.message)) warning = e.message;
+  }
+  session.youtube = '';
+  res.json({ ok: true, warning });
+});
+app.post('/api/facebook/end', async (req, res) => {
+  if (!session.facebook) return res.status(400).json({ error: 'There is no Facebook live to end' });
+  const d = fbDestination();
+  if (d) stopDestination(d.id);
+  chat.stopFacebook();
+  let warning = '';
+  try {
+    const r = await fetch(`${GRAPH}/${session.facebook}`, { method: 'POST', body: new URLSearchParams({ access_token: fb.token, end_live_video: 'true' }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok && !/already|ended|finished/i.test((j.error && j.error.message) || '')) warning = (j.error && j.error.message) || 'Facebook did not confirm';
+  } catch { warning = 'Could not reach Facebook'; }
+  session.facebook = '';
+  res.json({ ok: true, warning });
+});
+
+// ---- Check everything before the service ----
+app.get('/api/preflight', async (req, res) => {
+  const dir = fs.existsSync(REC_DIR) ? REC_DIR : DATA_DIR;
+  const results = await runPreflight({
+    obsLive,
+    signal,
+    signalOk: Date.now() - signal.lastDataAt < 4000,
+    youtube: ytView(),
+    facebook: { ready: Boolean(fb.token && fb.pageId) },
+    ytCheck: async () => (((await ytApi('GET', 'channels', { part: 'snippet', mine: 'true' })).items || [])[0] || {}).snippet?.title || '',
+    fbCheck: async () => {
+      const r = await fetch(`${GRAPH}/me?${new URLSearchParams({ fields: 'name', access_token: fb.token })}`);
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error((j.error && j.error.message) || 'Facebook did not answer');
+      return j.name || '';
+    },
+    freeBytes: async () => { try { const f = await fs.promises.statfs(dir); return Number(f.bavail) * Number(f.bsize); } catch { return null; } },
+    obsControl: obsView(),
+    destinations,
+  });
+  res.json({ at: Date.now(), results });
+});
 
 // ---- Recording routes ----
 app.get('/api/recording', (req, res) => res.json({ ...recView(), files: recorder.list() }));
@@ -558,6 +617,7 @@ app.post('/api/facebook/live', async (req, res) => {
     d.enabled = true;
     save();
     startDestination(d);
+    session.facebook = j.id || '';
     chat.startFacebook(j.id);
     res.json({ ok: true, liveVideoId: j.id || '' });
   } catch {
@@ -720,6 +780,7 @@ app.post('/api/youtube/live', async (req, res) => {
     if (!liveChatId) {
       try { liveChatId = (((await ytApi('GET', 'liveBroadcasts', { part: 'snippet', id: b.id })).items || [])[0] || {}).snippet?.liveChatId; } catch {}
     }
+    session.youtube = b.id;
     chat.startYoutube(liveChatId);
     res.json({ ok: true, broadcastId: b.id, thumbnailError });
   } catch (e) {

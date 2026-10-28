@@ -109,3 +109,9 @@ The Vercel link is a demo only: it shows the pages with sample data. The real ap
 - YouTube: asked every 6 seconds or slower. Each ask uses 5 of the 10,000 free daily quota units, so about 3,000 units an hour. That is fine for a service of 2 to 3 hours, but it shares the quota with Go live.
 - Facebook: needs a Page token that is allowed to read comments (the same token you pasted for Go live). If Facebook says it is not allowed, the Chat box shows Facebook's message.
 - Chat starts from the Go live button, and stops when OBS stops. It starts empty each time OBS starts.
+
+## Check everything, End live and alerts
+
+- **Check everything** (Go live box): press it before the service. It checks YouTube is connected, the Facebook token works, OBS is sending the right type of video and sound, the keyframe, free space for recording, OBS scene control, and channels with no key (like Instagram). Green is fine, yellow is worth a look, red needs fixing. Start streaming in OBS first to test the picture and sound.
+- **End live:** after you press Go live, that button turns red and says **End live**. Press it to stop sending and end the live on that site. It asks first. If you stop OBS and forget, a bar reminds you the live is still open.
+- **Alerts** (Settings → Alerts): a red bar shows at the top if a channel stops receiving, or if OBS is connected but no video arrives. You can turn on three beeps. On a phone, tap the screen once after opening the page so the sound is allowed.
