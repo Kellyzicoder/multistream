@@ -93,7 +93,16 @@
   .files .f:first-child { border-top:0; }
   .files .f span { color:var(--muted); white-space:nowrap; }
   .files .none { color:var(--muted); font-size:12.5px; padding:6px 0; }
-  #recRow { margin-top:14px; }
+  #recRow, #pfRow { margin-top:14px; }
+  .go.end { background:var(--red); color:#fff; box-shadow:none; }
+  .alertbar { display:flex; align-items:center; gap:12px; justify-content:space-between; background:var(--errbg); border-bottom:1px solid var(--errline); color:var(--errsvg); padding:10px 22px; font-size:13px; font-weight:500; position:relative; z-index:6; }
+  .alertbar button { border:1px solid var(--errline); background:transparent; color:inherit; border-radius:999px; padding:5px 12px; font-size:12px; flex:none; }
+  .pf { padding:2px 0 6px; }
+  .pf .it { display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--rule); font-size:12.5px; line-height:1.45; }
+  .pf .it:first-child { border-top:0; }
+  .pf .it i { flex:none; width:9px; height:9px; border-radius:50%; margin-top:5px; background:var(--muted); }
+  .pf .it.ok i { background:var(--green); } .pf .it.warn i { background:var(--amber); } .pf .it.bad i { background:var(--red); }
+  .pf .it b { display:block; font-weight:600; } .pf .it span { color:var(--muted); }
   .cht .chat { max-height:300px; overflow:auto; padding:2px 0; }
   .cht .none { color:var(--muted); font-size:12.5px; line-height:1.5; margin:6px 0; }
   .cm { display:flex; gap:8px; padding:7px 0; border-top:1px solid var(--rule); font-size:13px; line-height:1.4; overflow-wrap:anywhere; }
@@ -392,6 +401,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span>
   </button>
 </header>
+<div class="alertbar" id="alertBar" role="alert" hidden><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 
 <div class="app">
   <!-- left: the video, or how to connect -->
@@ -521,6 +531,11 @@
         <div class="who"><b>Recording</b><span id="recSub">Saves a copy on this computer</span></div>
         <button class="go" id="recBtn" type="button" disabled title="Start OBS streaming first">Record</button>
       </div>
+      <div class="gr" id="pfRow">
+        <div class="who"><b>Check everything</b><span id="pfSub">Do this before the service</span></div>
+        <button class="ghost" id="pfBtn" type="button">Run check</button>
+      </div>
+      <div class="pf" id="pfList" hidden></div>
       <p class="hint" id="glHint"></p>
       <p class="note" id="fbNote" hidden></p>
     </section>
@@ -599,6 +614,7 @@
         <button type="button" role="tab" data-pane="facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8.5h2.5V5H14a3.5 3.5 0 0 0-3.5 3.5V11H8v3.5h2.5V21H14v-6.5h2.5L17 11h-3V8.5z"/></svg> Facebook</button>
         <button type="button" role="tab" data-pane="recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6" fill="currentColor"/></svg> Recording</button>
         <button type="button" role="tab" data-pane="obs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/></svg> OBS</button>
+        <button type="button" role="tab" data-pane="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg> Alerts</button>
         <button type="button" role="tab" data-pane="phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg> Phone</button>
       </nav>
       <div class="smain">
@@ -684,6 +700,14 @@
             <div class="srow"><label class="lb" for="obsPw">Password</label>
               <div class="ctl"><input class="t" id="obsPw" type="password" placeholder="Leave empty to keep the saved password" autocomplete="new-password"></div></div>
             <div class="srow"><p class="lb">Status</p><div class="ctl"><p class="note" id="obsMsg"></p></div></div>
+          </div>
+        </section>
+
+        <section class="pane" data-pane="alerts" role="tabpanel" aria-label="Alerts">
+          <div class="grp"><h4>When something goes wrong</h4>
+            <p>A red bar shows at the top when a channel stops receiving, or OBS is connected but no video arrives. You can also have a sound. This is saved on this device only.</p>
+            <div class="srow"><p class="lb">Play a sound<small>Three beeps</small></p>
+              <div class="ctl"><label class="sw"><input type="checkbox" id="alSound" aria-label="Play a sound for alerts"><span></span></label><button class="b2" id="alTest" type="button">Test it</button></div></div>
           </div>
         </section>
 
@@ -1375,10 +1399,27 @@ $('#fbTest').addEventListener('change', renderTest);
 renderTest();
 
 function fbNoteSet(id, text, bad) { const n = $(id); n.textContent = text; n.hidden = !text; n.className = 'note' + (bad ? ' bad' : ''); }
-function renderFb(fbState, live) {
+function goBtn(id, inSession) {
+  const b = $(id);
+  b.dataset.end = inSession ? '1' : '';
+  b.classList.toggle('end', inSession);
+  if (!b.dataset.busy) b.textContent = inSession ? 'End live' : 'Go live';
+}
+async function endLive(site, name) {
+  if (!confirm(`End the live on ${name} now? Viewers will see it stop.`)) return;
+  const b = $(site === 'youtube' ? '#ytLive' : '#fbLive');
+  b.dataset.busy = '1'; b.disabled = true; b.textContent = 'Ending...';
+  const r = await api(`/api/${site}/end`, 'POST');
+  delete b.dataset.busy;
+  if (r.error) alert(r.error);
+  else if (r.warning) alert(`Sending has stopped. ${name} did not confirm the end: ${r.warning}. It should end by itself soon.`);
+  refresh();
+}
+function renderFb(fbState, live, inSession) {
   const ready = Boolean(fbState && fbState.hasToken && fbState.pageId);
-  $('#fbLive').disabled = !(live && ready);
-  $('#fbLive').title = !live ? 'Start OBS streaming first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
+  goBtn('#fbLive', Boolean(inSession));
+  $('#fbLive').disabled = inSession ? false : !(live && ready);
+  $('#fbLive').title = inSession ? 'Stop sending and end the live video on Facebook' : !live ? 'Start OBS streaming first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
   $('#fbSub').textContent = ready ? (fbState.pageName || 'Page ' + fbState.pageId) : 'No Page added';
 }
 async function loadFb() {
@@ -1400,15 +1441,17 @@ async function saveFb() {
 }
 $('#fbLive').onclick = async () => {
   const btn = $('#fbLive');
+  if (btn.dataset.end) return endLive('facebook', 'Facebook');
   btn.disabled = true;
+  btn.dataset.busy = '1';
   btn.textContent = 'Going live...';
   const test = $('#fbTest').checked;
   if (!test && !confirm('Test mode is off. This will go live publicly on the Facebook Page. Continue?')) {
-    btn.textContent = 'Go live';
+    delete btn.dataset.busy;
     return refresh();
   }
   const r = await api('/api/facebook/live', 'POST', { test, title: $('#glTitle').value.trim() });
-  btn.textContent = 'Go live';
+  delete btn.dataset.busy;
   if (r.error) alert(r.error);
   refresh();
 };
@@ -1419,10 +1462,11 @@ function ytStatusText(s) {
   if (s.connected) return `Connected${s.channelTitle ? ': ' + s.channelTitle : ''}.`;
   return s.hasClient ? 'File added. Click Connect YouTube to sign in.' : 'No file added yet.';
 }
-function renderYt(ytState, live) {
-  $('#ytLive').disabled = !(live && ytState && ytState.connected);
+function renderYt(ytState, live, inSession) {
+  goBtn('#ytLive', Boolean(inSession));
+  $('#ytLive').disabled = inSession ? false : !(live && ytState && ytState.connected);
   $('#ytSub').textContent = ytState && ytState.connected ? (ytState.channelTitle || 'Connected') : 'Not connected';
-  $('#ytLive').title = !live ? 'Start OBS streaming first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
+  $('#ytLive').title = inSession ? 'Stop sending and end the live broadcast on YouTube' : !live ? 'Start OBS streaming first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
   if (settingsPane() === 'youtube' && ytState) ytNote('#yt-status', ytStatusText(ytState), false);
 }
 async function loadYt() {
@@ -1448,15 +1492,17 @@ $('#yt-connect').onclick = async () => {
 };
 $('#ytLive').onclick = async () => {
   const btn = $('#ytLive');
+  if (btn.dataset.end) return endLive('youtube', 'YouTube');
   btn.disabled = true;
+  btn.dataset.busy = '1';
   btn.textContent = 'Going live...';
   const test = $('#fbTest').checked;
   if (!test && !confirm('Test mode is off. This will go live publicly on YouTube. Continue?')) {
-    btn.textContent = 'Go live';
+    delete btn.dataset.busy;
     return refresh();
   }
   const r = await api('/api/youtube/live', 'POST', { test, title: $('#glTitle').value.trim() });
-  btn.textContent = 'Go live';
+  delete btn.dataset.busy;
   if (r.error) alert(r.error);
   else if (r.thumbnailError) alert('You are live, but YouTube did not take the thumbnail: ' + r.thumbnailError);
   refresh();
@@ -1464,9 +1510,9 @@ $('#ytLive').onclick = async () => {
 
 // Settings window: sidebar of sections, OK / Cancel / Apply at the bottom
 const setOverlay = $('#setOverlay');
-const paneLoaders = { youtube: loadYt, facebook: loadFb, obs: loadObs, phone: loadPhone, recording: loadRec };
-const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, obs: saveObs, phone: savePhone, recording: saveRec };
-const paneOrder = ['appearance', 'facebook', 'obs', 'phone', 'recording'];
+const paneLoaders = { youtube: loadYt, facebook: loadFb, obs: loadObs, phone: loadPhone, recording: loadRec, alerts: loadAl };
+const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, obs: saveObs, phone: savePhone, recording: saveRec, alerts: saveAl };
+const paneOrder = ['appearance', 'facebook', 'obs', 'phone', 'recording', 'alerts'];
 let dirty = {};
 let loaded = {};
 let curPane = '';
@@ -1555,6 +1601,61 @@ $('#recBtn').onclick = async () => {
   refresh();
 };
 
+// Check everything
+$('#pfBtn').onclick = async () => {
+  const b = $('#pfBtn'); b.disabled = true; b.textContent = 'Checking...';
+  const r = await api('/api/preflight').catch(() => null);
+  b.disabled = false; b.textContent = 'Run again';
+  const list = $('#pfList');
+  if (!r || !Array.isArray(r.results)) { list.hidden = false; list.innerHTML = '<div class="it bad"><i></i><div><b>The check did not run</b><span>Try again.</span></div></div>'; return; }
+  list.hidden = false;
+  list.innerHTML = r.results.filter((x) => x.state !== 'skip').map((x) => `<div class="it ${esc(x.state)}"><i></i><div><b>${esc(x.label)}</b><span>${esc(x.detail)}</span></div></div>`).join('');
+  const bad = r.results.filter((x) => x.state === 'bad').length, warn = r.results.filter((x) => x.state === 'warn').length;
+  $('#pfSub').textContent = bad ? `${bad} to fix before you go live` : warn ? `All fine. ${warn} to look at` : 'All good';
+};
+
+// Alerts: a red bar (and a sound if it is on) when something stops
+let alertCfg = { sound: true };
+try { alertCfg = { sound: true, ...(JSON.parse(localStorage.getItem('ms_alerts') || '{}') || {}) }; } catch {}
+let audioCtx = null;
+function unlockAudio() { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch {} }
+document.addEventListener('click', unlockAudio);
+document.addEventListener('keydown', unlockAudio);
+function beep() {
+  if (!audioCtx) return;
+  [0, 0.35, 0.7].forEach((t) => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(), n = audioCtx.currentTime + t;
+    o.frequency.value = 880;
+    g.gain.setValueAtTime(0.0001, n); g.gain.exponentialRampToValueAtTime(0.25, n + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, n + 0.25);
+    o.connect(g); g.connect(audioCtx.destination); o.start(n); o.stop(n + 0.3);
+  });
+}
+function showAlert(text, sound) {
+  $('#alertTxt').textContent = text;
+  $('#alertBar').hidden = false;
+  if (sound && alertCfg.sound) beep();
+}
+$('#alertX').onclick = () => { $('#alertBar').hidden = true; };
+function loadAl() { $('#alSound').checked = alertCfg.sound; }
+async function saveAl() { alertCfg = { sound: $('#alSound').checked }; try { localStorage.setItem('ms_alerts', JSON.stringify(alertCfg)); } catch {} return true; }
+$('#alSound').addEventListener('change', () => setDirty('alerts'));
+$('#alTest').onclick = () => { unlockAudio(); const was = alertCfg.sound; alertCfg.sound = true; showAlert('This is a test alert.', true); alertCfg.sound = was; };
+let prevDest = {}, prevObs = null, noSigSince = 0, noSigShown = false;
+function checkAlerts(s) {
+  for (const d of s.destinations || []) {
+    const st = (d.status || {}).state;
+    if ((prevDest[d.id] === 'live' || prevDest[d.id] === 'starting') && st === 'error') showAlert(`${d.name} stopped receiving: ${(d.status || {}).message || 'no reason given'}`, true);
+    prevDest[d.id] = st;
+  }
+  const open = s.session && (s.session.youtube || s.session.facebook);
+  if (prevObs === true && s.obsLive === false && open) showAlert('OBS stopped, but the live is still open on ' + [s.session.youtube && 'YouTube', s.session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.', false);
+  prevObs = s.obsLive;
+  if (s.obsLive && s.signal && !s.signal.ok) {
+    if (!noSigSince) noSigSince = Date.now();
+    else if (Date.now() - noSigSince > 8000 && !noSigShown) { noSigShown = true; showAlert('OBS is connected, but no video is arriving.', true); }
+  } else { noSigSince = 0; noSigShown = false; }
+}
+
 // Chat (read only)
 let chatSeq = 0;
 async function pollChat() {
@@ -1582,7 +1683,7 @@ async function pollChat() {
 }
 setInterval(pollChat, 3000);
 
-async function refresh() { try { const s = await api('/api/state'); render(s); renderRec(s.recording, s.obsLive); renderFb(s.facebook, s.obsLive); renderYt(s.youtube, s.obsLive); obsInfo = s.obs; renderScn(); renderCr(); } catch {} }
+async function refresh() { try { const s = await api('/api/state'); render(s); renderRec(s.recording, s.obsLive); renderFb(s.facebook, s.obsLive, s.session && s.session.facebook); renderYt(s.youtube, s.obsLive, s.session && s.session.youtube); checkAlerts(s); obsInfo = s.obs; renderScn(); renderCr(); } catch {} }
 refresh();
 setInterval(refresh, 2000);
 </script>
