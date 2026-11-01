@@ -113,7 +113,11 @@ async function until(fn, ms, what) {
   await studio.screenshot({ path: path.join(OUT, '3-studio-sending.png') });
 
   // 8. record from the Studio while sending
+  // the quality list is inside the More menu
+  await studio.click('#moreBtn');
   await studio.selectOption('#recQ', '720-3');
+  await studio.screenshot({ path: path.join(OUT, '3b-studio-more-menu.png') });
+  await studio.click('#moreBtn');
   await studio.click('#recBtn');
   await sleep(5000);
   await studio.click('#recBtn');
