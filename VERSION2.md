@@ -18,15 +18,15 @@ The Studio from Version 1: cameras, screen, pictures, video, text, web pages, a 
 | Step | What | Status |
 |---|---|---|
 | 1 | Separate Version 2 app, installer and release | done |
-| 2 | Smooth transitions between scenes (cut, fade, slide) | in progress |
-| 3 | Steady for 2 hours: graphics card encoding, reconnect by itself | in progress |
-| 4 | Sound tools: per-input volume, mute, delay, noise gate, compressor | not started |
-| 5 | Picture tools on items: crop, colour fix, chroma key (green screen), mask | not started |
-| 6 | Lower thirds, countdown timer, clock | not started |
-| 7 | Recording from the Studio itself, with its own quality settings | not started |
-| 8 | Hotkeys and a second preview window (projector) | not started |
-| 9 | Virtual camera for Zoom (needs a special driver on Windows and Mac) | not started, hardest |
-| 10 | Capture cards and NDI | not started |
+| 2 | Smooth transitions between scenes (cut, fade, slide, dip to black) | done |
+| 3 | Steady for 2 hours or more: graphics card encoding, reconnect by itself | done |
+| 4 | Sound tools: per-input volume, mute, delay, noise gate, compressor | built (PR #28) |
+| 5 | Picture tools on items: crop, colour fix, chroma key (green screen), shape, flip | built (PR #29) |
+| 6 | Lower thirds, countdown timer, clock | built (PR #30) |
+| 7 | Recording from the Studio itself, with its own quality settings | built (PR #31) |
+| 8 | Hotkeys and a second preview window | built (PR #32). Keys work only when the Studio window is in front |
+| 9 | Virtual camera for Zoom (needs a special driver on Windows and Mac) | not started, hardest. For now: share the Preview window in Zoom |
+| 10 | Capture cards and NDI | capture cards that show up as a camera already work as a Camera source. NDI not started |
 | 11 | Plugins (OBS plugins will not work in Version 2) | not planned |
 
 The Studio draws everything in the app window and encodes it with ffmpeg. That is simpler than OBS, but it uses more computer power on a weak PC. Test on the church PC early.
