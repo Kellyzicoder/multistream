@@ -738,6 +738,21 @@ async function loadDevices() {
   renderAudio(); syncAudio();
 }
 
+// A pipe to the app for video. In the desktop app it goes straight to the app (no network, no localhost).
+// It behaves like a WebSocket (onopen, onmessage, onclose, send, close), so the code below works with either.
+function openPipe(p) {
+  if (!(window.msNative && window.msNative.pipe)) return new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + p);
+  const o = { readyState: 0, binaryType: 'arraybuffer', onopen: null, onmessage: null, onclose: null, onerror: null };
+  const h = window.msNative.pipe(p, (type, data) => {
+    if (type === 'open') { o.readyState = 1; o.onopen && o.onopen(); }
+    else if (type === 'message') { o.onmessage && o.onmessage({ data: typeof data === 'string' ? data : new TextDecoder().decode(data) }); }
+    else if (type === 'close') { if (o.readyState === 3) return; o.readyState = 3; o.onclose && o.onclose(); }
+  });
+  o.send = (d) => { if (o.readyState === 1) h.send(d); };
+  o.close = () => { if (o.readyState === 3) return; o.readyState = 3; h.close(); setTimeout(() => o.onclose && o.onclose(), 0); };
+  return o;
+}
+
 // ---------------- sending ----------------
 // Once you press Start sending, it keeps trying to send until you press Stop. If the link drops, or the
 // encoder stops, it reconnects by itself, so a long service does not end because of one hiccup.
@@ -752,7 +767,7 @@ async function connectSend() {
   try { ensureAudio(); await syncAudio(); } catch {}
   const out = new MediaStream(cv.captureStream(30).getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
-  wsOut = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/studio-ingest');
+  wsOut = openPipe('/studio-ingest');
   wsOut.binaryType = 'arraybuffer';
   wsOut.onopen = () => {
     const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
@@ -794,7 +809,7 @@ async function startRec() {
   try { ensureAudio(); await syncAudio(); } catch {}
   const out = new MediaStream(rcv.captureStream(30).getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
-  const ws = recWs = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + `/studio-record?h=${rcv.height}&mbit=${mb}`);
+  const ws = recWs = openPipe(`/studio-record?h=${rcv.height}&mbit=${mb}`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
     const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
@@ -838,7 +853,7 @@ $('#vcBtn').onclick = async () => {
     if (r.error) { $('#st').textContent = 'Virtual camera setup: ' + r.error; $('#st').className = 'stat bad'; return; }
     try { localStorage.setItem('ms_vcam_ok', '1'); } catch {}
   }
-  const ws = vcWs = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/studio-vcam');
+  const ws = vcWs = openPipe('/studio-vcam');
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
     const mt = ['video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));

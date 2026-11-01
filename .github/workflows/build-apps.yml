@@ -18,26 +18,26 @@ jobs:
             name: Windows
             args: --win --x64
             files: |
-              dist/Multistream2-Setup.exe
+              dist/Multistream3-Setup.exe
               dist/latest.yml
-              dist/Multistream2-Setup.exe.blockmap
+              dist/Multistream3-Setup.exe.blockmap
           - os: macos-latest
             name: Mac
             args: --mac --x64 --arm64
-            files: dist/Multistream2-Mac-*.dmg
+            files: dist/Multistream3-Mac-*.dmg
           - os: ubuntu-latest
             name: Linux
             args: --linux --x64
-            files: dist/Multistream2-Linux.AppImage
+            files: dist/Multistream3-Linux.AppImage
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Number this build (2.0.<run number>) so apps can tell which is newer
+      - name: Number this build (3.0.<run number>) so apps can tell which is newer
         shell: bash
-        run: npm version "2.0.${{ github.run_number }}" --no-git-tag-version
+        run: npm version "3.0.${{ github.run_number }}" --no-git-tag-version
       # Windows only: build the free "softcam" virtual camera (MIT licence) and our small helper that feeds it
       - name: Get softcam source
         if: matrix.name == 'Windows'
@@ -79,12 +79,33 @@ jobs:
       - name: Keep the installer from this run
         uses: actions/upload-artifact@v4
         with:
-          name: Multistream2-${{ matrix.name }}
+          name: Multistream3-${{ matrix.name }}
           path: ${{ matrix.files }}
 
+  # Runs the real app on a Linux computer with no screen, with a fake YouTube, and checks it end to end
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: npm install
+      - name: Unit tests (video hub and in-app requests)
+        run: npm test
+      - name: App test (real app, fake YouTube)
+        run: xvfb-run -a npm run test:app
+      - name: Keep the screenshots and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Multistream3-test-results
+          path: test-out
+
   release:
-    if: github.ref == 'refs/heads/v2'
-    needs: build
+    if: github.ref == 'refs/heads/v3'
+    needs: [build, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -93,9 +114,9 @@ jobs:
           merge-multiple: true
       - name: Publish a download link
         run: |
-          echo '{"version":"2.0.${{ github.run_number }}"}' > out/version.json
+          echo '{"version":"3.0.${{ github.run_number }}"}' > out/version.json
           ls -l out
-          gh release delete v2-latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
-          gh release create v2-latest out/* --repo "$GITHUB_REPOSITORY" --latest=false --title "Multistream 2 (latest)" --notes "Version 2 (test). Windows: Multistream2-Setup.exe. Mac: Multistream2-Mac-arm64.dmg (M1 and newer) or Multistream2-Mac-x64.dmg (Intel). Linux: Multistream2-Linux.AppImage. Version 1 stays on the Multistream (latest) release."
+          gh release delete v3-latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+          gh release create v3-latest out/* --repo "$GITHUB_REPOSITORY" --latest=false --title "Multistream 3 (latest)" --notes "Version 3 (test): no localhost. Windows: Multistream3-Setup.exe. Mac: Multistream3-Mac-arm64.dmg (M1 and newer) or Multistream3-Mac-x64.dmg (Intel). Linux: Multistream3-Linux.AppImage. Version 1 and 2 stay on their own releases."
         env:
           GH_TOKEN: ${{ github.token }}

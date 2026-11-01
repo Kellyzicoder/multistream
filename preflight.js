@@ -32,22 +32,22 @@ async function runPreflight(d) {
     }
   }
 
-  // The picture and sound coming from OBS
+  // The picture and sound coming in (from the Studio, or OBS if the backup is on)
   const s = d.signal || {};
   if (!d.obsLive) {
-    add('sig', 'OBS signal', 'warn', 'OBS is not sending yet. Press Start Streaming in OBS, then check again to test the picture and sound.');
+    add('sig', 'Video signal', 'warn', 'Nothing is being sent yet. In the Studio press Start sending, then check again to test the picture and sound.');
   } else {
-    if (!d.signalOk) add('sig', 'OBS signal', 'bad', 'OBS is connected but no video is arriving.');
-    else add('sig', 'OBS signal', 'ok', 'Video is arriving' + (s.kbps ? ' at ' + (s.kbps / 1000).toFixed(1) + ' Mbps' : '') + '.');
+    if (!d.signalOk) add('sig', 'Video signal', 'bad', 'The video source is connected but no video is arriving.');
+    else add('sig', 'Video signal', 'ok', 'Video is arriving' + (s.kbps ? ' at ' + (s.kbps / 1000).toFixed(1) + ' Mbps' : '') + '.');
     const vOk = s.video && /h264|avc/i.test(s.video.codec || '');
     const aOk = s.audio && /aac/i.test(s.audio.codec || '');
     if (!s.video) add('fmt', 'Video and sound type', 'warn', 'Not measured yet. Wait a few seconds and check again.');
     else if (vOk && aOk) add('fmt', 'Video and sound type', 'ok', `${s.video.codec} ${s.video.width}x${s.video.height}, sound ${s.audio.codec}.`);
-    else add('fmt', 'Video and sound type', 'bad', `YouTube and Facebook want H.264 video and AAC sound. OBS is sending ${(s.video || {}).codec || '?'} and ${(s.audio || {}).codec || 'no sound'}.`);
+    else add('fmt', 'Video and sound type', 'bad', `YouTube and Facebook want H.264 video and AAC sound. the video is ${(s.video || {}).codec || '?'} and ${(s.audio || {}).codec || 'no sound'}.`);
     if (s.keyframe == null) add('key', 'Keyframe', 'warn', 'Not measured yet. Wait a few seconds and check again.');
     else if (s.keyframe <= 2.5) add('key', 'Keyframe', 'ok', `Every ${s.keyframe} seconds.`);
-    else if (s.keyframe <= 4) add('key', 'Keyframe', 'warn', `Every ${s.keyframe} seconds. 2 is best. In OBS: Settings, Output, Keyframe Interval, 2.`);
-    else add('key', 'Keyframe', 'bad', `Every ${s.keyframe} seconds. Too long. In OBS: Settings, Output, Keyframe Interval, 2.`);
+    else if (s.keyframe <= 4) add('key', 'Keyframe', 'warn', `Every ${s.keyframe} seconds. 2 is best. (Only if you use the OBS backup: in OBS, Settings, Output, Keyframe Interval, 2.)`);
+    else add('key', 'Keyframe', 'bad', `Every ${s.keyframe} seconds. Too long. (Only if you use the OBS backup: in OBS, Settings, Output, Keyframe Interval, 2.)`);
   }
 
   // Room to record

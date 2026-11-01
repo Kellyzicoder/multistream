@@ -1,23 +1,31 @@
-// Desktop app (Windows + Mac). Opens a window around the dashboard and runs the relay inside it.
+// Desktop app (Windows + Mac). Version 3: the windows talk to the app directly, with no localhost.
+// Pages load from app://multistream/... and every request is answered inside the app (server.js handle()).
 
-const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, net: electronNet } = require('electron');
-const net = require('net');
+const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet } = require('electron');
 const path = require('path');
+const { Readable } = require('stream');
 
-const DASHBOARD_PORT = 3000;
-const RTMP_PORT = 1935;
-const PREVIEW_PORT = 8000;
+const HOME = 'app://multistream';
 
 let win = null;
 let relay = null; // the server module, once started
 
-// Is a port free on this computer?
-function portFree(port) {
-  return new Promise((resolve) => {
-    const s = net.createServer();
-    s.once('error', () => resolve(false));
-    s.once('listening', () => s.close(() => resolve(true)));
-    s.listen(port, '0.0.0.0');
+// must be set before the app is ready: app:// behaves like a normal secure web address (camera, fetch, video)
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true, codeCache: true } },
+]);
+function serveApp(ses) {
+  ses.protocol.handle('app', async (request) => {
+    const u = new URL(request.url);
+    const method = request.method || 'GET';
+    let body = null;
+    if (!['GET', 'HEAD'].includes(method)) body = Buffer.from(await request.arrayBuffer());
+    const headers = {};
+    request.headers.forEach((v, k) => { headers[k] = v; });
+    const r = await relay.handle({ method, url: u.pathname + u.search, headers, body });
+    const noBody = [101, 204, 205, 304].includes(r.status) || method === 'HEAD';
+    if (noBody) r.body.resume();
+    return new Response(noBody ? null : Readable.toWeb(r.body), { status: r.status, headers: r.headers });
   });
 }
 
@@ -34,16 +42,16 @@ function createWindow() {
     height: 780,
     minWidth: 900,
     minHeight: 640,
-    title: 'Multistream 2',
+    title: 'Multistream 3',
     autoHideMenuBar: true,
     backgroundColor: '#eaf1fb',
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
   win.webContents.session.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'mediaKeySystem', 'display-capture'].includes(perm)));
-  win.loadURL(`http://127.0.0.1:${DASHBOARD_PORT}`);
+  win.loadURL(HOME + '/');
   // links that leave the dashboard open in the normal browser
   win.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
   win.on('closed', () => { win = null; });
@@ -59,7 +67,8 @@ ipcMain.handle('ms-open-studio', () => {
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
   studioWin.webContents.session.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'display-capture'].includes(perm)));
-  studioWin.loadURL(`http://127.0.0.1:${DASHBOARD_PORT}/studio.html`);
+  studioWin.loadURL(HOME + '/studio.html');
+  studioWin.webContents.setWindowOpenHandler(({ url }) => (url.startsWith(HOME) || url === 'about:blank' || url === '' ? { action: 'allow' } : (/^https?:\/\//i.test(url) && shell.openExternal(url), { action: 'deny' })));
   studioWin.on('closed', () => { studioWin = null; browsers.forEach((b) => b.destroy()); browsers.clear(); });
 });
 let crWin = null;
@@ -67,7 +76,7 @@ ipcMain.handle('ms-open-cr', () => {
   if (crWin) { crWin.focus(); return; }
   crWin = new BrowserWindow({ width: 1280, height: 800, title: 'Multistream Control Room', autoHideMenuBar: true, backgroundColor: '#eaf1fb',
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') } });
-  crWin.loadURL(`http://127.0.0.1:${DASHBOARD_PORT}/#control-room`);
+  crWin.loadURL(HOME + '/#control-room');
   crWin.on('closed', () => { crWin = null; });
 });
 // A web page (like the lyrics page) is drawn off-screen. We pass each new picture of it to the studio page.
@@ -86,6 +95,21 @@ ipcMain.handle('ms-browser-open', (e, id, url, w, h) => {
   browsers.set(id, b);
 });
 ipcMain.handle('ms-browser-close', (e, id) => { const b = browsers.get(id); if (b) { b.destroy(); browsers.delete(id); } });
+// Two-way pipes between a window and the app (the Studio's video, recording and virtual camera).
+// They used to be WebSockets on localhost. Now they are plain messages inside the app.
+const pipes = new Map();
+ipcMain.on('ms-pipe-open', (e, id, p) => {
+  const key = e.sender.id + ':' + id;
+  const toWindow = (type, data) => { if (!e.sender.isDestroyed()) e.sender.send('ms-pipe-ev', id, type, data); if (type === 'close') pipes.delete(key); };
+  const w = relay && relay.openPipe(String(p), toWindow);
+  if (!w) { toWindow('close'); return; }
+  pipes.set(key, w);
+  toWindow('open');
+  e.sender.once('destroyed', () => { const x = pipes.get(key); if (x) { pipes.delete(key); x.windowClosed(); } });
+});
+ipcMain.on('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(e.sender.id + ':' + id); if (w) w.fromWindow(data, isText); });
+ipcMain.on('ms-pipe-close', (e, id) => { const key = e.sender.id + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });
+
 // choosing which screen to capture (for the screen with the lyrics)
 let pickedScreen = '';
 ipcMain.handle('ms-screens', async () => (await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } })).map((s) => ({ id: s.id, name: s.name })));
@@ -101,8 +125,8 @@ function setupScreenCapture(ses) {
 // ---- Updates ----
 // Windows: the app downloads the new version by itself and asks to restart.
 // Mac and Linux: the app only tells you a new version is ready and opens the download page.
-const RELEASE_PAGE = 'https://github.com/Kellyzicoder/multistream/releases/tag/v2-latest';
-const VERSION_URL = 'https://github.com/Kellyzicoder/multistream/releases/download/v2-latest/version.json';
+const RELEASE_PAGE = 'https://github.com/Kellyzicoder/multistream/releases/tag/v3-latest';
+const VERSION_URL = 'https://github.com/Kellyzicoder/multistream/releases/download/v3-latest/version.json';
 function isNewer(a, b) {
   const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
   for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); }
@@ -140,7 +164,7 @@ function startUpdates() {
           message: 'A new version of Multistream is ready.',
           detail: `Version ${info.version} is downloaded. Restart to use it. If you press Later, it installs when you close the app. Do not restart while you are live.`,
         });
-        if (pick.response === 0) { if (relay) relay.stopAll(); autoUpdater.quitAndInstall(); }
+        if (pick.response === 0) { if (relay) relay.shutdown(); autoUpdater.quitAndInstall(); }
       });
       const check = () => autoUpdater.checkForUpdates().catch(() => {});
       setTimeout(check, 20000);
@@ -153,25 +177,11 @@ function startUpdates() {
 }
 
 async function start() {
-  const busy = [];
-  if (!(await portFree(DASHBOARD_PORT))) busy.push(`${DASHBOARD_PORT} (dashboard)`);
-  if (!(await portFree(RTMP_PORT))) busy.push(`${RTMP_PORT} (video from OBS)`);
-  if (!(await portFree(PREVIEW_PORT))) busy.push(`${PREVIEW_PORT} (video preview)`);
-  if (busy.length) {
-    dialog.showErrorBox(
-      'Multistream cannot start',
-      `Another program is already using port ${busy.join(' and ')}.\n\n` +
-        'Close the other program (or another copy of Multistream) and open this app again.'
-    );
-    app.quit();
-    return;
-  }
-
   try {
     // where saved destinations and keys live: the user's own app-data folder
-    process.env.MULTISTREAM_DATA = path.join(app.getPath('userData'), 'data');
+    process.env.MULTISTREAM_DATA = process.env.MULTISTREAM_DATA || path.join(app.getPath('userData'), 'data');
     process.env.FFMPEG_PATH = ffmpegPath();
-    process.env.MULTISTREAM_RECORDINGS = path.join(app.getPath('videos'), 'Multistream');
+    process.env.MULTISTREAM_RECORDINGS = process.env.MULTISTREAM_RECORDINGS || path.join(app.getPath('videos'), 'Multistream');
     relay = require('./server');
     relay.setOpenFolder((p) => shell.openPath(p));
   } catch (err) {
@@ -179,6 +189,7 @@ async function start() {
     app.quit();
     return;
   }
+  serveApp(session.defaultSession);
   setupScreenCapture(session.defaultSession);
   createWindow();
   startUpdates();
@@ -199,6 +210,6 @@ if (!app.requestSingleInstanceLock()) {
 
 // stop every platform stream when the app closes
 app.on('before-quit', () => {
-  if (relay) relay.stopAll();
+  if (relay) relay.shutdown();
 });
 app.on('window-all-closed', () => app.quit());

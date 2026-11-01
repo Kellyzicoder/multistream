@@ -1,4 +1,4 @@
-// Records the stream from OBS into a file on this computer. No re-encoding, so it uses almost no CPU.
+// Records the stream into a file on this computer. No re-encoding, so it uses almost no CPU.
 // The file is .mkv: if the power or the app dies, the video recorded so far is still playable.
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -9,7 +9,8 @@ function stamp(d = new Date()) {
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}`;
 }
 
-function createRecorder({ ffmpeg, input, dir }) {
+// feed (optional): a function that connects ffmpeg's input to the video hub and returns a function to disconnect.
+function createRecorder({ ffmpeg, input, dir, feed }) {
   let proc = null;
   let info = { on: false, file: '', startedAt: 0, error: '' };
 
@@ -20,6 +21,7 @@ function createRecorder({ ffmpeg, input, dir }) {
     const args = ['-loglevel', 'warning', '-nostats', ...input, '-c', 'copy', '-f', 'matroska', file];
     const p = spawn(ffmpeg, args, { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
     proc = p;
+    p.unfeed = feed ? feed(p.stdin) : null;
     info = { on: true, file: path.basename(file), startedAt: Date.now(), error: '' };
     let last = '';
     p.stderr.on('data', (c) => { const t = c.toString().trim().split('\n').pop(); if (t) last = t; });
@@ -43,7 +45,8 @@ function createRecorder({ ffmpeg, input, dir }) {
       let done = false;
       const finish = () => { if (!done) { done = true; resolve(); } };
       p.once('close', finish);
-      try { p.stdin.write('q'); p.stdin.end(); } catch {}
+      // fed from the hub: closing its input makes ffmpeg finish the file. Otherwise: press q.
+      try { if (p.unfeed) { p.unfeed(); p.stdin.end(); } else { p.stdin.write('q'); p.stdin.end(); } } catch {}
       setTimeout(() => { try { p.kill('SIGTERM'); } catch {} }, 4000);
       setTimeout(finish, 6000);
     }).then(() => { if (proc === p) { proc = null; info.on = false; } });

@@ -3,7 +3,6 @@
 // Each destination gets its own ffmpeg process, so if one fails the others keep going.
 
 const express = require('express');
-const NodeMediaServer = require('node-media-server');
 const { spawn, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -11,6 +10,9 @@ const crypto = require('crypto');
 const WebSocket = require('ws');
 const os = require('os');
 const { createRecorder } = require('./recorder');
+const { createHub } = require('./flvhub');
+const { inject, FakeWs } = require('./inproc');
+const http = require('http');
 const { createVcam } = require('./vcam');
 const { createAutoRetry } = require('./autoretry');
 const { createChat } = require('./chat');
@@ -18,10 +20,14 @@ const { runPreflight } = require('./preflight');
 const { detectEncoder, videoArgs } = require('./encoder');
 const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker } = require('./stats');
 
+// Version 3: nothing listens on the network unless you switch it on.
+// The app windows talk to this file directly (see inproc.js), and video moves through the hub (flvhub.js).
+// Ports are only opened for: OBS backup (1935), phone control (3000), and for a few minutes while you sign in to YouTube (3000).
 const DASHBOARD_PORT = Number(process.env.PORT) || 3000;
 const RTMP_PORT = 1935;
-const HTTP_PORT = 8000; // the preview player watches the stream from here (http-flv)
-const INGEST_PATH = '/live/obs'; // OBS server: rtmp://localhost/live   key: obs
+const INGEST_PATH = '/live/obs'; // OBS backup: rtmp://localhost/live   key: obs
+const hub = createHub();
+const HUB_IN = ['-f', 'flv', '-i', 'pipe:0'];
 // The desktop app sets these two. Run on its own (npm start) they fall back to the old behaviour.
 const FFMPEG = process.env.FFMPEG_PATH || 'ffmpeg';
 const DATA_DIR = process.env.MULTISTREAM_DATA || path.join(__dirname, 'data');
@@ -60,7 +66,7 @@ const REC_DIR = process.env.MULTISTREAM_RECORDINGS || path.join(DATA_DIR, 'recor
 const REC_FILE = path.join(DATA_DIR, 'recording.json');
 let recCfg = { auto: false };
 try { recCfg = { auto: Boolean(JSON.parse(fs.readFileSync(REC_FILE, 'utf8')).auto) }; } catch {}
-const recorder = createRecorder({ ffmpeg: FFMPEG, input: ['-i', `rtmp://127.0.0.1:${RTMP_PORT}${INGEST_PATH}`], dir: REC_DIR });
+const recorder = createRecorder({ ffmpeg: FFMPEG, input: HUB_IN, dir: REC_DIR, feed: (stdin) => hub.subscribe(stdin) });
 let openFolderHook = null;
 const recView = () => ({ ...recorder.state(), auto: recCfg.auto });
 
@@ -111,11 +117,13 @@ function startMonitor() {
   signal.startedAt = Date.now();
   const args = [
     '-loglevel', 'info', '-nostats',
-    '-i', `rtmp://127.0.0.1:${RTMP_PORT}${INGEST_PATH}`,
+    ...HUB_IN,
     '-map', '0', '-c', 'copy', '-f', 'flv', 'pipe:1',
   ];
   const p = spawn(FFMPEG, args, { windowsHide: true });
   monitor = p;
+  p.stdin.on('error', () => {});
+  hub.subscribe(p.stdin, () => { try { p.kill('SIGKILL'); } catch {} });
   let bytes = 0;
   const rate = makeRateTracker();
   // seconds between keyframes: average of the last few gaps
@@ -177,7 +185,7 @@ function startDestination(d) {
   const args = [
     '-loglevel', 'warning',
     '-nostats', '-progress', 'pipe:1', '-stats_period', '1', // numbers for the dashboard
-    '-i', `rtmp://127.0.0.1:${RTMP_PORT}${INGEST_PATH}`,
+    ...HUB_IN,
     '-c', 'copy', // no re-encoding: low CPU. Set OBS to a bitrate/codec every platform accepts.
     '-f', 'flv',
     targetOf(d),
@@ -185,6 +193,9 @@ function startDestination(d) {
   const p = spawn(FFMPEG, args, { windowsHide: true });
   const startedAt = Date.now();
   procs.set(d.id, p);
+  p.stdin.on('error', () => {});
+  // if this channel falls far behind (slow internet), it is stopped and starts again by itself
+  hub.subscribe(p.stdin, () => { try { p.kill('SIGKILL'); } catch {} });
   // what we are really sending: average of the last few readings, because the sending comes in bursts
   const rate = makeRateTracker();
   const recent = [];
@@ -248,33 +259,65 @@ function stopAll() {
   for (const d of destinations) stopDestination(d.id);
 }
 
-// ---- OBS ingest ----
-// rtmp = video from OBS. http = lets the preview player in the window watch the same stream.
-const nms = new NodeMediaServer({
-  rtmp: { port: RTMP_PORT, chunk_size: 60000, gop_cache: true, ping: 30, ping_timeout: 60 },
-  http: { port: HTTP_PORT, allow_origin: '*' },
-  logType: 1,
-});
-nms.on('postPublish', (id, streamPath) => {
-  if (streamPath !== INGEST_PATH) return;
-  console.log('OBS connected. Starting destinations...');
+// ---- Video coming in (from the Studio, or from OBS when the backup is on) ----
+hub.on('start', () => {
+  console.log('Video is coming in. Starting destinations...');
   obsLive = true;
   chat.clear();
-  // small delay so the first video packets are available before ffmpeg connects
+  // small delay so the first keyframe is in the hub before the channels join
   setTimeout(() => {
+    if (!obsLive) return;
     startMonitor();
     destinations.forEach(startDestination);
     if (recCfg.auto) recorder.start();
   }, 1000);
 });
-nms.on('donePublish', (id, streamPath) => {
-  if (streamPath !== INGEST_PATH) return;
-  console.log('OBS disconnected. Stopping destinations.');
+hub.on('end', () => {
+  console.log('Video stopped coming in. Stopping destinations.');
   obsLive = false;
   stopAll();
   resetSignal();
 });
-nms.run();
+// Feed an ffmpeg's FLV output into the hub, but only once it really starts giving video,
+// so a source that fails to start does not cut off the one that is working.
+function feedHub(stdout) {
+  let stop = null;
+  stdout.once('data', (first) => { stop = hub.publish(stdout); hub.write(first); });
+  return () => { if (stop) stop(); };
+}
+
+// ---- OBS backup: off unless switched on in Settings ----
+// When on, OBS can send to rtmp://localhost:1935/live with stream key obs, like in Version 1 and 2.
+const OBSIN_FILE = path.join(DATA_DIR, 'obs-backup.json');
+let obsIn = { enabled: false };
+try { obsIn = { enabled: Boolean(JSON.parse(fs.readFileSync(OBSIN_FILE, 'utf8')).enabled) }; } catch {}
+const obsInInfo = { listening: false, sending: false, error: '' };
+let obsInProc = null, obsInTimer = null;
+function obsInStart() {
+  clearTimeout(obsInTimer);
+  if (!obsIn.enabled || obsInProc) return;
+  const p = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-listen', '1', '-f', 'flv', '-i', `rtmp://127.0.0.1:${RTMP_PORT}${INGEST_PATH}`,
+    '-c', 'copy', '-f', 'flv', 'pipe:1'], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+  obsInProc = p; obsInInfo.listening = true; obsInInfo.sending = false;
+  let last = '';
+  p.stderr.on('data', (c) => { const t = String(c).trim().split('\n').pop(); if (t) last = t; });
+  p.stdout.once('data', () => { obsInInfo.sending = true; obsInInfo.error = ''; });
+  const unfeed = feedHub(p.stdout);
+  p.on('error', (e) => { obsInInfo.error = e.message; });
+  p.on('close', () => {
+    if (obsInProc === p) { obsInProc = null; obsInInfo.listening = false; obsInInfo.sending = false; }
+    if (/address already in use|bind/i.test(last)) obsInInfo.error = `Port ${RTMP_PORT} is in use by another program (is Version 1 or 2 open?)`;
+    unfeed();
+    // OBS stopped (or nothing came): wait for the next time OBS starts streaming
+    if (obsIn.enabled) obsInTimer = setTimeout(obsInStart, obsInInfo.error ? 5000 : 1000);
+  });
+}
+function obsInStop() {
+  clearTimeout(obsInTimer);
+  const p = obsInProc; obsInProc = null; obsInInfo.listening = false; obsInInfo.sending = false; obsInInfo.error = '';
+  if (p) { try { p.kill('SIGKILL'); } catch {} }
+}
+obsInStart();
 
 
 // ---- remote access (control the dashboard from a phone on the same Wi-Fi) ----
@@ -333,6 +376,38 @@ function loginPage(error) {
 
 // ---- dashboard + API ----
 const app = express();
+// Phone control: a web server for other devices on the Wi-Fi. Only runs while "Allow other devices" is on.
+let phoneServer = null, phoneError = '';
+function syncPhoneServer() {
+  const want = Boolean(settings.remote.enabled && settings.remote.hash);
+  if (want && !phoneServer) {
+    phoneError = '';
+    const s = http.createServer(app);
+    s.on('upgrade', (req, sock) => sock.destroy());
+    s.on('error', (e) => { phoneError = e.code === 'EADDRINUSE' ? `Port ${DASHBOARD_PORT} is in use by another program (is Version 1 or 2 open?)` : e.message; if (phoneServer === s) phoneServer = null; });
+    s.listen(DASHBOARD_PORT, '0.0.0.0');
+    phoneServer = s;
+  } else if (!want && phoneServer) {
+    const s = phoneServer; phoneServer = null;
+    try { s.close(); s.closeAllConnections && s.closeAllConnections(); } catch {}
+  }
+}
+// YouTube sign-in: Google sends your browser back to this computer once. A small listener opens
+// for that only, on this computer only, and closes again after sign-in (or after 5 minutes).
+let loginServer = null, loginTimer = null;
+function openLoginListener() {
+  if (phoneServer || loginServer) return;
+  const s = http.createServer(app);
+  s.on('error', () => { if (loginServer === s) loginServer = null; });
+  s.listen(DASHBOARD_PORT, '127.0.0.1');
+  loginServer = s;
+  clearTimeout(loginTimer); loginTimer = setTimeout(closeLoginListener, 5 * 60 * 1000);
+}
+function closeLoginListener() {
+  clearTimeout(loginTimer);
+  const s = loginServer; loginServer = null;
+  if (s) setTimeout(() => { try { s.close(); s.closeAllConnections && s.closeAllConnections(); } catch {} }, 1500);
+}
 app.use(express.json({ limit: '8mb' }));
 app.use(express.urlencoded({ extended: false }));
 
@@ -369,7 +444,7 @@ app.post('/login', (req, res) => {
 
 // settings for remote access: only the app window on this computer may change them
 function remoteView() {
-  return { enabled: settings.remote.enabled, hasPassword: Boolean(settings.remote.hash), addresses: lanAddresses() };
+  return { enabled: settings.remote.enabled, hasPassword: Boolean(settings.remote.hash), addresses: lanAddresses(), running: Boolean(phoneServer), error: phoneError };
 }
 app.get('/api/remote', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
@@ -391,7 +466,8 @@ app.put('/api/remote', (req, res) => {
     if (!r.enabled) sessions.clear();
   }
   saveSettings();
-  res.json(remoteView());
+  syncPhoneServer();
+  setTimeout(() => res.json(remoteView()), 300);
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -418,7 +494,8 @@ function publicView(d) {
 app.get('/api/state', (req, res) => {
   res.json({
     obsLive,
-    ingest: { server: `rtmp://localhost:${RTMP_PORT}/live`, key: 'obs', httpPort: HTTP_PORT, path: INGEST_PATH },
+    ingest: { server: `rtmp://localhost:${RTMP_PORT}/live`, key: 'obs', obsBackup: obsIn.enabled, preview: '/live.flv' },
+    studio: { sending: studioInfo.sending },
     signal: {
       startedAt: signal.startedAt,
       video: signal.video,
@@ -496,7 +573,7 @@ app.get('/api/preflight', async (req, res) => {
 // ---- Recording routes ----
 app.get('/api/recording', (req, res) => res.json({ ...recView(), files: recorder.list() }));
 app.post('/api/recording/start', (req, res) => {
-  if (!obsLive) return res.status(400).json({ error: 'Start streaming in OBS first' });
+  if (!obsLive) return res.status(400).json({ error: 'Start sending from the Studio first' });
   const r = recorder.start();
   if (r.error) return res.status(500).json({ error: r.error });
   res.json(recView());
@@ -609,7 +686,7 @@ app.put('/api/facebook', async (req, res) => {
 });
 
 app.post('/api/facebook/live', async (req, res) => {
-  if (!obsLive) return res.status(400).json({ error: 'Start streaming in OBS first' });
+  if (!obsLive) return res.status(400).json({ error: 'Start sending from the Studio first' });
   if (!fb.token || !fb.pageId) return res.status(400).json({ error: 'Add the Facebook Page first' });
   const d = fbDestination() || addDestination('Facebook');
   const title = goLiveTitle(req);
@@ -706,6 +783,7 @@ app.get('/api/youtube/login', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
   if (!yt.clientId) return res.status(400).json({ error: 'Choose the file from Google first' });
   ytLoginState = crypto.randomBytes(16).toString('hex');
+  openLoginListener();
   const url = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
     client_id: yt.clientId,
     redirect_uri: YT_REDIRECT,
@@ -738,6 +816,7 @@ app.get('/api/youtube/callback', async (req, res) => {
   } catch (e) {
     page('YouTube not connected', plain(e.message));
   }
+  closeLoginListener();
 });
 
 async function ytSetThumbnail(videoId) {
@@ -754,7 +833,7 @@ async function ytSetThumbnail(videoId) {
   }
 }
 app.post('/api/youtube/live', async (req, res) => {
-  if (!obsLive) return res.status(400).json({ error: 'Start streaming in OBS first' });
+  if (!obsLive) return res.status(400).json({ error: 'Start sending from the Studio first' });
   if (!yt.refreshToken) return res.status(400).json({ error: 'Connect YouTube first' });
   const d = ytDestination() || addDestination('YouTube');
   const test = Boolean((req.body || {}).test);
@@ -1130,9 +1209,21 @@ let studioFf = null;
 const studioInfo = { sending: false, error: '' };
 app.get('/api/studio/status', (req, res) => res.json(studioInfo));
 
-const httpServer = app.listen(DASHBOARD_PORT, '0.0.0.0', () => {
-  console.log(`\nDashboard:  http://localhost:${DASHBOARD_PORT}`);
-  console.log(`In OBS use: Server  rtmp://localhost:${RTMP_PORT}/live   Stream key  obs\n`);
+// the dashboard's video preview: a copy from the hub, inside the app
+app.get('/live.flv', (req, res) => {
+  if (!hub.live) return res.status(404).end();
+  res.writeHead(200, { 'Content-Type': 'video/x-flv', 'Cache-Control': 'no-cache' });
+  const off = hub.subscribe(res, () => { try { res.end(); } catch {} });
+  req.on('close', off);
+});
+// ---- OBS backup settings ----
+app.get('/api/obsin', (req, res) => res.json({ ...obsIn, ...obsInInfo, server: `rtmp://localhost:${RTMP_PORT}/live`, key: 'obs' }));
+app.put('/api/obsin', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  obsIn.enabled = Boolean((req.body || {}).enabled);
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(OBSIN_FILE, JSON.stringify(obsIn)); } catch {}
+  if (obsIn.enabled) obsInStart(); else obsInStop();
+  setTimeout(() => res.json({ ...obsIn, ...obsInInfo, server: `rtmp://localhost:${RTMP_PORT}/live`, key: 'obs' }), 400);
 });
 
 // Which encoder the Studio uses: the graphics card if one works, else the processor. Tested once at start.
@@ -1140,14 +1231,7 @@ let studioEncoder = { key: 'software', id: 'libx264', name: 'processor (x264)' }
 detectEncoder(FFMPEG).then((e) => { studioEncoder = e; studioInfo.encoder = e.name; console.log('Studio encoder: ' + e.name); }).catch(() => {});
 
 const studioWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });
-httpServer.on('upgrade', (req, sock, head) => {
-  const isRec = req.url.startsWith('/studio-record'), isVc = req.url.startsWith('/studio-vcam');
-  if (!isRec && !isVc && !req.url.startsWith('/studio-ingest')) return sock.destroy();
-  if (!isLocal(req)) return sock.destroy();
-  if (isVc) return vcamWss.handleUpgrade(req, sock, head, (w) => vcamWss.emit('connection', w));
-  if (isRec) return studioRecWss.handleUpgrade(req, sock, head, (w) => studioRecWss.emit('connection', w, req));
-  studioWss.handleUpgrade(req, sock, head, (w) => studioWss.emit('connection', w));
-});
+// (the Studio's video, recording and virtual camera pipes are opened by openPipe() below)
 // ---- Recording from the Studio: its own file, own quality, works with or without sending ----
 const studioRecWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });
 studioRecWss.on('connection', (w, req) => {
@@ -1187,9 +1271,11 @@ studioWss.on('connection', (w) => {
   if (studioFf) { try { studioFf.kill('SIGKILL'); } catch {} }
   const args = ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0',
     '-vf', 'scale=1280:720', ...videoArgs(studioEncoder.key), '-pix_fmt', 'yuv420p', '-r', '30',
-    '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-f', 'flv', `rtmp://127.0.0.1:${RTMP_PORT}${INGEST_PATH}`];
-  const ff = spawn(FFMPEG, args, { stdio: ['pipe', 'ignore', 'pipe'] });
+    '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'];
+  const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
   studioFf = ff; studioInfo.sending = true; studioInfo.error = '';
+  const unfeed = feedHub(ff.stdout);
+  ff.on('close', unfeed);
   ff.stderr.on('data', (d) => { studioInfo.error = String(d).trim().split('\n').pop().slice(0, 200); });
   ff.stdin.on('error', () => {});
   ff.on('exit', () => { if (studioFf === ff) { studioFf = null; studioInfo.sending = false; } try { w.close(); } catch {} });
@@ -1197,7 +1283,30 @@ studioWss.on('connection', (w) => {
   w.on('close', () => { try { ff.stdin.end(); setTimeout(() => ff.kill('SIGKILL'), 1500); } catch {} });
 });
 
+// ---- for the desktop app (main.js) ----
+// A request from an app window, answered with no network: { method, url, headers, body } -> { status, headers, body }
+function handle(r) { return inject(app, r); }
+// A two-way pipe from an app window (instead of a WebSocket). toWindow(type, data) sends back to the window.
+function openPipe(p, toWindow) {
+  const url = String(p || '');
+  const target = url.startsWith('/studio-record') ? studioRecWss : url.startsWith('/studio-vcam') ? vcamWss : url.startsWith('/studio-ingest') ? studioWss : null;
+  if (!target) return null;
+  const w = new FakeWs(toWindow);
+  setImmediate(() => target.emit('connection', w, { url, socket: { remoteAddress: '127.0.0.1' }, headers: {} }));
+  return w;
+}
+function shutdown() {
+  stopAll();
+  obsInStop();
+  try { if (studioFf) studioFf.kill('SIGKILL'); } catch {}
+  try { vcam.stop(); } catch {}
+  for (const s of [phoneServer, loginServer]) { try { s && s.close(); } catch {} }
+}
+syncPhoneServer();
+
 if (STANDALONE) {
+  // for testing without the desktop app: open the dashboard in a browser at http://localhost:3000
+  if (!phoneServer) { const s = http.createServer(app); s.listen(DASHBOARD_PORT, '127.0.0.1', () => console.log(`Dashboard (test mode): http://localhost:${DASHBOARD_PORT}`)); }
   process.on('SIGINT', () => {
     stopAll();
     process.exit(0);
@@ -1205,4 +1314,4 @@ if (STANDALONE) {
 }
 
 // used by the desktop app (main.js)
-module.exports = { stopAll, DASHBOARD_PORT, RTMP_PORT, setOpenFolder: (fn) => { openFolderHook = fn; } };
+module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => { openFolderHook = fn; } };

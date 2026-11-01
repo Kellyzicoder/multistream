@@ -410,9 +410,12 @@
     <div class="stage-in" id="stageIn">
      <div id="offlineView">
       <div class="ring" aria-hidden="true"><i></i></div>
-      <h1 id="h1">Waiting for OBS</h1>
-      <p class="lead" id="lead">Start streaming in OBS. Copy these two into OBS first.</p>
+      <h1 id="h1">Waiting for the Studio</h1>
+      <p class="lead" id="lead">Open the Studio and press <b>Start sending</b>. The channels below start by themselves.</p>
+      <p style="text-align:center;margin:0 0 18px"><button type="button" class="b2 pri" id="openStudioBtn">Open Studio</button></p>
 
+      <div id="obsBox" hidden>
+      <p class="lead">OBS backup is on. In OBS use these two:</p>
       <div class="fld">
         <label>RTMP URL</label>
         <div class="inp"><input id="srv" readonly value="rtmp://localhost:1935/live"><button data-copy="srv" title="Copy" aria-label="Copy URL"></button></div>
@@ -436,6 +439,7 @@
             <li>On Facebook and Instagram, press <b>Go live</b> on their page.</li>
           </ol>
         </div>
+      </div>
       </div>
      </div>
 
@@ -691,6 +695,12 @@
         </section>
 
         <section class="pane" data-pane="obs" role="tabpanel" aria-label="OBS">
+          <div class="grp"><h4>OBS backup</h4>
+            <p>Off by default: the Studio does the show. Turn this on only if you want OBS to send the video instead (for example if the Studio has a problem). While it is on, OBS sends to <code>rtmp://localhost:1935/live</code> with stream key <code>obs</code>.</p>
+            <div class="srow"><p class="lb">Let OBS send video in</p>
+              <div class="ctl"><label class="sw"><input type="checkbox" id="obsInOn" aria-label="Let OBS send video in"><span></span></label></div></div>
+            <div class="srow"><p class="lb">Status</p><div class="ctl"><p class="note" id="obsInMsg"></p></div></div>
+          </div>
           <div class="grp"><h4>Connect to OBS</h4>
             <p>This lets Multistream show your scenes and switch them. In OBS, open <b>Tools → WebSocket Server Settings</b>, tick <b>Enable WebSocket server</b>, and set a password. Then type the same password here.</p>
             <div class="srow"><p class="lb">Connect to OBS</p>
@@ -858,7 +868,7 @@ function startPreview() {
   const i = last.ingest;
   setPreviewMsg('Starting preview…');
   player = flvjs.createPlayer(
-    { type: 'flv', isLive: true, url: `http://${location.hostname}:${i.httpPort}${i.path}.flv` },
+    { type: 'flv', isLive: true, url: i.preview || '/live.flv' },
     { enableWorker: false, enableStashBuffer: false, stashInitialSize: 128, lazyLoad: false, autoCleanupSourceBuffer: true }
   );
   player.attachMediaElement($('#pv'));
@@ -912,7 +922,8 @@ function render(state) {
   $('#offlineView').hidden = live;
   $('#liveView').hidden = !live;
   $('#stageIn').classList.toggle('wide', live);
-  $('#glHint').textContent = live ? '' : 'Start streaming in OBS first. Then Go live turns on.';
+  $('#glHint').textContent = live ? '' : 'Start sending from the Studio first. Then Go live turns on.';
+  $('#obsBox').hidden = !state.ingest.obsBackup;
   $('#lvLead').textContent = `Your stream is going to ${nLive} of ${n} active channel${n === 1 ? '' : 's'}.`;
   renderSignal(state);
   syncPreview();
@@ -1024,7 +1035,8 @@ async function savePhone() {
   if (v.error) { remNote(v.error, true); return false; }
   $('#remPw').value = '';
   showRemote(v);
-  remNote(v.enabled ? 'Saved. Other devices can log in with the password.' : 'Saved. Other devices are blocked.');
+  if (v.enabled && v.error) { remNote(v.error, true); return false; }
+  remNote(v.enabled ? 'Saved. Other devices can log in with the password.' : 'Saved. Other devices are blocked, and nothing is listening on the network.');
   return true;
 }
 
@@ -1040,6 +1052,7 @@ document.querySelectorAll('[data-copy]').forEach((b) => {
 });
 
 // how to connect OBS
+$('#openStudioBtn').onclick = () => showPage('studio');
 $('#howLink').onclick = () => {
   const s = $('#steps');
   s.style.display = s.style.display === 'block' ? 'none' : 'block';
@@ -1147,7 +1160,16 @@ async function pollAud() {
 setInterval(pollAud, 200);
 $('#audOn').onchange = (e) => { audOn = e.target.checked; try { localStorage.setItem('ms_audio', JSON.stringify(audOn)); } catch {} renderAud(); };
 
+function obsInText(v) {
+  if (!v.enabled) return ['Off. Nothing is listening for OBS.', false];
+  if (v.error) return [v.error, true];
+  if (v.sending) return ['OBS is sending video.', false];
+  return ['Waiting for OBS. In OBS press Start Streaming.', false];
+}
 async function loadObs() {
+  const vi = await api('/api/obsin');
+  $('#obsInOn').checked = Boolean(vi.enabled);
+  const [t, bad] = obsInText(vi); $('#obsInMsg').textContent = t; $('#obsInMsg').className = 'note' + (bad ? ' bad' : '');
   const o = await api('/api/obs');
   $('#obsOn').checked = o.enabled; $('#obsPort').value = o.port || 4455; $('#obsPw').value = '';
   $('#obsPw').placeholder = o.hasPassword ? 'Password saved. Leave empty to keep it' : 'Type the OBS password';
@@ -1155,6 +1177,9 @@ async function loadObs() {
   $('#obsMsg').className = 'note' + (o.enabled && !o.connected ? ' bad' : '');
 }
 async function saveObs() {
+  const vi = await api('/api/obsin', 'PUT', { enabled: $('#obsInOn').checked });
+  if (vi.error && !('enabled' in vi)) { $('#obsInMsg').textContent = vi.error; $('#obsInMsg').className = 'note bad'; return false; }
+  { const [t, bad] = obsInText(vi); $('#obsInMsg').textContent = t; $('#obsInMsg').className = 'note' + (bad ? ' bad' : ''); }
   const msg = $('#obsMsg');
   const body = { enabled: $('#obsOn').checked, port: $('#obsPort').value.trim() || 4455 };
   if ($('#obsPw').value) body.password = $('#obsPw').value;
@@ -1552,7 +1577,7 @@ $('#setOk').onclick = async () => { if (await applySettings()) closeSettings(tru
 $('#setCancel').onclick = () => closeSettings(false);
 $('#setX').onclick = () => closeSettings(false);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && setOverlay.classList.contains('open')) closeSettings(false); });
-[['#fb-page', 'facebook'], ['#fb-token', 'facebook'], ['#obsOn', 'obs'], ['#obsPort', 'obs'], ['#obsPw', 'obs'], ['#remOn', 'phone'], ['#remPw', 'phone'], ['#recAuto', 'recording']].forEach(([id, k]) => {
+[['#fb-page', 'facebook'], ['#fb-token', 'facebook'], ['#obsInOn', 'obs'], ['#obsOn', 'obs'], ['#obsPort', 'obs'], ['#obsPw', 'obs'], ['#remOn', 'phone'], ['#remPw', 'phone'], ['#recAuto', 'recording']].forEach(([id, k]) => {
   $(id).addEventListener('input', () => setDirty(k));
   $(id).addEventListener('change', () => setDirty(k));
 });
@@ -1622,11 +1647,11 @@ function checkAlerts(s) {
     prevDest[d.id] = st;
   }
   const open = s.session && (s.session.youtube || s.session.facebook);
-  if (prevObs === true && s.obsLive === false && open) showAlert('OBS stopped, but the live is still open on ' + [s.session.youtube && 'YouTube', s.session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.');
+  if (prevObs === true && s.obsLive === false && open) showAlert('The video stopped coming in, but the live is still open on ' + [s.session.youtube && 'YouTube', s.session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.');
   prevObs = s.obsLive;
   if (s.obsLive && s.signal && !s.signal.ok) {
     if (!noSigSince) noSigSince = Date.now();
-    else if (Date.now() - noSigSince > 8000 && !noSigShown) { noSigShown = true; showAlert('OBS is connected, but no video is arriving.'); }
+    else if (Date.now() - noSigSince > 8000 && !noSigShown) { noSigShown = true; showAlert('The video source is connected, but no video is arriving.'); }
   } else { noSigSince = 0; noSigShown = false; }
 }
 
