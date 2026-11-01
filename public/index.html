@@ -614,8 +614,7 @@
         <button type="button" role="tab" data-pane="facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8.5h2.5V5H14a3.5 3.5 0 0 0-3.5 3.5V11H8v3.5h2.5V21H14v-6.5h2.5L17 11h-3V8.5z"/></svg> Facebook</button>
         <button type="button" role="tab" data-pane="recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6" fill="currentColor"/></svg> Recording</button>
         <button type="button" role="tab" data-pane="obs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/></svg> OBS</button>
-        <button type="button" role="tab" data-pane="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg> Alerts</button>
-        <button type="button" role="tab" data-pane="phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg> Phone</button>
+                <button type="button" role="tab" data-pane="phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg> Phone</button>
       </nav>
       <div class="smain">
 
@@ -703,13 +702,7 @@
           </div>
         </section>
 
-        <section class="pane" data-pane="alerts" role="tabpanel" aria-label="Alerts">
-          <div class="grp"><h4>When something goes wrong</h4>
-            <p>A red bar shows at the top when a channel stops receiving, or OBS is connected but no video arrives. You can also have a sound. This is saved on this device only.</p>
-            <div class="srow"><p class="lb">Play a sound<small>Three beeps</small></p>
-              <div class="ctl"><label class="sw"><input type="checkbox" id="alSound" aria-label="Play a sound for alerts"><span></span></label><button class="b2" id="alTest" type="button">Test it</button></div></div>
-          </div>
-        </section>
+        
 
         <section class="pane" data-pane="phone" role="tabpanel" aria-label="Phone">
           <div class="grp"><h4>Control from phone</h4>
@@ -1510,9 +1503,9 @@ $('#ytLive').onclick = async () => {
 
 // Settings window: sidebar of sections, OK / Cancel / Apply at the bottom
 const setOverlay = $('#setOverlay');
-const paneLoaders = { youtube: loadYt, facebook: loadFb, obs: loadObs, phone: loadPhone, recording: loadRec, alerts: loadAl };
-const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, obs: saveObs, phone: savePhone, recording: saveRec, alerts: saveAl };
-const paneOrder = ['appearance', 'facebook', 'obs', 'phone', 'recording', 'alerts'];
+const paneLoaders = { youtube: loadYt, facebook: loadFb, obs: loadObs, phone: loadPhone, recording: loadRec };
+const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, obs: saveObs, phone: savePhone, recording: saveRec };
+const paneOrder = ['appearance', 'facebook', 'obs', 'phone', 'recording'];
 let dirty = {};
 let loaded = {};
 let curPane = '';
@@ -1614,45 +1607,25 @@ $('#pfBtn').onclick = async () => {
   $('#pfSub').textContent = bad ? `${bad} to fix before you go live` : warn ? `All fine. ${warn} to look at` : 'All good';
 };
 
-// Alerts: a red bar (and a sound if it is on) when something stops
-let alertCfg = { sound: true };
-try { alertCfg = { sound: true, ...(JSON.parse(localStorage.getItem('ms_alerts') || '{}') || {}) }; } catch {}
-let audioCtx = null;
-function unlockAudio() { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); } catch {} }
-document.addEventListener('click', unlockAudio);
-document.addEventListener('keydown', unlockAudio);
-function beep() {
-  if (!audioCtx) return;
-  [0, 0.35, 0.7].forEach((t) => {
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain(), n = audioCtx.currentTime + t;
-    o.frequency.value = 880;
-    g.gain.setValueAtTime(0.0001, n); g.gain.exponentialRampToValueAtTime(0.25, n + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, n + 0.25);
-    o.connect(g); g.connect(audioCtx.destination); o.start(n); o.stop(n + 0.3);
-  });
-}
-function showAlert(text, sound) {
+// Alerts: a red bar when something stops
+function showAlert(text) {
   $('#alertTxt').textContent = text;
   $('#alertBar').hidden = false;
-  if (sound && alertCfg.sound) beep();
 }
 $('#alertX').onclick = () => { $('#alertBar').hidden = true; };
-function loadAl() { $('#alSound').checked = alertCfg.sound; }
-async function saveAl() { alertCfg = { sound: $('#alSound').checked }; try { localStorage.setItem('ms_alerts', JSON.stringify(alertCfg)); } catch {} return true; }
-$('#alSound').addEventListener('change', () => setDirty('alerts'));
-$('#alTest').onclick = () => { unlockAudio(); const was = alertCfg.sound; alertCfg.sound = true; showAlert('This is a test alert.', true); alertCfg.sound = was; };
 let prevDest = {}, prevObs = null, noSigSince = 0, noSigShown = false;
 function checkAlerts(s) {
   for (const d of s.destinations || []) {
     const st = (d.status || {}).state;
-    if ((prevDest[d.id] === 'live' || prevDest[d.id] === 'starting') && st === 'error') showAlert(`${d.name} stopped receiving: ${(d.status || {}).message || 'no reason given'}`, true);
+    if ((prevDest[d.id] === 'live' || prevDest[d.id] === 'starting') && st === 'error') showAlert(`${d.name} stopped receiving: ${(d.status || {}).message || 'no reason given'}`);
     prevDest[d.id] = st;
   }
   const open = s.session && (s.session.youtube || s.session.facebook);
-  if (prevObs === true && s.obsLive === false && open) showAlert('OBS stopped, but the live is still open on ' + [s.session.youtube && 'YouTube', s.session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.', false);
+  if (prevObs === true && s.obsLive === false && open) showAlert('OBS stopped, but the live is still open on ' + [s.session.youtube && 'YouTube', s.session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.');
   prevObs = s.obsLive;
   if (s.obsLive && s.signal && !s.signal.ok) {
     if (!noSigSince) noSigSince = Date.now();
-    else if (Date.now() - noSigSince > 8000 && !noSigShown) { noSigShown = true; showAlert('OBS is connected, but no video is arriving.', true); }
+    else if (Date.now() - noSigSince > 8000 && !noSigShown) { noSigShown = true; showAlert('OBS is connected, but no video is arriving.'); }
   } else { noSigSince = 0; noSigShown = false; }
 }
 
