@@ -13,6 +13,7 @@ const os = require('os');
 const { createRecorder } = require('./recorder');
 const { createChat } = require('./chat');
 const { runPreflight } = require('./preflight');
+const { detectEncoder, videoArgs } = require('./encoder');
 const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker } = require('./stats');
 
 const DASHBOARD_PORT = Number(process.env.PORT) || 3000;
@@ -1121,6 +1122,10 @@ const httpServer = app.listen(DASHBOARD_PORT, '0.0.0.0', () => {
   console.log(`In OBS use: Server  rtmp://localhost:${RTMP_PORT}/live   Stream key  obs\n`);
 });
 
+// Which encoder the Studio uses: the graphics card if one works, else the processor. Tested once at start.
+let studioEncoder = { key: 'software', id: 'libx264', name: 'processor (x264)' };
+detectEncoder(FFMPEG).then((e) => { studioEncoder = e; studioInfo.encoder = e.name; console.log('Studio encoder: ' + e.name); }).catch(() => {});
+
 const studioWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });
 httpServer.on('upgrade', (req, sock, head) => {
   if (!req.url.startsWith('/studio-ingest')) return sock.destroy();
@@ -1130,8 +1135,7 @@ httpServer.on('upgrade', (req, sock, head) => {
 studioWss.on('connection', (w) => {
   if (studioFf) { try { studioFf.kill('SIGKILL'); } catch {} }
   const args = ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0',
-    '-vf', 'scale=1280:720', '-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency', '-pix_fmt', 'yuv420p', '-b:v', '4500k', '-maxrate', '4500k', '-bufsize', '9000k',
-    '-g', '60', '-keyint_min', '60', '-sc_threshold', '0', '-r', '30',
+    '-vf', 'scale=1280:720', ...videoArgs(studioEncoder.key), '-pix_fmt', 'yuv420p', '-r', '30',
     '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-f', 'flv', `rtmp://127.0.0.1:${RTMP_PORT}${INGEST_PATH}`];
   const ff = spawn(FFMPEG, args, { stdio: ['pipe', 'ignore', 'pipe'] });
   studioFf = ff; studioInfo.sending = true; studioInfo.error = '';

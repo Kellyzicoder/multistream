@@ -32,6 +32,7 @@
       "recorder.js",
       "chat.js",
       "preflight.js",
+      "encoder.js",
       "public/**/*",
       "package.json"
     ],
