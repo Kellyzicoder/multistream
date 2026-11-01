@@ -32,10 +32,10 @@ async function runPreflight(d) {
     }
   }
 
-  // The picture and sound coming in (from the Studio, or OBS if the backup is on)
+  // The picture and sound coming in from the Studio
   const s = d.signal || {};
   if (!d.obsLive) {
-    add('sig', 'Video signal', 'warn', 'Nothing is being sent yet. In the Studio press Start sending, then check again to test the picture and sound.');
+    add('sig', 'Video signal', 'warn', 'Nothing is being sent yet. In the Studio press Start Streaming, then check again to test the picture and sound.');
   } else {
     if (!d.signalOk) add('sig', 'Video signal', 'bad', 'The video source is connected but no video is arriving.');
     else add('sig', 'Video signal', 'ok', 'Video is arriving' + (s.kbps ? ' at ' + (s.kbps / 1000).toFixed(1) + ' Mbps' : '') + '.');
@@ -46,8 +46,8 @@ async function runPreflight(d) {
     else add('fmt', 'Video and sound type', 'bad', `YouTube and Facebook want H.264 video and AAC sound. the video is ${(s.video || {}).codec || '?'} and ${(s.audio || {}).codec || 'no sound'}.`);
     if (s.keyframe == null) add('key', 'Keyframe', 'warn', 'Not measured yet. Wait a few seconds and check again.');
     else if (s.keyframe <= 2.5) add('key', 'Keyframe', 'ok', `Every ${s.keyframe} seconds.`);
-    else if (s.keyframe <= 4) add('key', 'Keyframe', 'warn', `Every ${s.keyframe} seconds. 2 is best. (Only if you use the OBS backup: in OBS, Settings, Output, Keyframe Interval, 2.)`);
-    else add('key', 'Keyframe', 'bad', `Every ${s.keyframe} seconds. Too long. (Only if you use the OBS backup: in OBS, Settings, Output, Keyframe Interval, 2.)`);
+    else if (s.keyframe <= 4) add('key', 'Keyframe', 'warn', `Every ${s.keyframe} seconds. 2 is best.`);
+    else add('key', 'Keyframe', 'bad', `Every ${s.keyframe} seconds. Too long.`);
   }
 
   // Room to record
@@ -60,11 +60,7 @@ async function runPreflight(d) {
     }
   } catch { add('disk', 'Space for recording', 'skip', 'Could not read the free space.'); }
 
-  // OBS scene control (only if it was turned on)
-  if (d.obsControl && d.obsControl.enabled) {
-    if (d.obsControl.connected) add('obsctl', 'OBS scene control', 'ok', 'Connected.');
-    else add('obsctl', 'OBS scene control', 'warn', 'Turned on but not connected. Is OBS open? Check Settings, then OBS.');
-  }
+
 
   // Channels that need a key typed in by hand (Instagram changes it every time)
   const manual = (d.destinations || []).filter((x) => x.enabled && !/^(youtube|facebook)$/i.test(x.name) && !(x.url && x.key));

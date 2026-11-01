@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multistream Studio</title>
 <style>
-  :root { --bg:#0f1512; --card:#18201b; --line:#2a352d; --text:#e8efe9; --muted:#93a398; --green:#22c55e; --red:#dc3545; --field:#0b100d; }
+  :root { --bg:#1d1f26; --card:#272a33; --head:#2f323d; --line:#3c404d; --text:#dfe1e6; --muted:#9097a6; --green:#22c55e; --red:#d9434b; --field:#1f2128; --sel:#3d5bd0; --btn:#3b3f4b; }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
   label.tr { font-size:12px; color:#9fb3a5; display:flex; gap:6px; align-items:center; margin-right:8px; }
@@ -61,49 +61,113 @@
   label.mi select { font-size:12px; padding:3px 4px; }
   button.wide { width:100%; margin-top:4px; }
   @media (max-width:1100px) { .wrap { grid-template-columns:1fr; } }
+
+  /* ---------- OBS-style layout ---------- */
+  html, body { height:100%; }
+  body { display:flex; flex-direction:column; overflow:hidden; font-size:13px; }
+  .obs { display:flex; flex-direction:column; height:100vh; }
+  .stage { flex:1; min-height:0; display:flex; align-items:center; gap:10px; padding:10px; }
+  .screen { flex:1; min-width:0; display:flex; flex-direction:column; height:100%; justify-content:center; }
+  .screen .cap { text-align:center; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  .screen .cap span { color:var(--text); }
+  .stage canvas.v { width:100%; max-height:calc(100% - 22px); object-fit:contain; border:2px solid var(--line); border-radius:2px; background:#000; }
+  #cv.live { border-color:var(--red); }
+  #ev { border-color:var(--line); }
+  .mid { width:120px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .mid .note { text-align:center; font-size:11px; }
+  button.trans { width:100%; padding:8px 6px; }
+  .docks { height:290px; flex:none; display:flex; gap:4px; padding:0 4px 4px; }
+  .dock { flex:1; min-width:150px; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:3px; overflow:hidden; }
+  .dock.wide { flex:1.6; } .dock.narrow { flex:.85; }
+  .dock h2 { margin:0; padding:5px 8px; font-size:12px; font-weight:600; color:var(--text); background:var(--head); border-bottom:1px solid var(--line); text-transform:none; letter-spacing:0; }
+  .dock .list { flex:1; overflow:auto; padding:2px; background:var(--field); }
+  .dock .pad { flex:1; overflow:auto; padding:8px; display:flex; flex-direction:column; gap:6px; }
+  .dock .ctl { gap:4px; }
+  .dock .ctl button { width:100%; padding:5px 8px; }
+  input[type=color] { height:28px; padding:2px; min-width:60px; }
+  .tb { display:flex; align-items:center; gap:2px; padding:3px; border-top:1px solid var(--line); background:var(--card); }
+  .tb button { padding:2px 8px; min-width:28px; background:transparent; border-color:transparent; }
+  .tb button:hover { border-color:var(--line); background:var(--btn); }
+  .tb .note { margin-left:6px; font-size:11px; }
+  .lbl { display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--muted); }
+  button, select, input, textarea { background:var(--btn); border-color:var(--line); border-radius:3px; }
+  button:hover { border-color:#596072; }
+  button.on, button.stop { background:var(--sel); border-color:var(--sel); color:#fff; font-weight:600; }
+  .scn, .lyr { border:0; border-radius:2px; margin:0 0 1px; padding:4px 8px; background:transparent; }
+  .scn.on, .lyr.on { background:var(--sel); }
+  .scn .dot { width:8px; height:8px; border-radius:50%; background:var(--red); flex:none; }
+  .lyr input[type=checkbox] { accent-color:var(--sel); }
+  .au { background:transparent; border:0; border-bottom:1px solid var(--line); border-radius:0; }
+  .status { flex:none; display:flex; gap:16px; align-items:center; padding:3px 10px; font-size:11px; color:var(--muted); background:var(--card); border-top:1px solid var(--line); }
+  .status span#liveClock.on, .status span#recClock.on { color:#ff6b6b; }
+  .pop-up { position:absolute; left:0; bottom:calc(100% + 4px); top:auto; width:260px; max-height:60vh; overflow:auto; }
+  .modal { position:fixed; inset:0; background:#0008; display:flex; align-items:center; justify-content:center; z-index:60; }
+  .dlg { width:min(560px, 92vw); max-height:86vh; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:4px; box-shadow:0 20px 50px #000a; }
+  .dlg-h { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--head); border-bottom:1px solid var(--line); }
+  .dlg-h button { background:none; border:0; font-size:18px; padding:0 6px; }
+  .dlg-b { padding:12px; overflow:auto; }
+  .dlg-b .f { grid-template-columns:120px 1fr; }
+  .dlg-f { display:flex; justify-content:flex-end; padding:8px 12px; border-top:1px solid var(--line); }
+  @media (max-width:1000px) { .docks { height:auto; flex-wrap:wrap; overflow:auto; } .dock { min-height:180px; } body { overflow:auto; } .obs { height:auto; } }
 </style>
 </head>
 <body>
-<header>
-  <a href="/">&larr; Dashboard</a><h1>Studio</h1>
-  <span class="stat" id="st"></span><span class="grow"></span>
-  <div class="menu" id="moreWrap">
-    <button id="moreBtn" aria-haspopup="true" aria-expanded="false">More &#9662;</button>
-    <div class="pop" id="morePop" hidden>
-      <label class="mi">Scene change
-        <span><select id="trType"><option value="cut">Cut</option><option value="fade">Fade</option><option value="slide">Slide</option><option value="dip">Dip to black</option></select>
-        <select id="trMs"><option value="300">0.3 s</option><option value="500">0.5 s</option><option value="1000">1 s</option></select></span></label>
-      <label class="mi">Recording quality
-        <select id="recQ"><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></label>
-      <button class="mi" id="projBtn">Preview window<small>The on-air picture in its own window, for a second screen</small></button>
-      <button class="mi" id="vcBtn" hidden>Virtual camera<small>Use this picture as a webcam in Zoom (pick "Softcam")</small></button>
-      <button class="mi" id="impBtn">Import OBS scenes...<small>In OBS: Scene Collection, then Export</small></button>
-      <button class="mi" id="keysBtn">Keyboard shortcuts</button>
+<div class="obs">
+  <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
+  <div class="stage">
+    <div class="screen"><div class="cap">Preview <span id="editName"></span></div><canvas id="ev" class="v" width="960" height="540"></canvas></div>
+    <div class="mid">
+      <button id="transBtn" class="trans" title="Put the Preview scene on air (Program)">Transition</button>
+      <p class="note" id="hint">Pick a scene, then press Transition to put it on air.</p>
     </div>
+    <div class="screen"><div class="cap">Program <span id="airName"></span></div><canvas id="cv" class="v" width="1280" height="720"></canvas></div>
   </div>
-  <button id="recBtn">&#9679; Record</button>
-  <button id="sendBtn" class="go">Start sending</button>
-</header>
-<div class="wrap">
-  <div>
-    <div class="panel"><h2>Scenes</h2><div id="scenes"></div><div class="row"><button id="addScene">+ Scene</button><button id="delScene">Delete</button></div>
-      <p class="note">Click a scene to edit it. "Air" puts it on screen (and into the stream).</p></div>
-    <div class="panel"><h2>Sound</h2><div id="audio"></div><div class="row"><button id="addAudio" class="sm">+ Sound input</button></div>
-      <p class="note" id="audNote"></p></div>
+
+  <!-- docks along the bottom, like OBS -->
+  <div class="docks">
+    <section class="dock"><h2>Scenes</h2>
+      <div class="list" id="scenes"></div>
+      <div class="tb"><button id="addScene" title="Add scene">+</button><button id="delScene" title="Remove scene">&minus;</button><button id="scUp" title="Move up">&#9650;</button><button id="scDown" title="Move down">&#9660;</button></div>
+    </section>
+    <section class="dock"><h2>Sources</h2>
+      <div class="list" id="layers"></div>
+      <div class="tb">
+        <div class="menu"><button id="addBtn" title="Add source">+</button><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Camera<small>A webcam or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a computer screen</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
+        <button id="srcDel" title="Remove source">&minus;</button><button id="srcProps" title="Properties">&#9881;</button><button id="srcUp" title="Move up">&#9650;</button><button id="srcDown" title="Move down">&#9660;</button>
+      </div>
+    </section>
+    <section class="dock wide"><h2>Audio Mixer</h2>
+      <div class="list" id="audio"></div>
+      <div class="tb"><button id="addAudio" title="Add sound input">+</button><span class="note" id="audNote"></span></div>
+    </section>
+    <section class="dock narrow"><h2>Scene Transitions</h2>
+      <div class="pad">
+        <select id="trType"><option value="cut">Cut</option><option value="fade">Fade</option><option value="slide">Slide</option><option value="dip">Dip to black</option></select>
+        <label class="lbl">Duration <select id="trMs"><option value="300">300 ms</option><option value="500">500 ms</option><option value="1000">1000 ms</option></select></label>
+      </div>
+    </section>
+    <section class="dock narrow"><h2>Controls</h2>
+      <div class="pad ctl">
+        <button id="sendBtn">Start Streaming</button>
+        <button id="recBtn">Start Recording</button>
+        <label class="lbl">Recording quality <select id="recQ"><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></label>
+        <button id="vcBtn" hidden>Start Virtual Camera</button>
+        <button id="projBtn" title="The Program picture in its own window, for a second screen">Projector</button>
+        <button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes...</button>
+        <button id="keysBtn">Shortcuts</button>
+      </div>
+    </section>
   </div>
-  <div>
-    <div class="lab">ON AIR (what viewers see) <span id="airName"></span></div>
-    <canvas id="cv" class="v" width="1280" height="720"></canvas>
-    <div class="lab">EDITING: <span id="editName"></span></div>
-    <canvas id="ev" class="v" width="960" height="540"></canvas>
-    <p class="note" id="hint">Build your scenes on the left. Press <b>Air</b> to put one on screen. <b>Start sending</b> sends the on-air picture and sound to your channels.</p>
-  </div>
-  <div>
-    <div class="panel"><h2>Items in this scene</h2><div id="layers"></div>
-      <div class="menu"><button id="addBtn" class="go wide">+ Add item</button><div class="pop pop-l" id="addPop" hidden><button class="mi" data-add="camera">Camera<small>A webcam or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a computer screen</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
-    </div>
-    <div class="panel" id="propsBox" hidden><h2>Item settings</h2><div id="props"></div></div>
-  </div>
+
+  <!-- status bar, like OBS -->
+  <footer class="status"><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
+</div>
+
+<!-- Properties window, like OBS -->
+<div class="modal" id="propsBox" hidden>
+  <div class="dlg"><div class="dlg-h"><b id="propsTitle">Properties</b><button id="propsClose" title="Close">&times;</button></div>
+    <div class="dlg-b" id="props"></div>
+    <div class="dlg-f"><button id="propsOk">OK</button></div></div>
 </div>
 <input type="file" id="file" hidden>
 <script>
@@ -535,13 +599,22 @@ function renderScenes() {
   studio.scenes.forEach((s) => {
     const d = document.createElement('div'); d.className = 'scn' + (s.name === editing ? ' on' : '');
     const n = document.createElement('span'); n.className = 'n'; n.textContent = s.name; d.appendChild(n);
-    if (s.name === studio.current) { const a = document.createElement('span'); a.className = 'air'; a.textContent = 'ON AIR'; d.appendChild(a); }
-    else { const b = document.createElement('button'); b.className = 'sm'; b.textContent = 'Air'; b.title = 'Put this scene on air'; b.onclick = (e) => { e.stopPropagation(); setCurrent(s.name); }; d.appendChild(b); }
+    // a red dot marks the scene that is on air (Program)
+    if (s.name === studio.current) { const a = document.createElement('span'); a.className = 'dot'; a.title = 'On air'; d.appendChild(a); }
     d.onclick = () => { editing = s.name; sel = ''; renderAll(); };
     d.ondblclick = () => { const v = prompt('Scene name', s.name); if (v && !studio.scenes.some((x) => x.name === v)) { if (studio.current === s.name) { studio.current = v; dirtyCurrent = true; } s.name = v; editing = v; save(); renderAll(); } };
     box.appendChild(d);
   });
 }
+// Transition: put the Preview scene on air, like OBS Studio Mode
+$('#transBtn').onclick = () => { if (editing && editing !== studio.current) setCurrent(editing); };
+function moveScene(dir) {
+  const i = studio.scenes.findIndex((x) => x.name === editing), j = i + dir;
+  if (i < 0 || j < 0 || j >= studio.scenes.length) return;
+  [studio.scenes[i], studio.scenes[j]] = [studio.scenes[j], studio.scenes[i]]; save(); renderAll();
+}
+$('#scUp').onclick = () => moveScene(-1);
+$('#scDown').onclick = () => moveScene(1);
 $('#addScene').onclick = () => {
   let n = 'Scene ' + (studio.scenes.length + 1); while (studio.scenes.some((s) => s.name === n)) n += '+';
   studio.scenes.push({ name: n, layers: [], audio: studio.audio.map((a) => a.id) }); editing = n; if (!studio.current) { studio.current = n; dirtyCurrent = true; } save(); renderAll();
@@ -555,7 +628,7 @@ $('#delScene').onclick = () => {
 const ICON = { camera: 'Camera', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera', lower: 'Name bar', timer: 'Countdown', clock: 'Clock' };
 function renderLayers() {
   const s = byName(editing), box = $('#layers'); box.textContent = '';
-  $('#editName').textContent = editing; $('#airName').textContent = studio.current ? '- ' + studio.current : '';
+  $('#editName').textContent = editing ? '(' + editing + ')' : ''; $('#airName').textContent = studio.current ? '(' + studio.current + ')' : '';
   if (!s) { box.textContent = 'Add a scene first.'; $('#propsBox').hidden = true; return; }
   for (let i = s.layers.length - 1; i >= 0; i--) {
     const l = s.layers[i];
@@ -564,17 +637,32 @@ function renderLayers() {
     const n = document.createElement('span'); n.className = 'n'; n.textContent = (l.name || ICON[l.type] || l.type) + (l.locked ? ' (locked)' : ''); n.title = n.textContent;
     const up = document.createElement('button'); up.className = 'sm'; up.textContent = '\u2191'; up.title = 'Move in front'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
     const x = document.createElement('button'); x.className = 'sm'; x.textContent = '\u00d7'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
-    d.append(eye, n, up, x); d.onclick = () => { sel = l.id; renderLayers(); };
+    d.append(eye, n); d.onclick = () => { sel = l.id; renderLayers(); };
+    d.ondblclick = () => { sel = l.id; propsOpen = true; renderLayers(); };
     box.appendChild(d);
   }
   renderProps();
 }
 function field(label, el) { const d = document.createElement('div'); d.className = 'f'; const l = document.createElement('label'); l.textContent = label; d.append(l, el); return d; }
 let pfxOpen = false;
+// the Properties window (opens on double-click, the gear button, or when you add a source, like OBS)
+let propsOpen = false;
+function closeProps() { propsOpen = false; $('#propsBox').hidden = true; }
+$('#propsClose').onclick = closeProps; $('#propsOk').onclick = closeProps;
+$('#propsBox').addEventListener('mousedown', (e) => { if (e.target === $('#propsBox')) closeProps(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && propsOpen) closeProps(); });
+function selLayer() { const s = byName(editing); return s && s.layers.findIndex((x) => x.id === sel); }
+$('#srcProps').onclick = () => { if (sel) { propsOpen = true; renderProps(); } };
+$('#srcDel').onclick = () => { const s = byName(editing), i = selLayer(); if (i == null || i < 0) return; s.layers.splice(i, 1); sel = ''; closeProps(); save(); renderLayers(); };
+// the list shows the front item at the top (like OBS), so "up" moves an item to the front
+function moveLayer(dir) { const s = byName(editing), i = selLayer(); if (i == null || i < 0) return; const j = i + dir; if (j < 0 || j >= s.layers.length) return; [s.layers[i], s.layers[j]] = [s.layers[j], s.layers[i]]; save(); renderLayers(); }
+$('#srcUp').onclick = () => moveLayer(1);
+$('#srcDown').onclick = () => moveLayer(-1);
 function renderProps() {
   const box = $('#props'); box.textContent = '';
   const s = byName(editing), l = s && s.layers.find((x) => x.id === sel);
-  $('#propsBox').hidden = !l; if (!l) return;
+  $('#propsBox').hidden = !l || !propsOpen; if (!l) { propsOpen = false; return; }
+  $('#propsTitle').textContent = "Properties for '" + (l.name || ICON[l.type] || l.type) + "'";
   const inp = (k, type) => { const i = document.createElement('input'); i.type = type || 'text'; i.value = l[k] == null ? '' : l[k]; i.oninput = () => { l[k] = type === 'number' ? Number(i.value) : i.value; save(); }; return i; };
   box.append(field('Name', inp('name')));
   box.append(field('Left', inp('x', 'number')), field('Top', inp('y', 'number')));
@@ -679,8 +767,7 @@ document.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
   if (t === 'browser') { l.url = 'http://'; l.bw = SW; l.bh = SH; }
   if (t === 'ipcam') { l.url = 'http://192.168.0.0:4747/video'; l.fit = 'fit'; }
   if (t === 'video' || t === 'image') l.fit = 'fit';
-  s.layers.push(l); sel = l.id; save(); renderLayers();
-  if (t === 'image' || t === 'video') $('#propsBox').scrollIntoView();
+  s.layers.push(l); sel = l.id; propsOpen = true; save(); renderLayers();
 });
 function renderAll() { renderScenes(); renderLayers(); renderAudio(); updateVideos(); gateAudio(); }
 
@@ -777,7 +864,7 @@ function flash(text, ok) { $('#st').textContent = text; $('#st').className = 'st
 let rec = null, wsOut = null, wantSend = false, retryT = 0, deadTicks = 0;
 async function startSend() {
   wantSend = true; deadTicks = 0;
-  $('#sendBtn').textContent = 'Stop sending'; $('#sendBtn').className = 'stop';
+  $('#sendBtn').textContent = 'Stop Streaming'; $('#sendBtn').className = 'stop'; liveT0 = liveT0 || Date.now();
   await connectSend();
 }
 async function connectSend() {
@@ -809,9 +896,18 @@ function scheduleRetry() {
 function stopSend() {
   wantSend = false; clearTimeout(retryT);
   dropSend();
-  $('#sendBtn').textContent = 'Start sending'; $('#sendBtn').className = 'go';
+  $('#sendBtn').textContent = 'Start Streaming'; $('#sendBtn').className = ''; liveT0 = 0;
 }
 $('#sendBtn').onclick = () => (wantSend ? stopSend() : startSend());
+
+// ---------------- status bar clocks (LIVE and REC), like OBS ----------------
+let liveT0 = 0;
+const hms = (ms) => { const t = Math.floor(ms / 1000); return [Math.floor(t / 3600), Math.floor(t / 60) % 60, t % 60].map((n) => String(n).padStart(2, '0')).join(':'); };
+setInterval(() => {
+  const lc = $('#liveClock'), rc = $('#recClock');
+  lc.textContent = 'LIVE: ' + hms(liveT0 ? Date.now() - liveT0 : 0); lc.className = liveT0 ? 'on' : '';
+  rc.textContent = 'REC: ' + hms(recT0 ? Date.now() - recT0 : 0); rc.className = recT0 ? 'on' : '';
+}, 500);
 
 // ---------------- recording ----------------
 // Records the Studio picture to a file in the Videos/Multistream folder, at the quality you choose.
@@ -834,8 +930,8 @@ async function startRec() {
     recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.max(mb, 6) * 1000000, audioBitsPerSecond: 160000 });
     recMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     recMr.start(500);
-    recT0 = Date.now(); $('#recBtn').textContent = 'Stop recording'; $('#recBtn').className = 'stop';
-    recTick = setInterval(() => { const s = Math.floor((Date.now() - recT0) / 1000); $('#recBtn').textContent = 'Stop recording ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 1000);
+    recT0 = Date.now(); $('#recBtn').textContent = 'Stop Recording'; $('#recBtn').className = 'stop';
+    recTick = 0;
   };
   ws.onclose = () => { if (recWs === ws) endRec(true); };
   ws.onerror = () => {};
@@ -847,7 +943,7 @@ function endRec(fromClose) {
   const ws = recWs; recWs = recMr = null;
   // tell the relay we are done; it finishes the file, says where it saved it, then closes
   if (ws && !fromClose) setTimeout(() => { try { ws.send('stop'); } catch {} }, 700);
-  $('#recBtn').textContent = '\u25CF Record'; $('#recBtn').className = '';
+  $('#recBtn').textContent = 'Start Recording'; $('#recBtn').className = ''; recT0 = 0;
 }
 $('#recBtn').onclick = () => (recWs ? endRec(false) : startRec());
 document.addEventListener('click', () => ensureAudio(), { once: true });
@@ -859,7 +955,7 @@ fetch('/api/vcam').then((r) => r.json()).then((s) => { if (s.available) $('#vcBt
 function vcOff(msg) {
   try { vcMr && vcMr.state !== 'inactive' && vcMr.stop(); } catch {}
   try { vcWs && vcWs.close(); } catch {}
-  vcWs = vcMr = null; $('#vcBtn').textContent = 'Virtual camera'; $('#vcBtn').className = '';
+  vcWs = vcMr = null; $('#vcBtn').textContent = 'Start Virtual Camera'; $('#vcBtn').className = '';
   if (msg) { $('#st').textContent = msg; $('#st').className = 'stat bad'; }
 }
 $('#vcBtn').onclick = async () => {
@@ -878,7 +974,7 @@ $('#vcBtn').onclick = async () => {
     vcMr = new MediaRecorder(new MediaStream(cv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000 });
     vcMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     vcMr.start(100);
-    $('#vcBtn').textContent = 'Virtual camera: ON'; $('#vcBtn').className = 'stop';
+    $('#vcBtn').textContent = 'Stop Virtual Camera'; $('#vcBtn').className = 'stop';
     $('#st').textContent = 'Virtual camera is on. In Zoom, choose the camera called Softcam.'; $('#st').className = 'stat ok';
   };
   ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) vcOff('Virtual camera: ' + j.error); } catch {} };
@@ -891,7 +987,6 @@ function popMenu(btn, pop) {
   btn.addEventListener('click', (e) => { e.stopPropagation(); const show = pop.hidden; document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }); pop.hidden = !show; btn.setAttribute('aria-expanded', String(show)); });
   pop.addEventListener('click', (e) => { if (e.target.closest('button')) pop.hidden = true; e.stopPropagation(); });
 }
-popMenu($('#moreBtn'), $('#morePop'));
 popMenu($('#addBtn'), $('#addPop'));
 document.addEventListener('click', () => document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }); });

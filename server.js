@@ -1,5 +1,5 @@
 // Multistream relay.
-// OBS  ->  rtmp://localhost/live/obs  ->  this app  ->  ffmpeg copies the video to each destination.
+// The Studio  ->  the video hub (flvhub.js)  ->  ffmpeg copies the video to each destination.
 // Each destination gets its own ffmpeg process, so if one fails the others keep going.
 
 const express = require('express');
@@ -22,10 +22,9 @@ const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracke
 
 // Version 3: nothing listens on the network unless you switch it on.
 // The app windows talk to this file directly (see inproc.js), and video moves through the hub (flvhub.js).
-// Ports are only opened for: OBS backup (1935), phone control (3000), and for a few minutes while you sign in to YouTube (3000).
+// Ports are only opened for: phone control (3000), and for a few minutes while you sign in to YouTube (3000).
+// Version 3 has no OBS connection at all.
 const DASHBOARD_PORT = Number(process.env.PORT) || 3000;
-const RTMP_PORT = 1935;
-const INGEST_PATH = '/live/obs'; // OBS backup: rtmp://localhost/live   key: obs
 const hub = createHub();
 const HUB_IN = ['-f', 'flv', '-i', 'pipe:0'];
 // The desktop app sets these two. Run on its own (npm start) they fall back to the old behaviour.
@@ -95,7 +94,7 @@ function setStatus(id, state, message = '') {
   status.set(id, { state, message });
 }
 
-// ---- signal numbers for the stream coming in from OBS ----
+// ---- signal numbers for the stream coming in from the Studio ----
 // A second ffmpeg reads the incoming stream, copies it to nowhere, and we count the bytes.
 // It does not decode video, so it costs very little.
 const signal = { startedAt: 0, video: null, audio: null, kbps: 0, lastDataAt: 0, history: [], keyframe: null };
@@ -164,7 +163,7 @@ function stopMonitor() {
   p.kill('SIGTERM');
 }
 
-// a destination that drops while OBS is still live starts again by itself
+// a destination that drops while the Studio is still sending starts again by itself
 const autoRetry = createAutoRetry({
   restart: (id) => { const d = destinations.find((x) => x.id === id); if (d && obsLive) startDestination(d); },
   onWait: (id, reason, ms, n, max) => setStatus(id, 'error', `${reason || 'Dropped'} - trying again in ${Math.round(ms / 1000)} s (try ${n} of ${max})`),
@@ -186,7 +185,7 @@ function startDestination(d) {
     '-loglevel', 'warning',
     '-nostats', '-progress', 'pipe:1', '-stats_period', '1', // numbers for the dashboard
     ...HUB_IN,
-    '-c', 'copy', // no re-encoding: low CPU. Set OBS to a bitrate/codec every platform accepts.
+    '-c', 'copy', // no re-encoding: low CPU. The Studio sends H.264 + AAC, which every platform accepts.
     '-f', 'flv',
     targetOf(d),
   ];
@@ -259,7 +258,7 @@ function stopAll() {
   for (const d of destinations) stopDestination(d.id);
 }
 
-// ---- Video coming in (from the Studio, or from OBS when the backup is on) ----
+// ---- Video coming in from the Studio ----
 hub.on('start', () => {
   console.log('Video is coming in. Starting destinations...');
   obsLive = true;
@@ -286,38 +285,7 @@ function feedHub(stdout) {
   return () => { if (stop) stop(); };
 }
 
-// ---- OBS backup: off unless switched on in Settings ----
-// When on, OBS can send to rtmp://localhost:1935/live with stream key obs, like in Version 1 and 2.
-const OBSIN_FILE = path.join(DATA_DIR, 'obs-backup.json');
-let obsIn = { enabled: false };
-try { obsIn = { enabled: Boolean(JSON.parse(fs.readFileSync(OBSIN_FILE, 'utf8')).enabled) }; } catch {}
-const obsInInfo = { listening: false, sending: false, error: '' };
-let obsInProc = null, obsInTimer = null;
-function obsInStart() {
-  clearTimeout(obsInTimer);
-  if (!obsIn.enabled || obsInProc) return;
-  const p = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-listen', '1', '-f', 'flv', '-i', `rtmp://127.0.0.1:${RTMP_PORT}${INGEST_PATH}`,
-    '-c', 'copy', '-f', 'flv', 'pipe:1'], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
-  obsInProc = p; obsInInfo.listening = true; obsInInfo.sending = false;
-  let last = '';
-  p.stderr.on('data', (c) => { const t = String(c).trim().split('\n').pop(); if (t) last = t; });
-  p.stdout.once('data', () => { obsInInfo.sending = true; obsInInfo.error = ''; });
-  const unfeed = feedHub(p.stdout);
-  p.on('error', (e) => { obsInInfo.error = e.message; });
-  p.on('close', () => {
-    if (obsInProc === p) { obsInProc = null; obsInInfo.listening = false; obsInInfo.sending = false; }
-    if (/address already in use|bind/i.test(last)) obsInInfo.error = `Port ${RTMP_PORT} is in use by another program (is Version 1 or 2 open?)`;
-    unfeed();
-    // OBS stopped (or nothing came): wait for the next time OBS starts streaming
-    if (obsIn.enabled) obsInTimer = setTimeout(obsInStart, obsInInfo.error ? 5000 : 1000);
-  });
-}
-function obsInStop() {
-  clearTimeout(obsInTimer);
-  const p = obsInProc; obsInProc = null; obsInInfo.listening = false; obsInInfo.sending = false; obsInInfo.error = '';
-  if (p) { try { p.kill('SIGKILL'); } catch {} }
-}
-obsInStart();
+
 
 
 // ---- remote access (control the dashboard from a phone on the same Wi-Fi) ----
@@ -494,7 +462,7 @@ function publicView(d) {
 app.get('/api/state', (req, res) => {
   res.json({
     obsLive,
-    ingest: { server: `rtmp://localhost:${RTMP_PORT}/live`, key: 'obs', obsBackup: obsIn.enabled, preview: '/live.flv' },
+    ingest: { preview: '/live.flv' },
     studio: { sending: studioInfo.sending },
     signal: {
       startedAt: signal.startedAt,
@@ -508,7 +476,6 @@ app.get('/api/state', (req, res) => {
     destinations: destinations.map(publicView),
     facebook: fbView(),
     youtube: ytView(),
-    obs: obsView(),
     recording: recView(),
     session: { youtube: Boolean(session.youtube), facebook: Boolean(session.facebook) },
   });
@@ -564,7 +531,6 @@ app.get('/api/preflight', async (req, res) => {
       return j.name || '';
     },
     freeBytes: async () => { try { const f = await fs.promises.statfs(dir); return Number(f.bavail) * Number(f.bsize); } catch { return null; } },
-    obsControl: obsView(),
     destinations,
   });
   res.json({ at: Date.now(), results });
@@ -573,7 +539,7 @@ app.get('/api/preflight', async (req, res) => {
 // ---- Recording routes ----
 app.get('/api/recording', (req, res) => res.json({ ...recView(), files: recorder.list() }));
 app.post('/api/recording/start', (req, res) => {
-  if (!obsLive) return res.status(400).json({ error: 'Start sending from the Studio first' });
+  if (!obsLive) return res.status(400).json({ error: 'Start Streaming in the Studio first' });
   const r = recorder.start();
   if (r.error) return res.status(500).json({ error: r.error });
   res.json(recView());
@@ -686,7 +652,7 @@ app.put('/api/facebook', async (req, res) => {
 });
 
 app.post('/api/facebook/live', async (req, res) => {
-  if (!obsLive) return res.status(400).json({ error: 'Start sending from the Studio first' });
+  if (!obsLive) return res.status(400).json({ error: 'Start Streaming in the Studio first' });
   if (!fb.token || !fb.pageId) return res.status(400).json({ error: 'Add the Facebook Page first' });
   const d = fbDestination() || addDestination('Facebook');
   const title = goLiveTitle(req);
@@ -833,7 +799,7 @@ async function ytSetThumbnail(videoId) {
   }
 }
 app.post('/api/youtube/live', async (req, res) => {
-  if (!obsLive) return res.status(400).json({ error: 'Start sending from the Studio first' });
+  if (!obsLive) return res.status(400).json({ error: 'Start Streaming in the Studio first' });
   if (!yt.refreshToken) return res.status(400).json({ error: 'Connect YouTube first' });
   const d = ytDestination() || addDestination('YouTube');
   const test = Boolean((req.body || {}).test);
@@ -881,211 +847,7 @@ app.post('/api/youtube/live', async (req, res) => {
   }
 });
 
-// ---- OBS remote control (OBS WebSocket, built into OBS 28 and newer) ----
-// Shows the OBS scenes in the dashboard and switches scene. Only scene names, the current scene and small pictures are used.
-const OBS_FILE = path.join(DATA_DIR, 'obs.json');
-let obsCfg = { enabled: false, host: '127.0.0.1', port: 4455, password: '' };
-try { obsCfg = { ...obsCfg, ...JSON.parse(fs.readFileSync(OBS_FILE, 'utf8')) }; } catch {}
-function saveObsCfg() { fs.writeFileSync(OBS_FILE, JSON.stringify(obsCfg, null, 2), { mode: 0o600 }); }
-const obsState = { connected: false, scenes: [], current: '', error: '', levels: {}, muted: {} };
-const OBS_BASE_EVENTS = 4 | 8; // scene events + input events (mute changes)
-const OBS_METER_EVENTS = 65536; // audio meters. These are busy, so they are only on while someone is watching
-let obsMetersOn = false;
-let obsLastLevelPoll = 0;
-let obsWs = null;
-let obsTimer = null;
-let obsReqId = 0;
-const obsPending = new Map();
 
-function obsView() {
-  return {
-    enabled: obsCfg.enabled, host: obsCfg.host, port: obsCfg.port, hasPassword: Boolean(obsCfg.password),
-    connected: obsState.connected, error: obsState.error, scenes: obsState.scenes, current: obsState.current,
-  };
-}
-function obsRequest(type, data) {
-  return new Promise((resolve, reject) => {
-    if (!obsWs || obsWs.readyState !== 1 || !obsState.connected) return reject(new Error('OBS is not connected'));
-    const id = String(++obsReqId);
-    const t = setTimeout(() => { obsPending.delete(id); reject(new Error('OBS did not answer')); }, 5000);
-    obsPending.set(id, { resolve, reject, t });
-    obsWs.send(JSON.stringify({ op: 6, d: { requestType: type, requestId: id, requestData: data || {} } }));
-  });
-}
-async function obsRefreshScenes() {
-  try {
-    const r = await obsRequest('GetSceneList');
-    // OBS lists scenes from the bottom up, so flip them to match what you see in OBS
-    obsState.scenes = (r.scenes || []).slice().reverse().map((x) => x.sceneName);
-    obsState.current = r.currentProgramSceneName || '';
-  } catch {}
-}
-async function obsRefreshInputs() {
-  try {
-    const r = await obsRequest('GetInputList');
-    const muted = {};
-    await Promise.all((r.inputs || []).map(async (i) => {
-      try { muted[i.inputName] = Boolean((await obsRequest('GetInputMute', { inputName: i.inputName })).inputMuted); } catch {}
-    }));
-    obsState.muted = muted;
-  } catch {}
-}
-function obsSetMeters(on) {
-  if (!obsState.connected || obsMetersOn === on || !obsWs) return;
-  obsMetersOn = on;
-  if (!on) obsState.levels = {};
-  obsWs.send(JSON.stringify({ op: 3, d: { eventSubscriptions: OBS_BASE_EVENTS | (on ? OBS_METER_EVENTS : 0) } }));
-}
-setInterval(() => obsSetMeters(Date.now() - obsLastLevelPoll < 4000), 2000);
-function obsConnect() {
-  clearTimeout(obsTimer);
-  if (obsWs) { try { obsWs.removeAllListeners(); obsWs.on('error', () => {}); obsWs.close(); } catch {} obsWs = null; }
-  for (const p of obsPending.values()) { clearTimeout(p.t); p.reject(new Error('OBS disconnected')); }
-  obsPending.clear();
-  obsState.connected = false;
-  obsMetersOn = false;
-  obsState.levels = {};
-  thumbCache = { at: 0, w: 0, data: {} };
-  if (!obsCfg.enabled) { obsState.error = ''; obsState.scenes = []; obsState.current = ''; return; }
-  const retry = () => { if (obsWs === ws) { obsTimer = setTimeout(obsConnect, 3000); } };
-  let ws;
-  try { ws = new WebSocket(`ws://${obsCfg.host}:${obsCfg.port}`, { handshakeTimeout: 4000 }); } catch { obsState.error = 'Could not open the OBS address'; return; }
-  obsWs = ws;
-  ws.on('message', async (raw) => {
-    let m;
-    try { m = JSON.parse(raw); } catch { return; }
-    if (m.op === 0) {
-      const d = { rpcVersion: 1, eventSubscriptions: OBS_BASE_EVENTS };
-      const a = m.d && m.d.authentication;
-      if (a) {
-        const secret = crypto.createHash('sha256').update(obsCfg.password + a.salt).digest('base64');
-        d.authentication = crypto.createHash('sha256').update(secret + a.challenge).digest('base64');
-      }
-      ws.send(JSON.stringify({ op: 1, d }));
-    } else if (m.op === 2) {
-      obsState.connected = true;
-      obsState.error = '';
-      obsMetersOn = false;
-      await obsRefreshScenes();
-      obsRefreshInputs();
-    } else if (m.op === 5) {
-      const e = m.d || {};
-      if (e.eventType === 'CurrentProgramSceneChanged') obsState.current = e.eventData.sceneName;
-      else if (e.eventType === 'SceneListChanged') obsRefreshScenes();
-      else if (e.eventType === 'InputMuteStateChanged') obsState.muted[e.eventData.inputName] = Boolean(e.eventData.inputMuted);
-      else if (e.eventType === 'InputCreated' || e.eventType === 'InputRemoved' || e.eventType === 'InputNameChanged') obsRefreshInputs();
-      else if (e.eventType === 'InputVolumeMeters') {
-        const seen = {};
-        for (const i of (e.eventData && e.eventData.inputs) || []) {
-          let mag = 0;
-          let peak = 0;
-          for (const ch of i.inputLevelsMul || []) { mag = Math.max(mag, ch[0] || 0); peak = Math.max(peak, ch[1] || ch[0] || 0); }
-          const old = obsState.levels[i.inputName];
-          seen[i.inputName] = { mag, peak: Math.max(peak, old ? old.peak : 0) };
-        }
-        obsState.levels = seen;
-      }
-    } else if (m.op === 7) {
-      const p = obsPending.get(m.d.requestId);
-      if (!p) return;
-      obsPending.delete(m.d.requestId);
-      clearTimeout(p.t);
-      if (m.d.requestStatus && m.d.requestStatus.result) p.resolve(m.d.responseData || {});
-      else p.reject(new Error((m.d.requestStatus && m.d.requestStatus.comment) || 'OBS said no'));
-    }
-  });
-  ws.on('close', (code) => {
-    if (obsWs !== ws) return;
-    obsState.connected = false;
-    obsState.error = code === 4009 ? 'Wrong OBS password' : 'Cannot reach OBS. Is OBS open, with the WebSocket server turned on?';
-    retry();
-  });
-  ws.on('error', () => {});
-}
-let thumbCache = { at: 0, w: 0, data: {} };
-let thumbBusy = null;
-async function obsThumbs(w) {
-  if (Date.now() - thumbCache.at < 1200 && thumbCache.w === w) return thumbCache.data;
-  if (thumbBusy) return thumbBusy;
-  thumbBusy = (async () => {
-    const data = {};
-    for (const name of obsState.scenes) {
-      try {
-        const r = await obsRequest('GetSourceScreenshot', { sourceName: name, imageFormat: 'jpg', imageWidth: w, imageHeight: Math.round((w * 9) / 16), imageCompressionQuality: 40 });
-        data[name] = r.imageData;
-      } catch {}
-    }
-    thumbCache = { at: Date.now(), w, data };
-    return data;
-  })();
-  try { return await thumbBusy; } finally { thumbBusy = null; }
-}
-app.get('/api/obs', (req, res) => res.json(obsView()));
-app.put('/api/obs', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
-  const b = req.body || {};
-  if (typeof b.enabled === 'boolean') obsCfg.enabled = b.enabled;
-  if (b.host !== undefined) obsCfg.host = String(b.host).trim() || '127.0.0.1';
-  if (b.port !== undefined) {
-    const port = Number(b.port);
-    if (!Number.isInteger(port) || port < 1 || port > 65535) return res.status(400).json({ error: 'The port must be a number, usually 4455' });
-    obsCfg.port = port;
-  }
-  if (typeof b.password === 'string' && b.password !== '') obsCfg.password = b.password;
-  if (b.clearPassword === true) obsCfg.password = '';
-  saveObsCfg();
-  obsConnect();
-  res.json(obsView());
-});
-app.post('/api/obs/scene', async (req, res) => {
-  const name = String((req.body || {}).name || '');
-  if (!obsState.scenes.includes(name)) return res.status(400).json({ error: 'That scene is not in OBS' });
-  try {
-    await obsRequest('SetCurrentProgramScene', { sceneName: name });
-    obsState.current = name;
-    res.json({ current: name });
-  } catch (e) {
-    res.status(502).json({ error: e.message });
-  }
-});
-app.get('/api/obs/thumbs', async (req, res) => {
-  if (!obsState.connected) return res.json({});
-  const w = Math.min(400, Math.max(80, Number((req.query || {}).w) || 160));
-  res.json(await obsThumbs(w));
-});
-let shotCache = {};
-async function obsShot(name, w) {
-  const key = name + '|' + w;
-  const c = shotCache[key];
-  if (c && Date.now() - c.at < 200) return c.img;
-  const r = await obsRequest('GetSourceScreenshot', { sourceName: name, imageFormat: 'jpg', imageWidth: w, imageHeight: Math.round((w * 9) / 16), imageCompressionQuality: 45 });
-  shotCache[key] = { at: Date.now(), img: r.imageData };
-  return r.imageData;
-}
-app.get('/api/obs/shots', async (req, res) => {
-  if (!obsState.connected) return res.json({});
-  const q = req.query || {};
-  const w = Math.min(960, Math.max(160, Number(q.w) || 640));
-  const out = {};
-  for (const k of ['a', 'b']) {
-    const name = String(q[k] || '');
-    if (!name || !obsState.scenes.includes(name)) continue;
-    try { out[k] = await obsShot(name, w); } catch {}
-  }
-  res.json(out);
-});
-const toDb = (m) => (m > 0 ? Math.max(-100, 20 * Math.log10(m)) : -100);
-app.get('/api/obs/levels', (req, res) => {
-  obsLastLevelPoll = Date.now();
-  obsSetMeters(true);
-  const out = {};
-  for (const [name, v] of Object.entries(obsState.levels)) {
-    out[name] = { mag: Math.round(toDb(v.mag) * 10) / 10, peak: Math.round(toDb(v.peak) * 10) / 10 };
-    v.peak = v.mag; // the peak is held until it has been read once
-  }
-  res.json({ connected: obsState.connected, levels: out, muted: obsState.muted });
-});
-if (obsCfg.enabled) obsConnect();
 
 app.post('/api/destinations', (req, res) => {
   const { name, url, key } = req.body || {};
@@ -1216,15 +978,7 @@ app.get('/live.flv', (req, res) => {
   const off = hub.subscribe(res, () => { try { res.end(); } catch {} });
   req.on('close', off);
 });
-// ---- OBS backup settings ----
-app.get('/api/obsin', (req, res) => res.json({ ...obsIn, ...obsInInfo, server: `rtmp://localhost:${RTMP_PORT}/live`, key: 'obs' }));
-app.put('/api/obsin', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
-  obsIn.enabled = Boolean((req.body || {}).enabled);
-  try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(OBSIN_FILE, JSON.stringify(obsIn)); } catch {}
-  if (obsIn.enabled) obsInStart(); else obsInStop();
-  setTimeout(() => res.json({ ...obsIn, ...obsInInfo, server: `rtmp://localhost:${RTMP_PORT}/live`, key: 'obs' }), 400);
-});
+
 
 // Which encoder the Studio uses: the graphics card if one works, else the processor. Tested once at start.
 let studioEncoder = { key: 'software', id: 'libx264', name: 'processor (x264)' };
@@ -1297,7 +1051,6 @@ function openPipe(p, toWindow) {
 }
 function shutdown() {
   stopAll();
-  obsInStop();
   try { if (studioFf) studioFf.kill('SIGKILL'); } catch {}
   try { vcam.stop(); } catch {}
   for (const s of [phoneServer, loginServer]) { try { s && s.close(); } catch {} }

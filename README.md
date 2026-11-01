@@ -122,4 +122,4 @@ Click **Virtual camera** in the Studio. The first time, Windows asks for permiss
 If a destination stops while OBS is still live, Multistream starts it again by itself: after 3 seconds, then 6, 9 ... up to 30 seconds. It gives up after 10 tries in a row (so a wrong stream key is not tried over and over) and shows "Press Restart". Pressing Restart or End live cancels the waiting.
 
 ## Multistream 3 (no localhost)
-Version 3 runs everything inside the app: the windows, the Studio video, the preview and the recording do not use localhost or any port. OBS backup and phone control are switches in Settings and are off by default. See [VERSION3.md](VERSION3.md).
+Version 3 runs everything inside the app: the windows, the Studio video, the preview and the recording do not use localhost or any port. It has no OBS connection; phone control is a switch in Settings and is off by default. The Studio is laid out like OBS. See [VERSION3.md](VERSION3.md).

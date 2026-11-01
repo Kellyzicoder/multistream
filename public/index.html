@@ -63,7 +63,7 @@
   .tp.d { background:#0c110e; } .tp.d i.s { left:0; top:0; bottom:0; width:26%; background:#141b17; } .tp.d i.a { left:32%; right:8%; top:12px; height:6px; background:#34463b; } .tp.d i.b { left:32%; right:8%; top:26px; bottom:8px; background:#1d2721; }
   .tp.sy { background:linear-gradient(90deg,#f4f6f5 50%,#0c110e 50%); } .tp.sy i.a { left:32%; right:8%; top:12px; height:6px; background:#8a948f; } .tp.sy i.b { left:32%; right:8%; top:26px; bottom:8px; background:rgba(128,128,128,.35); }
 
-  /* ---------- settings window (sidebar + grouped options, like OBS) ---------- */
+  /* ---------- settings window (sidebar + grouped options) ---------- */
   .swin { width:min(900px,100%); height:min(640px,calc(100vh - 40px)); display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:0 30px 90px rgba(0,0,0,.55); overflow:hidden; }
   .swin-h { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--rule); font-size:14px; font-weight:600; }
   .swin-x { border:0; background:transparent; color:var(--muted); font-size:20px; line-height:1; padding:4px 8px; border-radius:8px; }
@@ -416,39 +416,12 @@
      <div id="offlineView">
       <div class="ring" aria-hidden="true"><i></i></div>
       <h1 id="h1">Waiting for the Studio</h1>
-      <p class="lead" id="lead">Open the Studio and press <b>Start sending</b>. The channels below start by themselves.</p>
+      <p class="lead" id="lead">Open the Studio and press <b>Start Streaming</b>. The channels below start by themselves.</p>
       <p style="text-align:center;margin:0 0 18px"><button type="button" class="b2 pri" id="openStudioBtn">Open Studio</button></p>
 
-      <div id="obsBox" hidden>
-      <p class="lead">OBS backup is on. In OBS use these two:</p>
-      <div class="fld">
-        <label>RTMP URL</label>
-        <div class="inp"><input id="srv" readonly value="rtmp://localhost:1935/live"><button data-copy="srv" title="Copy" aria-label="Copy URL"></button></div>
-      </div>
-      <div class="fld">
-        <label>Stream key</label>
-        <div class="inp"><input id="skey" readonly value="obs"><button data-copy="skey" title="Copy" aria-label="Copy key"></button></div>
-      </div>
-
-      <div class="how">
-        <a id="howLink">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor"/></svg>
-          How to connect OBS
-        </a>
-        <div class="steps" id="steps">
-          <ol>
-            <li>In OBS open <b>Settings → Stream</b>.</li>
-            <li>Set <b>Service</b> to <code>Custom</code>.</li>
-            <li>Paste the <b>RTMP URL</b> into <b>Server</b> and the <b>Stream key</b> above.</li>
-            <li>Click <b>Start Streaming</b> in OBS.</li>
-            <li>On Facebook and Instagram, press <b>Go live</b> on their page.</li>
-          </ol>
-        </div>
-      </div>
-      </div>
      </div>
 
-     <!-- shown while OBS is sending video -->
+     <!-- shown while the Studio is sending video -->
      <div id="liveView" hidden>
       <div class="pv-box">
         <video id="pv" muted autoplay playsinline></video>
@@ -467,41 +440,14 @@
         <div class="bi" id="kfBox"><b id="sgKey">…</b><span>Keyframe</span></div>
         <div class="bi"><b id="sgAudio">…</b><span>Audio</span></div>
       </div>
-      <p class="kfnote" id="kfNote" hidden>Facebook and YouTube want a keyframe every 2 seconds (4 at most). In OBS: Settings → Output → Streaming → Keyframe Interval → 2.</p>
+      <p class="kfnote" id="kfNote" hidden>Facebook and YouTube want a keyframe every 2 seconds (4 at most). The Studio already sends one every 2 seconds.</p>
       <div class="spark">
         <svg viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><polyline id="sparkLine" fill="none" stroke="#4ade80" stroke-width="2" vector-effect="non-scaling-stroke" points=""/></svg>
         <small id="sparkNote">Bitrate, last minute</small>
       </div>
      </div>
 
-     <!-- OBS scenes -->
-     <section class="scn" id="scn" aria-label="OBS scenes">
-      <div class="scn-h">
-        <h2>Scenes</h2><span class="st" id="scnSt"></span><span class="grow"></span>
-        <div class="scn-tools">
-          <details class="view">
-            <summary>View</summary>
-            <div class="viewbox">
-              <div class="opt" id="scnSize" role="group" aria-label="Tile size">
-                <button type="button" data-v="s">Small</button><button type="button" data-v="m">Medium</button><button type="button" data-v="l">Large</button>
-              </div>
-              <div class="row"><span>Show pictures</span><label class="sw"><input type="checkbox" id="scnPics" aria-label="Show scene pictures"><span></span></label></div>
-            </div>
-          </details>
-          <button class="ghost" id="obsCfgBtn" type="button">Connect OBS</button>
-        </div>
-      </div>
-      <div class="tiles" id="tiles"></div>
-     </section>
 
-     <!-- OBS audio levels -->
-     <section class="aud" id="aud" aria-label="OBS audio levels" hidden>
-      <div class="scn-h">
-        <h2>Audio levels</h2><span class="grow"></span>
-        <span class="st">Show</span><label class="sw"><input type="checkbox" id="audOn" aria-label="Show audio levels"><span></span></label>
-      </div>
-      <div class="arows" id="arows"></div>
-     </section>
     </div>
   </main>
 
@@ -512,12 +458,12 @@
       <div class="gr">
         <div class="who"><b>YouTube</b><span id="ytSub">Not connected</span></div>
         <button class="ghost" id="ytBtn" type="button" title="Connect the YouTube account">Set up</button>
-        <button class="go" id="ytLive" type="button" disabled title="Start sending from the Studio first, and connect YouTube">Go live</button>
+        <button class="go" id="ytLive" type="button" disabled title="Start Streaming in the Studio first, and connect YouTube">Go live</button>
       </div>
       <div class="gr">
         <div class="who"><b>Facebook</b><span id="fbSub">No Page added</span></div>
         <button class="ghost" id="fbBtn" type="button" title="Add the Facebook Page ID and token">Set up</button>
-        <button class="go" id="fbLive" type="button" disabled title="Start sending from the Studio first, and add the Facebook Page">Go live</button>
+        <button class="go" id="fbLive" type="button" disabled title="Start Streaming in the Studio first, and add the Facebook Page">Go live</button>
       </div>
       <div class="gt">
         <label class="fl" for="glTitle">Title</label>
@@ -541,7 +487,7 @@
         </div>
       <div class="gr" id="recRow">
         <div class="who"><b>Recording</b><span id="recSub">Saves a copy on this computer</span></div>
-        <button class="go" id="recBtn" type="button" disabled title="Start sending from the Studio first">Record</button>
+        <button class="go" id="recBtn" type="button" disabled title="Start Streaming in the Studio first">Record</button>
       </div>
       <div class="gr" id="pfRow">
         <div class="who"><b>Check everything</b><span id="pfSub">Do this before the service</span></div>
@@ -580,7 +526,7 @@
 <div class="cr" id="crView" hidden>
   <div class="cr-bar">
     <h1>Control Room</h1><span class="st" id="crSt"></span><span class="grow"></span>
-    <button type="button" id="crPop" class="cr-pop">Open in its own window</button> <label class="st" for="crEng">Engine</label> <select id="crEng" aria-label="What the Control Room controls"><option value="auto">Automatic</option><option value="studio">Studio</option><option value="obs">OBS</option></select>
+    <button type="button" id="crPop" class="cr-pop">Open in its own window</button>
     <div class="opt" id="crMode" role="group" aria-label="How a scene goes on air">
       <button type="button" data-v="take">Preview, then Take</button><button type="button" data-v="direct">Direct</button>
     </div>
@@ -626,7 +572,6 @@
         <button type="button" role="tab" data-pane="youtube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg> YouTube</button>
         <button type="button" role="tab" data-pane="facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8.5h2.5V5H14a3.5 3.5 0 0 0-3.5 3.5V11H8v3.5h2.5V21H14v-6.5h2.5L17 11h-3V8.5z"/></svg> Facebook</button>
         <button type="button" role="tab" data-pane="recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6" fill="currentColor"/></svg> Recording</button>
-        <button type="button" role="tab" data-pane="obs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/></svg> OBS</button>
                 <button type="button" role="tab" data-pane="phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg> Phone</button>
       </nav>
       <div class="smain">
@@ -691,9 +636,9 @@
 
         <section class="pane" data-pane="recording" role="tabpanel" aria-label="Recording">
           <div class="grp"><h4>Recording</h4>
-            <p>Saves the video from OBS to a file on this computer while you stream. It is the same picture and sound OBS sends. The file is an .mkv, so it still plays if the power goes out. VLC plays it.</p>
-            <div class="srow"><p class="lb">Record when OBS starts<small>No button to press</small></p>
-              <div class="ctl"><label class="sw"><input type="checkbox" id="recAuto" aria-label="Record when OBS starts"><span></span></label></div></div>
+            <p>Saves the video to a file on this computer while you stream. It is the same picture and sound that goes to your channels. The file is an .mkv, so it still plays if the power goes out. VLC plays it.</p>
+            <div class="srow"><p class="lb">Record when sending starts<small>No button to press</small></p>
+              <div class="ctl"><label class="sw"><input type="checkbox" id="recAuto" aria-label="Record when sending starts"><span></span></label></div></div>
             <div class="srow"><p class="lb">Saved in</p>
               <div class="ctl"><code id="recDir" class="path"></code><button class="b2" id="recOpen" type="button">Open folder</button><p class="note" id="recMsg" hidden></p></div></div>
           </div>
@@ -702,24 +647,7 @@
           </div>
         </section>
 
-        <section class="pane" data-pane="obs" role="tabpanel" aria-label="OBS">
-          <div class="grp"><h4>OBS backup</h4>
-            <p>Off by default: the Studio does the show. Turn this on only if you want OBS to send the video instead (for example if the Studio has a problem). While it is on, OBS sends to <code>rtmp://localhost:1935/live</code> with stream key <code>obs</code>.</p>
-            <div class="srow"><p class="lb">Let OBS send video in</p>
-              <div class="ctl"><label class="sw"><input type="checkbox" id="obsInOn" aria-label="Let OBS send video in"><span></span></label></div></div>
-            <div class="srow"><p class="lb">Status</p><div class="ctl"><p class="note" id="obsInMsg"></p></div></div>
-          </div>
-          <div class="grp"><h4>Connect to OBS</h4>
-            <p>This lets Multistream show your scenes and switch them. In OBS, open <b>Tools → WebSocket Server Settings</b>, tick <b>Enable WebSocket server</b>, and set a password. Then type the same password here.</p>
-            <div class="srow"><p class="lb">Connect to OBS</p>
-              <div class="ctl"><label class="sw"><input type="checkbox" id="obsOn" aria-label="Connect to OBS"><span></span></label></div></div>
-            <div class="srow"><label class="lb" for="obsPort">Port<small>OBS shows 4455</small></label>
-              <div class="ctl"><input class="t" id="obsPort" inputmode="numeric" placeholder="4455"></div></div>
-            <div class="srow"><label class="lb" for="obsPw">Password</label>
-              <div class="ctl"><input class="t" id="obsPw" type="password" placeholder="Leave empty to keep the saved password" autocomplete="new-password"></div></div>
-            <div class="srow"><p class="lb">Status</p><div class="ctl"><p class="note" id="obsMsg"></p></div></div>
-          </div>
-        </section>
+
 
         
 
@@ -864,7 +792,7 @@ function renderSignal(state) {
 setInterval(() => { if (last.obsLive && last.signal && last.signal.startedAt) $('#ovTime').textContent = fmtTime(Date.now() - last.signal.startedAt); }, 1000);
 
 // ---------- video preview ----------
-// The window plays the same stream OBS sends. It is only decoded for display, never re-encoded.
+// The window plays the same stream the Studio sends. It is only decoded for display, never re-encoded.
 let player = null;
 try { $('#pvSwitch').checked = localStorage.getItem('previewOn') !== '0'; } catch {}
 
@@ -930,8 +858,7 @@ function render(state) {
   $('#offlineView').hidden = live;
   $('#liveView').hidden = !live;
   $('#stageIn').classList.toggle('wide', live);
-  $('#glHint').textContent = live ? '' : 'Start sending from the Studio first. Then Go live turns on.';
-  $('#obsBox').hidden = !state.ingest.obsBackup;
+  $('#glHint').textContent = live ? '' : 'Start Streaming in the Studio first. Then Go live turns on.';
   $('#lvLead').textContent = `Your stream is going to ${nLive} of ${n} active channel${n === 1 ? '' : 's'}.`;
   renderSignal(state);
   syncPreview();
@@ -1059,148 +986,10 @@ document.querySelectorAll('[data-copy]').forEach((b) => {
   };
 });
 
-// how to connect OBS
 $('#openStudioBtn').onclick = () => showPage('studio');
-$('#howLink').onclick = () => {
-  const s = $('#steps');
-  s.style.display = s.style.display === 'block' ? 'none' : 'block';
-};
-
-// Facebook Page
-// OBS scenes
-let obsInfo = null;
-const SCN_W = { s: 120, m: 200, l: 280 };
-let scn = { size: 's', pics: true };
-try { scn = { ...scn, ...(JSON.parse(localStorage.getItem('ms_scenes') || '{}') || {}) }; } catch {}
-function saveScn() { try { localStorage.setItem('ms_scenes', JSON.stringify(scn)); } catch {} }
-function renderScn() {
-  const o = obsInfo;
-  // Version 3: the OBS scenes strip only shows when OBS control is switched on in Settings
-  $('#scn').hidden = !(o && o.enabled);
-  renderAud();
-  document.querySelectorAll('#scnSize button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === scn.size)));
-  $('#scnPics').checked = scn.pics;
-  $('#tiles').style.setProperty('--tw', SCN_W[scn.size] + 'px');
-  const st = $('#scnSt');
-  if (!o || !o.enabled) { st.textContent = 'Not connected'; st.className = 'st'; $('#tiles').textContent = ''; $('#tiles').dataset.key = ''; return; }
-  st.textContent = o.connected ? 'Connected to OBS' : (o.error || 'Connecting...');
-  st.className = 'st' + (o.connected ? ' ok' : '');
-  const key = o.scenes.join('\n') + '|' + scn.pics;
-  const box = $('#tiles');
-  if (box.dataset.key !== key) {
-    box.dataset.key = key;
-    box.textContent = '';
-    o.scenes.forEach((name) => {
-      const b = document.createElement('button');
-      b.type = 'button'; b.className = 'tile' + (scn.pics ? '' : ' noimg'); b.dataset.n = name;
-      const im = document.createElement('img'); im.className = 'im'; im.alt = ''; im.draggable = false;
-      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = name;
-      b.append(im, nm);
-      b.onclick = async () => {
-        const r = await api('/api/obs/scene', 'POST', { name });
-        if (r.error) { st.textContent = r.error; st.className = 'st'; }
-        else if (obsInfo) { obsInfo.current = name; renderScn(); }
-        refresh();
-      };
-      box.appendChild(b);
-    });
-  }
-  box.querySelectorAll('.tile').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.n === o.current)));
-}
-let thumbBusy = false;
-async function pollThumbs() {
-  if (thumbBusy || (!scn.pics && page !== 'cr') || !obsInfo || !obsInfo.connected || document.hidden) return;
-  thumbBusy = true;
-  try {
-    const d = await api('/api/obs/thumbs?w=' + Math.round(SCN_W[scn.size] * 1.3));
-    document.querySelectorAll('#tiles .tile, #crTiles .tile').forEach((b) => { const u = d[b.dataset.n]; if (u) b.querySelector('img').src = u; });
-  } catch {}
-  thumbBusy = false;
-}
-setInterval(pollThumbs, 1500);
-document.querySelectorAll('#scnSize button').forEach((b) => { b.onclick = () => { scn.size = b.dataset.v; saveScn(); renderScn(); pollThumbs(); }; });
-$('#scnPics').onchange = (e) => { scn.pics = e.target.checked; saveScn(); renderScn(); pollThumbs(); };
-// Audio levels (read only). Meters are only requested while this panel is showing.
-let audOn = true;
-try { audOn = JSON.parse(localStorage.getItem('ms_audio') || 'true'); } catch {}
-const rowsEl = $('#arows');
-const dbPct = (d) => Math.max(0, Math.min(100, ((d + 60) / 60) * 100));
-let audBusy = false;
-function renderAud() {
-  const box = $('#aud');
-  const show = Boolean(obsInfo && obsInfo.enabled && obsInfo.connected);
-  box.hidden = !show;
-  $('#audOn').checked = audOn;
-  if (!audOn || !show) rowsEl.hidden = true; else rowsEl.hidden = false;
-}
-async function pollAud() {
-  if (audBusy || !audOn || !obsInfo || !obsInfo.connected || document.hidden) return;
-  audBusy = true;
-  try {
-    const r = await api('/api/obs/levels');
-    const names = Object.keys(r.levels || {}).sort();
-    if (rowsEl.dataset.key !== names.join('\n')) {
-      rowsEl.dataset.key = names.join('\n');
-      rowsEl.textContent = '';
-      if (!names.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = 'No audio found in OBS yet.'; rowsEl.appendChild(p); }
-      names.forEach((n) => {
-        const row = document.createElement('div'); row.className = 'ar'; row.dataset.n = n;
-        row.innerHTML = '<span class="an"></span><span class="mt" role="meter" aria-valuemin="-60" aria-valuemax="0"><i class="cv"></i><i class="pk"></i></span><span class="db"></span>';
-        row.querySelector('.an').textContent = n;
-        row.querySelector('.mt').setAttribute('aria-label', n + ' level');
-        rowsEl.appendChild(row);
-      });
-    }
-    rowsEl.querySelectorAll('.ar').forEach((row) => {
-      const v = r.levels[row.dataset.n];
-      if (!v) return;
-      const muted = Boolean(r.muted && r.muted[row.dataset.n]);
-      row.classList.toggle('mute', muted);
-      const an = row.querySelector('.an');
-      if (muted && !an.querySelector('em')) an.insertAdjacentHTML('beforeend', '<em>MUTED</em>');
-      if (!muted && an.querySelector('em')) an.querySelector('em').remove();
-      row.querySelector('.cv').style.width = (100 - dbPct(v.mag)) + '%';
-      row.querySelector('.pk').style.left = 'calc(' + dbPct(v.peak) + '% - 2px)';
-      row.querySelector('.mt').setAttribute('aria-valuenow', String(Math.max(-60, Math.round(v.mag))));
-      row.querySelector('.db').textContent = v.mag <= -60 ? '-inf' : v.mag.toFixed(0) + ' dB';
-    });
-  } catch {}
-  audBusy = false;
-}
-setInterval(pollAud, 200);
-$('#audOn').onchange = (e) => { audOn = e.target.checked; try { localStorage.setItem('ms_audio', JSON.stringify(audOn)); } catch {} renderAud(); };
-
-function obsInText(v) {
-  if (!v.enabled) return ['Off. Nothing is listening for OBS.', false];
-  if (v.error) return [v.error, true];
-  if (v.sending) return ['OBS is sending video.', false];
-  return ['Waiting for OBS. In OBS press Start Streaming.', false];
-}
-async function loadObs() {
-  const vi = await api('/api/obsin');
-  $('#obsInOn').checked = Boolean(vi.enabled);
-  const [t, bad] = obsInText(vi); $('#obsInMsg').textContent = t; $('#obsInMsg').className = 'note' + (bad ? ' bad' : '');
-  const o = await api('/api/obs');
-  $('#obsOn').checked = o.enabled; $('#obsPort').value = o.port || 4455; $('#obsPw').value = '';
-  $('#obsPw').placeholder = o.hasPassword ? 'Password saved. Leave empty to keep it' : 'Type the OBS password';
-  $('#obsMsg').textContent = o.connected ? 'Connected to OBS.' : (o.enabled ? o.error : '');
-  $('#obsMsg').className = 'note' + (o.enabled && !o.connected ? ' bad' : '');
-}
-async function saveObs() {
-  const vi = await api('/api/obsin', 'PUT', { enabled: $('#obsInOn').checked });
-  if (vi.error && !('enabled' in vi)) { $('#obsInMsg').textContent = vi.error; $('#obsInMsg').className = 'note bad'; return false; }
-  { const [t, bad] = obsInText(vi); $('#obsInMsg').textContent = t; $('#obsInMsg').className = 'note' + (bad ? ' bad' : ''); }
-  const msg = $('#obsMsg');
-  const body = { enabled: $('#obsOn').checked, port: $('#obsPort').value.trim() || 4455 };
-  if ($('#obsPw').value) body.password = $('#obsPw').value;
-  const r = await api('/api/obs', 'PUT', body);
-  if (r.error) { msg.textContent = r.error; msg.className = 'note bad'; return false; }
-  $('#obsPw').value = '';
-  msg.textContent = r.enabled ? 'Saved. Connecting...' : 'Saved. OBS control is off.'; msg.className = 'note';
-  setTimeout(async () => { const o = await api('/api/obs'); obsInfo = o; renderScn(); if (o.enabled) { msg.textContent = o.connected ? 'Connected to OBS.' : o.error; msg.className = 'note' + (o.connected ? '' : ' bad'); } }, 1500);
-  return true;
-}
-renderScn();
+// Version 3 has no OBS connection. These stay as empty helpers so older code paths are harmless.
+function renderScn() {}
+function pollThumbs() {}
 
 // Control Room (multiview) and the page switcher
 let page = 'dash';
@@ -1214,29 +1003,21 @@ function showPage(p) {
   $('.app').hidden = page === 'cr';
   $('#crView').hidden = page !== 'cr';
   pageTabs.forEach((b) => { if (b.dataset.page === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-  const aud = $('#aud');
-  if (page === 'cr') $('#crAudio').appendChild(aud);
-  else $('#scn').after(aud);
   try { history.replaceState(null, '', page === 'cr' ? '#control-room' : location.pathname + location.search); } catch {}
   renderCr();
   pollThumbs();
 }
 pageTabs.forEach((b) => { b.onclick = () => showPage(b.dataset.page); });
-// Which engine the Control Room drives: the built-in Studio, or OBS (the fallback).
-let crEng = 'auto';
-try { crEng = (JSON.parse(localStorage.getItem('ms_cr') || '{}') || {}).eng || 'auto'; } catch {}
+// The Control Room drives the Studio.
+const crEng = 'studio';
 let stu = { alive: false, scenes: [], current: '', shots: {} };
-function engine() { return crEng === 'auto' ? (stu.alive ? 'studio' : 'obs') : crEng; }
-function saveCr() { try { localStorage.setItem('ms_cr', JSON.stringify({ mode: crMode, eng: crEng })); } catch {} }
+function engine() { return 'studio'; }
+function saveCr() { try { localStorage.setItem('ms_cr', JSON.stringify({ mode: crMode })); } catch {} }
 function crData() {
-  if (engine() === 'studio') return { on: true, ok: stu.alive, msg: stu.alive ? 'Studio is running' : 'The Studio is not open. On the church PC open the menu, then Studio.', scenes: stu.scenes.map((s) => s.name), current: stu.current };
-  const o = obsInfo;
-  if (!o || !o.enabled) return { on: false, msg: 'OBS is not connected. Use Dashboard, then Connect OBS.', scenes: [], current: '' };
-  return { on: true, ok: o.connected, msg: o.connected ? 'Connected to OBS' : (o.error || 'Connecting...'), scenes: o.scenes, current: o.current };
+  return { on: true, ok: stu.alive, msg: stu.alive ? 'Studio is running' : 'The Studio is not open. Press Studio at the top.', scenes: stu.scenes.map((s) => s.name), current: stu.current };
 }
 async function crSetScene(name) {
-  if (engine() === 'studio') { const r = await api('/api/studio/scene', 'POST', { name }); if (!r.error) stu.current = name; }
-  else { const r = await api('/api/obs/scene', 'POST', { name }); if (!r.error && obsInfo) obsInfo.current = name; }
+  const r = await api('/api/studio/scene', 'POST', { name }); if (!r.error) stu.current = name;
   crPrev = ''; if (engine() === 'studio') api('/api/studio/preview', 'POST', { name: '' }); renderCr(); refresh();
 }
 function crPreview(name) { crPrev = name; if (engine() === 'studio') api('/api/studio/preview', 'POST', { name }); renderCr(); }
@@ -1244,14 +1025,12 @@ function crTake() { const d = crData(); if (!crPrev || crPrev === d.current) ret
 $('#crTake').onclick = crTake;
 $('#crPop').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); showPage('dash'); };
 document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => { crMode = b.dataset.v; crPrev = ''; saveCr(); renderCr(); }; });
-$('#crEng').value = crEng;
-$('#crEng').onchange = (e) => { crEng = e.target.value; crPrev = ''; saveCr(); $('#crTiles').dataset.key = ''; renderCr(); };
 function renderCr() {
   if (page !== 'cr') return;
   const d = crData();
   document.querySelectorAll('#crMode button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === crMode)));
   const st = $('#crSt');
-  st.textContent = d.msg + (d.on ? ' (' + (engine() === 'studio' ? 'Studio' : 'OBS') + ')' : ''); st.className = 'st' + (d.ok ? ' ok' : '');
+  st.textContent = d.msg + (d.on ? ' (' + 'Studio' + ')' : ''); st.className = 'st' + (d.ok ? ' ok' : '');
   const box = $('#crTiles');
   if (!d.on) { box.textContent = ''; box.dataset.key = ''; return; }
   if (crPrev && !d.scenes.includes(crPrev)) crPrev = '';
@@ -1311,11 +1090,6 @@ async function pollCr() {
     if (engine() === 'studio') {
       if (sh.prog) $('#crProg').src = sh.prog;
       if (sh.pv || sh.prog) $('#crPrev').src = crPrev ? (sh.pv || sh.prog) : sh.prog;
-    } else if (obsInfo && obsInfo.connected) {
-      const a = obsInfo.current; const b = crPrev || obsInfo.current;
-      const d = await api('/api/obs/shots?a=' + encodeURIComponent(a) + '&b=' + encodeURIComponent(b) + '&w=640');
-      if (d.a) $('#crProg').src = d.a;
-      if (d.b) $('#crPrev').src = d.b;
     }
     renderCr();
   } catch {}
@@ -1448,7 +1222,7 @@ function renderFb(fbState, live, inSession) {
   const ready = Boolean(fbState && fbState.hasToken && fbState.pageId);
   goBtn('#fbLive', Boolean(inSession));
   $('#fbLive').disabled = inSession ? false : !(live && ready);
-  $('#fbLive').title = inSession ? 'Stop sending and end the live video on Facebook' : !live ? 'Start sending from the Studio first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
+  $('#fbLive').title = inSession ? 'Stop sending and end the live video on Facebook' : !live ? 'Start Streaming in the Studio first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
   $('#fbSub').textContent = ready ? (fbState.pageName || 'Page ' + fbState.pageId) : 'No Page added';
 }
 async function loadFb() {
@@ -1495,7 +1269,7 @@ function renderYt(ytState, live, inSession) {
   goBtn('#ytLive', Boolean(inSession));
   $('#ytLive').disabled = inSession ? false : !(live && ytState && ytState.connected);
   $('#ytSub').textContent = ytState && ytState.connected ? (ytState.channelTitle || 'Connected') : 'Not connected';
-  $('#ytLive').title = inSession ? 'Stop sending and end the live broadcast on YouTube' : !live ? 'Start sending from the Studio first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
+  $('#ytLive').title = inSession ? 'Stop sending and end the live broadcast on YouTube' : !live ? 'Start Streaming in the Studio first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
   if (settingsPane() === 'youtube' && ytState) ytNote('#yt-status', ytStatusText(ytState), false);
 }
 async function loadYt() {
@@ -1539,9 +1313,9 @@ $('#ytLive').onclick = async () => {
 
 // Settings window: sidebar of sections, OK / Cancel / Apply at the bottom
 const setOverlay = $('#setOverlay');
-const paneLoaders = { youtube: loadYt, facebook: loadFb, obs: loadObs, phone: loadPhone, recording: loadRec };
-const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, obs: saveObs, phone: savePhone, recording: saveRec };
-const paneOrder = ['appearance', 'facebook', 'obs', 'phone', 'recording'];
+const paneLoaders = { youtube: loadYt, facebook: loadFb, phone: loadPhone, recording: loadRec };
+const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, phone: savePhone, recording: saveRec };
+const paneOrder = ['appearance', 'facebook', 'phone', 'recording'];
 let dirty = {};
 let loaded = {};
 let curPane = '';
@@ -1581,13 +1355,12 @@ $('#setNav').addEventListener('click', (e) => { const b = e.target.closest('butt
 $('#setBtn').onclick = () => openSettings('appearance');
 $('#ytBtn').onclick = () => openSettings('youtube');
 $('#fbBtn').onclick = () => openSettings('facebook');
-$('#obsCfgBtn').onclick = () => openSettings('obs');
 $('#setApply').onclick = async () => { const b = $('#setApply'); b.disabled = true; if (!(await applySettings())) b.disabled = false; };
 $('#setOk').onclick = async () => { if (await applySettings()) closeSettings(true); };
 $('#setCancel').onclick = () => closeSettings(false);
 $('#setX').onclick = () => closeSettings(false);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && setOverlay.classList.contains('open')) closeSettings(false); });
-[['#fb-page', 'facebook'], ['#fb-token', 'facebook'], ['#obsInOn', 'obs'], ['#obsOn', 'obs'], ['#obsPort', 'obs'], ['#obsPw', 'obs'], ['#remOn', 'phone'], ['#remPw', 'phone'], ['#recAuto', 'recording']].forEach(([id, k]) => {
+[['#fb-page', 'facebook'], ['#fb-token', 'facebook'], ['#remOn', 'phone'], ['#remPw', 'phone'], ['#recAuto', 'recording']].forEach(([id, k]) => {
   $(id).addEventListener('input', () => setDirty(k));
   $(id).addEventListener('change', () => setDirty(k));
 });
@@ -1601,7 +1374,7 @@ function renderRec(rec, live) {
   b.classList.toggle('on', Boolean(rec.on));
   b.textContent = rec.on ? 'Stop' : 'Record';
   b.disabled = !rec.on && !live;
-  b.title = rec.on ? 'Stop recording' : live ? 'Save a copy of this stream on this computer' : 'Start sending from the Studio first';
+  b.title = rec.on ? 'Stop recording' : live ? 'Save a copy of this stream on this computer' : 'Start Streaming in the Studio first';
   $('#recSub').textContent = rec.on ? 'Recording ' + fmtClock(Date.now() - rec.startedAt) : rec.error ? 'Problem: ' + rec.error : 'Saves a copy on this computer';
 }
 async function loadRec() {
@@ -1692,7 +1465,7 @@ async function pollChat() {
 }
 setInterval(pollChat, 3000);
 
-async function refresh() { try { const s = await api('/api/state'); render(s); renderRec(s.recording, s.obsLive); renderFb(s.facebook, s.obsLive, s.session && s.session.facebook); renderYt(s.youtube, s.obsLive, s.session && s.session.youtube); checkAlerts(s); obsInfo = s.obs; renderScn(); renderCr(); } catch {} }
+async function refresh() { try { const s = await api('/api/state'); render(s); renderRec(s.recording, s.obsLive); renderFb(s.facebook, s.obsLive, s.session && s.session.facebook); renderYt(s.youtube, s.obsLive, s.session && s.session.youtube); checkAlerts(s); renderCr(); } catch {} }
 refresh();
 setInterval(refresh, 2000);
 </script>

@@ -18,15 +18,16 @@ Version 3 is a separate app. Version 1 (`main`) and Version 2 (`v2`) are not cha
 | The preview used a local video server (`localhost:8000`) | The preview comes from the same hub. No port. |
 | Studio video, recording and virtual camera used WebSockets on localhost | They use messages inside the app. No port. |
 
+Version 3 has **no OBS connection** at all (no OBS backup, no OBS control). You can still copy scenes from an exported OBS scene file with **Import Scenes...** (that is only reading a file).
+
 Ports are only opened when you ask for them:
-- **OBS backup** (Settings, OBS): port 1935, so OBS can send video in. Off by default.
 - **Phone control** (Settings, Phone): port 3000, so a phone on the Wi-Fi can open the dashboard. Off by default.
 - **YouTube sign-in**: Google sends your browser back to this computer once. A listener opens on this computer only while you sign in, then closes (after 5 minutes at most).
 
-## Simpler screens
-- Dashboard: a "Waiting for the Studio" screen with one **Open Studio** button. Thumbnail, recording and the check list are folded under **More options**. The OBS scenes strip only shows if OBS control is switched on.
-- Studio: the top bar is **More**, **Record** and **Start sending**. Everything else (scene change style, recording quality, preview window, virtual camera, import OBS scenes, shortcuts) is in **More**. Items are added with one **+ Add item** button that says what each one is.
+## Screens
+- **Studio** looks like OBS (Studio Mode): **Preview** on the left, **Program** (what viewers see) on the right, a **Transition** button between them. Along the bottom: **Scenes**, **Sources**, **Audio Mixer**, **Scene Transitions** and **Controls** (Start Streaming, Start Recording, Start Virtual Camera, Projector, Import Scenes, Shortcuts). Double-click a source (or press the gear) to open its **Properties** window. The status bar shows the LIVE and REC clocks.
+- **Dashboard**: a "Waiting for the Studio" screen with one **Open Studio** button. Thumbnail, recording and the check list are folded under **More options**.
 
 ## Tests
 - `npm test`: the video hub and the in-app requests.
-- `npm run test:app`: starts the real app with a fake YouTube, checks no ports are open, sends from the Studio, checks the preview, records, and checks OBS backup and phone control open and close their ports. GitHub runs this on every push and keeps screenshots.
+- `npm run test:app`: starts the real app with a fake YouTube, checks no ports are open, sends from the Studio, checks the preview, records, checks there is no OBS connection, and checks phone control opens and closes its port. GitHub runs this on every push and keeps screenshots.

@@ -96,8 +96,10 @@ async function until(fn, ms, what) {
   ok('Studio opens in its own window: ' + studio.url());
 
   // 6. Start sending: the video goes Studio -> app -> fake YouTube, with no local server
+  assert.strictEqual((await studio.textContent('#sendBtn')).trim(), 'Start Streaming');
   await studio.click('#sendBtn');
   await until(() => dash.evaluate(() => fetch('/api/state').then((r) => r.json()).then((s) => s.obsLive)), 30000, 'video coming in');
+  assert.strictEqual((await studio.textContent('#sendBtn')).trim(), 'Stop Streaming');
   ok('Studio video reaches the app');
   await until(() => dash.evaluate(() => fetch('/api/state').then((r) => r.json()).then((s) => s.destinations.some((d) => d.status.state === 'live'))), 30000, 'channel live');
   ok('channel is live');
@@ -113,11 +115,7 @@ async function until(fn, ms, what) {
   await studio.screenshot({ path: path.join(OUT, '3-studio-sending.png') });
 
   // 8. record from the Studio while sending
-  // the quality list is inside the More menu
-  await studio.click('#moreBtn');
   await studio.selectOption('#recQ', '720-3');
-  await studio.screenshot({ path: path.join(OUT, '3b-studio-more-menu.png') });
-  await studio.click('#moreBtn');
   await studio.click('#recBtn');
   await sleep(5000);
   await studio.click('#recBtn');
@@ -140,23 +138,11 @@ async function until(fn, ms, what) {
   assert.ok(yi.video && yi.w === 1280 && yi.h === 720 && yi.secs > 8, 'fake YouTube got ' + JSON.stringify(yi));
   ok(`fake YouTube received ${yi.secs.toFixed(1)} s of ${yi.w}x${yi.h} video (sound: ${yi.audio ? 'yes' : 'no'})`);
 
-  // 10. OBS backup: off = no port; on = OBS can send in; off again = port closed
-  await dash.evaluate(() => fetch('/api/obsin', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"enabled":true}' }));
-  await until(() => portOpen(1935), 10000, 'OBS backup port');
-  // checking the port uses up the listener's one connection, so it restarts; wait, then send like OBS (OBS retries too)
-  await sleep(3000);
-  let obsOk = false;
-  for (let tryN = 1; tryN <= 4 && !obsOk; tryN++) {
-    const obs = spawn(FF, ['-loglevel', 'error', '-re', '-f', 'lavfi', '-i', 'testsrc=size=1280x720:rate=30', '-f', 'lavfi', '-i', 'sine', '-t', '6', '-c:v', 'libx264', '-preset', 'ultrafast', '-g', '60', '-c:a', 'aac', '-f', 'flv', 'rtmp://127.0.0.1:1935/live/obs'], { stdio: 'inherit' });
-    obsOk = await until(() => dash.evaluate(() => fetch('/api/state').then((r) => r.json()).then((s) => s.obsLive)), 6000, 'OBS video').catch(() => false);
-    await new Promise((r) => (obs.exitCode !== null ? r() : obs.on('close', r)));
-    if (!obsOk) await sleep(2000);
-  }
-  assert.ok(obsOk, 'OBS video came in');
-  ok('OBS backup: when switched on, OBS can send video in');
-  await dash.evaluate(() => fetch('/api/obsin', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"enabled":false}' }));
-  await until(async () => !(await portOpen(1935)), 10000, 'OBS backup port to close');
-  ok('OBS backup: when switched off, the port closes');
+  // 10. Version 3 has no OBS connection: port 1935 never opens
+  assert.strictEqual(await portOpen(1935), false);
+  const obsApi = await dash.evaluate(() => fetch('/api/obsin').then((r) => r.status));
+  assert.notStrictEqual(obsApi, 200, 'the OBS backup setting is gone');
+  ok('no OBS connection (port 1935 stays closed, no OBS settings)');
 
   // 11. phone control: on = port 3000 open; off = closed
   await dash.evaluate(() => fetch('/api/remote', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"password":"test-pass-123","enabled":true}' }));
