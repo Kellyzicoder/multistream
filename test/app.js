@@ -45,12 +45,16 @@ async function until(fn, ms, what) {
 
   const app = await electron.launch({
     args: ['--no-sandbox', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', ROOT],
-    env: { ...process.env, MULTISTREAM_DATA: DATA, MULTISTREAM_RECORDINGS: REC, MULTISTREAM_ENCODER: 'software' },
+    env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', MULTISTREAM_DATA: DATA, MULTISTREAM_RECORDINGS: REC, MULTISTREAM_ENCODER: 'software' },
     timeout: 90000,
   });
+  // show what the app prints, so a failure can be understood
+  const proc = app.process();
+  proc.stdout.on('data', (d) => process.stdout.write('[app] ' + d));
+  proc.stderr.on('data', (d) => process.stdout.write('[app err] ' + d));
   const errors = [];
   const watch = (p, name) => { p.on('pageerror', (e) => errors.push(name + ': ' + e.message)); p.on('console', (m) => { if (m.type() === 'error') errors.push(name + ' console: ' + m.text()); }); };
-  const dash = await app.firstWindow();
+  const dash = await app.firstWindow({ timeout: 60000 });
   watch(dash, 'dashboard');
   await dash.waitForLoadState('domcontentloaded');
   await sleep(2500);

@@ -51,6 +51,15 @@
   .fxr .sl input { width:70px; } .fxr .sl b { min-width:52px; font-weight:500; text-align:right; }
   .mt { height:6px; border-radius:3px; background:#1d2a21; overflow:hidden; margin:4px 0; }
   .mt i { display:block; height:100%; width:0; background:linear-gradient(90deg,#22c55e 0 66%,#f59e0b 66% 85%,#dc3545 85% 100%); background-size:100vw 100%; }
+  .menu { position:relative; }
+  .pop { position:absolute; right:0; top:calc(100% + 6px); z-index:40; width:280px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px; box-shadow:0 10px 30px #0009; }
+  .pop-l { left:0; right:auto; width:100%; min-width:240px; max-height:60vh; overflow:auto; }
+  .mi { display:block; width:100%; text-align:left; border:0; background:none; padding:8px 10px; border-radius:6px; font-size:13px; color:var(--text); }
+  button.mi:hover { background:#223027; }
+  .mi small { display:block; color:var(--muted); font-size:11px; margin-top:1px; }
+  label.mi { display:flex; flex-direction:column; gap:4px; color:var(--muted); font-size:12px; }
+  label.mi select { font-size:12px; padding:3px 4px; }
+  button.wide { width:100%; margin-top:4px; }
   @media (max-width:1100px) { .wrap { grid-template-columns:1fr; } }
 </style>
 </head>
@@ -58,16 +67,21 @@
 <header>
   <a href="/">&larr; Dashboard</a><h1>Studio</h1>
   <span class="stat" id="st"></span><span class="grow"></span>
-  <label class="tr" title="How a scene changes on air">Transition
-    <select id="trType"><option value="cut">Cut</option><option value="fade">Fade</option><option value="slide">Slide</option><option value="dip">Dip to black</option></select>
-    <select id="trMs"><option value="300">0.3 s</option><option value="500">0.5 s</option><option value="1000">1 s</option></select></label>
-  <button id="vcBtn" hidden title="Use the Studio picture as a webcam in Zoom: choose the camera called Softcam in Zoom">Virtual camera</button>
-  <button id="projBtn" title="Opens the picture that is on air in its own window. Drag it to a second screen.">Preview window</button>
-  <button id="keysBtn" title="Keyboard shortcuts">Keys</button>
-  <button id="impBtn" title="Copy your scenes from OBS: in OBS choose Scene Collection, then Export">Import OBS scenes...</button>
-  <label class="tr" title="Saves a video file on this computer. It works with or without sending.">Record
-    <select id="recQ"><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></label>
-  <button id="recBtn">Record</button>
+  <div class="menu" id="moreWrap">
+    <button id="moreBtn" aria-haspopup="true" aria-expanded="false">More &#9662;</button>
+    <div class="pop" id="morePop" hidden>
+      <label class="mi">Scene change
+        <span><select id="trType"><option value="cut">Cut</option><option value="fade">Fade</option><option value="slide">Slide</option><option value="dip">Dip to black</option></select>
+        <select id="trMs"><option value="300">0.3 s</option><option value="500">0.5 s</option><option value="1000">1 s</option></select></span></label>
+      <label class="mi">Recording quality
+        <select id="recQ"><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></label>
+      <button class="mi" id="projBtn">Preview window<small>The on-air picture in its own window, for a second screen</small></button>
+      <button class="mi" id="vcBtn" hidden>Virtual camera<small>Use this picture as a webcam in Zoom (pick "Softcam")</small></button>
+      <button class="mi" id="impBtn">Import OBS scenes...<small>In OBS: Scene Collection, then Export</small></button>
+      <button class="mi" id="keysBtn">Keyboard shortcuts</button>
+    </div>
+  </div>
+  <button id="recBtn">&#9679; Record</button>
   <button id="sendBtn" class="go">Start sending</button>
 </header>
 <div class="wrap">
@@ -82,11 +96,11 @@
     <canvas id="cv" class="v" width="1280" height="720"></canvas>
     <div class="lab">EDITING: <span id="editName"></span></div>
     <canvas id="ev" class="v" width="960" height="540"></canvas>
-    <p class="note" id="hint">"Start sending" sends the ON AIR picture and the sound into the relay, the same place OBS sent to.</p>
+    <p class="note" id="hint">Build your scenes on the left. Press <b>Air</b> to put one on screen. <b>Start sending</b> sends the on-air picture and sound to your channels.</p>
   </div>
   <div>
     <div class="panel"><h2>Items in this scene</h2><div id="layers"></div>
-      <div class="row"><button class="sm" data-add="camera">+ Camera</button><button class="sm" data-add="image">+ Picture</button><button class="sm" data-add="video">+ Video</button><button class="sm" data-add="text">+ Text</button><button class="sm" data-add="color">+ Colour</button><button class="sm" data-add="screen">+ Screen</button><button class="sm" data-add="browser">+ Web page</button><button class="sm" data-add="ipcam">+ Phone camera</button><button class="sm" data-add="lower">+ Lower third</button><button class="sm" data-add="timer">+ Countdown</button><button class="sm" data-add="clock">+ Clock</button></div>
+      <div class="menu"><button id="addBtn" class="go wide">+ Add item</button><div class="pop pop-l" id="addPop" hidden><button class="mi" data-add="camera">Camera<small>A webcam or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a computer screen</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
     </div>
     <div class="panel" id="propsBox" hidden><h2>Item settings</h2><div id="props"></div></div>
   </div>
@@ -538,7 +552,7 @@ $('#delScene').onclick = () => {
   if (studio.current === s.name) { studio.current = (studio.scenes[0] || {}).name || ''; dirtyCurrent = true; }
   editing = studio.current; save(); renderAll();
 };
-const ICON = { camera: 'Camera', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera', lower: 'Lower third', timer: 'Countdown', clock: 'Clock' };
+const ICON = { camera: 'Camera', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera', lower: 'Name bar', timer: 'Countdown', clock: 'Clock' };
 function renderLayers() {
   const s = byName(editing), box = $('#layers'); box.textContent = '';
   $('#editName').textContent = editing; $('#airName').textContent = studio.current ? '- ' + studio.current : '';
@@ -829,7 +843,7 @@ function endRec(fromClose) {
   const ws = recWs; recWs = recMr = null;
   // tell the relay we are done; it finishes the file, says where it saved it, then closes
   if (ws && !fromClose) setTimeout(() => { try { ws.send('stop'); } catch {} }, 700);
-  $('#recBtn').textContent = 'Record'; $('#recBtn').className = '';
+  $('#recBtn').textContent = '\u25CF Record'; $('#recBtn').className = '';
 }
 $('#recBtn').onclick = () => (recWs ? endRec(false) : startRec());
 document.addEventListener('click', () => ensureAudio(), { once: true });
@@ -867,6 +881,16 @@ $('#vcBtn').onclick = async () => {
   ws.onclose = () => { if (vcWs === ws) vcOff('Virtual camera stopped.'); };
   ws.onerror = () => {};
 };
+
+// ---------------- the two drop-down menus (More, and + Add item) ----------------
+function popMenu(btn, pop) {
+  btn.addEventListener('click', (e) => { e.stopPropagation(); const show = pop.hidden; document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }); pop.hidden = !show; btn.setAttribute('aria-expanded', String(show)); });
+  pop.addEventListener('click', (e) => { if (e.target.closest('button')) pop.hidden = true; e.stopPropagation(); });
+}
+popMenu($('#moreBtn'), $('#morePop'));
+popMenu($('#addBtn'), $('#addPop'));
+document.addEventListener('click', () => document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }));
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }); });
 
 // ---------------- hotkeys and the preview window ----------------
 document.addEventListener('keydown', (e) => {

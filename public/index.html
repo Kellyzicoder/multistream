@@ -383,6 +383,11 @@
     .gl, .chs, .cht { padding-left:16px; padding-right:16px; }
     .cr { padding:4px 12px 16px; }
   }
+  /* Version 3: extra options folded away so the main card stays simple */
+  details.more { margin-top:12px; border-top:1px solid var(--line, #2a352d); padding-top:8px; }
+  details.more > summary { cursor:pointer; font-size:13px; opacity:.75; list-style:none; padding:4px 0; }
+  details.more > summary::before { content:'+ '; }
+  details.more[open] > summary::before { content:'\2212  '; }
 </style>
 </head>
 <body>
@@ -507,17 +512,24 @@
       <div class="gr">
         <div class="who"><b>YouTube</b><span id="ytSub">Not connected</span></div>
         <button class="ghost" id="ytBtn" type="button" title="Connect the YouTube account">Set up</button>
-        <button class="go" id="ytLive" type="button" disabled title="Start OBS streaming first, and connect YouTube">Go live</button>
+        <button class="go" id="ytLive" type="button" disabled title="Start sending from the Studio first, and connect YouTube">Go live</button>
       </div>
       <div class="gr">
         <div class="who"><b>Facebook</b><span id="fbSub">No Page added</span></div>
         <button class="ghost" id="fbBtn" type="button" title="Add the Facebook Page ID and token">Set up</button>
-        <button class="go" id="fbLive" type="button" disabled title="Start OBS streaming first, and add the Facebook Page">Go live</button>
+        <button class="go" id="fbLive" type="button" disabled title="Start sending from the Studio first, and add the Facebook Page">Go live</button>
       </div>
       <div class="gt">
         <label class="fl" for="glTitle">Title</label>
         <input class="t2" id="glTitle" type="text" maxlength="100" placeholder="Live from FCCHQ (and the date)" autocomplete="off">
-        <div class="th">
+      </div>
+      <label class="tm" id="tmBox">
+        <span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span>
+        <span><b>Private test</b><small id="tmState">Only you can see it. Turn this off for the real service.</small></span>
+      </label>
+      <details class="more">
+        <summary>More options</summary>
+        <div class="th" style="margin-top:10px">
           <div class="thp"><img id="thImg" alt="Thumbnail" hidden><span id="thNone">No picture</span></div>
           <div class="tha">
             <span class="fl">Thumbnail</span>
@@ -527,20 +539,16 @@
             <input type="file" id="thFile" accept="image/png,image/jpeg" hidden>
           </div>
         </div>
-      </div>
-      <label class="tm" id="tmBox">
-        <span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span>
-        <span><b>Private test</b><small id="tmState">Only you can see it. Turn this off for the real service.</small></span>
-      </label>
       <div class="gr" id="recRow">
         <div class="who"><b>Recording</b><span id="recSub">Saves a copy on this computer</span></div>
-        <button class="go" id="recBtn" type="button" disabled title="Start OBS streaming first">Record</button>
+        <button class="go" id="recBtn" type="button" disabled title="Start sending from the Studio first">Record</button>
       </div>
       <div class="gr" id="pfRow">
         <div class="who"><b>Check everything</b><span id="pfSub">Do this before the service</span></div>
         <button class="ghost" id="pfBtn" type="button">Run check</button>
       </div>
       <div class="pf" id="pfList" hidden></div>
+      </details>
       <p class="hint" id="glHint"></p>
       <p class="note" id="fbNote" hidden></p>
     </section>
@@ -1067,6 +1075,8 @@ try { scn = { ...scn, ...(JSON.parse(localStorage.getItem('ms_scenes') || '{}') 
 function saveScn() { try { localStorage.setItem('ms_scenes', JSON.stringify(scn)); } catch {} }
 function renderScn() {
   const o = obsInfo;
+  // Version 3: the OBS scenes strip only shows when OBS control is switched on in Settings
+  $('#scn').hidden = !(o && o.enabled);
   renderAud();
   document.querySelectorAll('#scnSize button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === scn.size)));
   $('#scnPics').checked = scn.pics;
@@ -1438,7 +1448,7 @@ function renderFb(fbState, live, inSession) {
   const ready = Boolean(fbState && fbState.hasToken && fbState.pageId);
   goBtn('#fbLive', Boolean(inSession));
   $('#fbLive').disabled = inSession ? false : !(live && ready);
-  $('#fbLive').title = inSession ? 'Stop sending and end the live video on Facebook' : !live ? 'Start OBS streaming first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
+  $('#fbLive').title = inSession ? 'Stop sending and end the live video on Facebook' : !live ? 'Start sending from the Studio first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
   $('#fbSub').textContent = ready ? (fbState.pageName || 'Page ' + fbState.pageId) : 'No Page added';
 }
 async function loadFb() {
@@ -1485,7 +1495,7 @@ function renderYt(ytState, live, inSession) {
   goBtn('#ytLive', Boolean(inSession));
   $('#ytLive').disabled = inSession ? false : !(live && ytState && ytState.connected);
   $('#ytSub').textContent = ytState && ytState.connected ? (ytState.channelTitle || 'Connected') : 'Not connected';
-  $('#ytLive').title = inSession ? 'Stop sending and end the live broadcast on YouTube' : !live ? 'Start OBS streaming first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
+  $('#ytLive').title = inSession ? 'Stop sending and end the live broadcast on YouTube' : !live ? 'Start sending from the Studio first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
   if (settingsPane() === 'youtube' && ytState) ytNote('#yt-status', ytStatusText(ytState), false);
 }
 async function loadYt() {
@@ -1591,7 +1601,7 @@ function renderRec(rec, live) {
   b.classList.toggle('on', Boolean(rec.on));
   b.textContent = rec.on ? 'Stop' : 'Record';
   b.disabled = !rec.on && !live;
-  b.title = rec.on ? 'Stop recording' : live ? 'Save a copy of this stream on this computer' : 'Start OBS streaming first';
+  b.title = rec.on ? 'Stop recording' : live ? 'Save a copy of this stream on this computer' : 'Start sending from the Studio first';
   $('#recSub').textContent = rec.on ? 'Recording ' + fmtClock(Date.now() - rec.startedAt) : rec.error ? 'Problem: ' + rec.error : 'Saves a copy on this computer';
 }
 async function loadRec() {
