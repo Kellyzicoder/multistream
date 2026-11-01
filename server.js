@@ -12,6 +12,7 @@ const WebSocket = require('ws');
 const os = require('os');
 const { createRecorder } = require('./recorder');
 const { createVcam } = require('./vcam');
+const { createAutoRetry } = require('./autoretry');
 const { createChat } = require('./chat');
 const { runPreflight } = require('./preflight');
 const { detectEncoder, videoArgs } = require('./encoder');
@@ -155,6 +156,13 @@ function stopMonitor() {
   p.kill('SIGTERM');
 }
 
+// a destination that drops while OBS is still live starts again by itself
+const autoRetry = createAutoRetry({
+  restart: (id) => { const d = destinations.find((x) => x.id === id); if (d && obsLive) startDestination(d); },
+  onWait: (id, reason, ms, n, max) => setStatus(id, 'error', `${reason || 'Dropped'} - trying again in ${Math.round(ms / 1000)} s (try ${n} of ${max})`),
+  onGiveUp: (id, reason, max) => setStatus(id, 'error', `${reason || 'Stopped'} - gave up after ${max} tries. Press Restart.`),
+});
+
 function targetOf(d) {
   return `${d.url.replace(/\/+$/, '')}/${d.key}`;
 }
@@ -175,6 +183,7 @@ function startDestination(d) {
     targetOf(d),
   ];
   const p = spawn(FFMPEG, args, { windowsHide: true });
+  const startedAt = Date.now();
   procs.set(d.id, p);
   // what we are really sending: average of the last few readings, because the sending comes in bursts
   const rate = makeRateTracker();
@@ -214,12 +223,15 @@ function startDestination(d) {
       destStats.delete(d.id);
     }
     if (signal === 'SIGTERM') return; // we stopped it on purpose
-    if (obsLive) setStatus(d.id, 'error', lastLine || `Stopped (code ${code})`);
-    else setStatus(d.id, 'off');
+    if (obsLive) {
+      if (d.enabled) autoRetry.dropped(d.id, lastLine || `Stopped (code ${code})`, Date.now() - startedAt);
+      else setStatus(d.id, 'error', lastLine || `Stopped (code ${code})`);
+    } else setStatus(d.id, 'off');
   });
 }
 
 function stopDestination(id, nextState = 'off') {
+  autoRetry.cancel(id);
   const p = procs.get(id);
   if (p) {
     procs.delete(id);
