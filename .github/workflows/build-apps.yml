@@ -38,6 +38,38 @@ jobs:
       - name: Number this build (2.0.<run number>) so apps can tell which is newer
         shell: bash
         run: npm version "2.0.${{ github.run_number }}" --no-git-tag-version
+      # Windows only: build the free "softcam" virtual camera (MIT licence) and our small helper that feeds it
+      - name: Get softcam source
+        if: matrix.name == 'Windows'
+        uses: actions/checkout@v4
+        with:
+          repository: tshino/softcam
+          ref: 6f5d8f9b5f7dc37a86a119b881bc75e1860fb3ec
+          path: softcam-src
+      - name: Add MSBuild
+        if: matrix.name == 'Windows'
+        uses: microsoft/setup-msbuild@v2
+      - name: Add the C++ compiler to the path
+        if: matrix.name == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Build the virtual camera
+        if: matrix.name == 'Windows'
+        shell: pwsh
+        run: |
+          Push-Location softcam-src
+          nuget restore softcam.sln
+          msbuild /m /p:Configuration=Release /p:Platform=x64 softcam.sln
+          msbuild /m /p:Configuration=Release /p:Platform=x64 examples/softcam_installer/softcam_installer.sln
+          Pop-Location
+          New-Item -ItemType Directory -Force vcam/win | Out-Null
+          Copy-Item softcam-src/dist/bin/x64/softcam.dll vcam/win/
+          $inst = Get-ChildItem -Recurse softcam-src/examples/softcam_installer -Filter softcam_installer.exe | Select-Object -First 1
+          Copy-Item $inst.FullName vcam/win/
+          Copy-Item softcam-src/LICENSE vcam/win/softcam-LICENSE.txt
+          cl /nologo /O2 /EHsc /Isoftcam-src\dist\include vcam\vcam.cpp /Fe:vcam\win\vcam.exe /link softcam-src\dist\lib\x64\softcam.lib user32.lib
+          Get-ChildItem vcam/win
       - name: Install
         run: npm install
       - name: Build

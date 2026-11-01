@@ -11,6 +11,7 @@ const crypto = require('crypto');
 const WebSocket = require('ws');
 const os = require('os');
 const { createRecorder } = require('./recorder');
+const { createVcam } = require('./vcam');
 const { createChat } = require('./chat');
 const { runPreflight } = require('./preflight');
 const { detectEncoder, videoArgs } = require('./encoder');
@@ -1128,9 +1129,25 @@ detectEncoder(FFMPEG).then((e) => { studioEncoder = e; studioInfo.encoder = e.na
 
 const studioWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });
 httpServer.on('upgrade', (req, sock, head) => {
-  if (!req.url.startsWith('/studio-ingest')) return sock.destroy();
+  const isVc = req.url.startsWith('/studio-vcam');
+  if (!isVc && !req.url.startsWith('/studio-ingest')) return sock.destroy();
   if (!isLocal(req)) return sock.destroy();
+  if (isVc) return vcamWss.handleUpgrade(req, sock, head, (w) => vcamWss.emit('connection', w));
   studioWss.handleUpgrade(req, sock, head, (w) => studioWss.emit('connection', w));
+});
+// ---- Virtual camera (Zoom etc.) ----
+const vcam = createVcam({ ffmpeg: FFMPEG });
+app.get('/api/vcam', (req, res) => res.json(vcam.state()));
+app.post('/api/vcam/install', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  res.json(await vcam.install(Boolean((req.body || {}).remove)));
+});
+const vcamWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });
+vcamWss.on('connection', (w) => {
+  let s;
+  try { s = vcam.start(1280, 720, 30); } catch (e) { try { w.send(JSON.stringify({ error: e.message })); w.close(); } catch {} return; }
+  w.on('message', (m) => s.write(m));
+  w.on('close', () => s.stop());
 });
 studioWss.on('connection', (w) => {
   if (studioFf) { try { studioFf.kill('SIGKILL'); } catch {} }

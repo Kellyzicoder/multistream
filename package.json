@@ -34,13 +34,25 @@
       "preflight.js",
       "encoder.js",
       "public/**/*",
-      "package.json"
+      "package.json",
+      "vcam.js"
     ],
     "asarUnpack": [
       "node_modules/ffmpeg-static/**"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "extraResources": [
+        {
+          "from": "vcam/win",
+          "to": "vcam",
+          "filter": [
+            "softcam.dll",
+            "softcam_installer.exe",
+            "vcam.exe"
+          ]
+        }
+      ]
     },
     "nsis": {
       "artifactName": "Multistream2-Setup.exe"

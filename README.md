@@ -115,3 +115,6 @@ The Vercel link is a demo only: it shows the pages with sample data. The real ap
 - **Check everything** (Go live box): press it before the service. It checks YouTube is connected, the Facebook token works, OBS is sending the right type of video and sound, the keyframe, free space for recording, OBS scene control, and channels with no key (like Instagram). Green is fine, yellow is worth a look, red needs fixing. Start streaming in OBS first to test the picture and sound.
 - **End live:** after you press Go live, that button turns red and says **End live**. Press it to stop sending and end the live on that site. It asks first. If you stop OBS and forget, a bar reminds you the live is still open.
 - **Alerts:** a red bar shows at the top if a channel stops receiving, or if OBS is connected but no video arrives. There is no sound.
+
+## Virtual camera for Zoom (Multistream 2, Windows)
+Click **Virtual camera** in the Studio. The first time, Windows asks for permission once to add a camera called **Softcam**. Then in Zoom choose Settings, Video, Camera, **Softcam**. It uses the free [softcam](https://github.com/tshino/softcam) (MIT licence). OBS Virtual Camera still works as a backup. It sends the picture only, not the sound.

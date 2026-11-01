@@ -61,6 +61,7 @@
   <label class="tr" title="How a scene changes on air">Transition
     <select id="trType"><option value="cut">Cut</option><option value="fade">Fade</option><option value="slide">Slide</option><option value="dip">Dip to black</option></select>
     <select id="trMs"><option value="300">0.3 s</option><option value="500">0.5 s</option><option value="1000">1 s</option></select></label>
+  <button id="vcBtn" hidden title="Use the Studio picture as a webcam in Zoom: choose the camera called Softcam in Zoom">Virtual camera</button>
   <button id="impBtn" title="Copy your scenes from OBS: in OBS choose Scene Collection, then Export">Import OBS scenes...</button>
   <button id="sendBtn" class="go">Start sending</button>
 </header>
@@ -691,6 +692,40 @@ function stopSend() {
 }
 $('#sendBtn').onclick = () => (wantSend ? stopSend() : startSend());
 document.addEventListener('click', () => ensureAudio(), { once: true });
+
+// ---------------- virtual camera (Zoom) ----------------
+// Sends the Studio picture to the Windows virtual camera. In Zoom, pick the camera called "Softcam".
+let vcWs = null, vcMr = null;
+fetch('/api/vcam').then((r) => r.json()).then((s) => { if (s.available) $('#vcBtn').hidden = false; }).catch(() => {});
+function vcOff(msg) {
+  try { vcMr && vcMr.state !== 'inactive' && vcMr.stop(); } catch {}
+  try { vcWs && vcWs.close(); } catch {}
+  vcWs = vcMr = null; $('#vcBtn').textContent = 'Virtual camera'; $('#vcBtn').className = '';
+  if (msg) { $('#st').textContent = msg; $('#st').className = 'stat bad'; }
+}
+$('#vcBtn').onclick = async () => {
+  if (vcWs) { vcOff(); $('#st').textContent = 'Virtual camera is off.'; $('#st').className = 'stat'; return; }
+  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok') === '1'; } catch {}
+  if (!ok) {
+    if (!confirm('Windows will ask for permission one time, to add a camera called Softcam. Continue?')) return;
+    const r = await fetch('/api/vcam/install', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then((x) => x.json()).catch(() => ({ error: 'Could not reach the app' }));
+    if (r.error) { $('#st').textContent = 'Virtual camera setup: ' + r.error; $('#st').className = 'stat bad'; return; }
+    try { localStorage.setItem('ms_vcam_ok', '1'); } catch {}
+  }
+  const ws = vcWs = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/studio-vcam');
+  ws.binaryType = 'arraybuffer';
+  ws.onopen = () => {
+    const mt = ['video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
+    vcMr = new MediaRecorder(new MediaStream(cv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000 });
+    vcMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
+    vcMr.start(100);
+    $('#vcBtn').textContent = 'Virtual camera: ON'; $('#vcBtn').className = 'stop';
+    $('#st').textContent = 'Virtual camera is on. In Zoom, choose the camera called Softcam.'; $('#st').className = 'stat ok';
+  };
+  ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) vcOff('Virtual camera: ' + j.error); } catch {} };
+  ws.onclose = () => { if (vcWs === ws) vcOff('Virtual camera stopped.'); };
+  ws.onerror = () => {};
+};
 
 // ---------------- follow the phone / Control Room, and give it pictures ----------------
 async function poll() {
