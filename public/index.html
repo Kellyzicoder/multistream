@@ -847,10 +847,6 @@ function render(state) {
   const n = state.destinations.filter((d) => d.enabled).length;
   const nLive = state.destinations.filter((d) => d.enabled && d.status.state === 'live').length;
 
-  // on a phone, "localhost" would mean the phone itself, so show this computer's address instead
-  const host = location.hostname;
-  $('#srv').value = ['localhost', '127.0.0.1'].includes(host) ? state.ingest.server : state.ingest.server.replace('localhost', host);
-  $('#skey').value = state.ingest.key;
   const chip = $('#chip');
   chip.textContent = live ? 'LIVE' : 'OFFLINE';
   chip.className = 'chip' + (live ? ' live' : '');
