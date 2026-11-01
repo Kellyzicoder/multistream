@@ -55,6 +55,8 @@
   <label class="tr" title="How a scene changes on air">Transition
     <select id="trType"><option value="cut">Cut</option><option value="fade">Fade</option><option value="slide">Slide</option><option value="dip">Dip to black</option></select>
     <select id="trMs"><option value="300">0.3 s</option><option value="500">0.5 s</option><option value="1000">1 s</option></select></label>
+  <button id="projBtn" title="Opens the picture that is on air in its own window. Drag it to a second screen.">Preview window</button>
+  <button id="keysBtn" title="Keyboard shortcuts">Keys</button>
   <button id="impBtn" title="Copy your scenes from OBS: in OBS choose Scene Collection, then Export">Import OBS scenes...</button>
   <button id="sendBtn" class="go">Start sending</button>
 </header>
@@ -565,6 +567,45 @@ function stopSend() {
 $('#sendBtn').onclick = () => (wantSend ? stopSend() : startSend());
 document.addEventListener('click', () => ensureAudio(), { once: true });
 
+// ---------------- hotkeys and the preview window ----------------
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+  if (e.ctrlKey || e.metaKey) return;
+  const d = /^Digit([1-9])$/.exec(e.code);
+  if (d && !e.shiftKey) {
+    const n = Number(d[1]) - 1;
+    if (e.altKey) { const a = studio.audio[n]; if (a) { a.muted = !a.muted; save(); syncAudio(); renderAudio(); e.preventDefault(); } }
+    else { const s = studio.scenes[n]; if (s && s.name !== studio.current) { setCurrent(s.name); e.preventDefault(); } }
+    return;
+  }
+  if (e.altKey) return;
+  if (e.code === 'KeyR' && !e.shiftKey) { const rb = $('#recBtn'); if (rb) { rb.click(); e.preventDefault(); } }
+  else if (e.code === 'KeyG' && e.shiftKey) {
+    if (!wantSend || confirm('Stop sending now?')) $('#sendBtn').click();
+    e.preventDefault();
+  } else if (e.code === 'KeyF' && !e.shiftKey) {
+    const s = $('#trType'); s.selectedIndex = (s.selectedIndex + 1) % s.options.length; saveTr();
+    $('#st').textContent = 'Transition: ' + s.options[s.selectedIndex].text; e.preventDefault();
+  }
+});
+$('#keysBtn').onclick = () => { $('#keysBox').hidden = !$('#keysBox').hidden; };
+let projWin = null;
+$('#projBtn').onclick = () => {
+  if (projWin && !projWin.closed) { projWin.focus(); return; }
+  projWin = window.open('', 'ms_preview', 'width=960,height=540');
+  if (!projWin) { $('#st').textContent = 'The preview window was blocked. Allow pop-ups for this app.'; $('#st').className = 'stat bad'; return; }
+  projWin.document.title = 'Multistream preview';
+  projWin.document.body.setAttribute('style', 'margin:0;background:#000;height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden');
+  projWin.document.body.textContent = '';
+  const v = projWin.document.createElement('video');
+  v.muted = true; v.autoplay = true; v.playsInline = true; v.setAttribute('style', 'max-width:100%;max-height:100%');
+  v.srcObject = cv.captureStream(30);
+  v.title = 'Double-click for full screen';
+  v.ondblclick = () => { if (projWin.document.fullscreenElement) projWin.document.exitFullscreen(); else v.requestFullscreen().catch(() => {}); };
+  projWin.document.body.appendChild(v); v.play().catch(() => {});
+};
+
 // ---------------- follow the phone / Control Room, and give it pictures ----------------
 async function poll() {
   try {
@@ -617,5 +658,13 @@ async function shots() {
   setInterval(poll, 700); setInterval(shots, 400);
 })();
 </script>
+<div id="keysBox" hidden style="position:fixed;right:12px;top:52px;z-index:50;background:var(--card,#101814);border:1px solid #2a3a30;border-radius:10px;padding:12px 14px;max-width:300px;font-size:13px;line-height:1.7;box-shadow:0 8px 30px #0008">
+<b>Keyboard shortcuts</b><br>
+<kbd>1</kbd> to <kbd>9</kbd> put that scene on air<br>
+<kbd>Alt</kbd>+<kbd>1</kbd> to <kbd>9</kbd> mute or unmute that sound input<br>
+<kbd>R</kbd> start or stop recording<br>
+<kbd>Shift</kbd>+<kbd>G</kbd> start or stop sending (it asks before stopping)<br>
+<kbd>F</kbd> next transition type<br>
+<span style="opacity:.7">They work when this window is the one you are in, and you are not typing in a box.</span></div>
 </body>
 </html>
