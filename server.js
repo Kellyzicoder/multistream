@@ -1129,11 +1129,33 @@ detectEncoder(FFMPEG).then((e) => { studioEncoder = e; studioInfo.encoder = e.na
 
 const studioWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });
 httpServer.on('upgrade', (req, sock, head) => {
-  const isVc = req.url.startsWith('/studio-vcam');
-  if (!isVc && !req.url.startsWith('/studio-ingest')) return sock.destroy();
+  const isRec = req.url.startsWith('/studio-record'), isVc = req.url.startsWith('/studio-vcam');
+  if (!isRec && !isVc && !req.url.startsWith('/studio-ingest')) return sock.destroy();
   if (!isLocal(req)) return sock.destroy();
   if (isVc) return vcamWss.handleUpgrade(req, sock, head, (w) => vcamWss.emit('connection', w));
+  if (isRec) return studioRecWss.handleUpgrade(req, sock, head, (w) => studioRecWss.emit('connection', w, req));
   studioWss.handleUpgrade(req, sock, head, (w) => studioWss.emit('connection', w));
+});
+// ---- Recording from the Studio: its own file, own quality, works with or without sending ----
+const studioRecWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });
+studioRecWss.on('connection', (w, req) => {
+  const q = new URL(req.url, 'http://x').searchParams;
+  const hh = Number(q.get('h')) === 1080 ? 1080 : 720, mbit = Math.min(30, Math.max(2, Number(q.get('mbit')) || 8));
+  try { fs.mkdirSync(REC_DIR, { recursive: true }); } catch (e) { w.send(JSON.stringify({ error: 'Cannot make the folder: ' + e.message })); return w.close(); }
+  const d = new Date(), two = (n) => String(n).padStart(2, '0');
+  const name = `Studio ${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}.mkv`;
+  const args = ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-vf', `scale=${hh === 1080 ? 1920 : 1280}:${hh}`,
+    ...videoArgs(studioEncoder.key, mbit * 1000, 60), '-pix_fmt', 'yuv420p', '-r', '30', '-c:a', 'aac', '-b:a', '160k', '-f', 'matroska', path.join(REC_DIR, name)];
+  const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
+  let last = '';
+  ff.stderr.on('data', (c) => { last = String(c).trim().split('\n').pop().slice(0, 200); });
+  ff.stdin.on('error', () => {});
+  ff.on('exit', (code) => { try { w.send(JSON.stringify(code ? { error: last || 'Recording stopped (code ' + code + ')' } : { saved: name })); } catch {} try { w.close(); } catch {} });
+  w.on('message', (m, isBin) => {
+    if (isBin === false) { if (String(m) === 'stop') { try { ff.stdin.end(); } catch {} } return; }
+    if (ff.stdin.writable) ff.stdin.write(m);
+  });
+  w.on('close', () => { try { ff.stdin.end(); } catch {} setTimeout(() => { try { ff.kill('SIGKILL'); } catch {} }, 8000); });
 });
 // ---- Virtual camera (Zoom etc.) ----
 const vcam = createVcam({ ffmpeg: FFMPEG });
