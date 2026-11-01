@@ -115,3 +115,6 @@ The Vercel link is a demo only: it shows the pages with sample data. The real ap
 - **Check everything** (Go live box): press it before the service. It checks YouTube is connected, the Facebook token works, OBS is sending the right type of video and sound, the keyframe, free space for recording, OBS scene control, and channels with no key (like Instagram). Green is fine, yellow is worth a look, red needs fixing. Start streaming in OBS first to test the picture and sound.
 - **End live:** after you press Go live, that button turns red and says **End live**. Press it to stop sending and end the live on that site. It asks first. If you stop OBS and forget, a bar reminds you the live is still open.
 - **Alerts:** a red bar shows at the top if a channel stops receiving, or if OBS is connected but no video arrives. There is no sound.
+
+## If YouTube or Facebook drops
+If a destination stops while OBS is still live, Multistream starts it again by itself: after 3 seconds, then 6, 9 ... up to 30 seconds. It gives up after 10 tries in a row (so a wrong stream key is not tried over and over) and shows "Press Restart". Pressing Restart or End live cancels the waiting.
