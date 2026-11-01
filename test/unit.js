@@ -73,6 +73,9 @@ async function hubTests() {
 async function injectTests() {
   let closed = false;
   const handler = (req, res) => {
+    // like Express: it swaps the prototype of req and res before handling
+    Object.setPrototypeOf(res, Object.create(require('http').ServerResponse.prototype));
+    Object.setPrototypeOf(req, Object.create(require('http').IncomingMessage.prototype));
     if (req.url === '/json') { res.setHeader('Content-Type', 'application/json'); res.statusCode = 201; return res.end(JSON.stringify({ local: req.socket.remoteAddress })); }
     if (req.url === '/echo') { const c = []; req.on('data', (d) => c.push(d)); req.on('end', () => { res.writeHead(200, { 'X-Len': String(Buffer.concat(c).length) }); res.end(Buffer.concat(c)); }); return; }
     if (req.url === '/forever') { res.writeHead(200); const t = setInterval(() => res.write('y'), 20); req.on('close', () => { clearInterval(t); closed = true; }); return; }

@@ -14,40 +14,37 @@ function fakeSocket() {
   return s;
 }
 
-class Res extends http.ServerResponse {
-  constructor(req, onHead) {
-    super(req);
-    this._onHead = onHead;
-    this._sink = null;
-  }
-  // how much is waiting to be read by the window (the video hub uses this to drop a stuck preview)
-  get writableLength() { return this._sink ? this._sink.readableLength : 0; }
-  _head() {
-    if (!this._header) this._implicitHeader();
-    if (!this._sink) {
-      this._sink = new PassThrough();
-      this._onHead(this, this._sink);
-    }
-  }
-  write(chunk, enc, cb) {
+// A response that hands what is written to the window instead of a network socket.
+// The methods are put on the object itself (not a class), because Express changes the object's
+// prototype when it handles a request, and that would throw class methods away.
+function makeRes(req, onHead) {
+  const res = new http.ServerResponse(req);
+  let sink = null;
+  const head = () => {
+    if (!res._header) res._implicitHeader();
+    if (!sink) { sink = new PassThrough(); onHead(res, sink); }
+  };
+  Object.defineProperty(res, 'writableLength', { configurable: true, get: () => (sink ? sink.readableLength : 0) });
+  res.write = function (chunk, enc, cb) {
     if (typeof enc === 'function') { cb = enc; enc = undefined; }
-    this._head();
-    if (chunk != null && chunk.length !== 0 && this.req.method !== 'HEAD') {
-      this._sink.write(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, typeof enc === 'string' ? enc : 'utf8'));
+    head();
+    if (chunk != null && chunk.length !== 0 && req.method !== 'HEAD') {
+      sink.write(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, typeof enc === 'string' ? enc : 'utf8'));
     }
     if (cb) process.nextTick(cb);
     return true;
-  }
-  end(chunk, enc, cb) {
+  };
+  res.end = function (chunk, enc, cb) {
     if (typeof chunk === 'function') { cb = chunk; chunk = null; }
     if (typeof enc === 'function') { cb = enc; enc = undefined; }
-    if (this.finished) { if (cb) process.nextTick(cb); return this; }
-    if (chunk != null) this.write(chunk, enc); else this._head();
-    this.finished = true;
-    this._sink.end();
-    process.nextTick(() => { this.emit('prefinish'); this.emit('finish'); if (cb) cb(); this.emit('close'); });
-    return this;
-  }
+    if (res.finished) { if (cb) process.nextTick(cb); return res; }
+    if (chunk != null) res.write(chunk, enc); else head();
+    res.finished = true;
+    sink.end();
+    process.nextTick(() => { res.emit('prefinish'); res.emit('finish'); if (cb) cb(); res.emit('close'); });
+    return res;
+  };
+  return res;
 }
 
 // headers that were written (both setHeader() ones and writeHead(status, {...}) ones)
@@ -80,7 +77,7 @@ function inject(handler, { method = 'GET', url = '/', headers = {}, body = null 
     if (body && body.length) req.push(body);
     req.push(null);
     let done = false;
-    const res = new Res(req, (r, sink) => {
+    const res = makeRes(req, (r, sink) => {
       if (done) return; done = true;
       const abort = () => { if (req.destroyed) return; req.destroyed = true; req.emit('aborted'); req.emit('close'); socket.destroy(); };
       // the window stopped reading (closed the page, or stopped the video): tell the handler
