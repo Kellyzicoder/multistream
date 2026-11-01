@@ -31,6 +31,7 @@
       "stats.js",
       "recorder.js",
       "chat.js",
+      "autoretry.js",
       "preflight.js",
       "encoder.js",
       "public/**/*",
