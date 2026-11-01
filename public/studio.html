@@ -43,6 +43,12 @@
   .au .t .n { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
   .au input[type=range] { width:100%; padding:0; }
   .au select { width:100%; font-size:12px; padding:2px 4px; margin-top:4px; }
+  details.fx { margin-top:6px; font-size:12px; }
+  details.fx summary { cursor:pointer; color:#9fb3a5; }
+  .fxr { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:6px; white-space:pre; }
+  .fxr > span:first-child { font-size:11px; }
+  .fxr .sl { display:flex; align-items:center; gap:6px; flex:1; justify-content:flex-end; }
+  .fxr .sl input { width:70px; } .fxr .sl b { min-width:52px; font-weight:500; text-align:right; }
   .mt { height:6px; border-radius:3px; background:#1d2a21; overflow:hidden; margin:4px 0; }
   .mt i { display:block; height:100%; width:0; background:linear-gradient(90deg,#22c55e 0 66%,#f59e0b 66% 85%,#dc3545 85% 100%); background-size:100vw 100%; }
   @media (max-width:1100px) { .wrap { grid-template-columns:1fr; } }
@@ -305,21 +311,50 @@ async function syncAudio() {
     let n = asrc.get(a.id);
     if (!n || n.dev !== (a.device || '') + '|' + (a.label || '')) {
       if (n) { try { n.node.disconnect(); n.gain.disconnect(); } catch {} }
-      n = { dev: (a.device || '') + '|' + (a.label || ''), gain: actx.createGain(), gate: actx.createGain(), an: actx.createAnalyser() };
-      n.an.fftSize = 512; n.gain.connect(n.an); n.gain.connect(n.gate); n.gate.connect(master); n.gate.gain.value = 0;
+      n = { dev: (a.device || '') + '|' + (a.label || ''), gain: actx.createGain(), gate: actx.createGain(), an: actx.createAnalyser(),
+        delay: actx.createDelay(1), det: actx.createAnalyser(), comp: actx.createDynamicsCompressor(), nz: actx.createGain(), open: true, lastOpen: 0 };
+      n.an.fftSize = 512; n.det.fftSize = 512;
+      // the chain: input -> delay -> (gate listens here) -> compressor -> noise gate -> fader -> scene gate -> master
+      n.delay.connect(n.det); n.delay.connect(n.comp); n.comp.connect(n.nz); n.nz.connect(n.gain);
+      n.gain.connect(n.an); n.gain.connect(n.gate); n.gate.connect(master); n.gate.gain.value = 0;
       asrc.set(a.id, n);
       const id = pickDevice('audio', a.label, a.device);
-      try { const st = await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.gain); n.err = ''; } catch (e) { n.err = e.message; }
+      try { const st = await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = ''; } catch (e) { n.err = e.message; }
     }
     n.gain.gain.setTargetAtTime(a.muted ? 0 : (a.vol == null ? 1 : a.vol), actx.currentTime, 0.02);
+    applyFx(a, n);
   }
   gateAudio();
 }
+// sound tools for each input: delay (to line sound up with the picture), noise gate, compressor
+const fxOf = (a) => (a.fx = a.fx || {});
+function applyFx(a, n) {
+  const f = a.fx || {}, t = actx.currentTime;
+  n.delay.delayTime.setTargetAtTime(Math.max(0, Math.min(1000, f.delay || 0)) / 1000, t, 0.02);
+  const c = f.comp || {};
+  if (c.on) { n.comp.threshold.value = c.thr == null ? -18 : c.thr; n.comp.ratio.value = c.ratio || 4; n.comp.knee.value = 12; n.comp.attack.value = 0.005; n.comp.release.value = 0.25; }
+  else { n.comp.threshold.value = 0; n.comp.ratio.value = 1; } // no change to the sound
+  if (!(f.gate && f.gate.on)) { n.open = true; n.nz.gain.setTargetAtTime(1, t, 0.02); }
+}
+const gbuf = new Float32Array(512);
+setInterval(() => {
+  if (!actx) return;
+  const t = actx.currentTime, now = performance.now();
+  for (const a of studio.audio) {
+    const n = asrc.get(a.id), g = a.fx && a.fx.gate;
+    if (!n || !g || !g.on) continue;
+    n.det.getFloatTimeDomainData(gbuf); let pk = 0; for (let i = 0; i < gbuf.length; i++) pk = Math.max(pk, Math.abs(gbuf[i]));
+    if (dB(pk) > (g.thr == null ? -45 : g.thr)) n.lastOpen = now;
+    const open = now - n.lastOpen < 300; // stays open a moment after the sound drops, so words are not cut off
+    if (open !== n.open) { n.open = open; n.nz.gain.setTargetAtTime(open ? 1 : 0, t, open ? 0.01 : 0.08); }
+  }
+}, 25);
 function gateAudio() {
   if (!actx) return;
   const s = byName(studio.current), on = new Set((s && s.audio) || []);
   asrc.forEach((n, id) => n.gate.gain.setTargetAtTime(on.has(id) ? 1 : 0, actx.currentTime, 0.02));
 }
+const openFx = new Set();
 const dB = (v) => (v <= 0.0001 ? -60 : Math.max(-60, 20 * Math.log10(v)));
 function renderAudio() {
   const box = $('#audio'); box.textContent = '';
@@ -340,7 +375,20 @@ function renderAudio() {
     sl.add(new Option('Default input', ''));
     devices.audio.forEach((x) => sl.add(new Option(x.label || 'Input', x.deviceId)));
     sl.value = pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
-    d.append(t, mt, r, sl); box.appendChild(d);
+    const fx = document.createElement('details'); fx.className = 'fx'; fx.innerHTML = '<summary>Tools</summary>';
+    const row = (label, el) => { const w = document.createElement('div'); w.className = 'fxr'; const l = document.createElement('span'); l.textContent = label; w.append(l, el); fx.appendChild(w); };
+    const slider = (min, max, step, val, fmt, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { o.textContent = fmt(i.value); set(Number(i.value)); save(); syncAudio(); }; w.append(i, o); return w; };
+    const sw = (on, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(on); c.onchange = () => { set(c.checked); save(); syncAudio(); }; return c; };
+    const F = fxOf(a);
+    row('Delay', slider(0, 1000, 10, F.delay || 0, (v) => v + ' ms', (v) => { F.delay = v; }));
+    row('Noise gate', sw(F.gate && F.gate.on, (v) => { F.gate = { ...(F.gate || {}), on: v }; }));
+    row('  opens above', slider(-70, -10, 1, F.gate && F.gate.thr != null ? F.gate.thr : -45, (v) => v + ' dB', (v) => { F.gate = { ...(F.gate || {}), thr: v }; }));
+    row('Compressor', sw(F.comp && F.comp.on, (v) => { F.comp = { ...(F.comp || {}), on: v }; }));
+    row('  starts at', slider(-50, 0, 1, F.comp && F.comp.thr != null ? F.comp.thr : -18, (v) => v + ' dB', (v) => { F.comp = { ...(F.comp || {}), thr: v }; }));
+    row('  strength', slider(1, 20, 0.5, F.comp && F.comp.ratio || 4, (v) => v + ':1', (v) => { F.comp = { ...(F.comp || {}), ratio: v }; }));
+    const hint = document.createElement('p'); hint.className = 'note'; hint.textContent = 'Delay: raise it if the sound arrives before the picture. Gate: cuts hiss when nobody speaks. Compressor: makes loud parts quieter so the level stays even.'; fx.appendChild(hint);
+    fx.open = openFx.has(a.id); fx.ontoggle = () => { fx.open ? openFx.add(a.id) : openFx.delete(a.id); };
+    d.append(t, mt, r, sl, fx); box.appendChild(d);
   });
   $('#audNote').textContent = studio.audio.length ? 'Tick a box to hear that input in the scene you are editing.' : 'No sound inputs yet.';
 }
