@@ -121,8 +121,11 @@ async function until(fn, ms, what) {
   await studio.click('#recBtn');
   await sleep(5000);
   await studio.click('#recBtn');
-  await until(() => studio.evaluate(() => /Saved/.test(document.getElementById('st').textContent)), 20000, 'recording saved');
+  const saved = await until(() => studio.evaluate(() => /Saved/.test(document.getElementById('st').textContent) && document.getElementById('st').textContent), 20000, 'the Saved message').catch(() => '');
+  await until(() => fs.existsSync(REC) && fs.readdirSync(REC).some((f) => f.startsWith('Studio ')), 20000, 'recording file');
+  await sleep(1500);
   const recs = fs.readdirSync(REC).filter((f) => f.startsWith('Studio '));
+  console.log('Studio said:', saved || '(no Saved message)');
   assert.strictEqual(recs.length, 1);
   const ri = mediaInfo(path.join(REC, recs[0]));
   assert.ok(ri.video && ri.w === 1280 && ri.secs > 3, 'recording ' + JSON.stringify(ri));

@@ -767,6 +767,10 @@ function openPipe(p) {
   return o;
 }
 
+// a message (like "Recording saved") stays on the status line for a few seconds
+let stHold = 0;
+function flash(text, ok) { $('#st').textContent = text; $('#st').className = 'stat ' + (ok ? 'ok' : 'bad'); stHold = Date.now() + 6000; }
+
 // ---------------- sending ----------------
 // Once you press Start sending, it keeps trying to send until you press Stop. If the link drops, or the
 // encoder stops, it reconnects by itself, so a long service does not end because of one hiccup.
@@ -835,7 +839,7 @@ async function startRec() {
   };
   ws.onclose = () => { if (recWs === ws) endRec(true); };
   ws.onerror = () => {};
-  ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) $('#st').textContent = 'Recording problem: ' + j.error, $('#st').className = 'stat bad'; if (j.saved) { $('#st').textContent = 'Saved: ' + j.saved + ' (in your Videos/Multistream folder)'; $('#st').className = 'stat ok'; } } catch {} };
+  ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) flash('Recording problem: ' + j.error, false); if (j.saved) flash('Saved: ' + j.saved + ' (in your Videos/Multistream folder)', true); } catch {} };
 }
 function endRec(fromClose) {
   clearInterval(recTick); recW = 0;
@@ -943,7 +947,7 @@ async function poll() {
       renderAll();
     }
     const e = await fetch('/api/studio/status').then((r) => r.json());
-    if (rec) {
+    if (rec && Date.now() > stHold) {
       $('#st').textContent = (e.sending ? 'Sending to the relay' + (e.encoder ? ' (using the ' + e.encoder + ')' : '') : 'Connecting...') + (e.error ? ' - ' + e.error : ''); $('#st').className = 'stat ' + (e.error ? 'bad' : 'ok');
       // the page is sending but the relay says it is not receiving for about 6 seconds: start again
       deadTicks = e.sending ? 0 : deadTicks + 1;
