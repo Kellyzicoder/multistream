@@ -48,7 +48,8 @@ function createWindow() {
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
   win.webContents.session.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'mediaKeySystem', 'display-capture'].includes(perm)));
-  win.loadURL(HOME + '/');
+  win.webContents.on('did-fail-load', (e, code, desc, url) => console.error('Page failed to load:', code, desc, url));
+  win.loadURL(HOME + '/').catch((e) => console.error('Dashboard did not load:', e && e.message));
   // links that leave the dashboard open in the normal browser
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:\/\//i.test(url)) shell.openExternal(url);
@@ -205,7 +206,7 @@ if (!app.requestSingleInstanceLock()) {
       win.focus();
     }
   });
-  app.whenReady().then(start);
+  app.whenReady().then(start).catch((e) => { console.error('Multistream failed to start:', e && e.stack || e); dialog.showErrorBox('Multistream cannot start', String(e && e.message || e)); app.quit(); });
 }
 
 // stop every platform stream when the app closes

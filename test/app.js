@@ -54,7 +54,12 @@ async function until(fn, ms, what) {
   proc.stderr.on('data', (d) => process.stdout.write('[app err] ' + d));
   const errors = [];
   const watch = (p, name) => { p.on('pageerror', (e) => errors.push(name + ': ' + e.message)); p.on('console', (m) => { if (m.type() === 'error') errors.push(name + ' console: ' + m.text()); }); };
-  const dash = await app.firstWindow({ timeout: 60000 });
+  let dash;
+  try { dash = await app.firstWindow({ timeout: 60000 }); } catch (e) {
+    const wins = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().map((w) => w.webContents.getURL() + ' loading=' + w.webContents.isLoading())).catch((x) => 'could not ask: ' + x.message);
+    console.log('windows the app has:', wins);
+    throw e;
+  }
   watch(dash, 'dashboard');
   await dash.waitForLoadState('domcontentloaded');
   await sleep(2500);
