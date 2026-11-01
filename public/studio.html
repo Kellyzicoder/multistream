@@ -486,9 +486,17 @@ async function loadDevices() {
 }
 
 // ---------------- sending ----------------
-let rec = null, wsOut = null;
+// Once you press Start sending, it keeps trying to send until you press Stop. If the link drops, or the
+// encoder stops, it reconnects by itself, so a long service does not end because of one hiccup.
+let rec = null, wsOut = null, wantSend = false, retryT = 0, deadTicks = 0;
 async function startSend() {
-  ensureAudio(); await syncAudio();
+  wantSend = true; deadTicks = 0;
+  $('#sendBtn').textContent = 'Stop sending'; $('#sendBtn').className = 'stop';
+  await connectSend();
+}
+async function connectSend() {
+  clearTimeout(retryT);
+  try { ensureAudio(); await syncAudio(); } catch {}
   const out = new MediaStream(cv.captureStream(30).getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
   wsOut = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/studio-ingest');
@@ -498,17 +506,26 @@ async function startSend() {
     rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: 5000000, audioBitsPerSecond: 128000 });
     rec.ondataavailable = async (e) => { if (e.data.size && wsOut && wsOut.readyState === 1) wsOut.send(await e.data.arrayBuffer()); };
     rec.start(250);
-    $('#sendBtn').textContent = 'Stop sending'; $('#sendBtn').className = 'stop'; cv.classList.add('live');
+    cv.classList.add('live');
   };
-  wsOut.onclose = () => stopSend();
+  const mine = wsOut;
+  wsOut.onclose = () => { if (wsOut !== mine) return; dropSend(); if (wantSend) scheduleRetry(); };
 }
-function stopSend() {
+function dropSend() {
   try { rec && rec.state !== 'inactive' && rec.stop(); } catch {}
   try { wsOut && wsOut.close(); } catch {}
-  rec = wsOut = null;
-  $('#sendBtn').textContent = 'Start sending'; $('#sendBtn').className = 'go'; cv.classList.remove('live');
+  rec = wsOut = null; cv.classList.remove('live');
 }
-$('#sendBtn').onclick = () => (rec ? stopSend() : startSend());
+function scheduleRetry() {
+  $('#st').textContent = 'Connection lost. Reconnecting...'; $('#st').className = 'stat bad';
+  clearTimeout(retryT); retryT = setTimeout(() => { if (wantSend) connectSend(); }, 2000);
+}
+function stopSend() {
+  wantSend = false; clearTimeout(retryT);
+  dropSend();
+  $('#sendBtn').textContent = 'Start sending'; $('#sendBtn').className = 'go';
+}
+$('#sendBtn').onclick = () => (wantSend ? stopSend() : startSend());
 document.addEventListener('click', () => ensureAudio(), { once: true });
 
 // ---------------- follow the phone / Control Room, and give it pictures ----------------
@@ -523,7 +540,12 @@ async function poll() {
       renderAll();
     }
     const e = await fetch('/api/studio/status').then((r) => r.json());
-    if (rec) { $('#st').textContent = (e.sending ? 'Sending to the relay' : 'Connecting...') + (e.error ? ' - ' + e.error : ''); $('#st').className = 'stat ' + (e.error ? 'bad' : 'ok'); }
+    if (rec) {
+      $('#st').textContent = (e.sending ? 'Sending to the relay' + (e.encoder ? ' (using the ' + e.encoder + ')' : '') : 'Connecting...') + (e.error ? ' - ' + e.error : ''); $('#st').className = 'stat ' + (e.error ? 'bad' : 'ok');
+      // the page is sending but the relay says it is not receiving for about 6 seconds: start again
+      deadTicks = e.sending ? 0 : deadTicks + 1;
+      if (wantSend && deadTicks >= 8) { deadTicks = 0; dropSend(); scheduleRetry(); }
+    }
   } catch {}
 }
 const small = document.createElement('canvas'); small.width = 640; small.height = 360;
