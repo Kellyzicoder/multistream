@@ -8,6 +8,8 @@
   :root { --bg:#0f1512; --card:#18201b; --line:#2a352d; --text:#e8efe9; --muted:#93a398; --green:#22c55e; --red:#dc3545; --field:#0b100d; }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
+  label.tr { font-size:12px; color:#9fb3a5; display:flex; gap:6px; align-items:center; margin-right:8px; }
+  label.tr select { font-size:12px; padding:3px 4px; }
   body { margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
   header { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
   header a { color:var(--green); text-decoration:none; font-weight:600; }
@@ -50,6 +52,9 @@
 <header>
   <a href="/">&larr; Dashboard</a><h1>Studio</h1>
   <span class="stat" id="st"></span><span class="grow"></span>
+  <label class="tr" title="How a scene changes on air">Transition
+    <select id="trType"><option value="cut">Cut</option><option value="fade">Fade</option><option value="slide">Slide</option><option value="dip">Dip to black</option></select>
+    <select id="trMs"><option value="300">0.3 s</option><option value="500">0.5 s</option><option value="1000">1 s</option></select></label>
   <button id="impBtn" title="Copy your scenes from OBS: in OBS choose Scene Collection, then Export">Import OBS scenes...</button>
   <button id="sendBtn" class="go">Start sending</button>
 </header>
@@ -223,9 +228,41 @@ function drawScene(c, scene, k, live) {
   if (scene) scene.layers.forEach((l) => drawLayer(c, l, live));
   c.restore();
 }
-function frame() {
-  drawScene(ctx, byName(studio.current), PW / SW, true);
+// ---- transitions: how one scene changes into the next on air ----
+const trCfg = { type: 'fade', ms: 500 };
+try { Object.assign(trCfg, JSON.parse(localStorage.getItem('ms_trans') || '{}')); } catch {}
+const trA = document.createElement('canvas'), trB = document.createElement('canvas');
+trA.width = trB.width = PW; trA.height = trB.height = PH;
+const trAc = trA.getContext('2d'), trBc = trB.getContext('2d');
+let shown = null, trans = null;
+const ease = (p) => (p < 0.5 ? 2 * p * p : 1 - 2 * (1 - p) * (1 - p));
+function drawTransition(c, from, to, p, type) {
+  const e = ease(p), k = PW / SW;
+  drawScene(trAc, from, k, true); drawScene(trBc, to, k, true);
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+  c.fillStyle = '#000'; c.fillRect(0, 0, PW, PH);
+  if (type === 'slide') { c.drawImage(trA, -e * PW, 0); c.drawImage(trB, PW - e * PW, 0); }
+  else if (type === 'dip') { c.globalAlpha = p < 0.5 ? 1 - 2 * p : 0; c.drawImage(trA, 0, 0); c.globalAlpha = p < 0.5 ? 0 : 2 * p - 1; c.drawImage(trB, 0, 0); }
+  else { c.drawImage(trA, 0, 0); c.globalAlpha = e; c.drawImage(trB, 0, 0); } // fade
+  c.restore();
 }
+function frame() {
+  const now = performance.now();
+  if (shown === null) shown = studio.current;
+  if (studio.current !== shown) {
+    if (trCfg.type !== 'cut' && trCfg.ms > 0 && byName(shown) && byName(studio.current)) trans = { from: shown, to: studio.current, t0: now };
+    shown = studio.current;
+  }
+  if (trans) {
+    const p = Math.min(1, (now - trans.t0) / trCfg.ms);
+    if (p < 1) { drawTransition(ctx, byName(trans.from), byName(trans.to), p, trCfg.type); return; }
+    trans = null;
+  }
+  drawScene(ctx, byName(shown), PW / SW, true);
+}
+$('#trType').value = trCfg.type; $('#trMs').value = String(trCfg.ms);
+const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#trMs').value); try { localStorage.setItem('ms_trans', JSON.stringify(trCfg)); } catch {} };
+$('#trType').onchange = saveTr; $('#trMs').onchange = saveTr;
 setInterval(frame, 1000 / 30); // not requestAnimationFrame, so it keeps running if the window is covered
 setInterval(() => { drawScene(ectx, byName(editing), ev.width / SW, false); }, 100);
 
