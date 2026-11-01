@@ -18,26 +18,26 @@ jobs:
             name: Windows
             args: --win --x64
             files: |
-              dist/Multistream-Setup.exe
+              dist/Multistream2-Setup.exe
               dist/latest.yml
-              dist/Multistream-Setup.exe.blockmap
+              dist/Multistream2-Setup.exe.blockmap
           - os: macos-latest
             name: Mac
             args: --mac --x64 --arm64
-            files: dist/Multistream-Mac-*.dmg
+            files: dist/Multistream2-Mac-*.dmg
           - os: ubuntu-latest
             name: Linux
             args: --linux --x64
-            files: dist/Multistream-Linux.AppImage
+            files: dist/Multistream2-Linux.AppImage
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Number this build (1.0.<run number>) so apps can tell which is newer
+      - name: Number this build (2.0.<run number>) so apps can tell which is newer
         shell: bash
-        run: npm version "1.0.${{ github.run_number }}" --no-git-tag-version
+        run: npm version "2.0.${{ github.run_number }}" --no-git-tag-version
       - name: Install
         run: npm install
       - name: Build
@@ -47,11 +47,11 @@ jobs:
       - name: Keep the installer from this run
         uses: actions/upload-artifact@v4
         with:
-          name: Multistream-${{ matrix.name }}
+          name: Multistream2-${{ matrix.name }}
           path: ${{ matrix.files }}
 
   release:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/v2'
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -61,9 +61,9 @@ jobs:
           merge-multiple: true
       - name: Publish a download link
         run: |
-          echo '{"version":"1.0.${{ github.run_number }}"}' > out/version.json
+          echo '{"version":"2.0.${{ github.run_number }}"}' > out/version.json
           ls -l out
-          gh release delete latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
-          gh release create latest out/* --repo "$GITHUB_REPOSITORY" --title "Multistream (latest)" --notes "Windows: Multistream-Setup.exe. Mac: Multistream-Mac-arm64.dmg (M1 and newer) or Multistream-Mac-x64.dmg (Intel). Linux: Multistream-Linux.AppImage."
+          gh release delete v2-latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+          gh release create v2-latest out/* --repo "$GITHUB_REPOSITORY" --latest=false --title "Multistream 2 (latest)" --notes "Version 2 (test). Windows: Multistream2-Setup.exe. Mac: Multistream2-Mac-arm64.dmg (M1 and newer) or Multistream2-Mac-x64.dmg (Intel). Linux: Multistream2-Linux.AppImage. Version 1 stays on the Multistream (latest) release."
         env:
           GH_TOKEN: ${{ github.token }}

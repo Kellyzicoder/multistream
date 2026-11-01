@@ -34,7 +34,7 @@ function createWindow() {
     height: 780,
     minWidth: 900,
     minHeight: 640,
-    title: 'Multistream',
+    title: 'Multistream 2',
     autoHideMenuBar: true,
     backgroundColor: '#eaf1fb',
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
@@ -101,8 +101,8 @@ function setupScreenCapture(ses) {
 // ---- Updates ----
 // Windows: the app downloads the new version by itself and asks to restart.
 // Mac and Linux: the app only tells you a new version is ready and opens the download page.
-const RELEASE_PAGE = 'https://github.com/Kellyzicoder/multistream/releases/tag/latest';
-const VERSION_URL = 'https://github.com/Kellyzicoder/multistream/releases/download/latest/version.json';
+const RELEASE_PAGE = 'https://github.com/Kellyzicoder/multistream/releases/tag/v2-latest';
+const VERSION_URL = 'https://github.com/Kellyzicoder/multistream/releases/download/v2-latest/version.json';
 function isNewer(a, b) {
   const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
   for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); }

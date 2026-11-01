@@ -1,7 +1,7 @@
 {
   "name": "multistream",
-  "version": "1.0.0",
-  "description": "Send one OBS stream to Facebook, YouTube, Instagram (and more) at the same time",
+  "version": "2.0.0",
+  "description": "Multistream 2: make the show in the Studio and send it to Facebook, YouTube and Instagram at the same time",
   "main": "main.js",
   "author": "Kelvin Mensah",
   "scripts": {
@@ -22,8 +22,8 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "com.multistream.app",
-    "productName": "Multistream",
+    "appId": "com.multistream.app.v2",
+    "productName": "Multistream 2",
     "files": [
       "main.js",
       "preload.js",
@@ -42,14 +42,14 @@
       "target": "nsis"
     },
     "nsis": {
-      "artifactName": "Multistream-Setup.exe"
+      "artifactName": "Multistream2-Setup.exe"
     },
     "dmg": {
-      "artifactName": "Multistream-Mac-${arch}.dmg"
+      "artifactName": "Multistream2-Mac-${arch}.dmg"
     },
     "linux": {
       "target": "AppImage",
-      "artifactName": "Multistream-Linux.AppImage",
+      "artifactName": "Multistream2-Linux.AppImage",
       "category": "AudioVideo"
     },
     "mac": {
@@ -63,10 +63,8 @@
     "afterPack": "adhoc-sign.js",
     "publish": [
       {
-        "provider": "github",
-        "owner": "Kellyzicoder",
-        "repo": "multistream",
-        "releaseType": "release"
+        "provider": "generic",
+        "url": "https://github.com/Kellyzicoder/multistream/releases/download/v2-latest"
       }
     ]
   }
