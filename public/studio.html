@@ -62,6 +62,9 @@
     <select id="trType"><option value="cut">Cut</option><option value="fade">Fade</option><option value="slide">Slide</option><option value="dip">Dip to black</option></select>
     <select id="trMs"><option value="300">0.3 s</option><option value="500">0.5 s</option><option value="1000">1 s</option></select></label>
   <button id="impBtn" title="Copy your scenes from OBS: in OBS choose Scene Collection, then Export">Import OBS scenes...</button>
+  <label class="tr" title="Saves a video file on this computer. It works with or without sending.">Record
+    <select id="recQ"><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></label>
+  <button id="recBtn">Record</button>
   <button id="sendBtn" class="go">Start sending</button>
 </header>
 <div class="wrap">
@@ -353,6 +356,14 @@ function drawTransition(c, from, to, p, type) {
   else { c.drawImage(trA, 0, 0); c.globalAlpha = e; c.drawImage(trB, 0, 0); } // fade
   c.restore();
 }
+// Draws the picture on air into any canvas (the preview/send canvas, and the bigger recording canvas)
+function paint(c, scale, now) {
+  if (trans) {
+    const p = Math.min(1, (now - trans.t0) / trCfg.ms);
+    if (p < 1) { drawTransition(c, byName(trans.from), byName(trans.to), p, trCfg.type); return; }
+  }
+  drawScene(c, byName(shown), scale, true);
+}
 function frame() {
   const now = performance.now();
   if (shown === null) shown = studio.current;
@@ -360,12 +371,9 @@ function frame() {
     if (trCfg.type !== 'cut' && trCfg.ms > 0 && byName(shown) && byName(studio.current)) trans = { from: shown, to: studio.current, t0: now };
     shown = studio.current;
   }
-  if (trans) {
-    const p = Math.min(1, (now - trans.t0) / trCfg.ms);
-    if (p < 1) { drawTransition(ctx, byName(trans.from), byName(trans.to), p, trCfg.type); return; }
-    trans = null;
-  }
-  drawScene(ctx, byName(shown), PW / SW, true);
+  if (trans && now - trans.t0 >= trCfg.ms) trans = null;
+  paint(ctx, PW / SW, now);
+  if (recW) paint(rctx, recW / SW, now);
 }
 $('#trType').value = trCfg.type; $('#trMs').value = String(trCfg.ms);
 const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#trMs').value); try { localStorage.setItem('ms_trans', JSON.stringify(trCfg)); } catch {} };
@@ -768,6 +776,44 @@ function stopSend() {
   $('#sendBtn').textContent = 'Start sending'; $('#sendBtn').className = 'go';
 }
 $('#sendBtn').onclick = () => (wantSend ? stopSend() : startSend());
+
+// ---------------- recording ----------------
+// Records the Studio picture to a file in the Videos/Multistream folder, at the quality you choose.
+// It has its own canvas, so 1080p is real 1080p and does not depend on what is being sent.
+const rcv = document.createElement('canvas'), rctx = rcv.getContext('2d');
+let recW = 0, recMr = null, recWs = null, recT0 = 0, recTick = 0;
+try { $('#recQ').value = localStorage.getItem('ms_recq') || '1080-8'; } catch {}
+if (!$('#recQ').value) $('#recQ').value = '1080-8';
+$('#recQ').onchange = () => { try { localStorage.setItem('ms_recq', $('#recQ').value); } catch {} };
+async function startRec() {
+  const [res, mb] = $('#recQ').value.split('-').map(Number);
+  recW = res === 1080 ? 1920 : 1280; rcv.width = recW; rcv.height = res === 1080 ? 1080 : 720;
+  try { ensureAudio(); await syncAudio(); } catch {}
+  const out = new MediaStream(rcv.captureStream(30).getVideoTracks());
+  dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
+  const ws = recWs = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + `/studio-record?h=${rcv.height}&mbit=${mb}`);
+  ws.binaryType = 'arraybuffer';
+  ws.onopen = () => {
+    const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
+    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.max(mb, 6) * 1000000, audioBitsPerSecond: 160000 });
+    recMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
+    recMr.start(500);
+    recT0 = Date.now(); $('#recBtn').textContent = 'Stop recording'; $('#recBtn').className = 'stop';
+    recTick = setInterval(() => { const s = Math.floor((Date.now() - recT0) / 1000); $('#recBtn').textContent = 'Stop recording ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }, 1000);
+  };
+  ws.onclose = () => { if (recWs === ws) endRec(true); };
+  ws.onerror = () => {};
+  ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) $('#st').textContent = 'Recording problem: ' + j.error, $('#st').className = 'stat bad'; if (j.saved) { $('#st').textContent = 'Saved: ' + j.saved + ' (in your Videos/Multistream folder)'; $('#st').className = 'stat ok'; } } catch {} };
+}
+function endRec(fromClose) {
+  clearInterval(recTick); recW = 0;
+  try { recMr && recMr.state !== 'inactive' && recMr.stop(); } catch {}
+  const ws = recWs; recWs = recMr = null;
+  // tell the relay we are done; it finishes the file, says where it saved it, then closes
+  if (ws && !fromClose) setTimeout(() => { try { ws.send('stop'); } catch {} }, 700);
+  $('#recBtn').textContent = 'Record'; $('#recBtn').className = '';
+}
+$('#recBtn').onclick = () => (recWs ? endRec(false) : startRec());
 document.addEventListener('click', () => ensureAudio(), { once: true });
 
 // ---------------- follow the phone / Control Room, and give it pictures ----------------
