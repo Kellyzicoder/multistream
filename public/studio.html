@@ -193,6 +193,58 @@ function note(c, l, msg) {
   c.fillStyle = '#9fb3a5'; c.font = '28px system-ui, sans-serif'; c.textBaseline = 'top';
   c.fillText(msg, l.x + 16, l.y + 16, Math.min(w, 900) - 32);
 }
+// ---- picture tools: crop, colour, green screen, shape, flip, see-through ----
+// l.pfx = { crop:{l,t,r,b} in %, bri, con, sat (percent, 100 = normal), key:{on,color,sim,smooth}, shape:'', round, flip, op }
+const pcv = new Map();
+function hasPfx(f) {
+  if (!f) return false;
+  const k = f.crop || {};
+  return Boolean((k.l || k.t || k.r || k.b) || (f.bri != null && f.bri !== 100) || (f.con != null && f.con !== 100) || (f.sat != null && f.sat !== 100) || (f.key && f.key.on) || f.shape || f.flip || (f.op != null && f.op < 100));
+}
+const hexRgb = (s) => { const m = /^#?([0-9a-f]{6})$/i.exec(s || ''); const n = m ? parseInt(m[1], 16) : 0x00ff00; return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const cbcr = (r, g, b) => [128 + (-0.168736 * r - 0.331264 * g + 0.5 * b), 128 + (0.5 * r - 0.418688 * g - 0.081312 * b)];
+function chromaKey(cx, w, h, k) {
+  const [kr, kg, kb] = hexRgb(k.color), [kcb, kcr] = cbcr(kr, kg, kb);
+  const sim = (k.sim == null ? 40 : k.sim) * 2.55 * 0.5, smo = Math.max(1, (k.smooth == null ? 8 : k.smooth) * 2.55 * 0.5);
+  const img = cx.getImageData(0, 0, w, h), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const [cb, cr] = cbcr(d[i], d[i + 1], d[i + 2]);
+    const dist = Math.hypot(cb - kcb, cr - kcr);
+    const a = dist <= sim ? 0 : dist >= sim + smo ? 1 : (dist - sim) / smo;
+    if (a < 1) d[i + 3] = d[i + 3] * a;
+  }
+  cx.putImageData(img, 0, 0);
+}
+function pic(c, l, el, sw, sh) {
+  const f = l.pfx;
+  if (!hasPfx(f)) { const [x, y, w, h] = place(l, sw, sh); c.drawImage(el, x, y, w, h); return; }
+  const k = f.crop || {}, cl = Math.min(90, k.l || 0) / 100, ct = Math.min(90, k.t || 0) / 100, cr = Math.min(90, k.r || 0) / 100, cb = Math.min(90, k.b || 0) / 100;
+  const sx = sw * cl, sy = sh * ct, ssw = Math.max(1, sw * (1 - cl - cr)), ssh = Math.max(1, sh * (1 - ct - cb));
+  const [x, y, w, h] = place(l, ssw, ssh);
+  const needPx = (f.key && f.key.on) || f.shape || (f.bri != null && f.bri !== 100) || (f.con != null && f.con !== 100) || (f.sat != null && f.sat !== 100);
+  c.save();
+  if (f.op != null && f.op < 100) c.globalAlpha = Math.max(0, f.op) / 100;
+  if (f.flip) { c.translate(x + w / 2, 0); c.scale(-1, 1); c.translate(-(x + w / 2), 0); }
+  if (!needPx) { c.drawImage(el, sx, sy, ssw, ssh, x, y, w, h); c.restore(); return; }
+  // work on a copy no bigger than 1280 wide, so the green screen stays fast
+  const k2 = Math.min(1, 1280 / Math.max(1, w)), pw = Math.max(1, Math.round(w * k2)), ph = Math.max(1, Math.round(h * k2));
+  let cv2 = pcv.get(l.id); if (!cv2) { cv2 = document.createElement('canvas'); pcv.set(l.id, cv2); }
+  if (cv2.width !== pw || cv2.height !== ph) { cv2.width = pw; cv2.height = ph; }
+  const px = cv2.getContext('2d', { willReadFrequently: true });
+  px.clearRect(0, 0, pw, ph);
+  px.filter = `brightness(${f.bri == null ? 100 : f.bri}%) contrast(${f.con == null ? 100 : f.con}%) saturate(${f.sat == null ? 100 : f.sat}%)`;
+  px.drawImage(el, sx, sy, ssw, ssh, 0, 0, pw, ph);
+  px.filter = 'none';
+  if (f.key && f.key.on) chromaKey(px, pw, ph, f.key);
+  if (f.shape) {
+    px.globalCompositeOperation = 'destination-in'; px.beginPath();
+    if (f.shape === 'circle') px.ellipse(pw / 2, ph / 2, pw / 2, ph / 2, 0, 0, Math.PI * 2);
+    else { const r = Math.min(pw, ph) * Math.min(50, f.round == null ? 12 : f.round) / 100; px.roundRect(0, 0, pw, ph, r); }
+    px.fill(); px.globalCompositeOperation = 'source-over';
+  }
+  c.drawImage(cv2, 0, 0, pw, ph, x, y, w, h);
+  c.restore();
+}
 function drawLayer(c, l, live) {
   if (l.visible === false) return;
   c.save();
@@ -203,26 +255,26 @@ function drawLayer(c, l, live) {
       String(l.text || '').split('\n').forEach((t, i) => c.fillText(t, l.x, l.y + i * (l.size || 60) * 1.2, l.w || SW));
     } else if (l.type === 'image') {
       const i = getImg(fileUrl(l));
-      if (i.complete && i.naturalWidth) { const [x, y, w, h] = place(l, i.naturalWidth, i.naturalHeight); c.drawImage(i, x, y, w, h); }
+      if (i.complete && i.naturalWidth) { pic(c, l, i, i.naturalWidth, i.naturalHeight); }
       else if (i.bad) note(c, l, 'Picture not found: ' + (l.file || l.url || l.name));
     } else if (l.type === 'video') {
       const v = getVid(l);
       if (v.bad) note(c, l, 'Video not found: ' + (l.file || l.url || l.name));
-      else if (v.el.readyState >= 2 && v.el.videoWidth) { const [x, y, w, h] = place(l, v.el.videoWidth, v.el.videoHeight); c.drawImage(v.el, x, y, w, h); }
+      else if (v.el.readyState >= 2 && v.el.videoWidth) { pic(c, l, v.el, v.el.videoWidth, v.el.videoHeight); }
     } else if (l.type === 'camera') {
       const cm = getCam(l);
-      if (cm.ready && cm.v.videoWidth) { const [x, y, w, h] = place(l, cm.v.videoWidth, cm.v.videoHeight); c.drawImage(cm.v, x, y, w, h); }
+      if (cm.ready && cm.v.videoWidth) { pic(c, l, cm.v, cm.v.videoWidth, cm.v.videoHeight); }
       else note(c, l, cm.err ? 'Camera: ' + cm.err : 'Starting camera...');
     } else if (l.type === 'screen') {
       const sc = getScreen(l);
-      if (sc.ready && sc.v.videoWidth) { const [x, y, w, h] = place(l, sc.v.videoWidth, sc.v.videoHeight); c.drawImage(sc.v, x, y, w, h); }
+      if (sc.ready && sc.v.videoWidth) { pic(c, l, sc.v, sc.v.videoWidth, sc.v.videoHeight); }
       else note(c, l, sc.err ? 'Screen: ' + sc.err : 'Starting screen capture...');
     } else if (l.type === 'browser') {
       if (!window.msNative) { note(c, l, 'Web pages need the Multistream desktop app'); }
-      else { const b = getBoard(l); if (b.ready) { const [x, y, w, h] = place(l, b.c.width, b.c.height); c.drawImage(b.c, x, y, w, h); } }
+      else { const b = getBoard(l); if (b.ready) { pic(c, l, b.c, b.c.width, b.c.height); } }
     } else if (l.type === 'ipcam') {
       const i = getIpcam(l);
-      if (i.complete && i.naturalWidth) { const [x, y, w, h] = place(l, i.naturalWidth, i.naturalHeight); c.drawImage(i, x, y, w, h); }
+      if (i.complete && i.naturalWidth) { pic(c, l, i, i.naturalWidth, i.naturalHeight); }
       else note(c, l, 'Phone camera: waiting for ' + (l.url || 'an address'));
     }
   } catch {}
@@ -444,6 +496,7 @@ function renderLayers() {
   renderProps();
 }
 function field(label, el) { const d = document.createElement('div'); d.className = 'f'; const l = document.createElement('label'); l.textContent = label; d.append(l, el); return d; }
+let pfxOpen = false;
 function renderProps() {
   const box = $('#props'); box.textContent = '';
   const s = byName(editing), l = s && s.layers.find((x) => x.id === sel);
@@ -473,6 +526,32 @@ function renderProps() {
     const lp = document.createElement('input'); lp.type = 'checkbox'; lp.checked = l.loop !== false; lp.onchange = () => { l.loop = lp.checked; const v = vids.get(l.id); if (v) v.el.loop = lp.checked; save(); };
     const mu = document.createElement('input'); mu.type = 'checkbox'; mu.checked = !!l.muted; mu.onchange = () => { l.muted = mu.checked; save(); };
     box.append(field('Repeat', lp), field('Mute its sound', mu));
+  }
+  if (['image', 'video', 'camera', 'screen', 'browser', 'ipcam'].includes(l.type)) {
+    const F = (l.pfx = l.pfx || {});
+    const dt = document.createElement('details'); dt.className = 'fx'; dt.open = pfxOpen; dt.ontoggle = () => { pfxOpen = dt.open; };
+    dt.innerHTML = '<summary>Picture tools</summary>';
+    const row = (label, el) => { const w = document.createElement('div'); w.className = 'fxr'; const sp = document.createElement('span'); sp.textContent = label; w.append(sp, el); dt.appendChild(w); };
+    const num = (get, set) => { const i = document.createElement('input'); i.type = 'number'; i.min = 0; i.max = 90; i.style.width = '56px'; i.value = get() || 0; i.oninput = () => { set(Number(i.value) || 0); save(); }; return i; };
+    const sl = (min, max, val, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.value = val; const o = document.createElement('b'); o.textContent = val; i.oninput = () => { o.textContent = i.value; set(Number(i.value)); save(); }; w.append(i, o); return w; };
+    const ck = (val, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(val); c.onchange = () => { set(c.checked); save(); }; return c; };
+    F.crop = F.crop || {};
+    row('Crop left %', num(() => F.crop.l, (v) => { F.crop.l = v; })); row('Crop top %', num(() => F.crop.t, (v) => { F.crop.t = v; }));
+    row('Crop right %', num(() => F.crop.r, (v) => { F.crop.r = v; })); row('Crop bottom %', num(() => F.crop.b, (v) => { F.crop.b = v; }));
+    row('Brightness', sl(0, 200, F.bri == null ? 100 : F.bri, (v) => { F.bri = v; }));
+    row('Contrast', sl(0, 200, F.con == null ? 100 : F.con, (v) => { F.con = v; }));
+    row('Colour strength', sl(0, 200, F.sat == null ? 100 : F.sat, (v) => { F.sat = v; }));
+    row('See-through', sl(0, 100, F.op == null ? 100 : F.op, (v) => { F.op = v; }));
+    row('Flip left-right', ck(F.flip, (v) => { F.flip = v; }));
+    const sh = document.createElement('select'); [['', 'Normal'], ['round', 'Rounded corners'], ['circle', 'Circle']].forEach(([v, t]) => sh.add(new Option(t, v))); sh.value = F.shape || ''; sh.onchange = () => { F.shape = sh.value; save(); }; row('Shape', sh);
+    row('Corner size', sl(0, 50, F.round == null ? 12 : F.round, (v) => { F.round = v; }));
+    F.key = F.key || {};
+    row('Green screen', ck(F.key.on, (v) => { F.key.on = v; }));
+    const kc = document.createElement('input'); kc.type = 'color'; kc.value = F.key.color || '#00ff00'; kc.oninput = () => { F.key.color = kc.value; save(); }; row('  colour to remove', kc);
+    row('  how much', sl(1, 100, F.key.sim == null ? 40 : F.key.sim, (v) => { F.key.sim = v; }));
+    row('  soft edge', sl(1, 50, F.key.smooth == null ? 8 : F.key.smooth, (v) => { F.key.smooth = v; }));
+    const rs = document.createElement('button'); rs.className = 'sm'; rs.textContent = 'Reset picture tools'; rs.onclick = () => { delete l.pfx; save(); renderProps(); }; dt.appendChild(rs);
+    box.append(dt);
   }
   if (l.type === 'browser' || l.type === 'ipcam') { const u = inp('url'); u.placeholder = 'http://...'; box.append(field('Address', u)); }
   if (l.type === 'screen') {
