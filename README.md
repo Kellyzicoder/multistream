@@ -120,3 +120,6 @@ The Vercel link is a demo only: it shows the pages with sample data. The real ap
 Click **Virtual camera** in the Studio. The first time, Windows asks for permission once to add a camera called **Softcam**. Then in Zoom choose Settings, Video, Camera, **Softcam**. It uses the free [softcam](https://github.com/tshino/softcam) (MIT licence). OBS Virtual Camera still works as a backup. It sends the picture only, not the sound.
 ## If YouTube or Facebook drops
 If a destination stops while OBS is still live, Multistream starts it again by itself: after 3 seconds, then 6, 9 ... up to 30 seconds. It gives up after 10 tries in a row (so a wrong stream key is not tried over and over) and shows "Press Restart". Pressing Restart or End live cancels the waiting.
+
+## Multistream 3 (no localhost)
+Version 3 runs everything inside the app: the windows, the Studio video, the preview and the recording do not use localhost or any port. OBS backup and phone control are switches in Settings and are off by default. See [VERSION3.md](VERSION3.md).
