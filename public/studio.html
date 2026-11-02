@@ -112,9 +112,74 @@
   .dlg-b h3 { margin:14px 0 6px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
   .dlg-b h3:first-child { margin-top:0; }
   #ev { touch-action:none; }
+  .dlg.big { width:min(880px, 96vw); height:min(620px, 90vh); max-height:90vh; }
+  .sbody { flex:1; min-height:0; display:flex; }
+  .snavs { width:150px; flex:none; display:flex; flex-direction:column; gap:2px; padding:8px; border-right:1px solid var(--line); background:var(--card); }
+  .snavs button { text-align:left; background:transparent; border-color:transparent; padding:8px 10px; }
+  .snavs button[aria-selected="true"] { background:var(--sel); color:var(--onsel); font-weight:600; }
+  .spanes { flex:1; min-width:0; overflow:auto; padding:12px 16px; }
+  .sp { display:none; } .sp.on { display:block; }
+  .sp .f { grid-template-columns:150px 1fr; }
+  label.chk { display:flex; gap:8px; align-items:center; font-size:12px; color:var(--text); }
+  label.chk input { width:auto; }
+  table.keys { border-collapse:collapse; font-size:12px; } table.keys td { padding:4px 14px 4px 0; vertical-align:top; }
+  .ch { border:1px solid var(--line); border-radius:8px; margin-bottom:8px; background:var(--field); }
+  .chh { display:flex; align-items:center; gap:8px; padding:8px 10px; }
+  .chh b { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chip { font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--muted); max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chip.live { background:var(--sel); color:var(--onsel); border-color:var(--sel); } .chip.err { color:var(--red); border-color:var(--red); }
+  .chd { padding:4px 10px 10px; border-top:1px solid var(--line); }
+  .chd .f { grid-template-columns:110px 1fr; }
+  #backBtn { padding:1px 10px; }
   .dlg-f { display:flex; justify-content:flex-end; padding:8px 12px; border-top:1px solid var(--line); }
   @media (max-width:1000px) { .docks { height:auto; flex-wrap:wrap; overflow:auto; } .dock { min-height:180px; } body { overflow:auto; } .obs { height:auto; } }
   input[type=range], input[type=checkbox] { accent-color:var(--sel); }
+  /* ---------- Liquid Glass: rounded, frosted, translucent (turned off by Settings > Appearance > High contrast or reduced transparency) ---------- */
+  :root { --gl:rgba(18,26,32,.52); --gl2:rgba(30,42,50,.46); --gl-line:rgba(255,255,255,.14); --gl-hi:rgba(255,255,255,.22); --gl-sh:0 10px 34px rgba(0,0,0,.38); --gl-blur:blur(26px) saturate(180%); --r:18px; }
+  html.t-light { --gl:rgba(255,255,255,.58); --gl2:rgba(255,255,255,.5); --gl-line:rgba(255,255,255,.75); --gl-hi:rgba(255,255,255,.95); --gl-sh:0 10px 30px rgba(40,70,60,.16); }
+  body { background:
+    radial-gradient(900px 520px at 90% -10%, color-mix(in srgb, var(--sel) 26%, transparent), transparent 62%),
+    radial-gradient(760px 480px at -8% 108%, color-mix(in srgb, var(--sel) 18%, transparent), transparent 62%),
+    radial-gradient(520px 360px at 50% 40%, rgba(90,120,255,.10), transparent 70%), var(--bg); background-attachment:fixed; }
+  .obs { padding:8px; gap:8px; }
+  .stage { padding:4px; }
+  .docks { padding:0; gap:8px; }
+  .dock, .dlg, .pop, .status, .tb, .panel { background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
+  .dock { border-radius:var(--r); } .dlg { border-radius:26px; } .pop { border-radius:18px; } .panel { border-radius:var(--r); }
+  .dock h2, .dlg-h { background:transparent; border-bottom:1px solid var(--gl-line); }
+  .dock .list { background:transparent; padding:4px; }
+  .status { border-radius:999px; padding:5px 16px; border-top:1px solid var(--gl-line); }
+  .tb { border-radius:0 0 var(--r) var(--r); border:0; border-top:1px solid var(--gl-line); background:transparent; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .snavs { background:transparent; border-right:1px solid var(--gl-line); }
+  .dlg-f { border-top:1px solid var(--gl-line); }
+  .modal { background:rgba(4,8,10,.42); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+  html.t-light .modal { background:rgba(200,215,210,.4); }
+  button, select, input, textarea { border-radius:12px; background:var(--gl2); border:1px solid var(--gl-line); box-shadow:inset 0 1px 0 var(--gl-hi); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); transition:background .15s, border-color .15s, transform .08s; }
+  button { border-radius:999px; padding:6px 14px; } button:active { transform:scale(.97); }
+  button:hover { background:color-mix(in srgb, var(--gl2) 60%, var(--sel) 22%); border-color:var(--gl-hi); }
+  button.sm { padding:2px 10px; } .tb button, .dlg-h button, .snavs button { box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .tb button { background:transparent; border-color:transparent; } .tb button:hover { background:var(--gl2); }
+  button.go, button.on, button.stop { box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 4px 16px color-mix(in srgb, var(--sel) 45%, transparent); }
+  button.go { background:linear-gradient(180deg, color-mix(in srgb, var(--green) 85%, #fff), var(--green)); }
+  button.stop { background:linear-gradient(180deg, color-mix(in srgb, var(--red) 85%, #fff), var(--red)); box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 4px 16px rgba(255,77,90,.4); }
+  button.on { background:linear-gradient(180deg, color-mix(in srgb, var(--sel) 85%, #fff), var(--sel)); }
+  .snavs button { border-radius:14px; } .snavs button[aria-selected="true"] { box-shadow:0 4px 16px color-mix(in srgb, var(--sel) 40%, transparent); }
+  .scn, .lyr { border-radius:12px; margin:0 0 3px; padding:6px 10px; }
+  .scn.on, .lyr.on { background:linear-gradient(180deg, color-mix(in srgb, var(--sel) 88%, #fff), var(--sel)); box-shadow:0 3px 14px color-mix(in srgb, var(--sel) 38%, transparent); }
+  .au { border-radius:12px; padding:8px 10px; margin-bottom:4px; border:1px solid var(--gl-line); background:var(--gl2); }
+  .ch { border-radius:16px; background:var(--gl2); border-color:var(--gl-line); } .chip { border-radius:999px; }
+  .mi, button.mi { border-radius:12px; } button.mi { background:transparent; box-shadow:none; border:0; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .stage canvas.v, canvas.v { border-radius:20px; border:2px solid var(--gl-line); box-shadow:0 14px 44px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.2); }
+  #cv.live { border-color:var(--red); box-shadow:0 0 0 1px var(--red), 0 0 40px rgba(255,77,90,.35), 0 14px 44px rgba(0,0,0,.45); }
+  .mt { border-radius:999px; } .air { border-radius:999px; }
+  input[type=range] { padding:0; background:transparent; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; border:0; }
+  input[type=checkbox] { backdrop-filter:none; -webkit-backdrop-filter:none; box-shadow:none; }
+  ::-webkit-scrollbar { width:10px; height:10px; } ::-webkit-scrollbar-thumb { background:rgba(150,170,165,.35); border-radius:999px; border:3px solid transparent; background-clip:content-box; } ::-webkit-scrollbar-track { background:transparent; }
+  html.glass-off { --gl:var(--card); --gl2:var(--btn); --gl-line:var(--line); --gl-hi:transparent; --gl-sh:none; --gl-blur:none; }
+  html.glass-off body { background:var(--bg); }
+  @media (prefers-reduced-transparency: reduce) { :root { --gl:var(--card); --gl2:var(--btn); --gl-line:var(--line); --gl-hi:transparent; --gl-blur:none; } }
+  button.eye { padding:2px 6px; min-width:0; background:transparent; border-color:transparent; box-shadow:none; color:inherit; display:inline-flex; align-items:center; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  button.eye.off { opacity:.45; } button.eye:hover { background:var(--gl2); }
 </style>
 </head>
 <body>
@@ -163,7 +228,7 @@
   </div>
 
   <!-- status bar, like OBS -->
-  <footer class="status"><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
+  <footer class="status"><button id="backBtn" hidden title="Go back to the dashboard">&larr; Dashboard</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
 </div>
 
 <!-- Properties window, like OBS -->
@@ -172,21 +237,85 @@
     <div class="dlg-b" id="props"></div>
     <div class="dlg-f"><button id="propsOk">OK</button></div></div>
 </div>
-<!-- Settings window: video size, recording, audio monitoring, and the less used buttons -->
+<!-- Settings window, like OBS (left list) with Restream's channels -->
 <div class="modal" id="setBox" hidden>
-  <div class="dlg"><div class="dlg-h"><b>Settings</b><button id="setClose" title="Close">&times;</button></div>
-    <div class="dlg-b">
-      <h3>Video (what viewers get)</h3>
-      <div class="f"><label>Quality</label><select id="outQ"></select></div>
-      <div class="f"><label>Bitrate (kbps)</label><input id="outKbps" type="number" min="1000" max="60000" step="500"></div>
-      <p class="note" id="outNote"></p>
-      <h3>Recording</h3>
-      <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></div>
-      <h3>Audio</h3>
-      <div class="f"><label>Monitoring output</label><select id="monDev"></select></div>
-      <p class="note">Monitoring lets you hear an input in your headphones. Use headphones, or the microphone will pick up the speakers.</p>
-      <h3>More</h3>
-      <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
+  <div class="dlg big"><div class="dlg-h"><b>Settings</b><button id="setClose" title="Close">&times;</button></div>
+    <div class="sbody">
+      <nav class="snavs" id="setNav" aria-label="Settings sections">
+        <button type="button" data-sp="general">General</button>
+        <button type="button" data-sp="channels">Channels</button>
+        <button type="button" data-sp="video">Video</button>
+        <button type="button" data-sp="output">Recording</button>
+        <button type="button" data-sp="audio">Audio</button>
+        <button type="button" data-sp="hotkeys">Hotkeys</button>
+        <button type="button" data-sp="advanced">Advanced</button>
+      </nav>
+      <div class="spanes">
+        <section class="sp" data-sp="general">
+          <h3>Studio</h3>
+          <div class="f"><label>Open the Studio in</label><select id="studioOpen"><option value="window">A new window</option><option value="same">The same window as the dashboard</option></select></div>
+          <p class="note">This is also in the dashboard under Settings, Appearance. It applies the next time you open the Studio.</p>
+          <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
+          <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
+          <h3>Scenes and windows</h3>
+          <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes from OBS...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
+          <p class="note">The colours follow the dashboard (Settings, Appearance).</p>
+        </section>
+        <section class="sp" data-sp="channels">
+          <h3>Where your video goes</h3>
+          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the dashboard under Settings.</p>
+          <div id="chanList"></div>
+          <h3>Add a channel</h3>
+          <div class="f"><label>Site</label><select id="chType"><option value="youtube">YouTube</option><option value="facebook">Facebook</option><option value="other">Instagram or another site</option></select></div>
+          <div class="f"><label>Name</label><input id="chName" placeholder="Church YouTube"></div>
+          <div class="f"><label>Stream URL</label><input id="chUrl" placeholder="rtmps://..."></div>
+          <div class="f"><label>Stream key</label><input id="chKey" type="password" autocomplete="off" placeholder="Paste the key"></div>
+          <div class="row"><button id="chAdd">Add channel</button><span class="note" id="chMsg"></span></div>
+        </section>
+        <section class="sp" data-sp="video">
+          <h3>What viewers get</h3>
+          <div class="f"><label>Quality</label><select id="outQ"></select></div>
+          <div class="f"><label>Bitrate (kbps)</label><input id="outKbps" type="number" min="1000" max="60000" step="500"></div>
+          <p class="note" id="outNote"></p>
+          <div class="f"><label>Canvas</label><span>1920 x 1080 (items are placed on this, like OBS)</span></div>
+          <div class="f"><label>Encoder</label><span id="encName">...</span></div>
+          <div class="f"><label>Keyframes</label><span>Every 2 seconds (what YouTube and Facebook ask for)</span></div>
+        </section>
+        <section class="sp" data-sp="output">
+          <h3>Recording</h3>
+          <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></div>
+          <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Also save the stream as soon as it starts</label></div>
+          <div class="f"><label>Saved in</label><span><code id="recDir2"></code></span></div>
+          <div class="row"><button id="recOpen2">Open folder</button><span class="note" id="recMsg2"></span></div>
+          <p class="note">Recordings are .mkv files, so they still play if the power goes out. VLC plays them.</p>
+        </section>
+        <section class="sp" data-sp="audio">
+          <h3>Monitoring</h3>
+          <div class="f"><label>Monitoring output</label><select id="monDev"></select></div>
+          <p class="note">Monitoring lets you hear an input in your headphones. Use headphones, or the microphone will pick up the speakers. Turn it on for each input in the Audio Mixer, under Tools.</p>
+          <h3>Inputs</h3>
+          <p class="note">Add and set up sound inputs in the Audio Mixer: volume, mute, delay, low cut, bass/mid/treble, noise gate, compressor and limiter. "Computer sound" (what this PC plays) is in the Windows app.</p>
+        </section>
+        <section class="sp" data-sp="hotkeys">
+          <h3>Hotkeys</h3>
+          <table class="keys">
+            <tr><td><kbd>1</kbd> - <kbd>9</kbd></td><td>Put that scene on air</td></tr>
+            <tr><td><kbd>Alt</kbd> + <kbd>1</kbd> - <kbd>9</kbd></td><td>Mute or unmute that sound input</td></tr>
+            <tr><td><kbd>R</kbd></td><td>Start or stop recording</td></tr>
+            <tr><td><kbd>Shift</kbd> + <kbd>G</kbd></td><td>Start or stop streaming (it asks before stopping)</td></tr>
+            <tr><td><kbd>F</kbd></td><td>Next transition type</td></tr>
+            <tr><td>Arrow keys</td><td>Move the selected item (<kbd>Shift</kbd> = 10 at a time)</td></tr>
+            <tr><td><kbd>Delete</kbd></td><td>Remove the selected item</td></tr>
+          </table>
+          <p class="note">These work when the Studio is the window in front and you are not typing in a box. They cannot be changed yet.</p>
+        </section>
+        <section class="sp" data-sp="advanced">
+          <h3>Advanced</h3>
+          <div class="f"><label>Dropped channels</label><span>Started again after 3, 6, 9 ... up to 30 seconds, 10 tries, then it says so.</span></div>
+          <div class="f"><label>Reset</label><span><button id="resetStudio">Reset Studio settings</button></span></div>
+          <p class="note">Reset puts the video size, recording quality, transition, monitoring output and the options above back to how they started. Your scenes, sources and channels are kept.</p>
+        </section>
+      </div>
     </div>
     <div class="dlg-f"><button id="setOk">OK</button></div></div>
 </div>
@@ -202,6 +331,7 @@
     const t = a.theme || 'system';
     const light = t === 'light' || (t === 'system' && dark && !dark.matches);
     document.documentElement.classList.toggle('t-light', light);
+    document.documentElement.classList.toggle('glass-off', Boolean(a.contrast));
     const r = document.documentElement.style;
     if (hexOk(a.accent)) { r.setProperty('--sel', a.accent); r.setProperty('--onsel', lum(a.accent) > 0.3 ? '#05130a' : '#ffffff'); }
     else { r.removeProperty('--sel'); r.removeProperty('--onsel'); }
@@ -664,6 +794,15 @@ function gateAudio() {
 }
 const openFx = new Set();
 const dB = (v) => (v <= 0.0001 ? -60 : Math.max(-60, 20 * Math.log10(v)));
+  // an eye button instead of a tick: open eye = shown / heard, slashed eye = hidden
+  const EYE_ON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const EYE_OFF = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 19C5 19 1 12 1 12a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.1 9.1 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>';
+  function eyeBtn(on, title, change) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'eye'; b.title = title;
+    const paint = () => { b.innerHTML = on ? EYE_ON : EYE_OFF; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', title + (on ? ': on' : ': off')); b.classList.toggle('off', !on); };
+    b.onclick = (e) => { e.stopPropagation(); on = !on; paint(); change(on); };
+    paint(); return b;
+  }
 function renderAudio() {
   const box = $('#audio'); box.textContent = '';
   const s = byName(editing), on = new Set((s && s.audio) || []);
@@ -671,8 +810,7 @@ function renderAudio() {
     const d = document.createElement('div'); d.className = 'au' + (on.has(a.id) ? '' : ' off'); d.dataset.id = a.id;
     const t = document.createElement('div'); t.className = 't';
     const n = document.createElement('span'); n.className = 'n'; n.textContent = a.name; n.title = a.name + (asrc.get(a.id) && asrc.get(a.id).err ? ' - ' + asrc.get(a.id).err : '');
-    const inScene = document.createElement('input'); inScene.type = 'checkbox'; inScene.checked = on.has(a.id); inScene.title = 'Heard in the scene being edited';
-    inScene.onchange = () => { const sc = byName(editing); if (!sc) return; sc.audio = sc.audio || []; if (inScene.checked) { if (!sc.audio.includes(a.id)) sc.audio.push(a.id); } else sc.audio = sc.audio.filter((x) => x !== a.id); save(); gateAudio(); renderAudio(); };
+    const inScene = eyeBtn(on.has(a.id), 'Heard in the scene being edited', (v) => { const sc = byName(editing); if (!sc) return; sc.audio = sc.audio || []; if (v) { if (!sc.audio.includes(a.id)) sc.audio.push(a.id); } else sc.audio = sc.audio.filter((x) => x !== a.id); save(); gateAudio(); renderAudio(); });
     const m = document.createElement('button'); m.className = 'sm' + (a.muted ? ' on' : ''); m.textContent = a.muted ? 'Muted' : 'Mute';
     m.onclick = () => { a.muted = !a.muted; save(); syncAudio(); renderAudio(); };
     t.append(inScene, n, m);
@@ -712,7 +850,7 @@ function renderAudio() {
     fx.open = openFx.has(a.id); fx.ontoggle = () => { fx.open ? openFx.add(a.id) : openFx.delete(a.id); };
     d.append(t, mt, r, sl, fx); box.appendChild(d);
   });
-  $('#audNote').textContent = studio.audio.length ? 'Tick a box to hear that input in the scene you are editing.' : 'No sound inputs yet.';
+  $('#audNote').textContent = studio.audio.length ? 'Click the eye to hear that input in the scene you are editing.' : 'No sound inputs yet.';
 }
 function addAudioInput(kind) {
   const a = { id: uid(), name: kind === 'desktop' ? 'Computer sound' : 'Sound ' + (studio.audio.length + 1), device: '', label: '', vol: 1, muted: false };
@@ -774,7 +912,7 @@ function renderLayers() {
   for (let i = s.layers.length - 1; i >= 0; i--) {
     const l = s.layers[i];
     const d = document.createElement('div'); d.className = 'lyr' + (l.id === sel ? ' on' : '');
-    const eye = document.createElement('input'); eye.type = 'checkbox'; eye.checked = l.visible !== false; eye.title = 'Show or hide'; eye.onclick = (e) => e.stopPropagation(); eye.onchange = () => { l.visible = eye.checked; save(); };
+    const eye = eyeBtn(l.visible !== false, 'Show or hide', (v) => { l.visible = v; save(); });
     const n = document.createElement('span'); n.className = 'n'; n.textContent = (l.name || ICON[l.type] || l.type) + (l.locked ? ' (locked)' : ''); n.title = n.textContent;
     const up = document.createElement('button'); up.className = 'sm'; up.textContent = '\u2191'; up.title = 'Move in front'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
     const x = document.createElement('button'); x.className = 'sm'; x.textContent = '\u00d7'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
@@ -1039,6 +1177,14 @@ function openPipe(p) {
   return o;
 }
 
+// when the Studio replaced the dashboard in the same window, this goes back
+if (/[?&]same=1/.test(location.search) && window.msNative) {
+  $('#backBtn').hidden = false;
+  $('#backBtn').onclick = () => {
+    if ((wantSend || recWs) && !confirm('Going back to the dashboard stops streaming and recording. Go back?')) return;
+    window.msNative.openDashboard();
+  };
+}
 // a message (like "Recording saved") stays on the status line for a few seconds
 let stHold = 0;
 function flash(text, ok) { $('#st').textContent = text; $('#st').className = 'stat ' + (ok ? 'ok' : 'bad'); stHold = Date.now() + 6000; }
@@ -1086,7 +1232,7 @@ function stopSend() {
   setProgramSize(1280, 720); setFps(30); lockOut();
   $('#sendBtn').textContent = 'Start Streaming'; $('#sendBtn').className = ''; liveT0 = 0;
 }
-$('#sendBtn').onclick = () => (wantSend ? stopSend() : startSend());
+$('#sendBtn').onclick = () => { if (wantSend) { if (askStop && !confirm('Stop streaming now?')) return; stopSend(); } else startSend(); };
 
 // ---------------- status bar clocks (LIVE and REC), like OBS ----------------
 let liveT0 = 0;
@@ -1320,9 +1466,9 @@ ev.addEventListener('pointermove', (e) => {
   if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 3 * pt.k) return;
   drag.moved = true;
   restoreLayer(l, drag.l0);
-  if (!drag.h) moveBy(l, dx, dy, !e.ctrlKey, pt.k);
+  if (!drag.h) moveBy(l, dx, dy, snapOn && !e.ctrlKey, pt.k);
   else if (e.altKey && MEDIA.has(l.type)) cropBy(l, drag, dx, dy);
-  else resizeBy(l, drag, dx, dy, e.shiftKey, !e.ctrlKey, pt.k);
+  else resizeBy(l, drag, dx, dy, e.shiftKey, snapOn && !e.ctrlKey, pt.k);
   save();
 });
 const endDrag = (e) => { if (!drag) return; try { ev.releasePointerCapture(e.pointerId); } catch {} drag = null; save(); };
@@ -1382,11 +1528,99 @@ function fillMon() {
   m.value = [...m.options].some((o) => o.value === monDev) ? monDev : '';
 }
 $('#monDev').onchange = () => setMonitorDevice($('#monDev').value);
-function openSettings() { fillMon(); lockOut(); $('#setBox').hidden = false; }
-function closeSettings() { $('#setBox').hidden = true; }
-$('#setBtn').onclick = openSettings; $('#setClose').onclick = closeSettings; $('#setOk').onclick = closeSettings;
+let spane = 'general';
+function showPane(n) {
+  spane = n;
+  document.querySelectorAll('#setNav button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.sp === n)));
+  document.querySelectorAll('.spanes .sp').forEach((x) => x.classList.toggle('on', x.dataset.sp === n));
+  if (n === 'channels') loadChans(); if (n === 'output') loadRec(); if (n === 'video') loadEnc();
+}
+document.querySelectorAll('#setNav button').forEach((b) => { b.onclick = () => showPane(b.dataset.sp); });
+function openSettings(pane) {
+  fillMon(); lockOut();
+  try { $('#studioOpen').value = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+  $('#optSnap').checked = snapOn; $('#optConfirm').checked = askStop;
+  $('#setBox').hidden = false; showPane(typeof pane === 'string' ? pane : spane);
+}
+function closeSettings() { $('#setBox').hidden = true; clearInterval(chanT); chanT = 0; }
+$('#setBtn').onclick = () => openSettings(); $('#setClose').onclick = closeSettings; $('#setOk').onclick = closeSettings;
 $('#setBox').addEventListener('mousedown', (e) => { if (e.target === $('#setBox')) closeSettings(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#setBox').hidden) closeSettings(); });
+// ----- options (saved on this computer) -----
+let snapOn = true, askStop = false;
+try { snapOn = localStorage.getItem('ms_snap') !== '0'; askStop = localStorage.getItem('ms_askstop') === '1'; } catch {}
+$('#optSnap').onchange = () => { snapOn = $('#optSnap').checked; try { localStorage.setItem('ms_snap', snapOn ? '1' : '0'); } catch {} };
+$('#optConfirm').onchange = () => { askStop = $('#optConfirm').checked; try { localStorage.setItem('ms_askstop', askStop ? '1' : '0'); } catch {} };
+$('#studioOpen').onchange = () => { try { localStorage.setItem('ms_studio_open', $('#studioOpen').value); } catch {} };
+$('#resetStudio').onclick = () => {
+  if (!confirm('Put the video size, recording quality, transition, monitoring output and options back to how they started?')) return;
+  ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_studio_open'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  flash('Studio settings were reset. Close and open the Studio to see them.', true); closeSettings();
+};
+// ----- Video pane: which encoder is used -----
+async function loadEnc() { try { const e = await fetch('/api/studio/status').then((r) => r.json()); $('#encName').textContent = e.encoder || 'checking...'; } catch {} }
+// ----- Recording pane -----
+async function loadRec() {
+  try { const r = await fetch('/api/recording').then((x) => x.json()); $('#recAuto2').checked = Boolean(r.auto); $('#recDir2').textContent = r.folder || ''; } catch {}
+}
+$('#recAuto2').onchange = () => { fetch('/api/recording', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ auto: $('#recAuto2').checked }) }).catch(() => {}); };
+$('#recOpen2').onclick = async () => { const r = await fetch('/api/recording/open', { method: 'POST' }).then((x) => x.json()).catch(() => ({})); $('#recMsg2').textContent = r.error || ''; };
+// ----- Channels pane (like Restream: every place your video goes) -----
+const SITE = { youtube: ['YouTube', 'rtmp://a.rtmp.youtube.com/live2'], facebook: ['Facebook', 'rtmps://live-api-s.facebook.com:443/rtmp/'], other: ['', ''] };
+let chans = [], chanT = 0, chanOpen = '';
+const chipOf = (d) => { const st = (d.status && d.status.state) || 'off', m = (d.status && d.status.message) || ''; return st === 'live' ? ['Live' + (m ? ' - ' + m : ''), 'chip live'] : st === 'starting' ? ['Starting...', 'chip'] : st === 'error' ? ['Problem: ' + m, 'chip err'] : [d.enabled ? 'Waiting for the stream' : 'Off', 'chip']; };
+async function loadChans(keep) {
+  try { chans = (await fetch('/api/state').then((r) => r.json())).destinations || []; } catch { return; }
+  if (keep) { chans.forEach((d) => { const c = document.querySelector('.ch[data-id="' + d.id + '"] .chip'); if (c) { const [t, cl] = chipOf(d); c.textContent = t; c.className = cl; c.title = t; } }); return; }
+  renderChans();
+  if (!chanT) chanT = setInterval(() => loadChans(true), 2000);
+}
+function renderChans() {
+  const box = $('#chanList'); box.textContent = '';
+  if (!chans.length) { const p = document.createElement('p'); p.className = 'note'; p.textContent = 'No channels yet. Add one below.'; box.appendChild(p); return; }
+  chans.forEach((d) => {
+    const c = document.createElement('div'); c.className = 'ch'; c.dataset.id = d.id;
+    const h = document.createElement('div'); h.className = 'chh';
+    const on = document.createElement('input'); on.type = 'checkbox'; on.checked = d.enabled; on.title = 'Send to this channel';
+    on.onchange = async () => { await fetch('/api/destinations/' + d.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ enabled: on.checked }) }); loadChans(true); };
+    const nm = document.createElement('b'); nm.textContent = d.name; nm.title = d.name;
+    const chip = document.createElement('span'); const [t, cl] = chipOf(d); chip.textContent = t; chip.className = cl; chip.title = t;
+    const ed = document.createElement('button'); ed.className = 'sm'; ed.textContent = 'Edit';
+    const rs = document.createElement('button'); rs.className = 'sm'; rs.textContent = 'Restart'; rs.title = 'Stop and start sending to this channel again';
+    rs.onclick = async () => { await fetch('/api/destinations/' + d.id + '/restart', { method: 'POST' }); loadChans(true); };
+    const rm = document.createElement('button'); rm.className = 'sm'; rm.textContent = 'Remove';
+    rm.onclick = async () => { if (!confirm('Remove "' + d.name + '"? Its key is deleted from this computer.')) return; await fetch('/api/destinations/' + d.id, { method: 'DELETE' }); loadChans(); };
+    h.append(on, nm, chip, ed, rs, rm); c.appendChild(h);
+    const det = document.createElement('div'); det.className = 'chd'; det.hidden = chanOpen !== d.id;
+    const fld = (label, el) => { const w = document.createElement('div'); w.className = 'f'; const l = document.createElement('label'); l.textContent = label; w.append(l, el); det.appendChild(w); return el; };
+    const iN = fld('Name', Object.assign(document.createElement('input'), { value: d.name }));
+    const iU = fld('Stream URL', Object.assign(document.createElement('input'), { value: d.url, placeholder: 'rtmps://...' }));
+    const iK = fld('Stream key', Object.assign(document.createElement('input'), { type: 'password', autocomplete: 'off', placeholder: d.hasKey ? 'Saved (ends in ' + d.keyEnd + '). Leave empty to keep it.' : 'Paste the key' }));
+    const lim = document.createElement('select'); [['', 'Automatic (Facebook and Instagram are limited)'], ['yes', 'Yes, never more than 1080p'], ['no', 'No, send the full size']].forEach(([v, x]) => lim.add(new Option(x, v)));
+    lim.value = d.cap1080 === true ? 'yes' : d.cap1080 === false ? 'no' : ''; fld('Limit to 1080p', lim);
+    const row = document.createElement('div'); row.className = 'row';
+    const sv = document.createElement('button'); sv.textContent = 'Save'; const msg = document.createElement('span'); msg.className = 'note';
+    sv.onclick = async () => {
+      const body = { name: iN.value.trim() || d.name, url: iU.value.trim(), cap1080: lim.value === 'yes' ? true : lim.value === 'no' ? false : null };
+      if (iK.value) body.key = iK.value.trim();
+      const r = await fetch('/api/destinations/' + d.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()).catch(() => ({}));
+      if (r.id) { iK.value = ''; msg.textContent = 'Saved.'; chanOpen = d.id; loadChans(); } else msg.textContent = 'Could not save.';
+    };
+    row.append(sv, msg); det.appendChild(row); c.appendChild(det);
+    ed.onclick = () => { det.hidden = !det.hidden; chanOpen = det.hidden ? '' : d.id; };
+    box.appendChild(c);
+  });
+}
+function fillSite() { const [n, u] = SITE[$('#chType').value]; if (n && !$('#chName').value) $('#chName').value = n; $('#chUrl').value = u; }
+$('#chType').onchange = () => { $('#chName').value = ''; fillSite(); };
+fillSite();
+$('#chAdd').onclick = async () => {
+  const name = $('#chName').value.trim() || 'Channel', url = $('#chUrl').value.trim(), key = $('#chKey').value.trim();
+  if (!url || !key) { $('#chMsg').textContent = 'Add the stream URL and the stream key.'; return; }
+  const r = await fetch('/api/destinations', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, url, key }) }).then((x) => x.json()).catch(() => ({}));
+  if (r.id) { $('#chKey').value = ''; $('#chName').value = ''; fillSite(); $('#chMsg').textContent = 'Added.'; loadChans(); } else $('#chMsg').textContent = 'Could not add it.';
+};
+
 // the buttons inside Settings close it first, so the window they open is not hidden behind it
 ['#impBtn', '#keysBtn', '#projBtn'].forEach((id) => $(id).addEventListener('click', closeSettings));
 

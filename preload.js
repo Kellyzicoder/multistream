@@ -17,7 +17,8 @@ contextBridge.exposeInMainWorld('msNative', {
     };
   },
   openControlRoom: () => ipcRenderer.invoke('ms-open-cr'),
-  openStudio: () => ipcRenderer.invoke('ms-open-studio'),
+  openStudio: (same) => ipcRenderer.invoke('ms-open-studio', Boolean(same)),
+  openDashboard: () => ipcRenderer.invoke('ms-open-dashboard'),
   browserOpen: (id, url, w, h) => ipcRenderer.invoke('ms-browser-open', id, url, w, h),
   browserClose: (id) => ipcRenderer.invoke('ms-browser-close', id),
   onFrame: (cb) => { frameCbs.add(cb); },

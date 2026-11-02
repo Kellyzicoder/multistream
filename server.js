@@ -459,6 +459,7 @@ function publicView(d) {
     hasKey: Boolean(d.key),
     keyEnd: d.key ? d.key.slice(-4) : '',
     enabled: d.enabled,
+    cap1080: d.cap1080 === undefined ? null : d.cap1080,
     status: status.get(d.id) || { state: 'off', message: '' },
     stats: destStats.get(d.id) || null,
   };

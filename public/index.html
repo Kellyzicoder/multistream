@@ -149,7 +149,8 @@
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; }
   .stage { position:relative; display:flex; justify-content:center; align-items:flex-start; padding:0 6px; overflow:auto; }
   .stage-in { width:100%; max-width:760px; text-align:center; }
-  #offlineView { max-width:460px; margin:0 auto; }
+  #offlineView { max-width:460px; margin:0 auto; text-align:center; }
+  #offlineView .lead { margin:10px auto 22px; text-align:center; }
   .side { display:flex; flex-direction:column; gap:14px; min-height:0; overflow:auto; }
   .sec-t { font-size:10.5px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
   .grow { flex:1; }
@@ -388,6 +389,29 @@
   details.more > summary { cursor:pointer; font-size:13px; opacity:.75; list-style:none; padding:4px 0; }
   details.more > summary::before { content:'+ '; }
   details.more[open] > summary::before { content:'\2212  '; }
+  /* ---------- Liquid Glass: rounded, frosted, translucent (off in High contrast) ---------- */
+  :root { --gl:rgba(16,24,29,.55); --gl2:rgba(30,42,50,.48); --gl-line:rgba(255,255,255,.13); --gl-hi:rgba(255,255,255,.20); --gl-sh:0 12px 40px rgba(0,0,0,.4); --gl-blur:blur(28px) saturate(180%); }
+  html.t-light { --gl:rgba(255,255,255,.6); --gl2:rgba(255,255,255,.5); --gl-line:rgba(255,255,255,.8); --gl-hi:rgba(255,255,255,.95); --gl-sh:0 12px 34px rgba(40,70,60,.16); }
+  body { background:
+    radial-gradient(900px 520px at 88% -10%, color-mix(in srgb, var(--blue) 26%, transparent), transparent 62%),
+    radial-gradient(760px 480px at -6% 108%, color-mix(in srgb, var(--blue) 18%, transparent), transparent 62%),
+    radial-gradient(520px 360px at 55% 45%, rgba(90,120,255,.09), transparent 70%), var(--bg); background-attachment:fixed; }
+  .card, .swin, .modal, .bar, .spark, .viewbox, .top { background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border-color:var(--gl-line); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
+  .card { border-radius:24px; } .swin { border-radius:30px; } .modal { border-radius:30px; } .bar, .spark { border-radius:20px; } .viewbox { border-radius:20px; background:var(--gl2); }
+  .top { margin:10px 14px 0; height:56px; border-radius:999px; border:1px solid var(--gl-line); padding:0 18px; } .app { height:calc(100% - 66px); }
+  .overlay { background:rgba(2,6,8,.38); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+  html.t-light .overlay { background:rgba(200,215,210,.4); }
+  .snav { border-right-color:var(--gl-line); } .snav button { border-radius:999px; } .snav button[aria-selected="true"] { box-shadow:0 4px 16px color-mix(in srgb, var(--blue) 40%, transparent); }
+  .seg { background:var(--gl2); border-color:var(--gl-line); box-shadow:inset 0 1px 0 var(--gl-hi); } .seg button[aria-current="page"] { background:var(--gl-hi); box-shadow:0 2px 8px rgba(0,0,0,.18); }
+  .b2 { background:var(--gl2); border-color:var(--gl-line); box-shadow:inset 0 1px 0 var(--gl-hi); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+  .b2.pri { background:linear-gradient(180deg, color-mix(in srgb, var(--blue) 85%, #fff), var(--blue)); box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 4px 16px color-mix(in srgb, var(--blue) 45%, transparent); }
+  .tile { border-radius:18px; border-color:var(--gl-line); background:var(--gl2); } .opt button { border-radius:999px; }
+  input, select, textarea { border-radius:12px; }
+  .themes .tp { border-radius:14px; }
+  ::-webkit-scrollbar { width:10px; height:10px; } ::-webkit-scrollbar-thumb { background:rgba(150,170,165,.35); border-radius:999px; border:3px solid transparent; background-clip:content-box; } ::-webkit-scrollbar-track { background:transparent; }
+  html.a-contrast { --gl:var(--card); --gl2:var(--card2); --gl-line:var(--line); --gl-hi:transparent; --gl-sh:none; --gl-blur:none; }
+  html.a-contrast body { background:var(--bg); }
+  @media (prefers-reduced-transparency: reduce) { :root { --gl:var(--card); --gl2:var(--card2); --gl-line:var(--line); --gl-hi:transparent; --gl-blur:none; } }
 </style>
 </head>
 <body>
@@ -588,6 +612,10 @@
             <div class="srow"><p class="lb" id="l-col">Main colour</p>
               <div class="ctl"><div class="sws" id="sws" role="group" aria-labelledby="l-col"></div>
                 <div class="cust"><span>Custom:</span><span class="hx">#<input id="accHex" maxlength="6" placeholder="22C55E" aria-label="Custom colour, 6 letters or numbers"></span><input type="color" id="accPick" aria-label="Pick a colour"></div></div></div>
+          </div>
+                  <div class="grp"><h4>Studio</h4>
+            <div class="srow"><label class="lb" for="studioOpenSel">Open the Studio in<small>A new window keeps the dashboard in view. This window replaces the dashboard; a button in the Studio comes back.</small></label>
+              <div class="ctl"><select class="t" id="studioOpenSel"><option value="window">A new window</option><option value="same">This window</option></select></div></div>
           </div>
         </section>
 
@@ -983,6 +1011,11 @@ document.querySelectorAll('[data-copy]').forEach((b) => {
 });
 
 $('#openStudioBtn').onclick = () => showPage('studio');
+(function () {
+  const sel = $('#studioOpenSel'); if (!sel) return;
+  try { sel.value = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+  sel.onchange = () => { try { localStorage.setItem('ms_studio_open', sel.value); } catch {} };
+})();
 // Version 3 has no OBS connection. These stay as empty helpers so older code paths are harmless.
 function renderScn() {}
 function pollThumbs() {}
@@ -994,7 +1027,11 @@ let crPrev = '';
 try { crMode = (JSON.parse(localStorage.getItem('ms_cr') || '{}') || {}).mode || 'take'; } catch {}
 const pageTabs = document.querySelectorAll('#pageTabs button');
 function showPage(p) {
-  if (p === 'studio') { if (window.msNative) window.msNative.openStudio(); else window.open('/studio.html', '_blank'); return; }
+  if (p === 'studio') {
+    let m = 'window'; try { m = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+    if (window.msNative) window.msNative.openStudio(m === 'same'); else window.open('/studio.html', m === 'same' ? '_self' : '_blank');
+    return;
+  }
   page = p === 'cr' ? 'cr' : 'dash';
   $('.app').hidden = page === 'cr';
   $('#crView').hidden = page !== 'cr';
