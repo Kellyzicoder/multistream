@@ -61,8 +61,10 @@ function createWindow() {
 
 // ---- Studio helpers ----
 let studioWin = null;
-ipcMain.handle('ms-open-studio', () => {
+// same = true: the Studio replaces the dashboard in the same window (a button in the Studio goes back).
+ipcMain.handle('ms-open-studio', (e, same) => {
   if (studioWin) { studioWin.focus(); return; }
+  if (same && win && !win.isDestroyed()) { win.loadURL(HOME + '/studio.html?same=1'); return; }
   studioWin = new BrowserWindow({
     width: 1400, height: 860, title: 'Multistream Studio', autoHideMenuBar: true, backgroundColor: '#0f1512',
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
@@ -71,6 +73,11 @@ ipcMain.handle('ms-open-studio', () => {
   studioWin.loadURL(HOME + '/studio.html');
   studioWin.webContents.setWindowOpenHandler(({ url }) => (url.startsWith(HOME) || url === 'about:blank' || url === '' ? { action: 'allow' } : (/^https?:\/\//i.test(url) && shell.openExternal(url), { action: 'deny' })));
   studioWin.on('closed', () => { studioWin = null; browsers.forEach((b) => b.destroy()); browsers.clear(); });
+});
+ipcMain.handle('ms-open-dashboard', () => {
+  if (!win || win.isDestroyed()) return;
+  browsers.forEach((b) => b.destroy()); browsers.clear();
+  win.loadURL(HOME + '/');
 });
 let crWin = null;
 ipcMain.handle('ms-open-cr', () => {

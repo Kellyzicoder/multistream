@@ -98,6 +98,19 @@ async function until(fn, ms, what) {
       ] }] }) });
   });
 
+  // 4b. "Open the Studio in: the same window" replaces the dashboard, and a button comes back
+  await dash.evaluate(() => localStorage.setItem('ms_studio_open', 'same'));
+  await dash.click('#pageTabs [data-page=studio]');
+  await until(() => dash.url().includes('studio.html?same=1'), 20000, 'the Studio in the same window');
+  await dash.waitForLoadState('domcontentloaded'); await sleep(1500);
+  assert.strictEqual(app.windows().length, 1, 'no second window was opened');
+  assert.ok(await dash.isVisible('#backBtn'), 'the Dashboard button shows');
+  await dash.click('#backBtn');
+  await until(() => dash.url() === 'app://multistream/', 20000, 'back to the dashboard');
+  await dash.waitForLoadState('domcontentloaded'); await sleep(2000);
+  ok('Studio can open in the same window (one window only) and the Dashboard button comes back');
+  await dash.evaluate(() => localStorage.setItem('ms_studio_open', 'window'));
+
   // 5. open the Studio from the dashboard
   const [studio] = await Promise.all([app.waitForEvent('window', { timeout: 30000 }), dash.click('#pageTabs [data-page=studio]')]);
   watch(studio, 'studio');
@@ -202,6 +215,31 @@ async function until(fn, ms, what) {
 
   // video size: 1080p, with a bitrate above what Facebook allows
   await studio.click('#setBtn');
+  const panes = await studio.evaluate(() => [...document.querySelectorAll('#setNav button')].map((b) => b.textContent));
+  assert.deepStrictEqual(panes, ['General', 'Channels', 'Video', 'Recording', 'Audio', 'Hotkeys', 'Advanced']);
+  // Channels (like Restream): both test channels are listed, the limit is shown, add and remove work
+  await studio.click('#setNav [data-sp=channels]');
+  await until(() => studio.evaluate(() => document.querySelectorAll('.ch').length === 2), 10000, 'two channels in the list');
+  const names = await studio.evaluate(() => [...document.querySelectorAll('.ch .chh b')].map((b) => b.textContent));
+  assert.deepStrictEqual(names, ['Test YouTube', 'Test Facebook']);
+  await studio.locator('.ch').nth(1).locator('button', { hasText: 'Edit' }).click();
+  assert.strictEqual(await studio.locator('.ch').nth(1).locator('select').inputValue(), 'yes', 'Facebook shows it is limited to 1080p');
+  const keyHint = await studio.locator('.ch').nth(1).locator('input[type=password]').getAttribute('placeholder');
+  assert.ok(/Saved \(ends in/.test(keyHint), 'the key is never shown, only its last letters: ' + keyHint);
+  await studio.selectOption('#chType', 'other'); await studio.fill('#chName', 'Extra'); await studio.fill('#chUrl', 'rtmp://127.0.0.1:19999/live'); await studio.fill('#chKey', 'k');
+  await studio.click('#chAdd');
+  await until(() => studio.evaluate(() => document.querySelectorAll('.ch').length === 3), 10000, 'the added channel');
+  studio.once('dialog', (d) => d.accept());
+  await studio.locator('.ch').nth(2).locator('button', { hasText: 'Remove' }).click();
+  await until(() => studio.evaluate(() => document.querySelectorAll('.ch').length === 2), 10000, 'the channel to be removed');
+  ok('Settings > Channels: lists the channels, shows the 1080p limit, adds and removes a channel');
+  // Recording pane
+  await studio.click('#setNav [data-sp=output]');
+  await until(() => studio.evaluate(() => document.getElementById('recDir2').textContent.length > 3), 10000, 'the recording folder');
+  ok('Settings > Recording: shows where files are saved');
+  await studio.click('#setNav [data-sp=video]');
+  await until(() => studio.evaluate(() => document.getElementById('encName').textContent.length > 2 && document.getElementById('encName').textContent !== '...'), 10000, 'the encoder name');
+  ok('Settings > Video: says which encoder is used (' + await studio.textContent('#encName') + ')');
   await studio.selectOption('#outQ', '1080-30-6000');
   await studio.fill('#outKbps', '12000'); await studio.press('#outKbps', 'Tab');
   assert.strictEqual(await studio.evaluate(() => OUT.kbps), 12000);

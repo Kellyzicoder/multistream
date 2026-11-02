@@ -589,6 +589,10 @@
               <div class="ctl"><div class="sws" id="sws" role="group" aria-labelledby="l-col"></div>
                 <div class="cust"><span>Custom:</span><span class="hx">#<input id="accHex" maxlength="6" placeholder="22C55E" aria-label="Custom colour, 6 letters or numbers"></span><input type="color" id="accPick" aria-label="Pick a colour"></div></div></div>
           </div>
+                  <div class="grp"><h4>Studio</h4>
+            <div class="srow"><label class="lb" for="studioOpenSel">Open the Studio in<small>A new window keeps the dashboard in view. This window replaces the dashboard; a button in the Studio comes back.</small></label>
+              <div class="ctl"><select class="t" id="studioOpenSel"><option value="window">A new window</option><option value="same">This window</option></select></div></div>
+          </div>
         </section>
 
         <section class="pane" data-pane="access" role="tabpanel" aria-label="Accessibility">
@@ -983,6 +987,11 @@ document.querySelectorAll('[data-copy]').forEach((b) => {
 });
 
 $('#openStudioBtn').onclick = () => showPage('studio');
+(function () {
+  const sel = $('#studioOpenSel'); if (!sel) return;
+  try { sel.value = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+  sel.onchange = () => { try { localStorage.setItem('ms_studio_open', sel.value); } catch {} };
+})();
 // Version 3 has no OBS connection. These stay as empty helpers so older code paths are harmless.
 function renderScn() {}
 function pollThumbs() {}
@@ -994,7 +1003,11 @@ let crPrev = '';
 try { crMode = (JSON.parse(localStorage.getItem('ms_cr') || '{}') || {}).mode || 'take'; } catch {}
 const pageTabs = document.querySelectorAll('#pageTabs button');
 function showPage(p) {
-  if (p === 'studio') { if (window.msNative) window.msNative.openStudio(); else window.open('/studio.html', '_blank'); return; }
+  if (p === 'studio') {
+    let m = 'window'; try { m = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+    if (window.msNative) window.msNative.openStudio(m === 'same'); else window.open('/studio.html', m === 'same' ? '_self' : '_blank');
+    return;
+  }
   page = p === 'cr' ? 'cr' : 'dash';
   $('.app').hidden = page === 'cr';
   $('#crView').hidden = page !== 'cr';

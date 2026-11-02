@@ -112,6 +112,25 @@
   .dlg-b h3 { margin:14px 0 6px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
   .dlg-b h3:first-child { margin-top:0; }
   #ev { touch-action:none; }
+  .dlg.big { width:min(880px, 96vw); height:min(620px, 90vh); max-height:90vh; }
+  .sbody { flex:1; min-height:0; display:flex; }
+  .snavs { width:150px; flex:none; display:flex; flex-direction:column; gap:2px; padding:8px; border-right:1px solid var(--line); background:var(--card); }
+  .snavs button { text-align:left; background:transparent; border-color:transparent; padding:8px 10px; }
+  .snavs button[aria-selected="true"] { background:var(--sel); color:var(--onsel); font-weight:600; }
+  .spanes { flex:1; min-width:0; overflow:auto; padding:12px 16px; }
+  .sp { display:none; } .sp.on { display:block; }
+  .sp .f { grid-template-columns:150px 1fr; }
+  label.chk { display:flex; gap:8px; align-items:center; font-size:12px; color:var(--text); }
+  label.chk input { width:auto; }
+  table.keys { border-collapse:collapse; font-size:12px; } table.keys td { padding:4px 14px 4px 0; vertical-align:top; }
+  .ch { border:1px solid var(--line); border-radius:8px; margin-bottom:8px; background:var(--field); }
+  .chh { display:flex; align-items:center; gap:8px; padding:8px 10px; }
+  .chh b { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chip { font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--line); color:var(--muted); max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chip.live { background:var(--sel); color:var(--onsel); border-color:var(--sel); } .chip.err { color:var(--red); border-color:var(--red); }
+  .chd { padding:4px 10px 10px; border-top:1px solid var(--line); }
+  .chd .f { grid-template-columns:110px 1fr; }
+  #backBtn { padding:1px 10px; }
   .dlg-f { display:flex; justify-content:flex-end; padding:8px 12px; border-top:1px solid var(--line); }
   @media (max-width:1000px) { .docks { height:auto; flex-wrap:wrap; overflow:auto; } .dock { min-height:180px; } body { overflow:auto; } .obs { height:auto; } }
   input[type=range], input[type=checkbox] { accent-color:var(--sel); }
@@ -163,7 +182,7 @@
   </div>
 
   <!-- status bar, like OBS -->
-  <footer class="status"><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
+  <footer class="status"><button id="backBtn" hidden title="Go back to the dashboard">&larr; Dashboard</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
 </div>
 
 <!-- Properties window, like OBS -->
@@ -172,21 +191,85 @@
     <div class="dlg-b" id="props"></div>
     <div class="dlg-f"><button id="propsOk">OK</button></div></div>
 </div>
-<!-- Settings window: video size, recording, audio monitoring, and the less used buttons -->
+<!-- Settings window, like OBS (left list) with Restream's channels -->
 <div class="modal" id="setBox" hidden>
-  <div class="dlg"><div class="dlg-h"><b>Settings</b><button id="setClose" title="Close">&times;</button></div>
-    <div class="dlg-b">
-      <h3>Video (what viewers get)</h3>
-      <div class="f"><label>Quality</label><select id="outQ"></select></div>
-      <div class="f"><label>Bitrate (kbps)</label><input id="outKbps" type="number" min="1000" max="60000" step="500"></div>
-      <p class="note" id="outNote"></p>
-      <h3>Recording</h3>
-      <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></div>
-      <h3>Audio</h3>
-      <div class="f"><label>Monitoring output</label><select id="monDev"></select></div>
-      <p class="note">Monitoring lets you hear an input in your headphones. Use headphones, or the microphone will pick up the speakers.</p>
-      <h3>More</h3>
-      <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
+  <div class="dlg big"><div class="dlg-h"><b>Settings</b><button id="setClose" title="Close">&times;</button></div>
+    <div class="sbody">
+      <nav class="snavs" id="setNav" aria-label="Settings sections">
+        <button type="button" data-sp="general">General</button>
+        <button type="button" data-sp="channels">Channels</button>
+        <button type="button" data-sp="video">Video</button>
+        <button type="button" data-sp="output">Recording</button>
+        <button type="button" data-sp="audio">Audio</button>
+        <button type="button" data-sp="hotkeys">Hotkeys</button>
+        <button type="button" data-sp="advanced">Advanced</button>
+      </nav>
+      <div class="spanes">
+        <section class="sp" data-sp="general">
+          <h3>Studio</h3>
+          <div class="f"><label>Open the Studio in</label><select id="studioOpen"><option value="window">A new window</option><option value="same">The same window as the dashboard</option></select></div>
+          <p class="note">This is also in the dashboard under Settings, Appearance. It applies the next time you open the Studio.</p>
+          <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
+          <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
+          <h3>Scenes and windows</h3>
+          <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes from OBS...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
+          <p class="note">The colours follow the dashboard (Settings, Appearance).</p>
+        </section>
+        <section class="sp" data-sp="channels">
+          <h3>Where your video goes</h3>
+          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the dashboard under Settings.</p>
+          <div id="chanList"></div>
+          <h3>Add a channel</h3>
+          <div class="f"><label>Site</label><select id="chType"><option value="youtube">YouTube</option><option value="facebook">Facebook</option><option value="other">Instagram or another site</option></select></div>
+          <div class="f"><label>Name</label><input id="chName" placeholder="Church YouTube"></div>
+          <div class="f"><label>Stream URL</label><input id="chUrl" placeholder="rtmps://..."></div>
+          <div class="f"><label>Stream key</label><input id="chKey" type="password" autocomplete="off" placeholder="Paste the key"></div>
+          <div class="row"><button id="chAdd">Add channel</button><span class="note" id="chMsg"></span></div>
+        </section>
+        <section class="sp" data-sp="video">
+          <h3>What viewers get</h3>
+          <div class="f"><label>Quality</label><select id="outQ"></select></div>
+          <div class="f"><label>Bitrate (kbps)</label><input id="outKbps" type="number" min="1000" max="60000" step="500"></div>
+          <p class="note" id="outNote"></p>
+          <div class="f"><label>Canvas</label><span>1920 x 1080 (items are placed on this, like OBS)</span></div>
+          <div class="f"><label>Encoder</label><span id="encName">...</span></div>
+          <div class="f"><label>Keyframes</label><span>Every 2 seconds (what YouTube and Facebook ask for)</span></div>
+        </section>
+        <section class="sp" data-sp="output">
+          <h3>Recording</h3>
+          <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></div>
+          <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Also save the stream as soon as it starts</label></div>
+          <div class="f"><label>Saved in</label><span><code id="recDir2"></code></span></div>
+          <div class="row"><button id="recOpen2">Open folder</button><span class="note" id="recMsg2"></span></div>
+          <p class="note">Recordings are .mkv files, so they still play if the power goes out. VLC plays them.</p>
+        </section>
+        <section class="sp" data-sp="audio">
+          <h3>Monitoring</h3>
+          <div class="f"><label>Monitoring output</label><select id="monDev"></select></div>
+          <p class="note">Monitoring lets you hear an input in your headphones. Use headphones, or the microphone will pick up the speakers. Turn it on for each input in the Audio Mixer, under Tools.</p>
+          <h3>Inputs</h3>
+          <p class="note">Add and set up sound inputs in the Audio Mixer: volume, mute, delay, low cut, bass/mid/treble, noise gate, compressor and limiter. "Computer sound" (what this PC plays) is in the Windows app.</p>
+        </section>
+        <section class="sp" data-sp="hotkeys">
+          <h3>Hotkeys</h3>
+          <table class="keys">
+            <tr><td><kbd>1</kbd> - <kbd>9</kbd></td><td>Put that scene on air</td></tr>
+            <tr><td><kbd>Alt</kbd> + <kbd>1</kbd> - <kbd>9</kbd></td><td>Mute or unmute that sound input</td></tr>
+            <tr><td><kbd>R</kbd></td><td>Start or stop recording</td></tr>
+            <tr><td><kbd>Shift</kbd> + <kbd>G</kbd></td><td>Start or stop streaming (it asks before stopping)</td></tr>
+            <tr><td><kbd>F</kbd></td><td>Next transition type</td></tr>
+            <tr><td>Arrow keys</td><td>Move the selected item (<kbd>Shift</kbd> = 10 at a time)</td></tr>
+            <tr><td><kbd>Delete</kbd></td><td>Remove the selected item</td></tr>
+          </table>
+          <p class="note">These work when the Studio is the window in front and you are not typing in a box. They cannot be changed yet.</p>
+        </section>
+        <section class="sp" data-sp="advanced">
+          <h3>Advanced</h3>
+          <div class="f"><label>Dropped channels</label><span>Started again after 3, 6, 9 ... up to 30 seconds, 10 tries, then it says so.</span></div>
+          <div class="f"><label>Reset</label><span><button id="resetStudio">Reset Studio settings</button></span></div>
+          <p class="note">Reset puts the video size, recording quality, transition, monitoring output and the options above back to how they started. Your scenes, sources and channels are kept.</p>
+        </section>
+      </div>
     </div>
     <div class="dlg-f"><button id="setOk">OK</button></div></div>
 </div>
@@ -1039,6 +1122,14 @@ function openPipe(p) {
   return o;
 }
 
+// when the Studio replaced the dashboard in the same window, this goes back
+if (/[?&]same=1/.test(location.search) && window.msNative) {
+  $('#backBtn').hidden = false;
+  $('#backBtn').onclick = () => {
+    if ((wantSend || recWs) && !confirm('Going back to the dashboard stops streaming and recording. Go back?')) return;
+    window.msNative.openDashboard();
+  };
+}
 // a message (like "Recording saved") stays on the status line for a few seconds
 let stHold = 0;
 function flash(text, ok) { $('#st').textContent = text; $('#st').className = 'stat ' + (ok ? 'ok' : 'bad'); stHold = Date.now() + 6000; }
@@ -1086,7 +1177,7 @@ function stopSend() {
   setProgramSize(1280, 720); setFps(30); lockOut();
   $('#sendBtn').textContent = 'Start Streaming'; $('#sendBtn').className = ''; liveT0 = 0;
 }
-$('#sendBtn').onclick = () => (wantSend ? stopSend() : startSend());
+$('#sendBtn').onclick = () => { if (wantSend) { if (askStop && !confirm('Stop streaming now?')) return; stopSend(); } else startSend(); };
 
 // ---------------- status bar clocks (LIVE and REC), like OBS ----------------
 let liveT0 = 0;
@@ -1320,9 +1411,9 @@ ev.addEventListener('pointermove', (e) => {
   if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 3 * pt.k) return;
   drag.moved = true;
   restoreLayer(l, drag.l0);
-  if (!drag.h) moveBy(l, dx, dy, !e.ctrlKey, pt.k);
+  if (!drag.h) moveBy(l, dx, dy, snapOn && !e.ctrlKey, pt.k);
   else if (e.altKey && MEDIA.has(l.type)) cropBy(l, drag, dx, dy);
-  else resizeBy(l, drag, dx, dy, e.shiftKey, !e.ctrlKey, pt.k);
+  else resizeBy(l, drag, dx, dy, e.shiftKey, snapOn && !e.ctrlKey, pt.k);
   save();
 });
 const endDrag = (e) => { if (!drag) return; try { ev.releasePointerCapture(e.pointerId); } catch {} drag = null; save(); };
@@ -1382,11 +1473,99 @@ function fillMon() {
   m.value = [...m.options].some((o) => o.value === monDev) ? monDev : '';
 }
 $('#monDev').onchange = () => setMonitorDevice($('#monDev').value);
-function openSettings() { fillMon(); lockOut(); $('#setBox').hidden = false; }
-function closeSettings() { $('#setBox').hidden = true; }
-$('#setBtn').onclick = openSettings; $('#setClose').onclick = closeSettings; $('#setOk').onclick = closeSettings;
+let spane = 'general';
+function showPane(n) {
+  spane = n;
+  document.querySelectorAll('#setNav button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.sp === n)));
+  document.querySelectorAll('.spanes .sp').forEach((x) => x.classList.toggle('on', x.dataset.sp === n));
+  if (n === 'channels') loadChans(); if (n === 'output') loadRec(); if (n === 'video') loadEnc();
+}
+document.querySelectorAll('#setNav button').forEach((b) => { b.onclick = () => showPane(b.dataset.sp); });
+function openSettings(pane) {
+  fillMon(); lockOut();
+  try { $('#studioOpen').value = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+  $('#optSnap').checked = snapOn; $('#optConfirm').checked = askStop;
+  $('#setBox').hidden = false; showPane(typeof pane === 'string' ? pane : spane);
+}
+function closeSettings() { $('#setBox').hidden = true; clearInterval(chanT); chanT = 0; }
+$('#setBtn').onclick = () => openSettings(); $('#setClose').onclick = closeSettings; $('#setOk').onclick = closeSettings;
 $('#setBox').addEventListener('mousedown', (e) => { if (e.target === $('#setBox')) closeSettings(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#setBox').hidden) closeSettings(); });
+// ----- options (saved on this computer) -----
+let snapOn = true, askStop = false;
+try { snapOn = localStorage.getItem('ms_snap') !== '0'; askStop = localStorage.getItem('ms_askstop') === '1'; } catch {}
+$('#optSnap').onchange = () => { snapOn = $('#optSnap').checked; try { localStorage.setItem('ms_snap', snapOn ? '1' : '0'); } catch {} };
+$('#optConfirm').onchange = () => { askStop = $('#optConfirm').checked; try { localStorage.setItem('ms_askstop', askStop ? '1' : '0'); } catch {} };
+$('#studioOpen').onchange = () => { try { localStorage.setItem('ms_studio_open', $('#studioOpen').value); } catch {} };
+$('#resetStudio').onclick = () => {
+  if (!confirm('Put the video size, recording quality, transition, monitoring output and options back to how they started?')) return;
+  ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_studio_open'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  flash('Studio settings were reset. Close and open the Studio to see them.', true); closeSettings();
+};
+// ----- Video pane: which encoder is used -----
+async function loadEnc() { try { const e = await fetch('/api/studio/status').then((r) => r.json()); $('#encName').textContent = e.encoder || 'checking...'; } catch {} }
+// ----- Recording pane -----
+async function loadRec() {
+  try { const r = await fetch('/api/recording').then((x) => x.json()); $('#recAuto2').checked = Boolean(r.auto); $('#recDir2').textContent = r.folder || ''; } catch {}
+}
+$('#recAuto2').onchange = () => { fetch('/api/recording', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ auto: $('#recAuto2').checked }) }).catch(() => {}); };
+$('#recOpen2').onclick = async () => { const r = await fetch('/api/recording/open', { method: 'POST' }).then((x) => x.json()).catch(() => ({})); $('#recMsg2').textContent = r.error || ''; };
+// ----- Channels pane (like Restream: every place your video goes) -----
+const SITE = { youtube: ['YouTube', 'rtmp://a.rtmp.youtube.com/live2'], facebook: ['Facebook', 'rtmps://live-api-s.facebook.com:443/rtmp/'], other: ['', ''] };
+let chans = [], chanT = 0, chanOpen = '';
+const chipOf = (d) => { const st = (d.status && d.status.state) || 'off', m = (d.status && d.status.message) || ''; return st === 'live' ? ['Live' + (m ? ' - ' + m : ''), 'chip live'] : st === 'starting' ? ['Starting...', 'chip'] : st === 'error' ? ['Problem: ' + m, 'chip err'] : [d.enabled ? 'Waiting for the stream' : 'Off', 'chip']; };
+async function loadChans(keep) {
+  try { chans = (await fetch('/api/state').then((r) => r.json())).destinations || []; } catch { return; }
+  if (keep) { chans.forEach((d) => { const c = document.querySelector('.ch[data-id="' + d.id + '"] .chip'); if (c) { const [t, cl] = chipOf(d); c.textContent = t; c.className = cl; c.title = t; } }); return; }
+  renderChans();
+  if (!chanT) chanT = setInterval(() => loadChans(true), 2000);
+}
+function renderChans() {
+  const box = $('#chanList'); box.textContent = '';
+  if (!chans.length) { const p = document.createElement('p'); p.className = 'note'; p.textContent = 'No channels yet. Add one below.'; box.appendChild(p); return; }
+  chans.forEach((d) => {
+    const c = document.createElement('div'); c.className = 'ch'; c.dataset.id = d.id;
+    const h = document.createElement('div'); h.className = 'chh';
+    const on = document.createElement('input'); on.type = 'checkbox'; on.checked = d.enabled; on.title = 'Send to this channel';
+    on.onchange = async () => { await fetch('/api/destinations/' + d.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ enabled: on.checked }) }); loadChans(true); };
+    const nm = document.createElement('b'); nm.textContent = d.name; nm.title = d.name;
+    const chip = document.createElement('span'); const [t, cl] = chipOf(d); chip.textContent = t; chip.className = cl; chip.title = t;
+    const ed = document.createElement('button'); ed.className = 'sm'; ed.textContent = 'Edit';
+    const rs = document.createElement('button'); rs.className = 'sm'; rs.textContent = 'Restart'; rs.title = 'Stop and start sending to this channel again';
+    rs.onclick = async () => { await fetch('/api/destinations/' + d.id + '/restart', { method: 'POST' }); loadChans(true); };
+    const rm = document.createElement('button'); rm.className = 'sm'; rm.textContent = 'Remove';
+    rm.onclick = async () => { if (!confirm('Remove "' + d.name + '"? Its key is deleted from this computer.')) return; await fetch('/api/destinations/' + d.id, { method: 'DELETE' }); loadChans(); };
+    h.append(on, nm, chip, ed, rs, rm); c.appendChild(h);
+    const det = document.createElement('div'); det.className = 'chd'; det.hidden = chanOpen !== d.id;
+    const fld = (label, el) => { const w = document.createElement('div'); w.className = 'f'; const l = document.createElement('label'); l.textContent = label; w.append(l, el); det.appendChild(w); return el; };
+    const iN = fld('Name', Object.assign(document.createElement('input'), { value: d.name }));
+    const iU = fld('Stream URL', Object.assign(document.createElement('input'), { value: d.url, placeholder: 'rtmps://...' }));
+    const iK = fld('Stream key', Object.assign(document.createElement('input'), { type: 'password', autocomplete: 'off', placeholder: d.hasKey ? 'Saved (ends in ' + d.keyEnd + '). Leave empty to keep it.' : 'Paste the key' }));
+    const lim = document.createElement('select'); [['', 'Automatic (Facebook and Instagram are limited)'], ['yes', 'Yes, never more than 1080p'], ['no', 'No, send the full size']].forEach(([v, x]) => lim.add(new Option(x, v)));
+    lim.value = d.cap1080 === true ? 'yes' : d.cap1080 === false ? 'no' : ''; fld('Limit to 1080p', lim);
+    const row = document.createElement('div'); row.className = 'row';
+    const sv = document.createElement('button'); sv.textContent = 'Save'; const msg = document.createElement('span'); msg.className = 'note';
+    sv.onclick = async () => {
+      const body = { name: iN.value.trim() || d.name, url: iU.value.trim(), cap1080: lim.value === 'yes' ? true : lim.value === 'no' ? false : null };
+      if (iK.value) body.key = iK.value.trim();
+      const r = await fetch('/api/destinations/' + d.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()).catch(() => ({}));
+      if (r.id) { iK.value = ''; msg.textContent = 'Saved.'; chanOpen = d.id; loadChans(); } else msg.textContent = 'Could not save.';
+    };
+    row.append(sv, msg); det.appendChild(row); c.appendChild(det);
+    ed.onclick = () => { det.hidden = !det.hidden; chanOpen = det.hidden ? '' : d.id; };
+    box.appendChild(c);
+  });
+}
+function fillSite() { const [n, u] = SITE[$('#chType').value]; if (n && !$('#chName').value) $('#chName').value = n; $('#chUrl').value = u; }
+$('#chType').onchange = () => { $('#chName').value = ''; fillSite(); };
+fillSite();
+$('#chAdd').onclick = async () => {
+  const name = $('#chName').value.trim() || 'Channel', url = $('#chUrl').value.trim(), key = $('#chKey').value.trim();
+  if (!url || !key) { $('#chMsg').textContent = 'Add the stream URL and the stream key.'; return; }
+  const r = await fetch('/api/destinations', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, url, key }) }).then((x) => x.json()).catch(() => ({}));
+  if (r.id) { $('#chKey').value = ''; $('#chName').value = ''; fillSite(); $('#chMsg').textContent = 'Added.'; loadChans(); } else $('#chMsg').textContent = 'Could not add it.';
+};
+
 // the buttons inside Settings close it first, so the window they open is not hidden behind it
 ['#impBtn', '#keysBtn', '#projBtn'].forEach((id) => $(id).addEventListener('click', closeSettings));
 

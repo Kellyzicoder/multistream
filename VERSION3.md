@@ -29,6 +29,10 @@ Ports are only opened when you ask for them:
 - **Dashboard**: a "Waiting for the Studio" screen with one **Open Studio** button. Thumbnail, recording and the check list are folded under **More options**.
 
 ## Studio tools (what you can do, and what is not there)
+**Settings (in the Studio), like OBS with Restream's channels.** A list on the left: General (open the Studio in a new window or the same window, snapping, "are you sure" before stopping, Import Scenes, Shortcuts, Preview window), Channels (every place your video goes: on/off, status, edit name/URL/key, 1080p limit, restart, remove, add YouTube / Facebook / other), Video, Recording, Audio, Hotkeys (a list, they cannot be changed yet) and Advanced (reset). YouTube and Facebook sign-in, titles and Go Live stay in the dashboard under Settings.
+
+**Studio window choice.** Dashboard > Settings > Appearance > "Open the Studio in" (also in Studio Settings > General): a new window, or the same window. In the same window, the Studio has a "Dashboard" button to go back. Going back stops streaming and recording (it asks first), because the Studio page is closed.
+
 **Picture size.** Settings > Video: 720p, 1080p, 1080p at 60 frames, 1440p, or 4K (30 frames). YouTube gets the video as it is. Facebook and Instagram take 1080p at most (Facebook Live API reference: 1920x1080, 60 frames, 9000 kbps), so for those two the app makes a smaller 1080p copy by itself and the dashboard says so. Recording can be up to 4K. The virtual camera stays at 720p.
 
 **Video Capture Device** (webcam, ATEM Mini, capture box). Pick the device, a resolution (up to 4K) and a frame rate. The Properties window shows what the device really gives. Plug a device in while the Studio is open and it appears in the list by itself.
