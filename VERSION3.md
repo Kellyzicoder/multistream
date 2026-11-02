@@ -51,3 +51,6 @@ Ports are only opened when you ask for them:
 
 ## Liquid Glass look
 Rounded corners, frosted translucent panels with blur, light edges and a soft accent glow, in the Studio and the dashboard, in dark and light, following the accent colour. It is switched off by Appearance > High contrast and by the system's reduce-transparency setting. Checked in Chromium screenshots and the GitHub tests only; not yet seen on a Mac or the church PC.
+
+## Movable panels
+In the Studio, drag a panel's title (Scenes, Sources, Audio Mixer, Scene Transitions, Controls) to put it in a new place on the bottom row. Drag it up, or press the arrow button on its title, to float it as its own window that you can move and resize. Drop it on the bottom row, or press the arrow again, to dock it. The layout is saved on this device. Settings, General, Put the panels back resets it.

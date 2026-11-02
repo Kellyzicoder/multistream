@@ -180,6 +180,14 @@
   @media (prefers-reduced-transparency: reduce) { :root { --gl:var(--card); --gl2:var(--btn); --gl-line:var(--line); --gl-hi:transparent; --gl-blur:none; } }
   button.eye { padding:2px 6px; min-width:0; background:transparent; border-color:transparent; box-shadow:none; color:inherit; display:inline-flex; align-items:center; backdrop-filter:none; -webkit-backdrop-filter:none; }
   button.eye.off { opacity:.45; } button.eye:hover { background:var(--gl2); }
+  /* ---------- movable panels: drag a title to reorder, drag it up to float it, drag it back to dock it ---------- */
+  .dock h2 { display:flex; align-items:center; gap:6px; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; }
+  .dock h2 .pin { margin-left:auto; padding:0 6px; min-width:0; font-size:12px; line-height:18px; background:transparent; border-color:transparent; box-shadow:none; color:var(--muted); backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .dock h2 .pin:hover { color:var(--text); background:var(--gl2); }
+  .dock.drag { z-index:50; opacity:.9; cursor:grabbing; box-shadow:0 18px 50px rgba(0,0,0,.5); transition:none; }
+  .dock.float { position:fixed; flex:none; z-index:30; resize:both; overflow:auto; min-width:200px; min-height:120px; box-shadow:0 18px 56px rgba(0,0,0,.5), inset 0 1px 0 var(--gl-hi); }
+  .dock.float h2 { position:sticky; top:0; z-index:1; }
+  .docks.over { outline:2px dashed var(--sel); outline-offset:-3px; border-radius:var(--r); }
 </style>
 </head>
 <body>
@@ -257,6 +265,7 @@
           <p class="note">This is also in the dashboard under Settings, Appearance. It applies the next time you open the Studio.</p>
           <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
           <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
+          <div class="f"><label>Panels</label><span><button id="resetLayout" type="button">Put the panels back</button> <span class="note">Drag a panel's title to move it. Drag it up to float it, or drop it on the bottom row to dock it again.</span></span></div>
           <h3>Scenes and windows</h3>
           <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes from OBS...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
           <p class="note">The colours follow the dashboard (Settings, Appearance).</p>
@@ -1554,7 +1563,7 @@ $('#optConfirm').onchange = () => { askStop = $('#optConfirm').checked; try { lo
 $('#studioOpen').onchange = () => { try { localStorage.setItem('ms_studio_open', $('#studioOpen').value); } catch {} };
 $('#resetStudio').onclick = () => {
   if (!confirm('Put the video size, recording quality, transition, monitoring output and options back to how they started?')) return;
-  ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_studio_open'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_studio_open', 'ms_layout'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
   flash('Studio settings were reset. Close and open the Studio to see them.', true); closeSettings();
 };
 // ----- Video pane: which encoder is used -----
@@ -1734,5 +1743,70 @@ async function shots() {
 <kbd>Arrow keys</kbd> move the selected item (<kbd>Shift</kbd> = 10 at a time), <kbd>Delete</kbd> removes it<br>
 In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+drag an edge to crop, <kbd>Ctrl</kbd> turns snapping off<br>
 <span style="opacity:.7">They work when this window is the one you are in, and you are not typing in a box.</span></div>
+<script>
+// movable panels (like OBS docks): drag a title to reorder, drag it up to float it, drag it back onto the bottom row to dock it. Saved on this device.
+(function () {
+  const row = document.querySelector('.docks'); if (!row) return;
+  const names = ['scenes', 'sources', 'mixer', 'transitions', 'controls'];
+  const docks = [...row.querySelectorAll('.dock')]; docks.forEach((d, i) => { d.dataset.id = names[i]; });
+  const fresh = () => ({ order: names.slice(), float: {} });
+  let L = fresh();
+  try { const j = JSON.parse(localStorage.getItem('ms_layout') || 'null'); if (j && Array.isArray(j.order)) { L.order = j.order.filter((x) => names.includes(x)); names.forEach((n) => { if (!L.order.includes(n)) L.order.push(n); }); if (j.float && typeof j.float === 'object') L.float = j.float; } } catch {}
+  const save = () => { try { localStorage.setItem('ms_layout', JSON.stringify(L)); } catch {} };
+  const byId = (id) => docks.find((d) => d.dataset.id === id);
+  let z = 30;
+  const front = (d) => { if (d.classList.contains('float')) d.style.zIndex = String(++z > 45 ? (z = 31) : z); };
+  const clamp = (f) => ({ w: Math.max(200, Math.min(f.w, innerWidth - 16)), h: Math.max(120, Math.min(f.h, innerHeight - 16)), x: Math.max(0, Math.min(f.x, innerWidth - 120)), y: Math.max(0, Math.min(f.y, innerHeight - 60)) });
+  function paint(d) {
+    const f = L.float[d.dataset.id];
+    d.classList.toggle('float', Boolean(f));
+    const pin = d.querySelector('.pin'); if (pin) { pin.textContent = f ? '↓' : '↗'; pin.title = f ? 'Put this panel back on the bottom row' : 'Float this panel'; }
+    if (f) { const c = clamp(f); Object.assign(d.style, { left: c.x + 'px', top: c.y + 'px', width: c.w + 'px', height: c.h + 'px' }); }
+    else Object.assign(d.style, { left: '', top: '', width: '', height: '', zIndex: '' });
+  }
+  function layout() { L.order.forEach((id) => { const d = byId(id); if (d) row.appendChild(d); }); docks.forEach(paint); }
+  const floatAt = (d, x, y, w, h) => { L.float[d.dataset.id] = { x, y, w: Math.max(w, 260), h: Math.max(h, 200) }; paint(d); front(d); save(); };
+  const dockBack = (d, clientX) => {
+    delete L.float[d.dataset.id];
+    const rest = L.order.filter((id) => id !== d.dataset.id && !L.float[id]);
+    let at = rest.length; for (let i = 0; i < rest.length; i++) { const r = byId(rest[i]).getBoundingClientRect(); if (clientX < r.left + r.width / 2) { at = i; break; } }
+    const before = rest[at]; const o = L.order.filter((id) => id !== d.dataset.id);
+    o.splice(before ? o.indexOf(before) : o.length, 0, d.dataset.id); L.order = o; layout(); save();
+  };
+  docks.forEach((d) => {
+    const h = d.querySelector('h2'); const pin = document.createElement('button'); pin.type = 'button'; pin.className = 'pin'; h.appendChild(pin);
+    pin.onclick = (e) => {
+      e.stopPropagation(); const r = d.getBoundingClientRect();
+      if (L.float[d.dataset.id]) dockBack(d, 1e9); else floatAt(d, Math.max(8, r.left), Math.max(8, r.top - 300), r.width, 280);
+    };
+    d.addEventListener('pointerdown', () => front(d));
+    if ('ResizeObserver' in window) new ResizeObserver(() => { const f = L.float[d.dataset.id]; if (!f || !d.classList.contains('float') || d.classList.contains('drag')) return; const r = d.getBoundingClientRect(); if (Math.abs(r.width - f.w) > 2 || Math.abs(r.height - f.h) > 2) { f.w = Math.round(r.width); f.h = Math.round(r.height); save(); } }).observe(d);
+  });
+  row.addEventListener('pointerdown', (e) => {
+    const h = e.target.closest('.dock > h2'); if (!h || e.button !== 0 || e.target.closest('button')) return;
+    const d = h.parentElement, r0 = d.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, ox = sx - r0.left, oy = sy - r0.top, wasFloat = d.classList.contains('float');
+    const rowTop = () => row.getBoundingClientRect().top; let moving = false;
+    const move = (ev) => {
+      if (!moving) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return; moving = true; d.classList.add('drag'); try { h.setPointerCapture(e.pointerId); } catch {} }
+      if (wasFloat) { d.style.left = Math.max(0, Math.min(ev.clientX - ox, innerWidth - 120)) + 'px'; d.style.top = Math.max(0, Math.min(ev.clientY - oy, innerHeight - 60)) + 'px'; }
+      else d.style.transform = `translate(${ev.clientX - sx}px, ${ev.clientY - sy}px)`;
+      row.classList.toggle('over', wasFloat && ev.clientY > rowTop());
+    };
+    const up = (ev) => {
+      h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up);
+      try { h.releasePointerCapture(e.pointerId); } catch {}
+      row.classList.remove('over'); if (!moving) return;
+      d.classList.remove('drag'); d.style.transform = '';
+      if (wasFloat) { if (ev.clientY > rowTop()) dockBack(d, ev.clientX); else { const f = L.float[d.dataset.id]; f.x = Math.round(parseFloat(d.style.left)); f.y = Math.round(parseFloat(d.style.top)); save(); } }
+      else if (ev.clientY < rowTop() - 24) floatAt(d, Math.max(0, ev.clientX - ox), Math.max(0, ev.clientY - oy), r0.width, Math.max(r0.height, 240));
+      else dockBack(d, ev.clientX);
+    };
+    h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+  });
+  window.addEventListener('resize', () => docks.forEach((d) => { if (L.float[d.dataset.id]) paint(d); }));
+  const rb = document.getElementById('resetLayout'); if (rb) rb.onclick = () => { L = fresh(); layout(); save(); };
+  layout();
+})();
+</script>
 </body>
 </html>
