@@ -134,6 +134,50 @@
   .dlg-f { display:flex; justify-content:flex-end; padding:8px 12px; border-top:1px solid var(--line); }
   @media (max-width:1000px) { .docks { height:auto; flex-wrap:wrap; overflow:auto; } .dock { min-height:180px; } body { overflow:auto; } .obs { height:auto; } }
   input[type=range], input[type=checkbox] { accent-color:var(--sel); }
+  /* ---------- Liquid Glass: rounded, frosted, translucent (turned off by Settings > Appearance > High contrast or reduced transparency) ---------- */
+  :root { --gl:rgba(18,26,32,.52); --gl2:rgba(30,42,50,.46); --gl-line:rgba(255,255,255,.14); --gl-hi:rgba(255,255,255,.22); --gl-sh:0 10px 34px rgba(0,0,0,.38); --gl-blur:blur(26px) saturate(180%); --r:18px; }
+  html.t-light { --gl:rgba(255,255,255,.58); --gl2:rgba(255,255,255,.5); --gl-line:rgba(255,255,255,.75); --gl-hi:rgba(255,255,255,.95); --gl-sh:0 10px 30px rgba(40,70,60,.16); }
+  body { background:
+    radial-gradient(900px 520px at 90% -10%, color-mix(in srgb, var(--sel) 26%, transparent), transparent 62%),
+    radial-gradient(760px 480px at -8% 108%, color-mix(in srgb, var(--sel) 18%, transparent), transparent 62%),
+    radial-gradient(520px 360px at 50% 40%, rgba(90,120,255,.10), transparent 70%), var(--bg); background-attachment:fixed; }
+  .obs { padding:8px; gap:8px; }
+  .stage { padding:4px; }
+  .docks { padding:0; gap:8px; }
+  .dock, .dlg, .pop, .status, .tb, .panel { background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
+  .dock { border-radius:var(--r); } .dlg { border-radius:26px; } .pop { border-radius:18px; } .panel { border-radius:var(--r); }
+  .dock h2, .dlg-h { background:transparent; border-bottom:1px solid var(--gl-line); }
+  .dock .list { background:transparent; padding:4px; }
+  .status { border-radius:999px; padding:5px 16px; border-top:1px solid var(--gl-line); }
+  .tb { border-radius:0 0 var(--r) var(--r); border:0; border-top:1px solid var(--gl-line); background:transparent; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  .snavs { background:transparent; border-right:1px solid var(--gl-line); }
+  .dlg-f { border-top:1px solid var(--gl-line); }
+  .modal { background:rgba(4,8,10,.42); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+  html.t-light .modal { background:rgba(200,215,210,.4); }
+  button, select, input, textarea { border-radius:12px; background:var(--gl2); border:1px solid var(--gl-line); box-shadow:inset 0 1px 0 var(--gl-hi); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); transition:background .15s, border-color .15s, transform .08s; }
+  button { border-radius:999px; padding:6px 14px; } button:active { transform:scale(.97); }
+  button:hover { background:color-mix(in srgb, var(--gl2) 60%, var(--sel) 22%); border-color:var(--gl-hi); }
+  button.sm { padding:2px 10px; } .tb button, .dlg-h button, .snavs button { box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .tb button { background:transparent; border-color:transparent; } .tb button:hover { background:var(--gl2); }
+  button.go, button.on, button.stop { box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 4px 16px color-mix(in srgb, var(--sel) 45%, transparent); }
+  button.go { background:linear-gradient(180deg, color-mix(in srgb, var(--green) 85%, #fff), var(--green)); }
+  button.stop { background:linear-gradient(180deg, color-mix(in srgb, var(--red) 85%, #fff), var(--red)); box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 4px 16px rgba(255,77,90,.4); }
+  button.on { background:linear-gradient(180deg, color-mix(in srgb, var(--sel) 85%, #fff), var(--sel)); }
+  .snavs button { border-radius:14px; } .snavs button[aria-selected="true"] { box-shadow:0 4px 16px color-mix(in srgb, var(--sel) 40%, transparent); }
+  .scn, .lyr { border-radius:12px; margin:0 0 3px; padding:6px 10px; }
+  .scn.on, .lyr.on { background:linear-gradient(180deg, color-mix(in srgb, var(--sel) 88%, #fff), var(--sel)); box-shadow:0 3px 14px color-mix(in srgb, var(--sel) 38%, transparent); }
+  .au { border-radius:12px; padding:8px 10px; margin-bottom:4px; border:1px solid var(--gl-line); background:var(--gl2); }
+  .ch { border-radius:16px; background:var(--gl2); border-color:var(--gl-line); } .chip { border-radius:999px; }
+  .mi, button.mi { border-radius:12px; } button.mi { background:transparent; box-shadow:none; border:0; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .stage canvas.v, canvas.v { border-radius:20px; border:2px solid var(--gl-line); box-shadow:0 14px 44px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.2); }
+  #cv.live { border-color:var(--red); box-shadow:0 0 0 1px var(--red), 0 0 40px rgba(255,77,90,.35), 0 14px 44px rgba(0,0,0,.45); }
+  .mt { border-radius:999px; } .air { border-radius:999px; }
+  input[type=range] { padding:0; background:transparent; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; border:0; }
+  input[type=checkbox] { backdrop-filter:none; -webkit-backdrop-filter:none; box-shadow:none; }
+  ::-webkit-scrollbar { width:10px; height:10px; } ::-webkit-scrollbar-thumb { background:rgba(150,170,165,.35); border-radius:999px; border:3px solid transparent; background-clip:content-box; } ::-webkit-scrollbar-track { background:transparent; }
+  html.glass-off { --gl:var(--card); --gl2:var(--btn); --gl-line:var(--line); --gl-hi:transparent; --gl-sh:none; --gl-blur:none; }
+  html.glass-off body { background:var(--bg); }
+  @media (prefers-reduced-transparency: reduce) { :root { --gl:var(--card); --gl2:var(--btn); --gl-line:var(--line); --gl-hi:transparent; --gl-blur:none; } }
 </style>
 </head>
 <body>
@@ -285,6 +329,7 @@
     const t = a.theme || 'system';
     const light = t === 'light' || (t === 'system' && dark && !dark.matches);
     document.documentElement.classList.toggle('t-light', light);
+    document.documentElement.classList.toggle('glass-off', Boolean(a.contrast));
     const r = document.documentElement.style;
     if (hexOk(a.accent)) { r.setProperty('--sel', a.accent); r.setProperty('--onsel', lum(a.accent) > 0.3 ? '#05130a' : '#ffffff'); }
     else { r.removeProperty('--sel'); r.removeProperty('--onsel'); }

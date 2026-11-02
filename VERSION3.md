@@ -48,3 +48,6 @@ Ports are only opened when you ask for them:
 ## Tests
 - `npm test`: the video hub, the in-app requests, the output sizes (720p to 4K) and the 1080p limit for Facebook/Instagram (a real 1440p picture is turned into 1080p).
 - `npm run test:app`: starts the real app with a fake YouTube, checks no ports are open, sends from the Studio, checks the preview, records, checks there is no OBS connection, and checks phone control opens and closes its port. It also drags, resizes and crops items in the Preview with the mouse, checks the camera settings, the sound monitoring wiring, the screen and window lists, and sends 1080p to a fake YouTube and a fake Facebook (which must get the smaller copy). GitHub runs this on every push and keeps screenshots.
+
+## Liquid Glass look
+Rounded corners, frosted translucent panels with blur, light edges and a soft accent glow, in the Studio and the dashboard, in dark and light, following the accent colour. It is switched off by Appearance > High contrast and by the system's reduce-transparency setting. Checked in Chromium screenshots and the GitHub tests only; not yet seen on a Mac or the church PC.
