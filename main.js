@@ -112,14 +112,27 @@ ipcMain.on('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(e.send
 ipcMain.on('ms-pipe-close', (e, id) => { const key = e.sender.id + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });
 
 // choosing which screen to capture (for the screen with the lyrics)
-let pickedScreen = '';
+let picked = { id: '', name: '', kind: 'screen' };
+// kind: 'screen' (a whole screen) or 'window' (one program). Each comes with a small picture so it is easy to pick.
+ipcMain.handle('ms-sources', async (e, kind) => {
+  const list = await desktopCapturer.getSources({ types: [kind === 'window' ? 'window' : 'screen'], thumbnailSize: { width: 192, height: 108 }, fetchWindowIcons: false });
+  return list.map((s) => ({ id: s.id, name: s.name, thumb: s.thumbnail && !s.thumbnail.isEmpty() ? s.thumbnail.toDataURL() : '' }));
+});
 ipcMain.handle('ms-screens', async () => (await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } })).map((s) => ({ id: s.id, name: s.name })));
-ipcMain.handle('ms-pick-screen', (e, id) => { pickedScreen = String(id || ''); });
+// The page says what it is about to ask for (kind: 'screen', 'window' or 'audio' = the sound this PC plays).
+ipcMain.handle('ms-pick-screen', (e, id, name, kind) => { picked = { id: String(id || ''), name: String(name || ''), kind: String(kind || 'screen') }; });
 function setupScreenCapture(ses) {
   ses.setDisplayMediaRequestHandler(async (req, cb) => {
-    const list = await desktopCapturer.getSources({ types: ['screen'] });
-    const pick = list.find((s) => s.id === pickedScreen) || list[0];
-    cb(pick ? { video: pick } : {});
+    try {
+      const list = await desktopCapturer.getSources({ types: [picked.kind === 'window' ? 'window' : 'screen'], thumbnailSize: { width: 0, height: 0 } });
+      let pick = list.find((s) => s.id === picked.id);
+      if (!pick && picked.name) pick = list.find((s) => s.name.toLowerCase().includes(picked.name.toLowerCase()));
+      if (!pick && picked.kind !== 'window') pick = list[0]; // a window that is gone is NOT swapped for a screen
+      if (!pick) return cb({});
+      const out = { video: pick };
+      if (picked.kind === 'audio' && process.platform === 'win32') out.audio = 'loopback'; // the sound this PC is playing (Windows)
+      cb(out);
+    } catch { cb({}); }
   });
 }
 

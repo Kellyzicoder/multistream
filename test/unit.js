@@ -6,6 +6,7 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const { createHub } = require('../flvhub');
 const { inject, FakeWs } = require('../inproc');
+const oa = require('../outargs');
 let FF = process.env.FFMPEG_PATH || 'ffmpeg';
 try { if (!process.env.FFMPEG_PATH) FF = require('ffmpeg-static'); } catch {}
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ms3-unit-'));
@@ -97,7 +98,51 @@ async function injectTests() {
   ok('in-app pipes: both ways, text and video');
 }
 
+
+function outTests() {
+  const q = (o) => new URLSearchParams(o);
+  // sizes
+  assert.deepStrictEqual(oa.parseOut(q({ h: '2160', fps: '30', kbps: '20000' })), { h: 2160, w: 3840, fps: 30, kbps: 20000 });
+  assert.deepStrictEqual(oa.parseOut(q({ h: '1440' })), { h: 1440, w: 2560, fps: 30, kbps: 12000 });
+  assert.deepStrictEqual(oa.parseOut(q({ h: '1080', fps: '60' })), { h: 1080, w: 1920, fps: 60, kbps: 9000 });
+  assert.deepStrictEqual(oa.parseOut(q({ h: '999', fps: '24', kbps: '9' })), { h: 720, w: 1280, fps: 30, kbps: 1000 }, 'nonsense falls back to safe values');
+  assert.strictEqual(oa.parseOut(q({ h: '1080', kbps: '999999' })).kbps, 60000);
+  ok('output sizes: 720p, 1080p, 1440p, 4K and safe fallbacks');
+  // ingest + record arguments carry the size
+  const ia = oa.ingestArgs('software', oa.parseOut(q({ h: '2160', fps: '30', kbps: '20000' })));
+  assert.ok(ia.includes('scale=3840:2160') && ia.includes('20000k') && ia[ia.indexOf('-r') + 1] === '30', ia.join(' '));
+  const ra = oa.recordArgs('software', { h: '1440', mbit: '16', fps: '60' }, 'x.mkv');
+  assert.ok(ra.includes('scale=2560:1440') && ra.includes('16000k') && ra[ra.indexOf('-r') + 1] === '60' && ra[ra.length - 1] === 'x.mkv', ra.join(' '));
+  assert.ok(oa.recordArgs('nvenc', { h: '2160', mbit: '500' }, 'y.mkv').includes('80000k'), 'recording bitrate is capped');
+  ok('ffmpeg arguments for sending and recording at the chosen size');
+  // Facebook / Instagram get at most 1080p and 9000 kbps; YouTube gets everything
+  const fb = { url: 'rtmps://live-api-s.facebook.com:443/rtmp/' }, ig = { url: 'rtmps://edgetee-upload.instagram.com:443/rtmp/' }, yt = { url: 'rtmp://a.rtmp.youtube.com/live2' };
+  const big = oa.parseOut(q({ h: '2160', fps: '30', kbps: '20000' })), ok1080 = oa.parseOut(q({ h: '1080', fps: '60', kbps: '9000' })), heavy = oa.parseOut(q({ h: '1080', fps: '30', kbps: '12000' }));
+  assert.strictEqual(oa.channelVideoArgs(yt, big, 'software').capped, false);
+  assert.deepStrictEqual(oa.channelVideoArgs(yt, big, 'software').args, ['-c', 'copy']);
+  for (const d of [fb, ig]) {
+    const c = oa.channelVideoArgs(d, big, 'software');
+    assert.ok(c.capped && c.args.includes('scale=-2:1080') && c.args.includes('6000k') && c.args.includes('copy'), c.args.join(' '));
+    assert.strictEqual(oa.channelVideoArgs(d, ok1080, 'software').capped, false, '1080p60 at 9000 is allowed as it is');
+    assert.strictEqual(oa.channelVideoArgs(d, heavy, 'software').capped, true, 'over 9000 kbps is lowered');
+  }
+  assert.strictEqual(oa.channelVideoArgs({ url: 'rtmp://x/y', cap1080: true }, ok1080 && heavy, 'software').capped, true, 'a channel can be marked limited by hand');
+  assert.strictEqual(oa.channelVideoArgs({ url: fb.url, cap1080: false }, big, 'software').capped, false, 'or marked not limited');
+  ok('Facebook and Instagram are held to 1080p / 9000 kbps; YouTube gets the full size');
+  // the arguments really run: a 1080p source -> capped copy, and the picture comes out 1080p
+  const src = path.join(tmp, 'big.flv');
+  let r = spawnSync(FF, ['-loglevel', 'error', '-f', 'lavfi', '-i', 'testsrc=size=2560x1440:rate=30', '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=44100', '-t', '2', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-y', src]);
+  assert.strictEqual(r.status, 0, 'make a 1440p test file');
+  const dst = path.join(tmp, 'capped.flv'), cv = oa.channelVideoArgs(fb, oa.parseOut(q({ h: '1440', fps: '30', kbps: '12000' })), 'software');
+  r = spawnSync(FF, ['-loglevel', 'error', '-i', src, ...cv.args, '-f', 'flv', '-y', dst]);
+  assert.strictEqual(r.status, 0, String(r.stderr));
+  const e = spawnSync(FF, ['-hide_banner', '-i', dst, '-f', 'null', '-'], { encoding: 'utf8' }).stderr;
+  assert.ok(/Video: h264[^\n]*1920x1080/.test(e), 'capped copy is 1080p: ' + e.split('\n').filter((l) => /Video:/.test(l)).join(' '));
+  ok('a 1440p picture really is turned into a 1080p copy for Facebook');
+}
+
 (async () => {
+  outTests();
   await injectTests();
   await hubTests();
   console.log('ALL UNIT TESTS PASSED');
