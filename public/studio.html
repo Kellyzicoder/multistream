@@ -5,12 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multistream Studio</title>
 <style>
-  :root { --bg:#1d1f26; --card:#272a33; --head:#2f323d; --line:#3c404d; --text:#dfe1e6; --muted:#9097a6; --green:#22c55e; --red:#d9434b; --field:#1f2128; --sel:#3d5bd0; --btn:#3b3f4b; }
+  /* same colours as the dashboard (and its light theme and accent colour from Settings, Appearance) */
+  :root { color-scheme:dark; --bg:#07090b; --card:#0c1013; --head:#131a20; --line:#1b242b; --text:#e8eef1; --muted:#7a8890; --green:#34d27b; --red:#ff4d5a; --field:#090c0f; --sel:#22c55e; --onsel:#04130a; --btn:#141b21; --btn2:#1b252c; --hover:#2a363f; }
+  html.t-light { color-scheme:light; --bg:#f2f5f4; --card:#fff; --head:#eef2f0; --line:#d9e0dc; --text:#13201a; --muted:#5b6b64; --green:#15803d; --red:#d6333b; --field:#f7f9f8; --btn:#e8eeea; --btn2:#dce5df; --hover:#c6d2cb; }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
-  label.tr { font-size:12px; color:#9fb3a5; display:flex; gap:6px; align-items:center; margin-right:8px; }
+  label.tr { font-size:12px; color:var(--muted); display:flex; gap:6px; align-items:center; margin-right:8px; }
   label.tr select { font-size:12px; padding:3px 4px; }
-  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.4 Inter, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; -webkit-font-smoothing:antialiased; }
   header { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
   header a { color:var(--green); text-decoration:none; font-weight:600; }
   header h1 { font-size:15px; margin:0; font-weight:600; }
@@ -36,7 +38,7 @@
   .f { display:grid; grid-template-columns:70px 1fr; gap:6px; align-items:center; margin-bottom:6px; }
   .f input, .f select, .f textarea { width:100%; }
   .note { color:var(--muted); font-size:12px; }
-  .stat { font-size:12px; color:var(--muted); } .stat.ok { color:var(--green); } .stat.bad { color:#ff8a8a; }
+  .stat { font-size:12px; color:var(--muted); } .stat.ok { color:var(--green); } .stat.bad { color:var(--red); }
   .au { border:1px solid var(--line); border-radius:6px; padding:6px 8px; margin-bottom:6px; background:var(--field); }
   .au.off { opacity:.55; }
   .au .t { display:flex; gap:6px; align-items:center; }
@@ -44,18 +46,18 @@
   .au input[type=range] { width:100%; padding:0; }
   .au select { width:100%; font-size:12px; padding:2px 4px; margin-top:4px; }
   details.fx { margin-top:6px; font-size:12px; }
-  details.fx summary { cursor:pointer; color:#9fb3a5; }
+  details.fx summary { cursor:pointer; color:var(--muted); }
   .fxr { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:6px; white-space:pre; }
   .fxr > span:first-child { font-size:11px; }
   .fxr .sl { display:flex; align-items:center; gap:6px; flex:1; justify-content:flex-end; }
   .fxr .sl input { width:70px; } .fxr .sl b { min-width:52px; font-weight:500; text-align:right; }
-  .mt { height:6px; border-radius:3px; background:#1d2a21; overflow:hidden; margin:4px 0; }
+  .mt { height:6px; border-radius:3px; background:var(--btn2); overflow:hidden; margin:4px 0; }
   .mt i { display:block; height:100%; width:0; background:linear-gradient(90deg,#22c55e 0 66%,#f59e0b 66% 85%,#dc3545 85% 100%); background-size:100vw 100%; }
   .menu { position:relative; }
   .pop { position:absolute; right:0; top:calc(100% + 6px); z-index:40; width:280px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px; box-shadow:0 10px 30px #0009; }
   .pop-l { left:0; right:auto; width:100%; min-width:240px; max-height:60vh; overflow:auto; }
   .mi { display:block; width:100%; text-align:left; border:0; background:none; padding:8px 10px; border-radius:6px; font-size:13px; color:var(--text); }
-  button.mi:hover { background:#223027; }
+  button.mi:hover { background:var(--btn2); }
   .mi small { display:block; color:var(--muted); font-size:11px; margin-top:1px; }
   label.mi { display:flex; flex-direction:column; gap:4px; color:var(--muted); font-size:12px; }
   label.mi select { font-size:12px; padding:3px 4px; }
@@ -70,16 +72,16 @@
   .screen { flex:1; min-width:0; display:flex; flex-direction:column; height:100%; justify-content:center; }
   .screen .cap { text-align:center; font-size:12px; color:var(--muted); margin-bottom:4px; }
   .screen .cap span { color:var(--text); }
-  .stage canvas.v { width:100%; max-height:calc(100% - 22px); object-fit:contain; border:2px solid var(--line); border-radius:2px; background:#000; }
+  .stage canvas.v { width:100%; max-height:calc(100% - 22px); object-fit:contain; border:2px solid var(--line); border-radius:8px; background:#000; }
   #cv.live { border-color:var(--red); }
   #ev { border-color:var(--line); }
   .mid { width:120px; display:flex; flex-direction:column; align-items:center; gap:8px; }
   .mid .note { text-align:center; font-size:11px; }
   button.trans { width:100%; padding:8px 6px; }
   .docks { height:290px; flex:none; display:flex; gap:4px; padding:0 4px 4px; }
-  .dock { flex:1; min-width:150px; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:3px; overflow:hidden; }
+  .dock { flex:1; min-width:150px; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
   .dock.wide { flex:1.6; } .dock.narrow { flex:.85; }
-  .dock h2 { margin:0; padding:5px 8px; font-size:12px; font-weight:600; color:var(--text); background:var(--head); border-bottom:1px solid var(--line); text-transform:none; letter-spacing:0; }
+  .dock h2 { margin:0; padding:7px 10px; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:var(--card); border-bottom:1px solid var(--line); }
   .dock .list { flex:1; overflow:auto; padding:2px; background:var(--field); }
   .dock .pad { flex:1; overflow:auto; padding:8px; display:flex; flex-direction:column; gap:6px; }
   .dock .ctl { gap:4px; }
@@ -87,28 +89,29 @@
   input[type=color] { height:28px; padding:2px; min-width:60px; }
   .tb { display:flex; align-items:center; gap:2px; padding:3px; border-top:1px solid var(--line); background:var(--card); }
   .tb button { padding:2px 8px; min-width:28px; background:transparent; border-color:transparent; }
-  .tb button:hover { border-color:var(--line); background:var(--btn); }
+  .tb button:hover { border-color:var(--line); background:var(--btn2); }
   .tb .note { margin-left:6px; font-size:11px; }
   .lbl { display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--muted); }
   button, select, input, textarea { background:var(--btn); border-color:var(--line); border-radius:3px; }
-  button:hover { border-color:#596072; }
-  button.on, button.stop { background:var(--sel); border-color:var(--sel); color:#fff; font-weight:600; }
+  button:hover { border-color:var(--hover); }
+  button.on, button.stop { background:var(--sel); border-color:var(--sel); color:var(--onsel); font-weight:600; }
   .scn, .lyr { border:0; border-radius:2px; margin:0 0 1px; padding:4px 8px; background:transparent; }
-  .scn.on, .lyr.on { background:var(--sel); }
+  .scn.on, .lyr.on { background:var(--sel); color:var(--onsel); }
   .scn .dot { width:8px; height:8px; border-radius:50%; background:var(--red); flex:none; }
   .lyr input[type=checkbox] { accent-color:var(--sel); }
   .au { background:transparent; border:0; border-bottom:1px solid var(--line); border-radius:0; }
   .status { flex:none; display:flex; gap:16px; align-items:center; padding:3px 10px; font-size:11px; color:var(--muted); background:var(--card); border-top:1px solid var(--line); }
-  .status span#liveClock.on, .status span#recClock.on { color:#ff6b6b; }
+  .status span#liveClock.on, .status span#recClock.on { color:var(--red); font-weight:600; }
   .pop-up { position:absolute; left:0; bottom:calc(100% + 4px); top:auto; width:260px; max-height:60vh; overflow:auto; }
   .modal { position:fixed; inset:0; background:#0008; display:flex; align-items:center; justify-content:center; z-index:60; }
-  .dlg { width:min(560px, 92vw); max-height:86vh; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:4px; box-shadow:0 20px 50px #000a; }
+  .dlg { width:min(560px, 92vw); max-height:86vh; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; box-shadow:0 20px 50px #000a; }
   .dlg-h { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--head); border-bottom:1px solid var(--line); }
   .dlg-h button { background:none; border:0; font-size:18px; padding:0 6px; }
   .dlg-b { padding:12px; overflow:auto; }
   .dlg-b .f { grid-template-columns:120px 1fr; }
   .dlg-f { display:flex; justify-content:flex-end; padding:8px 12px; border-top:1px solid var(--line); }
   @media (max-width:1000px) { .docks { height:auto; flex-wrap:wrap; overflow:auto; } .dock { min-height:180px; } body { overflow:auto; } .obs { height:auto; } }
+  input[type=range], input[type=checkbox] { accent-color:var(--sel); }
 </style>
 </head>
 <body>
@@ -171,6 +174,24 @@
 </div>
 <input type="file" id="file" hidden>
 <script>
+// Use the same look the dashboard uses (Settings, Appearance): light or dark, and the accent colour.
+(function () {
+  const dark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  const hexOk = (v) => /^#[0-9a-f]{6}$/i.test(v || '');
+  const lum = (h) => { const n = parseInt(h.slice(1), 16); const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  function apply() {
+    let a = {}; try { a = JSON.parse(localStorage.getItem('ms_access') || '{}') || {}; } catch {}
+    const t = a.theme || 'system';
+    const light = t === 'light' || (t === 'system' && dark && !dark.matches);
+    document.documentElement.classList.toggle('t-light', light);
+    const r = document.documentElement.style;
+    if (hexOk(a.accent)) { r.setProperty('--sel', a.accent); r.setProperty('--onsel', lum(a.accent) > 0.3 ? '#05130a' : '#ffffff'); }
+    else { r.removeProperty('--sel'); r.removeProperty('--onsel'); }
+  }
+  apply();
+  window.addEventListener('storage', (e) => { if (e.key === 'ms_access') apply(); });
+  if (dark && dark.addEventListener) dark.addEventListener('change', apply);
+})();
 const SW = 1920, SH = 1080;           // the size scenes are drawn in (same as OBS)
 const PW = 1280, PH = 720;            // the size sent out
 const $ = (s) => document.querySelector(s);
@@ -1082,7 +1103,7 @@ async function shots() {
   setInterval(poll, 700); setInterval(shots, 400);
 })();
 </script>
-<div id="keysBox" hidden style="position:fixed;right:12px;top:52px;z-index:50;background:var(--card,#101814);border:1px solid #2a3a30;border-radius:10px;padding:12px 14px;max-width:300px;font-size:13px;line-height:1.7;box-shadow:0 8px 30px #0008">
+<div id="keysBox" hidden style="position:fixed;right:12px;top:52px;z-index:50;background:var(--card,#101814);border:1px solid var(--line);border-radius:10px;padding:12px 14px;max-width:300px;font-size:13px;line-height:1.7;box-shadow:0 8px 30px #0008">
 <b>Keyboard shortcuts</b><br>
 <kbd>1</kbd> to <kbd>9</kbd> put that scene on air<br>
 <kbd>Alt</kbd>+<kbd>1</kbd> to <kbd>9</kbd> mute or unmute that sound input<br>
