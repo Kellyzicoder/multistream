@@ -17,7 +17,8 @@ const { createVcam } = require('./vcam');
 const { createAutoRetry } = require('./autoretry');
 const { createChat } = require('./chat');
 const { runPreflight } = require('./preflight');
-const { detectEncoder, videoArgs } = require('./encoder');
+const { detectEncoder } = require('./encoder');
+const outargs = require('./outargs');
 const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker } = require('./stats');
 
 // Version 3: nothing listens on the network unless you switch it on.
@@ -87,6 +88,7 @@ const session = { youtube: '', facebook: '' }; // YouTube broadcast id, Facebook
 // ---- relay state ----
 let obsLive = false;
 const procs = new Map(); // id -> ffmpeg process
+let studioOut = { h: 720, w: 1280, fps: 30, kbps: 4500 }; // the size the Studio is sending right now
 const status = new Map(); // id -> { state, message }
 const destStats = new Map(); // id -> { kbps, speed }  (what we are really sending to each platform)
 
@@ -181,11 +183,14 @@ function startDestination(d) {
     return;
   }
   setStatus(d.id, 'starting');
+  // No re-encoding (low CPU): the Studio sends H.264 + AAC, which every platform accepts.
+  // The one exception: Facebook and Instagram take 1080p at most, so a bigger picture gets a smaller copy.
+  const cv = outargs.channelVideoArgs(d, studioOut, studioEncoder.key);
   const args = [
     '-loglevel', 'warning',
     '-nostats', '-progress', 'pipe:1', '-stats_period', '1', // numbers for the dashboard
     ...HUB_IN,
-    '-c', 'copy', // no re-encoding: low CPU. The Studio sends H.264 + AAC, which every platform accepts.
+    ...cv.args,
     '-f', 'flv',
     targetOf(d),
   ];
@@ -214,7 +219,7 @@ function startDestination(d) {
   let lastLine = '';
   // ffmpeg prints nothing at "warning" level while healthy, so mark live after a short wait
   const liveTimer = setTimeout(() => {
-    if (procs.get(d.id) === p) setStatus(d.id, 'live');
+    if (procs.get(d.id) === p) setStatus(d.id, 'live', cv.capped ? 'Sent as 1080p, the most this site takes' : '');
   }, 3000);
   p.stderr.on('data', (chunk) => {
     const text = chunk.toString().trim().split('\n').pop();
@@ -850,9 +855,10 @@ app.post('/api/youtube/live', async (req, res) => {
 
 
 app.post('/api/destinations', (req, res) => {
-  const { name, url, key } = req.body || {};
+  const { name, url, key, cap1080 } = req.body || {};
   if (!name) return res.status(400).json({ error: 'Name is needed' });
   const d = { id: crypto.randomUUID(), name: String(name), url: String(url || ''), key: String(key || ''), enabled: true };
+  if (typeof cap1080 === 'boolean') d.cap1080 = cap1080;
   destinations.push(d);
   save();
   startDestination(d);
@@ -862,7 +868,8 @@ app.post('/api/destinations', (req, res) => {
 app.put('/api/destinations/:id', (req, res) => {
   const d = destinations.find((x) => x.id === req.params.id);
   if (!d) return res.status(404).json({ error: 'Not found' });
-  const { name, url, key, enabled } = req.body || {};
+  const { name, url, key, enabled, cap1080 } = req.body || {};
+  if (cap1080 !== undefined) d.cap1080 = cap1080 === null ? undefined : Boolean(cap1080);
   const changedTarget = (url !== undefined && url !== d.url) || (key !== undefined && key !== '' && key !== d.key);
   if (name !== undefined) d.name = String(name);
   if (url !== undefined) d.url = String(url);
@@ -990,12 +997,10 @@ const studioWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 *
 const studioRecWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });
 studioRecWss.on('connection', (w, req) => {
   const q = new URL(req.url, 'http://x').searchParams;
-  const hh = Number(q.get('h')) === 1080 ? 1080 : 720, mbit = Math.min(30, Math.max(2, Number(q.get('mbit')) || 8));
   try { fs.mkdirSync(REC_DIR, { recursive: true }); } catch (e) { w.send(JSON.stringify({ error: 'Cannot make the folder: ' + e.message })); return w.close(); }
   const d = new Date(), two = (n) => String(n).padStart(2, '0');
   const name = `Studio ${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}.mkv`;
-  const args = ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-vf', `scale=${hh === 1080 ? 1920 : 1280}:${hh}`,
-    ...videoArgs(studioEncoder.key, mbit * 1000, 60), '-pix_fmt', 'yuv420p', '-r', '30', '-c:a', 'aac', '-b:a', '160k', '-f', 'matroska', path.join(REC_DIR, name)];
+  const args = outargs.recordArgs(studioEncoder.key, { h: q.get('h'), mbit: q.get('mbit'), fps: q.get('fps') }, path.join(REC_DIR, name));
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
   let last = '';
   ff.stderr.on('data', (c) => { last = String(c).trim().split('\n').pop().slice(0, 200); });
@@ -1021,11 +1026,11 @@ vcamWss.on('connection', (w) => {
   w.on('message', (m) => s.write(m));
   w.on('close', () => s.stop());
 });
-studioWss.on('connection', (w) => {
+studioWss.on('connection', (w, req) => {
   if (studioFf) { try { studioFf.kill('SIGKILL'); } catch {} }
-  const args = ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0',
-    '-vf', 'scale=1280:720', ...videoArgs(studioEncoder.key), '-pix_fmt', 'yuv420p', '-r', '30',
-    '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'];
+  const out = outargs.parseOut(new URL((req && req.url) || '/', 'http://x').searchParams);
+  studioOut = out; studioInfo.out = outargs.label(out);
+  const args = outargs.ingestArgs(studioEncoder.key, out);
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
   studioFf = ff; studioInfo.sending = true; studioInfo.error = '';
   const unfeed = feedHub(ff.stdout);

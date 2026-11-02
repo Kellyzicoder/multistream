@@ -21,6 +21,8 @@ contextBridge.exposeInMainWorld('msNative', {
   browserOpen: (id, url, w, h) => ipcRenderer.invoke('ms-browser-open', id, url, w, h),
   browserClose: (id) => ipcRenderer.invoke('ms-browser-close', id),
   onFrame: (cb) => { frameCbs.add(cb); },
+  platform: process.platform,
   screens: () => ipcRenderer.invoke('ms-screens'),
-  pickScreen: (id) => ipcRenderer.invoke('ms-pick-screen', id),
+  sources: (kind) => ipcRenderer.invoke('ms-sources', kind),
+  pickScreen: (id, name, kind) => ipcRenderer.invoke('ms-pick-screen', id, name, kind),
 });

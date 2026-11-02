@@ -5,12 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multistream Studio</title>
 <style>
-  :root { --bg:#1d1f26; --card:#272a33; --head:#2f323d; --line:#3c404d; --text:#dfe1e6; --muted:#9097a6; --green:#22c55e; --red:#d9434b; --field:#1f2128; --sel:#3d5bd0; --btn:#3b3f4b; }
+  /* same colours as the dashboard (and its light theme and accent colour from Settings, Appearance) */
+  :root { color-scheme:dark; --bg:#07090b; --card:#0c1013; --head:#131a20; --line:#1b242b; --text:#e8eef1; --muted:#7a8890; --green:#34d27b; --red:#ff4d5a; --field:#090c0f; --sel:#22c55e; --onsel:#04130a; --btn:#141b21; --btn2:#1b252c; --hover:#2a363f; }
+  html.t-light { color-scheme:light; --bg:#f2f5f4; --card:#fff; --head:#eef2f0; --line:#d9e0dc; --text:#13201a; --muted:#5b6b64; --green:#15803d; --red:#d6333b; --field:#f7f9f8; --btn:#e8eeea; --btn2:#dce5df; --hover:#c6d2cb; }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
-  label.tr { font-size:12px; color:#9fb3a5; display:flex; gap:6px; align-items:center; margin-right:8px; }
+  label.tr { font-size:12px; color:var(--muted); display:flex; gap:6px; align-items:center; margin-right:8px; }
   label.tr select { font-size:12px; padding:3px 4px; }
-  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.4 Inter, "SF Pro Text", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; -webkit-font-smoothing:antialiased; }
   header { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
   header a { color:var(--green); text-decoration:none; font-weight:600; }
   header h1 { font-size:15px; margin:0; font-weight:600; }
@@ -36,7 +38,7 @@
   .f { display:grid; grid-template-columns:70px 1fr; gap:6px; align-items:center; margin-bottom:6px; }
   .f input, .f select, .f textarea { width:100%; }
   .note { color:var(--muted); font-size:12px; }
-  .stat { font-size:12px; color:var(--muted); } .stat.ok { color:var(--green); } .stat.bad { color:#ff8a8a; }
+  .stat { font-size:12px; color:var(--muted); } .stat.ok { color:var(--green); } .stat.bad { color:var(--red); }
   .au { border:1px solid var(--line); border-radius:6px; padding:6px 8px; margin-bottom:6px; background:var(--field); }
   .au.off { opacity:.55; }
   .au .t { display:flex; gap:6px; align-items:center; }
@@ -44,18 +46,18 @@
   .au input[type=range] { width:100%; padding:0; }
   .au select { width:100%; font-size:12px; padding:2px 4px; margin-top:4px; }
   details.fx { margin-top:6px; font-size:12px; }
-  details.fx summary { cursor:pointer; color:#9fb3a5; }
+  details.fx summary { cursor:pointer; color:var(--muted); }
   .fxr { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-top:6px; white-space:pre; }
   .fxr > span:first-child { font-size:11px; }
   .fxr .sl { display:flex; align-items:center; gap:6px; flex:1; justify-content:flex-end; }
   .fxr .sl input { width:70px; } .fxr .sl b { min-width:52px; font-weight:500; text-align:right; }
-  .mt { height:6px; border-radius:3px; background:#1d2a21; overflow:hidden; margin:4px 0; }
+  .mt { height:6px; border-radius:3px; background:var(--btn2); overflow:hidden; margin:4px 0; }
   .mt i { display:block; height:100%; width:0; background:linear-gradient(90deg,#22c55e 0 66%,#f59e0b 66% 85%,#dc3545 85% 100%); background-size:100vw 100%; }
   .menu { position:relative; }
   .pop { position:absolute; right:0; top:calc(100% + 6px); z-index:40; width:280px; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px; box-shadow:0 10px 30px #0009; }
   .pop-l { left:0; right:auto; width:100%; min-width:240px; max-height:60vh; overflow:auto; }
   .mi { display:block; width:100%; text-align:left; border:0; background:none; padding:8px 10px; border-radius:6px; font-size:13px; color:var(--text); }
-  button.mi:hover { background:#223027; }
+  button.mi:hover { background:var(--btn2); }
   .mi small { display:block; color:var(--muted); font-size:11px; margin-top:1px; }
   label.mi { display:flex; flex-direction:column; gap:4px; color:var(--muted); font-size:12px; }
   label.mi select { font-size:12px; padding:3px 4px; }
@@ -70,16 +72,16 @@
   .screen { flex:1; min-width:0; display:flex; flex-direction:column; height:100%; justify-content:center; }
   .screen .cap { text-align:center; font-size:12px; color:var(--muted); margin-bottom:4px; }
   .screen .cap span { color:var(--text); }
-  .stage canvas.v { width:100%; max-height:calc(100% - 22px); object-fit:contain; border:2px solid var(--line); border-radius:2px; background:#000; }
+  .stage canvas.v { width:100%; max-height:calc(100% - 22px); object-fit:contain; border:2px solid var(--line); border-radius:8px; background:#000; }
   #cv.live { border-color:var(--red); }
   #ev { border-color:var(--line); }
   .mid { width:120px; display:flex; flex-direction:column; align-items:center; gap:8px; }
   .mid .note { text-align:center; font-size:11px; }
   button.trans { width:100%; padding:8px 6px; }
   .docks { height:290px; flex:none; display:flex; gap:4px; padding:0 4px 4px; }
-  .dock { flex:1; min-width:150px; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:3px; overflow:hidden; }
+  .dock { flex:1; min-width:150px; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
   .dock.wide { flex:1.6; } .dock.narrow { flex:.85; }
-  .dock h2 { margin:0; padding:5px 8px; font-size:12px; font-weight:600; color:var(--text); background:var(--head); border-bottom:1px solid var(--line); text-transform:none; letter-spacing:0; }
+  .dock h2 { margin:0; padding:7px 10px; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:var(--card); border-bottom:1px solid var(--line); }
   .dock .list { flex:1; overflow:auto; padding:2px; background:var(--field); }
   .dock .pad { flex:1; overflow:auto; padding:8px; display:flex; flex-direction:column; gap:6px; }
   .dock .ctl { gap:4px; }
@@ -87,28 +89,32 @@
   input[type=color] { height:28px; padding:2px; min-width:60px; }
   .tb { display:flex; align-items:center; gap:2px; padding:3px; border-top:1px solid var(--line); background:var(--card); }
   .tb button { padding:2px 8px; min-width:28px; background:transparent; border-color:transparent; }
-  .tb button:hover { border-color:var(--line); background:var(--btn); }
+  .tb button:hover { border-color:var(--line); background:var(--btn2); }
   .tb .note { margin-left:6px; font-size:11px; }
   .lbl { display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--muted); }
   button, select, input, textarea { background:var(--btn); border-color:var(--line); border-radius:3px; }
-  button:hover { border-color:#596072; }
-  button.on, button.stop { background:var(--sel); border-color:var(--sel); color:#fff; font-weight:600; }
+  button:hover { border-color:var(--hover); }
+  button.on, button.stop { background:var(--sel); border-color:var(--sel); color:var(--onsel); font-weight:600; }
   .scn, .lyr { border:0; border-radius:2px; margin:0 0 1px; padding:4px 8px; background:transparent; }
-  .scn.on, .lyr.on { background:var(--sel); }
+  .scn.on, .lyr.on { background:var(--sel); color:var(--onsel); }
   .scn .dot { width:8px; height:8px; border-radius:50%; background:var(--red); flex:none; }
   .lyr input[type=checkbox] { accent-color:var(--sel); }
   .au { background:transparent; border:0; border-bottom:1px solid var(--line); border-radius:0; }
   .status { flex:none; display:flex; gap:16px; align-items:center; padding:3px 10px; font-size:11px; color:var(--muted); background:var(--card); border-top:1px solid var(--line); }
-  .status span#liveClock.on, .status span#recClock.on { color:#ff6b6b; }
+  .status span#liveClock.on, .status span#recClock.on { color:var(--red); font-weight:600; }
   .pop-up { position:absolute; left:0; bottom:calc(100% + 4px); top:auto; width:260px; max-height:60vh; overflow:auto; }
   .modal { position:fixed; inset:0; background:#0008; display:flex; align-items:center; justify-content:center; z-index:60; }
-  .dlg { width:min(560px, 92vw); max-height:86vh; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:4px; box-shadow:0 20px 50px #000a; }
+  .dlg { width:min(560px, 92vw); max-height:86vh; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; box-shadow:0 20px 50px #000a; }
   .dlg-h { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:var(--head); border-bottom:1px solid var(--line); }
   .dlg-h button { background:none; border:0; font-size:18px; padding:0 6px; }
   .dlg-b { padding:12px; overflow:auto; }
-  .dlg-b .f { grid-template-columns:120px 1fr; }
+  .dlg-b .f { grid-template-columns:140px 1fr; }
+  .dlg-b h3 { margin:14px 0 6px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .dlg-b h3:first-child { margin-top:0; }
+  #ev { touch-action:none; }
   .dlg-f { display:flex; justify-content:flex-end; padding:8px 12px; border-top:1px solid var(--line); }
   @media (max-width:1000px) { .docks { height:auto; flex-wrap:wrap; overflow:auto; } .dock { min-height:180px; } body { overflow:auto; } .obs { height:auto; } }
+  input[type=range], input[type=checkbox] { accent-color:var(--sel); }
 </style>
 </head>
 <body>
@@ -132,13 +138,13 @@
     <section class="dock"><h2>Sources</h2>
       <div class="list" id="layers"></div>
       <div class="tb">
-        <div class="menu"><button id="addBtn" title="Add source">+</button><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Camera<small>A webcam or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a computer screen</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
+        <div class="menu"><button id="addBtn" title="Add source">+</button><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Video Capture Device<small>A webcam, ATEM Mini or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a whole computer screen</small></button><button class="mi" data-add="window">Window<small>One program, like lyrics or slides</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
         <button id="srcDel" title="Remove source">&minus;</button><button id="srcProps" title="Properties">&#9881;</button><button id="srcUp" title="Move up">&#9650;</button><button id="srcDown" title="Move down">&#9660;</button>
       </div>
     </section>
     <section class="dock wide"><h2>Audio Mixer</h2>
       <div class="list" id="audio"></div>
-      <div class="tb"><button id="addAudio" title="Add sound input">+</button><span class="note" id="audNote"></span></div>
+      <div class="tb"><div class="menu"><button id="addAudio" title="Add sound input">+</button><div class="pop pop-up" id="audPop" hidden><button class="mi" data-addaudio="mic">Sound input<small>A microphone, mixer or the ATEM</small></button><button class="mi" data-addaudio="desktop" id="desktopAudioItem" hidden>Computer sound<small>What this PC plays (Windows)</small></button></div></div><span class="note" id="audNote"></span></div>
     </section>
     <section class="dock narrow"><h2>Scene Transitions</h2>
       <div class="pad">
@@ -150,11 +156,8 @@
       <div class="pad ctl">
         <button id="sendBtn">Start Streaming</button>
         <button id="recBtn">Start Recording</button>
-        <label class="lbl">Recording quality <select id="recQ"><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></label>
         <button id="vcBtn" hidden>Start Virtual Camera</button>
-        <button id="projBtn" title="The Program picture in its own window, for a second screen">Projector</button>
-        <button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes...</button>
-        <button id="keysBtn">Shortcuts</button>
+        <button id="setBtn">Settings</button>
       </div>
     </section>
   </div>
@@ -169,10 +172,50 @@
     <div class="dlg-b" id="props"></div>
     <div class="dlg-f"><button id="propsOk">OK</button></div></div>
 </div>
+<!-- Settings window: video size, recording, audio monitoring, and the less used buttons -->
+<div class="modal" id="setBox" hidden>
+  <div class="dlg"><div class="dlg-h"><b>Settings</b><button id="setClose" title="Close">&times;</button></div>
+    <div class="dlg-b">
+      <h3>Video (what viewers get)</h3>
+      <div class="f"><label>Quality</label><select id="outQ"></select></div>
+      <div class="f"><label>Bitrate (kbps)</label><input id="outKbps" type="number" min="1000" max="60000" step="500"></div>
+      <p class="note" id="outNote"></p>
+      <h3>Recording</h3>
+      <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></div>
+      <h3>Audio</h3>
+      <div class="f"><label>Monitoring output</label><select id="monDev"></select></div>
+      <p class="note">Monitoring lets you hear an input in your headphones. Use headphones, or the microphone will pick up the speakers.</p>
+      <h3>More</h3>
+      <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
+    </div>
+    <div class="dlg-f"><button id="setOk">OK</button></div></div>
+</div>
 <input type="file" id="file" hidden>
 <script>
+// Use the same look the dashboard uses (Settings, Appearance): light or dark, and the accent colour.
+(function () {
+  const dark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  const hexOk = (v) => /^#[0-9a-f]{6}$/i.test(v || '');
+  const lum = (h) => { const n = parseInt(h.slice(1), 16); const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  function apply() {
+    let a = {}; try { a = JSON.parse(localStorage.getItem('ms_access') || '{}') || {}; } catch {}
+    const t = a.theme || 'system';
+    const light = t === 'light' || (t === 'system' && dark && !dark.matches);
+    document.documentElement.classList.toggle('t-light', light);
+    const r = document.documentElement.style;
+    if (hexOk(a.accent)) { r.setProperty('--sel', a.accent); r.setProperty('--onsel', lum(a.accent) > 0.3 ? '#05130a' : '#ffffff'); }
+    else { r.removeProperty('--sel'); r.removeProperty('--onsel'); }
+  }
+  apply();
+  window.addEventListener('storage', (e) => { if (e.key === 'ms_access') apply(); });
+  if (dark && dark.addEventListener) dark.addEventListener('change', apply);
+})();
 const SW = 1920, SH = 1080;           // the size scenes are drawn in (same as OBS)
-const PW = 1280, PH = 720;            // the size sent out
+let PW = 1280, PH = 720;              // the size of the Program picture (small while idle, the real size while sending)
+// What viewers get. Saved on this computer. Facebook and Instagram take 1080p at most; the app makes them a smaller copy.
+const OUT = { h: 1080, fps: 30, kbps: 6000 };
+try { Object.assign(OUT, JSON.parse(localStorage.getItem('ms_out') || '{}')); } catch {}
+const outW = (h) => Math.round(h * 16 / 9 / 2) * 2;
 const $ = (s) => document.querySelector(s);
 const cv = $('#cv'), ctx = cv.getContext('2d'), ev = $('#ev'), ectx = ev.getContext('2d');
 let studio = { scenes: [], audio: [], current: '' };
@@ -205,29 +248,57 @@ function pickDevice(kind, label, id) {
   if (label) { const d = list.find((x) => x.label.toLowerCase().includes(String(label).toLowerCase())); if (d) return d.deviceId; }
   return '';
 }
+const RES = { auto: [1920, 1080], '720': [1280, 720], '1080': [1920, 1080], '1440': [2560, 1440], '2160': [3840, 2160] };
+const camKey = (l) => [l.label || '', l.device || '', l.res || 'auto', l.fps || 'auto'].join('|');
 function getCam(l) {
-  const key = (l.label || '') + '|' + (l.device || '');
-  let c = cams.get(key); if (c) return c;
-  c = { v: document.createElement('video'), ready: false };
+  const key = camKey(l);
+  let c = cams.get(key); if (c) { c.seen = Date.now(); return c; }
+  c = { v: document.createElement('video'), ready: false, seen: Date.now(), info: '' };
   c.v.muted = true; c.v.playsInline = true; cams.set(key, c);
   const id = pickDevice('video', l.label, l.device);
   if (!id && l.label && devices.video.length) { c.err = 'Camera "' + l.label + '" not found'; return c; }
-  navigator.mediaDevices.getUserMedia({ video: { deviceId: id ? { exact: id } : undefined, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false })
-    .then(async (st) => { c.v.srcObject = st; await c.v.play(); c.ready = true; })
-    .catch((e) => { c.err = e.message; });
+  const [w, h] = RES[l.res || 'auto'] || RES.auto;
+  const video = { deviceId: id ? { exact: id } : undefined, width: { ideal: w }, height: { ideal: h } };
+  if (l.fps && l.fps !== 'auto') video.frameRate = { ideal: Number(l.fps) };
+  navigator.mediaDevices.getUserMedia({ video, audio: false })
+    .then(async (st) => {
+      c.st = st; c.v.srcObject = st; await c.v.play(); c.ready = true;
+      const t = st.getVideoTracks()[0], g = t && t.getSettings ? t.getSettings() : {};
+      c.info = (g.width || c.v.videoWidth) + 'x' + (g.height || c.v.videoHeight) + (g.frameRate ? ' at ' + Math.round(g.frameRate) + ' frames a second' : '');
+      if (t) t.onended = () => { c.ready = false; c.err = 'The camera was unplugged'; c.dead = true; };
+    })
+    .catch((e) => { c.err = e.message; c.dead = true; });
   return c;
 }
-const screens = new Map();
-function getScreen(l) {
-  let c = screens.get(l.display || 'screen'); if (c) return c;
-  c = { v: document.createElement('video'), ready: false }; c.v.muted = true; screens.set(l.display || 'screen', c);
-  (async () => {
+// cameras nobody uses any more (removed, or changed to another setting) are released so the device is free again
+setInterval(() => {
+  const used = new Set();
+  studio.scenes.forEach((s) => s.layers.forEach((l) => { if (l.type === 'camera') used.add(camKey(l)); }));
+  cams.forEach((c, k) => {
+    if (used.has(k)) return;
+    if (!c.unusedAt) c.unusedAt = Date.now();
+    if (Date.now() - c.unusedAt > 2500) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} cams.delete(k); }
+  });
+  // a camera that failed (unplugged, busy) is tried again every few seconds
+  cams.forEach((c, k) => { if (c.dead && used.has(k) && Date.now() - c.seen > 4000) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} cams.delete(k); } });
+}, 1000);
+// Screens and windows. Asking the app one at a time, because each ask names what it wants.
+let capQ = Promise.resolve();
+const serial = (fn) => { const p = capQ.then(fn); capQ = p.catch(() => {}); return p; };
+const caps = new Map();
+const capKey = (l) => l.type + '|' + (l.display || '') + '|' + (l.winName || '');
+function getCapture(l) {
+  const key = capKey(l);
+  let c = caps.get(key); if (c) return c;
+  c = { v: document.createElement('video'), ready: false }; c.v.muted = true; caps.set(key, c);
+  serial(async () => {
     try {
-      if (window.msNative) await window.msNative.pickScreen(l.display || '');
+      if (window.msNative) { const r = await window.msNative.pickScreen(l.display || '', l.winName || '', l.type === 'window' ? 'window' : 'screen'); if (r && r.found === false) throw new Error('not found'); }
       const st = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: false });
-      c.v.srcObject = st; await c.v.play(); c.ready = true;
-    } catch (e) { c.err = e.message; }
-  })();
+      c.st = st; c.v.srcObject = st; await c.v.play(); c.ready = true;
+      st.getVideoTracks()[0].onended = () => { caps.delete(key); }; // the window was closed: look for it again
+    } catch (e) { c.err = l.type === 'window' ? 'Could not find the window' + (l.winName ? ' "' + l.winName + '"' : '') : e.message; setTimeout(() => caps.delete(key), 3000); }
+  });
   return c;
 }
 const vids = new Map();   // layer id -> { el, gain, active }
@@ -243,8 +314,9 @@ function getVid(l) {
   return c;
 }
 const boards = new Map();  // browser sources: id -> canvas the desktop app draws into
+const boardKey = (l) => l.url + '|' + (l.bw || SW) + 'x' + (l.bh || SH);
 function getBoard(l) {
-  const key = l.url + '|' + (l.bw || SW) + 'x' + (l.bh || SH);
+  const key = boardKey(l);
   let b = boards.get(key); if (b) return b;
   b = { c: document.createElement('canvas'), ready: false }; boards.set(key, b);
   if (window.msNative) window.msNative.browserOpen(key, l.url, l.bw || SW, l.bh || SH);
@@ -392,11 +464,11 @@ function drawLayer(c, l, live) {
     } else if (l.type === 'camera') {
       const cm = getCam(l);
       if (cm.ready && cm.v.videoWidth) { pic(c, l, cm.v, cm.v.videoWidth, cm.v.videoHeight); }
-      else note(c, l, cm.err ? 'Camera: ' + cm.err : 'Starting camera...');
-    } else if (l.type === 'screen') {
-      const sc = getScreen(l);
+      else note(c, l, cm.err ? 'Video capture device: ' + cm.err : 'Starting the video capture device...');
+    } else if (l.type === 'screen' || l.type === 'window') {
+      const sc = getCapture(l), nm = l.type === 'window' ? 'Window' : 'Screen';
       if (sc.ready && sc.v.videoWidth) { pic(c, l, sc.v, sc.v.videoWidth, sc.v.videoHeight); }
-      else note(c, l, sc.err ? 'Screen: ' + sc.err : 'Starting screen capture...');
+      else note(c, l, sc.err ? nm + ': ' + sc.err : 'Starting ' + nm.toLowerCase() + ' capture...');
     } else if (l.type === 'browser') {
       if (!window.msNative) { note(c, l, 'Web pages need the Multistream desktop app'); }
       else { const b = getBoard(l); if (b.ready) { pic(c, l, b.c, b.c.width, b.c.height); } }
@@ -422,26 +494,29 @@ function drawScene(c, scene, k, live) {
 // ---- transitions: how one scene changes into the next on air ----
 const trCfg = { type: 'fade', ms: 500 };
 try { Object.assign(trCfg, JSON.parse(localStorage.getItem('ms_trans') || '{}')); } catch {}
-const trA = document.createElement('canvas'), trB = document.createElement('canvas');
-trA.width = trB.width = PW; trA.height = trB.height = PH;
-const trAc = trA.getContext('2d'), trBc = trB.getContext('2d');
+const trPairs = new Map(); // one pair of scratch canvases per output width
+function trPair(w, h) {
+  let p = trPairs.get(w);
+  if (!p) { const a = document.createElement('canvas'), b = document.createElement('canvas'); a.width = b.width = w; a.height = b.height = h; p = { a, b, ac: a.getContext('2d'), bc: b.getContext('2d') }; trPairs.set(w, p); }
+  return p;
+}
 let shown = null, trans = null;
 const ease = (p) => (p < 0.5 ? 2 * p * p : 1 - 2 * (1 - p) * (1 - p));
-function drawTransition(c, from, to, p, type) {
-  const e = ease(p), k = PW / SW;
-  drawScene(trAc, from, k, true); drawScene(trBc, to, k, true);
+function drawTransition(c, from, to, p, type, k) {
+  const W = Math.round(SW * k), H = Math.round(SH * k), e = ease(p), t = trPair(W, H);
+  drawScene(t.ac, from, k, true); drawScene(t.bc, to, k, true);
   c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
-  c.fillStyle = '#000'; c.fillRect(0, 0, PW, PH);
-  if (type === 'slide') { c.drawImage(trA, -e * PW, 0); c.drawImage(trB, PW - e * PW, 0); }
-  else if (type === 'dip') { c.globalAlpha = p < 0.5 ? 1 - 2 * p : 0; c.drawImage(trA, 0, 0); c.globalAlpha = p < 0.5 ? 0 : 2 * p - 1; c.drawImage(trB, 0, 0); }
-  else { c.drawImage(trA, 0, 0); c.globalAlpha = e; c.drawImage(trB, 0, 0); } // fade
+  c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+  if (type === 'slide') { c.drawImage(t.a, -e * W, 0); c.drawImage(t.b, W - e * W, 0); }
+  else if (type === 'dip') { c.globalAlpha = p < 0.5 ? 1 - 2 * p : 0; c.drawImage(t.a, 0, 0); c.globalAlpha = p < 0.5 ? 0 : 2 * p - 1; c.drawImage(t.b, 0, 0); }
+  else { c.drawImage(t.a, 0, 0); c.globalAlpha = e; c.drawImage(t.b, 0, 0); } // fade
   c.restore();
 }
 // Draws the picture on air into any canvas (the preview/send canvas, and the bigger recording canvas)
 function paint(c, scale, now) {
   if (trans) {
     const p = Math.min(1, (now - trans.t0) / trCfg.ms);
-    if (p < 1) { drawTransition(c, byName(trans.from), byName(trans.to), p, trCfg.type); return; }
+    if (p < 1) { drawTransition(c, byName(trans.from), byName(trans.to), p, trCfg.type, scale); return; }
   }
   drawScene(c, byName(shown), scale, true);
 }
@@ -455,12 +530,17 @@ function frame() {
   if (trans && now - trans.t0 >= trCfg.ms) trans = null;
   paint(ctx, PW / SW, now);
   if (recW) paint(rctx, recW / SW, now);
+  if (vcOn) paint(vctx, 1280 / SW, now);
 }
 $('#trType').value = trCfg.type; $('#trMs').value = String(trCfg.ms);
 const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#trMs').value); try { localStorage.setItem('ms_trans', JSON.stringify(trCfg)); } catch {} };
 $('#trType').onchange = saveTr; $('#trMs').onchange = saveTr;
-setInterval(frame, 1000 / 30); // not requestAnimationFrame, so it keeps running if the window is covered
-setInterval(() => { drawScene(ectx, byName(editing), ev.width / SW, false); }, 100);
+// not requestAnimationFrame, so it keeps running if the window is covered
+let frameT = 0, frameFps = 0;
+function setFps(f) { if (f === frameFps) return; frameFps = f; clearInterval(frameT); frameT = setInterval(frame, 1000 / f); }
+setFps(30);
+// The Program picture is small while nothing is sent (saves the computer's work) and full size while sending.
+function setProgramSize(w, h) { if (cv.width === w && cv.height === h) return; cv.width = w; cv.height = h; PW = w; PH = h; }
 
 // videos play only while their scene is on air (or shown in a preview); each restarts when its scene goes on air
 function updateVideos() {
@@ -488,30 +568,60 @@ const streams = new Map(); // device id -> MediaStream
 function ensureAudio() {
   if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
   actx = new AudioContext(); master = actx.createGain(); dest = actx.createMediaStreamDestination(); master.connect(dest);
+  setMonitorDevice(monDev);
   syncAudio();
+}
+// where "monitor" sound is heard (your headphones). Not the stream: only you hear it.
+let monDev = ''; try { monDev = localStorage.getItem('ms_mondev') || ''; } catch {}
+function setMonitorDevice(id) {
+  monDev = id || '';
+  try { localStorage.setItem('ms_mondev', monDev); } catch {}
+  if (actx && actx.setSinkId) actx.setSinkId(monDev || '').catch(() => {});
+}
+// the sound this PC plays (Windows only; the app asks Windows for it)
+let desktopAudioP = null;
+function openDesktopAudio() {
+  if (desktopAudioP) return desktopAudioP;
+  desktopAudioP = serial(async () => {
+    if (!(window.msNative && window.msNative.platform === 'win32')) throw new Error('Computer sound works in the Windows app. On a Mac, install BlackHole and pick it as a Sound input.');
+    const r = await window.msNative.pickScreen('', '', 'audio'); if (r && r.found === false) throw new Error('No screen was found to ask Windows for the sound');
+    const st = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+    st.getVideoTracks().forEach((t) => t.stop());
+    if (!st.getAudioTracks().length) throw new Error('Windows did not give the computer sound');
+    return new MediaStream(st.getAudioTracks());
+  });
+  desktopAudioP.catch(() => { desktopAudioP = null; });
+  return desktopAudioP;
 }
 async function openStream(id) {
   const key = id || 'default'; if (streams.has(key)) return streams.get(key);
   const p = navigator.mediaDevices.getUserMedia({ audio: { deviceId: id ? { exact: id } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-  streams.set(key, p); return p;
+  streams.set(key, p); p.catch(() => streams.delete(key)); return p;
 }
 async function syncAudio() {
   if (!actx) return;
   for (const a of studio.audio) {
     let n = asrc.get(a.id);
-    if (!n || n.dev !== (a.device || '') + '|' + (a.label || '')) {
-      if (n) { try { n.node.disconnect(); n.gain.disconnect(); } catch {} }
-      n = { dev: (a.device || '') + '|' + (a.label || ''), gain: actx.createGain(), gate: actx.createGain(), an: actx.createAnalyser(),
-        delay: actx.createDelay(1), det: actx.createAnalyser(), comp: actx.createDynamicsCompressor(), nz: actx.createGain(), open: true, lastOpen: 0 };
+    const devKey = (a.kind || '') + '|' + (a.device || '') + '|' + (a.label || '');
+    if (!n || n.dev !== devKey) {
+      if (n) { try { n.node.disconnect(); n.gain.disconnect(); n.mon.disconnect(); } catch {} }
+      n = { dev: devKey, gain: actx.createGain(), gate: actx.createGain(), an: actx.createAnalyser(),
+        delay: actx.createDelay(1), det: actx.createAnalyser(), comp: actx.createDynamicsCompressor(), nz: actx.createGain(), open: true, lastOpen: 0,
+        hp: actx.createBiquadFilter(), eqL: actx.createBiquadFilter(), eqM: actx.createBiquadFilter(), eqH: actx.createBiquadFilter(), lim: actx.createDynamicsCompressor(), mon: actx.createGain() };
       n.an.fftSize = 512; n.det.fftSize = 512;
-      // the chain: input -> delay -> (gate listens here) -> compressor -> noise gate -> fader -> scene gate -> master
-      n.delay.connect(n.det); n.delay.connect(n.comp); n.comp.connect(n.nz); n.nz.connect(n.gain);
+      n.hp.type = 'allpass'; n.eqL.type = 'lowshelf'; n.eqL.frequency.value = 200; n.eqM.type = 'peaking'; n.eqM.frequency.value = 1000; n.eqM.Q.value = 0.9; n.eqH.type = 'highshelf'; n.eqH.frequency.value = 4000;
+      // the chain: input -> delay -> (gate listens here) -> low cut -> bass/mid/treble -> compressor -> noise gate -> limiter -> fader -> scene gate -> master
+      // and after the fader a copy goes to the monitor (your headphones)
+      n.delay.connect(n.det); n.delay.connect(n.hp); n.hp.connect(n.eqL); n.eqL.connect(n.eqM); n.eqM.connect(n.eqH); n.eqH.connect(n.comp);
+      n.comp.connect(n.nz); n.nz.connect(n.lim); n.lim.connect(n.gain);
       n.gain.connect(n.an); n.gain.connect(n.gate); n.gate.connect(master); n.gate.gain.value = 0;
+      n.mon.gain.value = 0; n.gain.connect(n.mon); n.mon.connect(actx.destination);
       asrc.set(a.id, n);
       const id = pickDevice('audio', a.label, a.device);
-      try { const st = await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = ''; } catch (e) { n.err = e.message; }
+      try { const st = a.kind === 'desktop' ? await openDesktopAudio() : await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = ''; } catch (e) { n.err = e.message; }
     }
     n.gain.gain.setTargetAtTime(a.muted ? 0 : (a.vol == null ? 1 : a.vol), actx.currentTime, 0.02);
+    n.mon.gain.setTargetAtTime(a.monitor === 'only' || a.monitor === 'both' ? 1 : 0, actx.currentTime, 0.02);
     applyFx(a, n);
   }
   gateAudio();
@@ -525,6 +635,13 @@ function applyFx(a, n) {
   if (c.on) { n.comp.threshold.value = c.thr == null ? -18 : c.thr; n.comp.ratio.value = c.ratio || 4; n.comp.knee.value = 12; n.comp.attack.value = 0.005; n.comp.release.value = 0.25; }
   else { n.comp.threshold.value = 0; n.comp.ratio.value = 1; } // no change to the sound
   if (!(f.gate && f.gate.on)) { n.open = true; n.nz.gain.setTargetAtTime(1, t, 0.02); }
+  const lc = f.lowcut || {};
+  n.hp.type = lc.on ? 'highpass' : 'allpass'; n.hp.frequency.value = lc.on ? (lc.hz || 80) : 350;
+  const q = f.eq || {};
+  n.eqL.gain.value = q.on ? (q.low || 0) : 0; n.eqM.gain.value = q.on ? (q.mid || 0) : 0; n.eqH.gain.value = q.on ? (q.high || 0) : 0;
+  const L = f.lim || {};
+  if (L.on) { n.lim.threshold.value = L.thr == null ? -3 : L.thr; n.lim.ratio.value = 20; n.lim.knee.value = 0; n.lim.attack.value = 0.002; n.lim.release.value = 0.12; }
+  else { n.lim.threshold.value = 0; n.lim.ratio.value = 1; }
 }
 const gbuf = new Float32Array(512);
 setInterval(() => {
@@ -542,7 +659,8 @@ setInterval(() => {
 function gateAudio() {
   if (!actx) return;
   const s = byName(studio.current), on = new Set((s && s.audio) || []);
-  asrc.forEach((n, id) => n.gate.gain.setTargetAtTime(on.has(id) ? 1 : 0, actx.currentTime, 0.02));
+  // "monitor only" inputs are heard in your headphones but never go to the stream
+  asrc.forEach((n, id) => { const a = studio.audio.find((x) => x.id === id); n.gate.gain.setTargetAtTime(on.has(id) && !(a && a.monitor === 'only') ? 1 : 0, actx.currentTime, 0.02); });
 }
 const openFx = new Set();
 const dB = (v) => (v <= 0.0001 ? -60 : Math.max(-60, 20 * Math.log10(v)));
@@ -552,7 +670,7 @@ function renderAudio() {
   studio.audio.forEach((a) => {
     const d = document.createElement('div'); d.className = 'au' + (on.has(a.id) ? '' : ' off'); d.dataset.id = a.id;
     const t = document.createElement('div'); t.className = 't';
-    const n = document.createElement('span'); n.className = 'n'; n.textContent = a.name; n.title = a.name;
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = a.name; n.title = a.name + (asrc.get(a.id) && asrc.get(a.id).err ? ' - ' + asrc.get(a.id).err : '');
     const inScene = document.createElement('input'); inScene.type = 'checkbox'; inScene.checked = on.has(a.id); inScene.title = 'Heard in the scene being edited';
     inScene.onchange = () => { const sc = byName(editing); if (!sc) return; sc.audio = sc.audio || []; if (inScene.checked) { if (!sc.audio.includes(a.id)) sc.audio.push(a.id); } else sc.audio = sc.audio.filter((x) => x !== a.id); save(); gateAudio(); renderAudio(); };
     const m = document.createElement('button'); m.className = 'sm' + (a.muted ? ' on' : ''); m.textContent = a.muted ? 'Muted' : 'Mute';
@@ -562,27 +680,48 @@ function renderAudio() {
     r.oninput = () => { a.vol = r.value <= -60 ? 0 : Math.pow(10, r.value / 20); r.title = Math.round(r.value) + ' dB'; save(); syncAudio(); };
     const mt = document.createElement('div'); mt.className = 'mt'; mt.innerHTML = '<i></i>';
     const sl = document.createElement('select');
-    sl.add(new Option('Default input', ''));
-    devices.audio.forEach((x) => sl.add(new Option(x.label || 'Input', x.deviceId)));
-    sl.value = pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
+    if (a.kind === 'desktop') { sl.add(new Option('The sound this computer plays', '')); sl.disabled = true; }
+    else {
+      sl.add(new Option('Default input', ''));
+      devices.audio.forEach((x) => sl.add(new Option(x.label || 'Input', x.deviceId)));
+      sl.value = pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
+    }
     const fx = document.createElement('details'); fx.className = 'fx'; fx.innerHTML = '<summary>Tools</summary>';
     const row = (label, el) => { const w = document.createElement('div'); w.className = 'fxr'; const l = document.createElement('span'); l.textContent = label; w.append(l, el); fx.appendChild(w); };
     const slider = (min, max, step, val, fmt, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { o.textContent = fmt(i.value); set(Number(i.value)); save(); syncAudio(); }; w.append(i, o); return w; };
     const sw = (on, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(on); c.onchange = () => { set(c.checked); save(); syncAudio(); }; return c; };
     const F = fxOf(a);
+    const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only (not in the stream)'], ['both', 'Monitor and stream']].forEach(([v, t]) => mon.add(new Option(t, v)));
+    mon.value = a.monitor || 'off'; mon.onchange = () => { a.monitor = mon.value; save(); syncAudio(); gateAudio(); };
+    row('Listen with headphones', mon);
     row('Delay', slider(0, 1000, 10, F.delay || 0, (v) => v + ' ms', (v) => { F.delay = v; }));
+    row('Low cut (rumble)', sw(F.lowcut && F.lowcut.on, (v) => { F.lowcut = { ...(F.lowcut || {}), on: v }; }));
+    row('  cuts below', slider(40, 300, 5, F.lowcut && F.lowcut.hz || 80, (v) => v + ' Hz', (v) => { F.lowcut = { ...(F.lowcut || {}), hz: v }; }));
+    row('Bass, mid, treble', sw(F.eq && F.eq.on, (v) => { F.eq = { ...(F.eq || {}), on: v }; }));
+    row('  bass', slider(-12, 12, 1, F.eq && F.eq.low || 0, (v) => v + ' dB', (v) => { F.eq = { ...(F.eq || {}), low: v }; }));
+    row('  mid', slider(-12, 12, 1, F.eq && F.eq.mid || 0, (v) => v + ' dB', (v) => { F.eq = { ...(F.eq || {}), mid: v }; }));
+    row('  treble', slider(-12, 12, 1, F.eq && F.eq.high || 0, (v) => v + ' dB', (v) => { F.eq = { ...(F.eq || {}), high: v }; }));
     row('Noise gate', sw(F.gate && F.gate.on, (v) => { F.gate = { ...(F.gate || {}), on: v }; }));
     row('  opens above', slider(-70, -10, 1, F.gate && F.gate.thr != null ? F.gate.thr : -45, (v) => v + ' dB', (v) => { F.gate = { ...(F.gate || {}), thr: v }; }));
     row('Compressor', sw(F.comp && F.comp.on, (v) => { F.comp = { ...(F.comp || {}), on: v }; }));
     row('  starts at', slider(-50, 0, 1, F.comp && F.comp.thr != null ? F.comp.thr : -18, (v) => v + ' dB', (v) => { F.comp = { ...(F.comp || {}), thr: v }; }));
     row('  strength', slider(1, 20, 0.5, F.comp && F.comp.ratio || 4, (v) => v + ':1', (v) => { F.comp = { ...(F.comp || {}), ratio: v }; }));
-    const hint = document.createElement('p'); hint.className = 'note'; hint.textContent = 'Delay: raise it if the sound arrives before the picture. Gate: cuts hiss when nobody speaks. Compressor: makes loud parts quieter so the level stays even.'; fx.appendChild(hint);
+    row('Limiter (stops peaks)', sw(F.lim && F.lim.on, (v) => { F.lim = { ...(F.lim || {}), on: v }; }));
+    row('  ceiling', slider(-20, 0, 1, F.lim && F.lim.thr != null ? F.lim.thr : -3, (v) => v + ' dB', (v) => { F.lim = { ...(F.lim || {}), thr: v }; }));
+    const hint = document.createElement('p'); hint.className = 'note'; hint.textContent = 'Headphones: hear this input yourself (use headphones). Delay: raise it if the sound arrives before the picture. Low cut: removes rumble. Gate: cuts hiss when nobody speaks. Compressor: keeps the level even. Limiter: stops sudden loud peaks.'; fx.appendChild(hint);
     fx.open = openFx.has(a.id); fx.ontoggle = () => { fx.open ? openFx.add(a.id) : openFx.delete(a.id); };
     d.append(t, mt, r, sl, fx); box.appendChild(d);
   });
   $('#audNote').textContent = studio.audio.length ? 'Tick a box to hear that input in the scene you are editing.' : 'No sound inputs yet.';
 }
-$('#addAudio').onclick = () => { studio.audio.push({ id: uid(), name: 'Sound ' + (studio.audio.length + 1), device: '', label: '', vol: 1, muted: false }); const s = byName(editing); if (s) (s.audio = s.audio || []).push(studio.audio[studio.audio.length - 1].id); save(); renderAudio(); syncAudio(); };
+function addAudioInput(kind) {
+  const a = { id: uid(), name: kind === 'desktop' ? 'Computer sound' : 'Sound ' + (studio.audio.length + 1), device: '', label: '', vol: 1, muted: false };
+  if (kind === 'desktop') a.kind = 'desktop';
+  studio.audio.push(a); const s = byName(editing); if (s) (s.audio = s.audio || []).push(a.id);
+  save(); renderAudio(); syncAudio();
+}
+document.querySelectorAll('[data-addaudio]').forEach((b) => { b.onclick = () => addAudioInput(b.dataset.addaudio); });
+if (window.msNative && window.msNative.platform === 'win32') $('#desktopAudioItem').hidden = false;
 const buf = new Float32Array(512);
 setInterval(() => {
   document.querySelectorAll('#audio .au').forEach((d) => {
@@ -625,10 +764,12 @@ $('#delScene').onclick = () => {
   if (studio.current === s.name) { studio.current = (studio.scenes[0] || {}).name || ''; dirtyCurrent = true; }
   editing = studio.current; save(); renderAll();
 };
-const ICON = { camera: 'Camera', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera', lower: 'Name bar', timer: 'Countdown', clock: 'Clock' };
+const MEDIA = new Set(['image', 'video', 'camera', 'screen', 'window', 'browser', 'ipcam']); // sources that show a picture from somewhere
+const ICON = { camera: 'Video capture', window: 'Window', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera', lower: 'Name bar', timer: 'Countdown', clock: 'Clock' };
 function renderLayers() {
   const s = byName(editing), box = $('#layers'); box.textContent = '';
   $('#editName').textContent = editing ? '(' + editing + ')' : ''; $('#airName').textContent = studio.current ? '(' + studio.current + ')' : '';
+  $('#hint').textContent = sel ? 'Drag to move. Drag a corner or edge to resize. Hold Alt and drag an edge to crop.' : 'Pick a scene, then press Transition to put it on air. Click an item in the Preview to move it.';
   if (!s) { box.textContent = 'Add a scene first.'; $('#propsBox').hidden = true; return; }
   for (let i = s.layers.length - 1; i >= 0; i--) {
     const l = s.layers[i];
@@ -665,11 +806,20 @@ function renderProps() {
   $('#propsTitle').textContent = "Properties for '" + (l.name || ICON[l.type] || l.type) + "'";
   const inp = (k, type) => { const i = document.createElement('input'); i.type = type || 'text'; i.value = l[k] == null ? '' : l[k]; i.oninput = () => { l[k] = type === 'number' ? Number(i.value) : i.value; save(); }; return i; };
   box.append(field('Name', inp('name')));
+  const lk = document.createElement('input'); lk.type = 'checkbox'; lk.checked = Boolean(l.locked); lk.onchange = () => { l.locked = lk.checked; save(); renderLayers(); };
+  lk.title = 'A locked item cannot be moved by accident in the Preview'; box.append(field('Lock in place', lk));
   box.append(field('Left', inp('x', 'number')), field('Top', inp('y', 'number')));
   const fit = document.createElement('select'); [['stretch', 'Fill the box'], ['fit', 'Fit in the box'], ['natural', 'Own size']].forEach(([v, t]) => fit.add(new Option(t, v)));
   fit.value = l.fit || 'stretch'; fit.onchange = () => { l.fit = fit.value; save(); renderProps(); }; box.append(field('Size', fit));
   if ((l.fit || 'stretch') === 'natural') { const sc = inp('sx', 'number'); sc.step = 0.05; sc.value = l.sx || 1; sc.oninput = () => { l.sx = l.sy = Number(sc.value); save(); }; box.append(field('Scale', sc)); }
   else box.append(field('Width', inp('w', 'number')), field('Height', inp('h', 'number')));
+  if (MEDIA.has(l.type)) {
+    const r = document.createElement('div'); r.className = 'row';
+    const full = (fit) => () => { l.fit = fit; l.x = 0; l.y = 0; l.w = SW; l.h = SH; delete l.sx; delete l.sy; save(); renderProps(); };
+    const b1 = document.createElement('button'); b1.textContent = 'Fit to screen'; b1.title = 'Show all of it, keeping its shape'; b1.onclick = full('fit');
+    const b2 = document.createElement('button'); b2.textContent = 'Fill the screen'; b2.title = 'Stretch it over the whole picture'; b2.onclick = full('stretch');
+    r.append(b1, b2); box.append(r);
+  }
   if (l.type === 'color' || l.type === 'text') { const c = document.createElement('input'); c.type = 'color'; c.value = l.color || '#ffffff'; c.oninput = () => { l.color = c.value; save(); }; box.append(field('Colour', c)); }
   if (l.type === 'text') {
     const t = document.createElement('textarea'); t.rows = 3; t.value = l.text || ''; t.oninput = () => { l.text = t.value; save(); };
@@ -678,7 +828,13 @@ function renderProps() {
   if (l.type === 'camera') {
     const sl = document.createElement('select'); sl.add(new Option('Default camera', ''));
     devices.video.forEach((x) => sl.add(new Option(x.label || 'Camera', x.deviceId)));
-    sl.value = pickDevice('video', l.label, l.device); sl.onchange = () => { l.device = sl.value; l.label = ''; save(); }; box.append(field('Camera', sl));
+    sl.value = pickDevice('video', l.label, l.device); sl.onchange = () => { l.device = sl.value; l.label = ''; save(); }; box.append(field('Device', sl));
+    const rs = document.createElement('select'); [['auto', 'Automatic (up to 1080p)'], ['720', '720p'], ['1080', '1080p'], ['1440', '1440p'], ['2160', '4K']].forEach(([v, t]) => rs.add(new Option(t, v)));
+    rs.value = l.res || 'auto'; rs.onchange = () => { l.res = rs.value; save(); }; box.append(field('Resolution', rs));
+    const fp = document.createElement('select'); [['auto', 'Automatic'], ['24', '24'], ['25', '25'], ['30', '30'], ['50', '50'], ['60', '60']].forEach(([v, t]) => fp.add(new Option(t, v)));
+    fp.value = l.fps || 'auto'; fp.onchange = () => { l.fps = fp.value; save(); }; box.append(field('Frame rate', fp));
+    const ci = document.createElement('p'); ci.className = 'note'; ci.id = 'camInfo'; box.append(ci);
+    const help = document.createElement('p'); help.className = 'note'; help.textContent = 'ATEM Mini or a capture box: plug its USB cable into this computer, then choose it in Device. It appears by itself within a few seconds. If a size or frame rate is not offered by the device, the device picks the closest one, and the line above says what you really get.'; box.append(help);
   }
   if (l.type === 'image' || l.type === 'video') {
     const p = inp('file'); p.placeholder = 'C:/path/to/file'; p.title = 'The file path on this computer'; box.append(field('File', p));
@@ -742,10 +898,30 @@ function renderProps() {
     box.append(dt);
   }
   if (l.type === 'browser' || l.type === 'ipcam') { const u = inp('url'); u.placeholder = 'http://...'; box.append(field('Address', u)); }
-  if (l.type === 'screen') {
-    const sl = document.createElement('select'); sl.add(new Option('First screen', ''));
-    if (window.msNative) window.msNative.screens().then((list) => { list.forEach((x) => sl.add(new Option(x.name, x.id))); sl.value = l.display || ''; });
-    sl.onchange = () => { l.display = sl.value; screens.delete(''); save(); }; box.append(field('Screen', sl));
+  if (l.type === 'screen' || l.type === 'window') {
+    const win = l.type === 'window';
+    const sl = document.createElement('select'), im = document.createElement('img');
+    im.style.cssText = 'width:192px;height:108px;object-fit:contain;background:#000;border-radius:4px;display:block;margin:4px 0';
+    let list = [];
+    const fill = async () => {
+      if (!window.msNative) return;
+      list = await window.msNative.sources(win ? 'window' : 'screen').catch(() => []);
+      sl.textContent = ''; sl.add(new Option(win ? 'Pick a window...' : 'First screen', ''));
+      if (win && l.winName && !list.some((x) => x.id === l.display)) sl.add(new Option('Saved: ' + l.winName, '__saved'));
+      list.forEach((x) => sl.add(new Option(x.name, x.id)));
+      sl.value = list.some((x) => x.id === l.display) ? l.display : (win && l.winName ? '__saved' : '');
+      const cur = list.find((x) => x.id === sl.value); im.src = cur && cur.thumb ? cur.thumb : ''; im.hidden = !(cur && cur.thumb);
+    };
+    sl.onchange = () => {
+      if (sl.value === '__saved') return;
+      const old = caps.get(capKey(l)); if (old) { try { old.st && old.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(capKey(l)); }
+      l.display = sl.value; l.winName = win && sl.value ? sl.options[sl.selectedIndex].text : '';
+      const cur = list.find((x) => x.id === sl.value); im.src = cur && cur.thumb ? cur.thumb : ''; im.hidden = !(cur && cur.thumb);
+      save();
+    };
+    fill(); box.append(field(win ? 'Window' : 'Screen', sl), im);
+    const rf = document.createElement('button'); rf.className = 'sm'; rf.textContent = 'Refresh the list'; rf.onclick = fill; box.append(rf);
+    if (win) { const h = document.createElement('p'); h.className = 'note'; h.textContent = 'Open the program first (for example the lyrics or slides), then pick it here. If you close it and open it again, the Studio finds it again by its name. On a Mac, allow Screen Recording for Multistream when the Mac asks.'; box.append(h); }
   }
 }
 function pickFile(l) {
@@ -761,6 +937,8 @@ document.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
   const t = b.dataset.add, l = { id: uid(), type: t, x: 0, y: 0, w: SW, h: SH, fit: 'stretch', visible: true };
   if (t === 'text') Object.assign(l, { text: 'Welcome', size: 110, color: '#ffffff', x: 120, y: 800, w: 1600, h: 160 });
   if (t === 'color') l.color = '#0b3d1e';
+  if (t === 'window') { l.display = ''; l.winName = ''; l.fit = 'fit'; }
+  if (t === 'screen' || t === 'camera') l.fit = 'fit';
   if (t === 'lower') Object.assign(l, { title: 'Name here', sub: 'Role or message', color: '#22c55e', textColor: '#ffffff', x: 100, y: 800, w: 1100, h: 170, fit: 'stretch' });
   if (t === 'timer') Object.assign(l, { mode: 'duration', minutes: 10, at: '10:00', label: 'Service starts in', doneText: 'Starting now', size: 220, color: '#ffffff', x: 0, y: 330, w: SW, h: 420 });
   if (t === 'clock') Object.assign(l, { size: 120, color: '#ffffff', x: 0, y: 60, w: SW, h: 200, h24: false, secs: false, date: false });
@@ -781,9 +959,10 @@ function importObs(j) {
     if (!AUDIO.test(s.id)) return;
     const wing = String((s.settings || {}).device_id || '').includes('720a4ef2');
     const a = { id: uid(), name: s.name, device: '', label: wing ? 'WING' : '', vol: s.volume == null ? 1 : s.volume, muted: !!s.muted };
+    if (/output_capture$/.test(s.id)) a.kind = 'desktop'; // OBS "Desktop Audio" = the sound this computer plays
     audio.push(a); aId.set(s.uuid, a.id);
   });
-  const kindOf = (id) => ({ image_source: 'image', ffmpeg_source: 'video', dshow_input: 'camera', av_capture_input: 'camera', v4l2_input: 'camera', monitor_capture: 'screen', display_capture: 'screen', screen_capture: 'screen', browser_source: 'browser', droidcam_obs: 'ipcam', color_source: 'color', color_source_v3: 'color', text_gdiplus: 'text', text_gdiplus_v3: 'text' }[id]);
+  const kindOf = (id) => ({ image_source: 'image', ffmpeg_source: 'video', dshow_input: 'camera', av_capture_input: 'camera', v4l2_input: 'camera', monitor_capture: 'screen', display_capture: 'screen', screen_capture: 'screen', window_capture: 'window', game_capture: 'window', xcomposite_input: 'window', browser_source: 'browser', droidcam_obs: 'ipcam', color_source: 'color', color_source_v3: 'color', text_gdiplus: 'text', text_gdiplus_v3: 'text' }[id]);
   const scenes = [];
   const order = (j.scene_order || []).map((x) => x.name);
   (j.sources || []).filter((s) => s.id === 'scene').sort((a, b) => (order.indexOf(a.name) + 1 || 999) - (order.indexOf(b.name) + 1 || 999)).forEach((sc) => {
@@ -806,6 +985,7 @@ function importObs(j) {
       if (kind === 'video') { l.file = st.local_file || ''; l.loop = st.looping !== false; l.restart = st.restart_on_activate !== false; l.muted = !!s.muted; l.vol = s.volume == null ? 1 : s.volume; }
       if (kind === 'camera') { l.label = String(st.video_device_id || '').split(':')[0]; l.device = ''; }
       if (kind === 'screen') l.display = '';
+      if (kind === 'window') { l.display = ''; l.winName = String(st.window || '').split(':')[0]; }
       if (kind === 'browser') { l.url = st.url || ''; l.bw = st.width || 1920; l.bh = st.height || 1080; }
       if (kind === 'ipcam') { l.url = 'http://' + (st.cur_dev_ip || st.wifi_ip || '192.168.0.0') + ':4747/video'; }
       if (kind === 'color') { l.color = '#000000'; l.fit = 'stretch'; l.w = st.width || SW; l.h = st.height || SH; }
@@ -831,13 +1011,18 @@ $('#impBtn').onclick = () => {
 };
 
 // ---------------- devices ----------------
-async function loadDevices() {
-  try { const t = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); t.getTracks().forEach((x) => x.stop()); } catch {}
+async function loadDevices(first = true) {
+  if (first) { try { const t = await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); t.getTracks().forEach((x) => x.stop()); } catch {} }
   const d = await navigator.mediaDevices.enumerateDevices().catch(() => []);
-  devices.video = d.filter((x) => x.kind === 'videoinput'); devices.audio = d.filter((x) => x.kind === 'audioinput');
+  devices.video = d.filter((x) => x.kind === 'videoinput'); devices.audio = d.filter((x) => x.kind === 'audioinput'); devices.out = d.filter((x) => x.kind === 'audiooutput');
   cams.forEach((c, k) => { if (!c.ready) cams.delete(k); });
-  renderAudio(); syncAudio();
+  asrc.forEach((n) => { if (n.err) n.dev = 'retry'; }); // an input that failed is tried again
+  fillMon(); renderAudio(); syncAudio();
+  if (!first) { flash('The list of cameras and sound inputs was updated.', true); renderProps(); }
 }
+// plug in a capture box (like the ATEM Mini) and it shows up here by itself
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { loadDevices(false); });
+devices.out = [];
 
 // A pipe to the app for video. In the desktop app it goes straight to the app (no network, no localhost).
 // It behaves like a WebSocket (onopen, onmessage, onclose, send, close), so the code below works with either.
@@ -862,21 +1047,23 @@ function flash(text, ok) { $('#st').textContent = text; $('#st').className = 'st
 // Once you press Start sending, it keeps trying to send until you press Stop. If the link drops, or the
 // encoder stops, it reconnects by itself, so a long service does not end because of one hiccup.
 let rec = null, wsOut = null, wantSend = false, retryT = 0, deadTicks = 0;
+const vcv = document.createElement('canvas'); vcv.width = 1280; vcv.height = 720; const vctx = vcv.getContext('2d'); let vcOn = false; // the virtual camera has its own 720p picture
 async function startSend() {
   wantSend = true; deadTicks = 0;
+  setProgramSize(outW(OUT.h), OUT.h); setFps(OUT.fps); lockOut();
   $('#sendBtn').textContent = 'Stop Streaming'; $('#sendBtn').className = 'stop'; liveT0 = liveT0 || Date.now();
   await connectSend();
 }
 async function connectSend() {
   clearTimeout(retryT);
   try { ensureAudio(); await syncAudio(); } catch {}
-  const out = new MediaStream(cv.captureStream(30).getVideoTracks());
+  const out = new MediaStream(cv.captureStream(OUT.fps).getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
-  wsOut = openPipe('/studio-ingest');
+  wsOut = openPipe(`/studio-ingest?h=${OUT.h}&fps=${OUT.fps}&kbps=${OUT.kbps}`);
   wsOut.binaryType = 'arraybuffer';
   wsOut.onopen = () => {
     const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
-    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: 5000000, audioBitsPerSecond: 128000 });
+    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: 128000 });
     rec.ondataavailable = async (e) => { if (e.data.size && wsOut && wsOut.readyState === 1) wsOut.send(await e.data.arrayBuffer()); };
     rec.start(250);
     cv.classList.add('live');
@@ -896,6 +1083,7 @@ function scheduleRetry() {
 function stopSend() {
   wantSend = false; clearTimeout(retryT);
   dropSend();
+  setProgramSize(1280, 720); setFps(30); lockOut();
   $('#sendBtn').textContent = 'Start Streaming'; $('#sendBtn').className = ''; liveT0 = 0;
 }
 $('#sendBtn').onclick = () => (wantSend ? stopSend() : startSend());
@@ -919,15 +1107,16 @@ if (!$('#recQ').value) $('#recQ').value = '1080-8';
 $('#recQ').onchange = () => { try { localStorage.setItem('ms_recq', $('#recQ').value); } catch {} };
 async function startRec() {
   const [res, mb] = $('#recQ').value.split('-').map(Number);
-  recW = res === 1080 ? 1920 : 1280; rcv.width = recW; rcv.height = res === 1080 ? 1080 : 720;
+  recW = outW(res); rcv.width = recW; rcv.height = res;
+  const rfps = OUT.fps === 60 ? 60 : 30;
   try { ensureAudio(); await syncAudio(); } catch {}
-  const out = new MediaStream(rcv.captureStream(30).getVideoTracks());
+  const out = new MediaStream(rcv.captureStream(rfps).getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
-  const ws = recWs = openPipe(`/studio-record?h=${rcv.height}&mbit=${mb}`);
+  const ws = recWs = openPipe(`/studio-record?h=${rcv.height}&mbit=${mb}&fps=${rfps}`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
     const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
-    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.max(mb, 6) * 1000000, audioBitsPerSecond: 160000 });
+    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.min(80, Math.max(mb, 6)) * 1000000, audioBitsPerSecond: 160000 });
     recMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     recMr.start(500);
     recT0 = Date.now(); $('#recBtn').textContent = 'Stop Recording'; $('#recBtn').className = 'stop';
@@ -955,7 +1144,7 @@ fetch('/api/vcam').then((r) => r.json()).then((s) => { if (s.available) $('#vcBt
 function vcOff(msg) {
   try { vcMr && vcMr.state !== 'inactive' && vcMr.stop(); } catch {}
   try { vcWs && vcWs.close(); } catch {}
-  vcWs = vcMr = null; $('#vcBtn').textContent = 'Start Virtual Camera'; $('#vcBtn').className = '';
+  vcWs = vcMr = null; vcOn = false; $('#vcBtn').textContent = 'Start Virtual Camera'; $('#vcBtn').className = '';
   if (msg) { $('#st').textContent = msg; $('#st').className = 'stat bad'; }
 }
 $('#vcBtn').onclick = async () => {
@@ -971,7 +1160,8 @@ $('#vcBtn').onclick = async () => {
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
     const mt = ['video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
-    vcMr = new MediaRecorder(new MediaStream(cv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000 });
+    vcOn = true;
+    vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000 });
     vcMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     vcMr.start(100);
     $('#vcBtn').textContent = 'Stop Virtual Camera'; $('#vcBtn').className = 'stop';
@@ -988,14 +1178,232 @@ function popMenu(btn, pop) {
   pop.addEventListener('click', (e) => { if (e.target.closest('button')) pop.hidden = true; e.stopPropagation(); });
 }
 popMenu($('#addBtn'), $('#addPop'));
+popMenu($('#addAudio'), $('#audPop'));
 document.addEventListener('click', () => document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }); });
+
+// ---------------- move, resize and crop in the Preview (like OBS) ----------------
+// Click an item to select it. Drag it to move. Drag a corner (keeps the shape) or an edge to resize.
+// Hold Alt and drag an edge to crop. Hold Shift on a corner to change the shape. Hold Ctrl to switch snapping off.
+// Arrow keys move the item (Shift = 10 at a time). Delete removes it.
+function srcSizeOf(l) {
+  try {
+    if (l.type === 'image') { const i = getImg(fileUrl(l)); return i.naturalWidth ? [i.naturalWidth, i.naturalHeight] : null; }
+    if (l.type === 'video') { const v = vids.get(l.id); return v && v.el.videoWidth ? [v.el.videoWidth, v.el.videoHeight] : null; }
+    if (l.type === 'camera') { const c = cams.get(camKey(l)); return c && c.ready && c.v.videoWidth ? [c.v.videoWidth, c.v.videoHeight] : null; }
+    if (l.type === 'screen' || l.type === 'window') { const c = caps.get(capKey(l)); return c && c.ready && c.v.videoWidth ? [c.v.videoWidth, c.v.videoHeight] : null; }
+    if (l.type === 'browser') { const b = boards.get(boardKey(l)); return b && b.c.width ? [b.c.width, b.c.height] : null; }
+    if (l.type === 'ipcam') { const i = ipcams.get(l.url); return i && i.naturalWidth ? [i.naturalWidth, i.naturalHeight] : null; }
+  } catch {}
+  return null;
+}
+function cropOf(l) { const k = (l.pfx && l.pfx.crop) || {}; const c = (v) => Math.min(90, Math.max(0, v || 0)) / 100; return { l: c(k.l), t: c(k.t), r: c(k.r), b: c(k.b) }; }
+// where an item really is, in scene units: [left, top, width, height]
+function boundsOf(l) {
+  if (MEDIA.has(l.type)) {
+    const sz = srcSizeOf(l);
+    if (!sz) return [l.x, l.y, l.w || SW, l.h || SH];
+    const k = cropOf(l);
+    return place(l, Math.max(1, sz[0] * (1 - k.l - k.r)), Math.max(1, sz[1] * (1 - k.t - k.b)));
+  }
+  if (l.type === 'text') return [l.x, l.y, l.w || SW, String(l.text || '').split('\n').length * (l.size || 60) * 1.2];
+  return [l.x, l.y, l.w || SW, l.h || SH];
+}
+const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+const CURSOR = { nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize', n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize' };
+function handlePos(b, h) {
+  const [x, y, w, hh] = b, cx = x + w / 2, cy = y + hh / 2;
+  return { nw: [x, y], n: [cx, y], ne: [x + w, y], e: [x + w, cy], se: [x + w, y + hh], s: [cx, y + hh], sw: [x, y + hh], w: [x, cy] }[h];
+}
+// the picture inside the Preview box (it is centred, with black bars if the box is a different shape)
+function evGeom() {
+  const r = ev.getBoundingClientRect(), asp = SW / SH;
+  let dw = r.width, dh = r.height;
+  if (dw / dh > asp) dw = dh * asp; else dh = dw / asp;
+  return { left: r.left + (r.width - dw) / 2, top: r.top + (r.height - dh) / 2, dw, dh, k: SW / Math.max(1, dw) };
+}
+function evPoint(e) { const g = evGeom(); return { x: (e.clientX - g.left) * g.k, y: (e.clientY - g.top) * g.k, k: g.k }; }
+function curLayer() { const sc = byName(editing); return sc && sel ? sc.layers.find((x) => x.id === sel) : null; }
+function hitHandle(pt) {
+  const l = curLayer(); if (!l || l.locked) return '';
+  const b = boundsOf(l), r = 8 * pt.k;
+  return HANDLES.find((h) => { const [hx, hy] = handlePos(b, h); return Math.abs(pt.x - hx) <= r && Math.abs(pt.y - hy) <= r; }) || '';
+}
+function hitLayer(pt) {
+  const sc = byName(editing); if (!sc) return null;
+  for (let i = sc.layers.length - 1; i >= 0; i--) {
+    const l = sc.layers[i]; if (l.visible === false) continue;
+    const [x, y, w, h] = boundsOf(l);
+    if (pt.x >= x && pt.x <= x + w && pt.y >= y && pt.y <= y + h) return l;
+  }
+  return null;
+}
+let drag = null;
+function snapAxis(vals, lines, thr) {
+  let best = null;
+  for (const v of vals) for (const ln of lines) { const d = ln - v; if (Math.abs(d) <= thr && (best === null || Math.abs(d) < Math.abs(best))) best = d; }
+  return best || 0;
+}
+function snapLines(l) {
+  const xs = [0, SW / 2, SW], ys = [0, SH / 2, SH], sc = byName(editing);
+  if (sc) sc.layers.forEach((o) => { if (o === l || o.visible === false) return; const [x, y, w, h] = boundsOf(o); xs.push(x, x + w / 2, x + w); ys.push(y, y + h / 2, y + h); });
+  return { xs, ys };
+}
+function restoreLayer(l, l0) { Object.keys(l).forEach((k) => { delete l[k]; }); Object.assign(l, JSON.parse(JSON.stringify(l0))); }
+function moveBy(l, dx, dy, snap, k) {
+  l.x = drag.l0.x + dx; l.y = drag.l0.y + dy;
+  if (snap) {
+    const b = boundsOf(l), L = snapLines(l), thr = 8 * k;
+    l.x += snapAxis([b[0], b[0] + b[2] / 2, b[0] + b[2]], L.xs, thr);
+    l.y += snapAxis([b[1], b[1] + b[3] / 2, b[1] + b[3]], L.ys, thr);
+  }
+  l.x = Math.round(l.x); l.y = Math.round(l.y);
+}
+function resizeBy(l, d, dx, dy, free, snap, k) {
+  const [bx, by, bw, bh] = d.b0, h = d.h, corner = h.length === 2;
+  let x1 = bx, y1 = by, x2 = bx + bw, y2 = by + bh;
+  if (h.includes('w')) x1 += dx; if (h.includes('e')) x2 += dx; if (h.includes('n')) y1 += dy; if (h.includes('s')) y2 += dy;
+  if (snap) {
+    const thr = 8 * k, xs = [0, SW / 2, SW], ys = [0, SH / 2, SH];
+    if (h.includes('w')) x1 += snapAxis([x1], xs, thr); if (h.includes('e')) x2 += snapAxis([x2], xs, thr);
+    if (h.includes('n')) y1 += snapAxis([y1], ys, thr); if (h.includes('s')) y2 += snapAxis([y2], ys, thr);
+  }
+  if (corner && !free) { // keep the shape
+    const s2 = Math.max(Math.abs((x2 - x1) / bw), Math.abs((y2 - y1) / bh)), nw = bw * s2, nh = bh * s2;
+    if (h.includes('w')) x1 = x2 - nw; else x2 = x1 + nw;
+    if (h.includes('n')) y1 = y2 - nh; else y2 = y1 + nh;
+  }
+  if (x2 - x1 < 8) { if (h.includes('w')) x1 = x2 - 8; else x2 = x1 + 8; }
+  if (y2 - y1 < 8) { if (h.includes('n')) y1 = y2 - 8; else y2 = y1 + 8; }
+  const nw = x2 - x1, nh = y2 - y1, t = l.type;
+  if (MEDIA.has(t) && (l.fit || 'stretch') === 'natural') {
+    const ow = bw / (d.l0.sx || 1), oh = bh / (d.l0.sy || 1); // the picture's own (cropped) size
+    l.sx = nw / ow; l.sy = nh / oh; l.x = Math.round(x1); l.y = Math.round(y1);
+  } else if (t === 'text' || t === 'timer' || t === 'clock') {
+    if (corner) {
+      const base = d.l0.size || (t === 'text' ? 60 : t === 'timer' ? 200 : 120);
+      l.size = Math.max(8, Math.round(base * (nh / bh))); l.x = Math.round(x1); l.y = Math.round(y1); l.w = Math.round(nw); if (t !== 'text') l.h = Math.round(nh);
+    } else { l.x = Math.round(x1); l.w = Math.round(nw); if (t !== 'text') { l.y = Math.round(y1); l.h = Math.round(nh); } }
+  } else { l.x = Math.round(x1); l.y = Math.round(y1); l.w = Math.round(nw); l.h = Math.round(nh); }
+}
+// Alt + drag an edge: cut the sides off the picture, the rest stays where it is
+function cropBy(l, d, dx, dy) {
+  const [, , bw, bh] = d.b0, F = (l.pfx = l.pfx || {}), C = (F.crop = F.crop || {}), k0 = cropOf(d.l0), nat = (l.fit || 'stretch') === 'natural';
+  const visW = Math.max(0.05, 1 - k0.l - k0.r), visH = Math.max(0.05, 1 - k0.t - k0.b), h = d.h;
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  if (h.includes('w')) { const nl = clamp(k0.l * 100 + dx / bw * visW * 100, 0, 90 - k0.r * 100), mv = (nl - k0.l * 100) / 100 / visW * bw; C.l = Math.round(nl * 10) / 10; l.x = Math.round(d.l0.x + mv); if (!nat) l.w = Math.round(d.l0.w - mv); }
+  if (h.includes('e')) { const nr = clamp(k0.r * 100 - dx / bw * visW * 100, 0, 90 - k0.l * 100), mv = (nr - k0.r * 100) / 100 / visW * bw; C.r = Math.round(nr * 10) / 10; if (!nat) l.w = Math.round(d.l0.w - mv); }
+  if (h.includes('n')) { const nt = clamp(k0.t * 100 + dy / bh * visH * 100, 0, 90 - k0.b * 100), mv = (nt - k0.t * 100) / 100 / visH * bh; C.t = Math.round(nt * 10) / 10; l.y = Math.round(d.l0.y + mv); if (!nat) l.h = Math.round(d.l0.h - mv); }
+  if (h.includes('s')) { const nb = clamp(k0.b * 100 - dy / bh * visH * 100, 0, 90 - k0.t * 100), mv = (nb - k0.b * 100) / 100 / visH * bh; C.b = Math.round(nb * 10) / 10; if (!nat) l.h = Math.round(d.l0.h - mv); }
+}
+ev.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0) return;
+  const pt = evPoint(e); let h = hitHandle(pt), l = curLayer();
+  if (!h) {
+    const hit = hitLayer(pt);
+    if (!hit) { if (sel) { sel = ''; renderLayers(); } return; }
+    if (hit.id !== sel) { sel = hit.id; renderLayers(); }
+    l = hit;
+  }
+  if (!l || l.locked) return;
+  if (h && MEDIA.has(l.type) && l.fit === 'fit' && srcSizeOf(l)) { const b = boundsOf(l); l.fit = 'stretch'; l.x = Math.round(b[0]); l.y = Math.round(b[1]); l.w = Math.round(b[2]); l.h = Math.round(b[3]); }
+  drag = { id: l.id, h, start: pt, b0: boundsOf(l), l0: JSON.parse(JSON.stringify(l)), moved: false };
+  try { ev.setPointerCapture(e.pointerId); } catch {}
+  e.preventDefault();
+});
+ev.addEventListener('pointermove', (e) => {
+  const pt = evPoint(e);
+  if (!drag) { const h = hitHandle(pt); ev.style.cursor = h ? CURSOR[h] : (hitLayer(pt) ? 'move' : 'default'); return; }
+  const sc = byName(editing), l = sc && sc.layers.find((x) => x.id === drag.id);
+  if (!l) { drag = null; return; }
+  const dx = pt.x - drag.start.x, dy = pt.y - drag.start.y;
+  if (!drag.moved && Math.abs(dx) + Math.abs(dy) < 3 * pt.k) return;
+  drag.moved = true;
+  restoreLayer(l, drag.l0);
+  if (!drag.h) moveBy(l, dx, dy, !e.ctrlKey, pt.k);
+  else if (e.altKey && MEDIA.has(l.type)) cropBy(l, drag, dx, dy);
+  else resizeBy(l, drag, dx, dy, e.shiftKey, !e.ctrlKey, pt.k);
+  save();
+});
+const endDrag = (e) => { if (!drag) return; try { ev.releasePointerCapture(e.pointerId); } catch {} drag = null; save(); };
+ev.addEventListener('pointerup', endDrag); ev.addEventListener('pointercancel', endDrag);
+ev.addEventListener('dblclick', (e) => { const l = hitLayer(evPoint(e)); if (l) { sel = l.id; propsOpen = true; renderLayers(); } });
+// the red box and the handles around the selected item (only in the Preview, never in what viewers see)
+function drawSelection() {
+  const l = curLayer(); if (!l) return;
+  const b = boundsOf(l), g = evGeom(), k = ev.width / SW, css = ev.width / Math.max(1, g.dw);
+  ectx.save(); ectx.setTransform(1, 0, 0, 1, 0, 0);
+  ectx.lineWidth = 2 * css; ectx.strokeStyle = '#ff3b3b'; ectx.strokeRect(b[0] * k, b[1] * k, b[2] * k, b[3] * k);
+  if (!l.locked) { ectx.fillStyle = '#ff3b3b'; const z = 8 * css; HANDLES.forEach((h) => { const [x, y] = handlePos(b, h); ectx.fillRect(x * k - z / 2, y * k - z / 2, z, z); }); }
+  ectx.restore();
+}
+setInterval(() => { drawScene(ectx, byName(editing), ev.width / SW, false); drawSelection(); }, 50);
+// the line under the Properties window and the camera's real size
+setInterval(() => {
+  const el = $('#camInfo'); if (!el) return;
+  const l = curLayer(); if (!l || l.type !== 'camera') return;
+  const c = cams.get(camKey(l));
+  el.textContent = c ? (c.ready ? 'Receiving ' + c.info : (c.err ? 'Problem: ' + c.err : 'Starting...')) : 'Not started yet';
+}, 500);
+
+// ---------------- Settings window: video size, recording, monitoring ----------------
+const PRESETS = [
+  ['720-30-4500', '720p, 30 frames (smallest)'],
+  ['1080-30-6000', '1080p, 30 frames (recommended)'],
+  ['1080-60-9000', '1080p, 60 frames (fast movement)'],
+  ['1440-30-12000', '1440p, 30 frames'],
+  ['2160-30-20000', '4K, 30 frames (needs a strong computer)'],
+];
+function outNote() {
+  const name = OUT.h === 2160 ? '4K' : OUT.h + 'p';
+  let t = 'Sends ' + name + ' at ' + OUT.fps + ' frames a second.';
+  if (OUT.h > 1080) t += ' YouTube gets the full size. Facebook and Instagram take 1080p at most, so the app sends them a smaller copy. This is heavy for the computer: do a test stream first.';
+  else if (OUT.kbps > 9000) t += ' Facebook takes 9000 kbps at most, so it gets a lighter copy.';
+  else t += ' This is within the limits Facebook lists (1080p, 60 frames, 9000 kbps).';
+  $('#outNote').textContent = t;
+}
+function saveOut() { try { localStorage.setItem('ms_out', JSON.stringify(OUT)); } catch {} outNote(); }
+function lockOut() {
+  $('#outQ').disabled = $('#outKbps').disabled = wantSend;
+  if (wantSend) $('#outNote').textContent = 'Stop streaming to change the video size.'; else outNote();
+}
+(function () {
+  const q = $('#outQ'); PRESETS.forEach(([v, t]) => q.add(new Option(t, v)));
+  const cur = PRESETS.find((x) => x[0].startsWith(OUT.h + '-' + OUT.fps + '-'));
+  q.value = cur ? cur[0] : '1080-30-6000';
+  if (!cur) { OUT.h = 1080; OUT.fps = 30; OUT.kbps = 6000; }
+  $('#outKbps').value = OUT.kbps; outNote();
+  q.onchange = () => { const [h, f, k] = q.value.split('-').map(Number); OUT.h = h; OUT.fps = f; OUT.kbps = k; $('#outKbps').value = k; saveOut(); };
+  $('#outKbps').onchange = () => { OUT.kbps = Math.min(60000, Math.max(1000, Math.round(Number($('#outKbps').value)) || OUT.kbps)); $('#outKbps').value = OUT.kbps; saveOut(); };
+})();
+function fillMon() {
+  const m = $('#monDev'); m.textContent = ''; m.add(new Option('Default output', ''));
+  (devices.out || []).forEach((x) => { if (x.deviceId !== 'default' && x.deviceId !== 'communications') m.add(new Option(x.label || 'Output', x.deviceId)); });
+  m.value = [...m.options].some((o) => o.value === monDev) ? monDev : '';
+}
+$('#monDev').onchange = () => setMonitorDevice($('#monDev').value);
+function openSettings() { fillMon(); lockOut(); $('#setBox').hidden = false; }
+function closeSettings() { $('#setBox').hidden = true; }
+$('#setBtn').onclick = openSettings; $('#setClose').onclick = closeSettings; $('#setOk').onclick = closeSettings;
+$('#setBox').addEventListener('mousedown', (e) => { if (e.target === $('#setBox')) closeSettings(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#setBox').hidden) closeSettings(); });
+// the buttons inside Settings close it first, so the window they open is not hidden behind it
+['#impBtn', '#keysBtn', '#projBtn'].forEach((id) => $(id).addEventListener('click', closeSettings));
 
 // ---------------- hotkeys and the preview window ----------------
 document.addEventListener('keydown', (e) => {
   const t = e.target, tag = t && t.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
   if (e.ctrlKey || e.metaKey) return;
+  const cl = curLayer();
+  if (cl) {
+    const ar = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.code];
+    if (ar && !cl.locked && $('#propsBox').hidden && $('#setBox').hidden) { const stp = e.shiftKey ? 10 : 1; cl.x = Math.round(cl.x) + ar[0] * stp; cl.y = Math.round(cl.y) + ar[1] * stp; save(); e.preventDefault(); return; }
+    if ((e.code === 'Delete' || e.code === 'Backspace') && $('#propsBox').hidden && $('#setBox').hidden) {
+      if (confirm('Remove "' + (cl.name || ICON[cl.type] || cl.type) + '" from this scene?')) { const sc = byName(editing); sc.layers = sc.layers.filter((x) => x.id !== cl.id); sel = ''; save(); renderLayers(); }
+      e.preventDefault(); return;
+    }
+  }
   const d = /^Digit([1-9])$/.exec(e.code);
   if (d && !e.shiftKey) {
     const n = Number(d[1]) - 1;
@@ -1035,7 +1443,7 @@ async function poll() {
   try {
     const s = await fetch('/api/studio').then((r) => r.json());
     serverPreview = s.preview || '';
-    if (s.rev !== lastRev && !saveT) {
+    if (s.rev !== lastRev && !saveT && !drag) {
       const wasEditing = editing;
       studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '' }; lastRev = s.rev;
       editing = byName(wasEditing) ? wasEditing : studio.current;
@@ -1082,13 +1490,15 @@ async function shots() {
   setInterval(poll, 700); setInterval(shots, 400);
 })();
 </script>
-<div id="keysBox" hidden style="position:fixed;right:12px;top:52px;z-index:50;background:var(--card,#101814);border:1px solid #2a3a30;border-radius:10px;padding:12px 14px;max-width:300px;font-size:13px;line-height:1.7;box-shadow:0 8px 30px #0008">
+<div id="keysBox" hidden style="position:fixed;right:12px;top:52px;z-index:50;background:var(--card,#101814);border:1px solid var(--line);border-radius:10px;padding:12px 14px;max-width:300px;font-size:13px;line-height:1.7;box-shadow:0 8px 30px #0008">
 <b>Keyboard shortcuts</b><br>
 <kbd>1</kbd> to <kbd>9</kbd> put that scene on air<br>
 <kbd>Alt</kbd>+<kbd>1</kbd> to <kbd>9</kbd> mute or unmute that sound input<br>
 <kbd>R</kbd> start or stop recording<br>
 <kbd>Shift</kbd>+<kbd>G</kbd> start or stop sending (it asks before stopping)<br>
 <kbd>F</kbd> next transition type<br>
+<kbd>Arrow keys</kbd> move the selected item (<kbd>Shift</kbd> = 10 at a time), <kbd>Delete</kbd> removes it<br>
+In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+drag an edge to crop, <kbd>Ctrl</kbd> turns snapping off<br>
 <span style="opacity:.7">They work when this window is the one you are in, and you are not typing in a box.</span></div>
 </body>
 </html>

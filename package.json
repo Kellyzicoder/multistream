@@ -38,6 +38,7 @@
       "autoretry.js",
       "preflight.js",
       "encoder.js",
+      "outargs.js",
       "public/**/*",
       "package.json",
       "vcam.js"

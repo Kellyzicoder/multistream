@@ -28,6 +28,19 @@ Ports are only opened when you ask for them:
 - **Studio** looks like OBS (Studio Mode): **Preview** on the left, **Program** (what viewers see) on the right, a **Transition** button between them. Along the bottom: **Scenes**, **Sources**, **Audio Mixer**, **Scene Transitions** and **Controls** (Start Streaming, Start Recording, Start Virtual Camera, Projector, Import Scenes, Shortcuts). Double-click a source (or press the gear) to open its **Properties** window. The status bar shows the LIVE and REC clocks.
 - **Dashboard**: a "Waiting for the Studio" screen with one **Open Studio** button. Thumbnail, recording and the check list are folded under **More options**.
 
+## Studio tools (what you can do, and what is not there)
+**Picture size.** Settings > Video: 720p, 1080p, 1080p at 60 frames, 1440p, or 4K (30 frames). YouTube gets the video as it is. Facebook and Instagram take 1080p at most (Facebook Live API reference: 1920x1080, 60 frames, 9000 kbps), so for those two the app makes a smaller 1080p copy by itself and the dashboard says so. Recording can be up to 4K. The virtual camera stays at 720p.
+
+**Video Capture Device** (webcam, ATEM Mini, capture box). Pick the device, a resolution (up to 4K) and a frame rate. The Properties window shows what the device really gives. Plug a device in while the Studio is open and it appears in the list by itself.
+
+**Preview editing** (like OBS): click an item to select it, drag to move, drag a corner (keeps the shape) or an edge to resize, hold Alt and drag an edge to crop, Shift on a corner changes the shape, Ctrl turns snapping off. Items snap to the edges and centre of the picture and to each other. Arrow keys move the item (Shift = 10), Delete removes it. A "Lock in place" tick protects an item.
+
+**Window capture.** Add source > Window: pick a program from a list with small pictures. If you close it and open it again, the Studio finds it again by its name. A window that is not there gives a message; it is never swapped for a screen.
+
+**Sound.** Each input has Tools: listen with headphones (monitor off / only / and stream), delay, low cut, bass-mid-treble, noise gate, compressor, limiter. Settings > Audio picks the monitoring output. "Computer sound" (the sound this PC plays) is in the Windows app; on a Mac use BlackHole as a Sound input.
+
+**Not in Version 3 (OBS has it):** stinger transitions, video filters like blur or colour lookup, groups and scenes inside scenes, several audio tracks in one recording, replay buffer, NDI, global hotkeys when the Studio is not the window in front, plugins and scripts, a virtual camera on Mac, 4K at 60 frames.
+
 ## Tests
-- `npm test`: the video hub and the in-app requests.
-- `npm run test:app`: starts the real app with a fake YouTube, checks no ports are open, sends from the Studio, checks the preview, records, checks there is no OBS connection, and checks phone control opens and closes its port. GitHub runs this on every push and keeps screenshots.
+- `npm test`: the video hub, the in-app requests, the output sizes (720p to 4K) and the 1080p limit for Facebook/Instagram (a real 1440p picture is turned into 1080p).
+- `npm run test:app`: starts the real app with a fake YouTube, checks no ports are open, sends from the Studio, checks the preview, records, checks there is no OBS connection, and checks phone control opens and closes its port. It also drags, resizes and crops items in the Preview with the mouse, checks the camera settings, the sound monitoring wiring, the screen and window lists, and sends 1080p to a fake YouTube and a fake Facebook (which must get the smaller copy). GitHub runs this on every push and keeps screenshots.
