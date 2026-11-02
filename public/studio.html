@@ -178,6 +178,8 @@
   html.glass-off { --gl:var(--card); --gl2:var(--btn); --gl-line:var(--line); --gl-hi:transparent; --gl-sh:none; --gl-blur:none; }
   html.glass-off body { background:var(--bg); }
   @media (prefers-reduced-transparency: reduce) { :root { --gl:var(--card); --gl2:var(--btn); --gl-line:var(--line); --gl-hi:transparent; --gl-blur:none; } }
+  button.eye { padding:2px 6px; min-width:0; background:transparent; border-color:transparent; box-shadow:none; color:inherit; display:inline-flex; align-items:center; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  button.eye.off { opacity:.45; } button.eye:hover { background:var(--gl2); }
 </style>
 </head>
 <body>
@@ -792,6 +794,15 @@ function gateAudio() {
 }
 const openFx = new Set();
 const dB = (v) => (v <= 0.0001 ? -60 : Math.max(-60, 20 * Math.log10(v)));
+  // an eye button instead of a tick: open eye = shown / heard, slashed eye = hidden
+  const EYE_ON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const EYE_OFF = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.9 10.9 0 0 1 12 19C5 19 1 12 1 12a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.1 9.1 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>';
+  function eyeBtn(on, title, change) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'eye'; b.title = title;
+    const paint = () => { b.innerHTML = on ? EYE_ON : EYE_OFF; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', title + (on ? ': on' : ': off')); b.classList.toggle('off', !on); };
+    b.onclick = (e) => { e.stopPropagation(); on = !on; paint(); change(on); };
+    paint(); return b;
+  }
 function renderAudio() {
   const box = $('#audio'); box.textContent = '';
   const s = byName(editing), on = new Set((s && s.audio) || []);
@@ -799,8 +810,7 @@ function renderAudio() {
     const d = document.createElement('div'); d.className = 'au' + (on.has(a.id) ? '' : ' off'); d.dataset.id = a.id;
     const t = document.createElement('div'); t.className = 't';
     const n = document.createElement('span'); n.className = 'n'; n.textContent = a.name; n.title = a.name + (asrc.get(a.id) && asrc.get(a.id).err ? ' - ' + asrc.get(a.id).err : '');
-    const inScene = document.createElement('input'); inScene.type = 'checkbox'; inScene.checked = on.has(a.id); inScene.title = 'Heard in the scene being edited';
-    inScene.onchange = () => { const sc = byName(editing); if (!sc) return; sc.audio = sc.audio || []; if (inScene.checked) { if (!sc.audio.includes(a.id)) sc.audio.push(a.id); } else sc.audio = sc.audio.filter((x) => x !== a.id); save(); gateAudio(); renderAudio(); };
+    const inScene = eyeBtn(on.has(a.id), 'Heard in the scene being edited', (v) => { const sc = byName(editing); if (!sc) return; sc.audio = sc.audio || []; if (v) { if (!sc.audio.includes(a.id)) sc.audio.push(a.id); } else sc.audio = sc.audio.filter((x) => x !== a.id); save(); gateAudio(); renderAudio(); });
     const m = document.createElement('button'); m.className = 'sm' + (a.muted ? ' on' : ''); m.textContent = a.muted ? 'Muted' : 'Mute';
     m.onclick = () => { a.muted = !a.muted; save(); syncAudio(); renderAudio(); };
     t.append(inScene, n, m);
@@ -840,7 +850,7 @@ function renderAudio() {
     fx.open = openFx.has(a.id); fx.ontoggle = () => { fx.open ? openFx.add(a.id) : openFx.delete(a.id); };
     d.append(t, mt, r, sl, fx); box.appendChild(d);
   });
-  $('#audNote').textContent = studio.audio.length ? 'Tick a box to hear that input in the scene you are editing.' : 'No sound inputs yet.';
+  $('#audNote').textContent = studio.audio.length ? 'Click the eye to hear that input in the scene you are editing.' : 'No sound inputs yet.';
 }
 function addAudioInput(kind) {
   const a = { id: uid(), name: kind === 'desktop' ? 'Computer sound' : 'Sound ' + (studio.audio.length + 1), device: '', label: '', vol: 1, muted: false };
@@ -902,7 +912,7 @@ function renderLayers() {
   for (let i = s.layers.length - 1; i >= 0; i--) {
     const l = s.layers[i];
     const d = document.createElement('div'); d.className = 'lyr' + (l.id === sel ? ' on' : '');
-    const eye = document.createElement('input'); eye.type = 'checkbox'; eye.checked = l.visible !== false; eye.title = 'Show or hide'; eye.onclick = (e) => e.stopPropagation(); eye.onchange = () => { l.visible = eye.checked; save(); };
+    const eye = eyeBtn(l.visible !== false, 'Show or hide', (v) => { l.visible = v; save(); });
     const n = document.createElement('span'); n.className = 'n'; n.textContent = (l.name || ICON[l.type] || l.type) + (l.locked ? ' (locked)' : ''); n.title = n.textContent;
     const up = document.createElement('button'); up.className = 'sm'; up.textContent = '\u2191'; up.title = 'Move in front'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
     const x = document.createElement('button'); x.className = 'sm'; x.textContent = '\u00d7'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
