@@ -293,7 +293,7 @@ function getCapture(l) {
   c = { v: document.createElement('video'), ready: false }; c.v.muted = true; caps.set(key, c);
   serial(async () => {
     try {
-      if (window.msNative) await window.msNative.pickScreen(l.display || '', l.winName || '', l.type === 'window' ? 'window' : 'screen');
+      if (window.msNative) { const r = await window.msNative.pickScreen(l.display || '', l.winName || '', l.type === 'window' ? 'window' : 'screen'); if (r && r.found === false) throw new Error('not found'); }
       const st = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: false });
       c.st = st; c.v.srcObject = st; await c.v.play(); c.ready = true;
       st.getVideoTracks()[0].onended = () => { caps.delete(key); }; // the window was closed: look for it again
@@ -584,7 +584,7 @@ function openDesktopAudio() {
   if (desktopAudioP) return desktopAudioP;
   desktopAudioP = serial(async () => {
     if (!(window.msNative && window.msNative.platform === 'win32')) throw new Error('Computer sound works in the Windows app. On a Mac, install BlackHole and pick it as a Sound input.');
-    await window.msNative.pickScreen('', '', 'audio');
+    const r = await window.msNative.pickScreen('', '', 'audio'); if (r && r.found === false) throw new Error('No screen was found to ask Windows for the sound');
     const st = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
     st.getVideoTracks().forEach((t) => t.stop());
     if (!st.getAudioTracks().length) throw new Error('Windows did not give the computer sound');

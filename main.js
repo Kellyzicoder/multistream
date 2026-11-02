@@ -119,15 +119,24 @@ ipcMain.handle('ms-sources', async (e, kind) => {
   return list.map((s) => ({ id: s.id, name: s.name, thumb: s.thumbnail && !s.thumbnail.isEmpty() ? s.thumbnail.toDataURL() : '' }));
 });
 ipcMain.handle('ms-screens', async () => (await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } })).map((s) => ({ id: s.id, name: s.name })));
-// The page says what it is about to ask for (kind: 'screen', 'window' or 'audio' = the sound this PC plays).
-ipcMain.handle('ms-pick-screen', (e, id, name, kind) => { picked = { id: String(id || ''), name: String(name || ''), kind: String(kind || 'screen') }; });
+// kind: 'screen', 'window' or 'audio' (the sound this PC plays)
+// Finds what was asked for: the exact one, else one with the same name. A window that is gone is NOT swapped for a screen.
+async function findSource(p) {
+  const list = await desktopCapturer.getSources({ types: [p.kind === 'window' ? 'window' : 'screen'], thumbnailSize: { width: 0, height: 0 } });
+  let pick = list.find((s) => s.id === p.id);
+  if (!pick && p.name) pick = list.find((s) => s.name.toLowerCase().includes(p.name.toLowerCase()));
+  if (!pick && p.kind !== 'window') pick = list[0];
+  return pick || null;
+}
+// The page says what it is about to ask for, and hears at once if it is not there (so it can say so clearly).
+ipcMain.handle('ms-pick-screen', async (e, id, name, kind) => {
+  picked = { id: String(id || ''), name: String(name || ''), kind: String(kind || 'screen') };
+  try { return { found: Boolean(await findSource(picked)) }; } catch { return { found: false }; }
+});
 function setupScreenCapture(ses) {
   ses.setDisplayMediaRequestHandler(async (req, cb) => {
     try {
-      const list = await desktopCapturer.getSources({ types: [picked.kind === 'window' ? 'window' : 'screen'], thumbnailSize: { width: 0, height: 0 } });
-      let pick = list.find((s) => s.id === picked.id);
-      if (!pick && picked.name) pick = list.find((s) => s.name.toLowerCase().includes(picked.name.toLowerCase()));
-      if (!pick && picked.kind !== 'window') pick = list[0]; // a window that is gone is NOT swapped for a screen
+      const pick = await findSource(picked);
       if (!pick) return cb({});
       const out = { video: pick };
       if (picked.kind === 'audio' && process.platform === 'win32') out.audio = 'loopback'; // the sound this PC is playing (Windows)
