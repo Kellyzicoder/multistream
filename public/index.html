@@ -1501,6 +1501,16 @@ setInterval(pollChat, 3000);
 async function refresh() { try { const s = await api('/api/state'); render(s); renderRec(s.recording, s.obsLive); renderFb(s.facebook, s.obsLive, s.session && s.session.facebook); renderYt(s.youtube, s.obsLive, s.session && s.session.youtube); checkAlerts(s); renderCr(); } catch {} }
 refresh();
 setInterval(refresh, 2000);
+// scroll the right-hand column with the wheel even when the mouse is over the middle (when the middle has nothing to scroll itself)
+(function () {
+  const stage = document.querySelector('.stage'), side = document.querySelector('.side'); if (!stage || !side) return;
+  stage.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.defaultPrevented) return;
+    if (stage.scrollHeight > stage.clientHeight + 1) return; // the middle scrolls by itself
+    if (side.scrollHeight <= side.clientHeight + 1) return;
+    side.scrollTop += e.deltaY; e.preventDefault();
+  }, { passive: false });
+})();
 </script>
 </body>
 </html>
