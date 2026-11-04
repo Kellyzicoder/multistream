@@ -1,7 +1,7 @@
 // Desktop app (Windows + Mac). Version 3: the windows talk to the app directly, with no localhost.
 // Pages load from app://multistream/... and every request is answered inside the app (server.js handle()).
 
-const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet } = require('electron');
+const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet, screen } = require('electron');
 const path = require('path');
 const { Readable } = require('stream');
 
@@ -52,6 +52,7 @@ function createWindow() {
   win.loadURL(HOME + '/').catch((e) => console.error('Dashboard did not load:', e && e.message));
   // links that leave the dashboard open in the normal browser
   win.webContents.setWindowOpenHandler(({ url }) => {
+    const p = projectorOptions(url); if (p) return p;
     if (/^https?:\/\//i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
@@ -71,7 +72,7 @@ ipcMain.handle('ms-open-studio', (e, same) => {
   });
   studioWin.webContents.session.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'display-capture'].includes(perm)));
   studioWin.loadURL(HOME + '/studio.html');
-  studioWin.webContents.setWindowOpenHandler(({ url }) => (url.startsWith(HOME) || url === 'about:blank' || url === '' ? { action: 'allow' } : (/^https?:\/\//i.test(url) && shell.openExternal(url), { action: 'deny' })));
+  studioWin.webContents.setWindowOpenHandler(({ url }) => projectorOptions(url) || (url.startsWith(HOME) || url === 'about:blank' || url === '' ? { action: 'allow' } : (/^https?:\/\//i.test(url) && shell.openExternal(url), { action: 'deny' })));
   studioWin.on('closed', () => { studioWin = null; browsers.forEach((b) => b.destroy()); browsers.clear(); });
 });
 ipcMain.handle('ms-open-dashboard', () => {
@@ -79,13 +80,34 @@ ipcMain.handle('ms-open-dashboard', () => {
   browsers.forEach((b) => b.destroy()); browsers.clear();
   win.loadURL(HOME + '/');
 });
+// the screens that are connected (for showing the Control Room or a Preview/Program picture full screen on one of them)
+const displayList = () => { const main = screen.getPrimaryDisplay().id; return screen.getAllDisplays().map((d, i) => ({ id: d.id, n: i + 1, label: d.label || '', w: d.size.width, h: d.size.height, main: d.id === main })); };
+ipcMain.handle('ms-displays', () => { try { return displayList(); } catch { return []; } });
+const displayById = (id) => (id == null || id === '' ? null : screen.getAllDisplays().find((d) => String(d.id) === String(id)) || null);
+// window.open of /projector.html (a picture of the Preview or Program): a normal window, or full screen on the chosen display
+function projectorOptions(url) {
+  let u; try { u = new URL(url); } catch { return null; }
+  if (u.protocol !== 'app:' || u.pathname !== '/projector.html') return null;
+  const d = displayById(u.searchParams.get('d')), o = { backgroundColor: '#000000', autoHideMenuBar: true, title: 'Multistream Projector', webPreferences: { backgroundThrottling: false } };
+  if (d) Object.assign(o, { x: d.bounds.x, y: d.bounds.y, width: d.bounds.width, height: d.bounds.height, fullscreen: true, frame: false });
+  else Object.assign(o, { width: 960, height: 540 });
+  return { action: 'allow', overrideBrowserWindowOptions: o };
+}
 let crWin = null;
-ipcMain.handle('ms-open-cr', () => {
-  if (crWin) { crWin.focus(); return; }
-  crWin = new BrowserWindow({ width: 1280, height: 800, title: 'Multistream Control Room', autoHideMenuBar: true, backgroundColor: '#eaf1fb',
-    webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') } });
-  crWin.loadURL(HOME + '/#control-room');
-  crWin.on('closed', () => { crWin = null; });
+ipcMain.handle('ms-open-cr', (e, displayId) => {
+  const d = displayById(displayId);
+  if (crWin && !crWin.isDestroyed()) crWin.close();
+  const o = { width: 1280, height: 800, title: 'Multistream Control Room', autoHideMenuBar: true, backgroundColor: '#07090b', show: !d,
+    webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') } };
+  if (d) Object.assign(o, { x: d.bounds.x, y: d.bounds.y, width: d.bounds.width, height: d.bounds.height });
+  const w = crWin = new BrowserWindow(o);
+  if (d) {
+    w.once('ready-to-show', () => { w.setBounds(d.bounds); w.setFullScreen(true); w.show(); });
+    // Esc leaves full screen (the window stays, on that display)
+    w.webContents.on('before-input-event', (ev, input) => { if (input.type === 'keyDown' && input.key === 'Escape' && w.isFullScreen()) { w.setFullScreen(false); ev.preventDefault(); } });
+  }
+  w.loadURL(HOME + '/#control-room');
+  w.on('closed', () => { if (crWin === w) crWin = null; });
 });
 // A web page (like the lyrics page) is drawn off-screen. We pass each new picture of it to the studio page.
 const browsers = new Map();

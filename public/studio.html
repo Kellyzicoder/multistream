@@ -188,19 +188,78 @@
   .dock.float { position:fixed; flex:none; z-index:30; resize:both; overflow:auto; min-width:200px; min-height:120px; box-shadow:0 18px 56px rgba(0,0,0,.5), inset 0 1px 0 var(--gl-hi); }
   .dock.float h2 { position:sticky; top:0; z-index:1; }
   .docks.over { outline:2px dashed var(--sel); outline-offset:-3px; border-radius:var(--r); }
+  /* panels keep a readable size: taller on big screens, a minimum width, and a sideways scroll instead of squashing */
+  @media (min-width:1001px) { .docks { height:clamp(280px, 38vh, 480px); overflow-x:auto; overflow-y:hidden; } }
+  .dock { min-width:170px; } .dock.wide { min-width:260px; } .dock.narrow { min-width:200px; } .dock[data-id=controls] { min-width:215px; }
+  .dock h2 { white-space:nowrap; } .dock .ctl button, .dock .pad button { white-space:nowrap; }
+  /* ---------- vertical audio mixer (like OBS) ---------- */
+  #audio { display:flex; flex-direction:row; align-items:stretch; gap:8px; padding:8px; overflow-x:auto; overflow-y:hidden; }
+  #audio .au { flex:none; width:104px; display:flex; flex-direction:column; gap:6px; margin:0; padding:8px 6px; border:1px solid var(--gl-line); border-radius:16px; background:var(--gl2); }
+  #audio .au.off { opacity:.5; }
+  #audio .au .t { gap:2px; } #audio .au .t .n { font-size:11px; }
+  .aub { flex:1; min-height:110px; display:flex; justify-content:center; }
+  .aum { display:flex; gap:4px; height:100%; min-height:110px; }
+  .scale { position:relative; width:22px; font-size:9px; color:var(--muted); } .scale span { position:absolute; right:0; transform:translateY(50%); line-height:1; }
+  #audio .mt { position:relative; width:10px; height:100%; margin:0; border-radius:999px; overflow:hidden; background:linear-gradient(0deg,#22c55e 0 52%,#f59e0b 52% 72%,#dc3545 72% 83%,#dc3545 100%); background-size:100% 100%; }
+  #audio .mt i { position:absolute; left:0; right:0; top:0; height:100%; background:var(--mcov); transition:height .06s linear; }
+  .fdr { position:relative; width:26px; height:100%; cursor:pointer; touch-action:none; outline:none; border-radius:8px; }
+  .fdr:focus-visible { outline:2px solid var(--sel); }
+  .fdr .trk { position:absolute; left:50%; top:6px; bottom:6px; width:4px; margin-left:-2px; border-radius:999px; background:var(--track, rgba(150,170,165,.4)); }
+  .fdr .knob { position:absolute; left:1px; right:1px; height:14px; margin-bottom:-7px; border-radius:7px; background:linear-gradient(180deg,#fff,#cfd8d4); border:1px solid rgba(0,0,0,.3); box-shadow:0 2px 6px rgba(0,0,0,.45); }
+  .fdr { --pad:6px; } .fdr .knob { bottom:0; }
+  .dbr { text-align:center; font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .aut { display:flex; gap:4px; justify-content:center; } .aut button { padding:2px 8px; font-size:11px; }
+  :root { --mcov:rgba(8,12,15,.86); --track:rgba(150,170,165,.4); } html.t-light { --mcov:rgba(224,231,227,.92); --track:rgba(90,110,100,.35); }
+  .fxbody .fxr { white-space:normal; } .fxbody select { max-width:260px; }
+  .dock .ctl button { padding:3px 8px; font-size:12px; }
+  /* ---------- panels can also sit left or right of the pictures ---------- */
+  .upper { flex:1; min-height:0; display:flex; gap:8px; }
+  .upper .stage { flex:1; min-width:0; }
+  .sdock { flex:none; width:0; display:flex; flex-direction:column; gap:8px; min-height:0; }
+  .sdock:not(:empty) { width:clamp(210px, 17vw, 300px); }
+  .sdock .dock { flex:1 1 0; min-width:0; min-height:130px; }
+  .sdock .dock.wide, .sdock .dock.narrow { flex:1 1 0; min-width:0; }
+  .dz { position:fixed; top:8px; width:110px; display:none; z-index:45; pointer-events:none; border:2px dashed var(--sel); border-radius:22px; background:color-mix(in srgb, var(--sel) 10%, transparent); }
+  .dz.show { display:block; } .dz.hot { background:color-mix(in srgb, var(--sel) 30%, transparent); }
+  .dz::after { content:attr(data-t); position:absolute; left:0; right:0; top:50%; text-align:center; font-size:12px; font-weight:600; color:var(--text); }
+  @media (max-width:1000px) { .upper { flex-direction:column; } .sdock:not(:empty) { width:auto; } }
+  /* ---------- adjusting sizes, with limits ---------- */
+  .dock { position:relative; } .dock.float { position:fixed; max-width:92vw; max-height:92vh; }
+  .split { flex:none; position:relative; z-index:4; touch-action:none; }
+  .split.h { height:6px; margin:-3px 0; cursor:ns-resize; } .split.v { width:6px; margin:0 -3px; cursor:ew-resize; }
+  .split::after { content:""; position:absolute; border-radius:999px; background:var(--sel); opacity:0; transition:opacity .12s; }
+  .split.h::after { left:30%; right:30%; top:2px; height:2px; } .split.v::after { top:30%; bottom:30%; left:2px; width:2px; }
+  .split:hover::after, .split.drag::after { opacity:.9; }
+  .rz { position:absolute; z-index:3; touch-action:none; } .rz:hover, .rz.drag { background:color-mix(in srgb, var(--sel) 45%, transparent); }
+  .rzx { top:10px; bottom:10px; right:0; width:7px; cursor:col-resize; border-radius:999px; } .rzy { left:10px; right:10px; bottom:0; height:7px; cursor:row-resize; border-radius:999px; }
+  @media (max-width:1000px) { .split, .rz { display:none; } }
+  /* ---------- Studio Mode off: only the live picture ---------- */
+  body.single .stage > .mid, body.single .stage > .screen:last-child { display:none; }
+  body.single .stage > .screen:first-child { max-width:min(100%, calc((100vh - 360px) * 16 / 9)); margin:0 auto; }
+  body.single #ev { border-color:var(--red); box-shadow:0 0 0 1px var(--red), 0 0 40px rgba(255,77,90,.3), 0 14px 44px rgba(0,0,0,.45); }
+  /* ---------- right-click menu on the pictures ---------- */
+  .ctxm { position:fixed; z-index:70; min-width:250px; max-width:340px; padding:6px; border-radius:16px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
+  .ctxh { padding:6px 10px 4px; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .ctxi { display:block; width:100%; text-align:left; border:0; border-radius:10px; padding:8px 10px; font-size:13px; background:transparent; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .ctxi small { display:block; margin-top:1px; font-size:11px; color:var(--muted); }
+  .ctxi:hover, .ctxi:focus-visible { background:var(--sel); color:var(--onsel); outline:none; } .ctxi:hover small, .ctxi:focus-visible small { color:inherit; opacity:.8; }
+  .ctxs { height:1px; margin:5px 6px; background:var(--gl-line); }
 </style>
 </head>
 <body>
 <div class="obs">
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
+  <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside><div class="split v" id="splitL" title="Drag to make the left panels wider or narrower" hidden></div>
   <div class="stage">
-    <div class="screen"><div class="cap">Preview <span id="editName"></span></div><canvas id="ev" class="v" width="960" height="540"></canvas></div>
+    <div class="screen"><div class="cap"><span id="evT">Preview</span> <span id="editName"></span></div><canvas id="ev" class="v" width="960" height="540"></canvas></div>
     <div class="mid">
       <button id="transBtn" class="trans" title="Put the Preview scene on air (Program)">Transition</button>
       <p class="note" id="hint">Pick a scene, then press Transition to put it on air.</p>
     </div>
     <div class="screen"><div class="cap">Program <span id="airName"></span></div><canvas id="cv" class="v" width="1280" height="720"></canvas></div>
   </div>
+  <div class="split v" id="splitR" title="Drag to make the right panels wider or narrower" hidden></div><aside class="sdock" id="dockR" aria-label="Panels on the right"></aside></div>
+  <div class="split h" id="splitB" title="Drag to make the bottom panels taller or shorter"></div>
 
   <!-- docks along the bottom, like OBS -->
   <div class="docks">
@@ -230,6 +289,7 @@
         <button id="sendBtn">Start Streaming</button>
         <button id="recBtn">Start Recording</button>
         <button id="vcBtn" hidden>Start Virtual Camera</button>
+        <button id="modeBtn" type="button" aria-pressed="true" title="On: a Preview and a Program picture, and a Transition button (like OBS Studio Mode). Off: only the live picture, and a click on a scene puts it on air.">Studio Mode</button>
         <button id="setBtn">Settings</button>
       </div>
     </section>
@@ -315,6 +375,20 @@
             <tr><td><kbd>F</kbd></td><td>Next transition type</td></tr>
             <tr><td>Arrow keys</td><td>Move the selected item (<kbd>Shift</kbd> = 10 at a time)</td></tr>
             <tr><td><kbd>Delete</kbd></td><td>Remove the selected item</td></tr>
+            <tr><td colspan="2"><b>Like OBS Studio</b> (select an item in the Preview or the Sources list first)</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>F</kbd></td><td>Fit to screen (all of it, keeping its shape)</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td>Stretch to screen</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>D</kbd></td><td>Centre on the screen</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>R</kbd></td><td>Reset the transform (original size, no crop, no flip)</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>E</kbd></td><td>Edit the item (properties)</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>C</kbd> / <kbd>Ctrl</kbd> + <kbd>V</kbd></td><td>Copy the item / paste it into the scene you are editing</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></td><td>Undo / redo a change to scenes and items (also <kbd>Ctrl</kbd> + <kbd>Y</kbd>)</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>&uarr;</kbd> / <kbd>&darr;</kbd></td><td>Move the item in front of / behind the others</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Home</kbd> / <kbd>End</kbd></td><td>Move the item to the very front / back</td></tr>
+            <tr><td><kbd>F2</kbd></td><td>Rename the item</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Select nothing</td></tr>
+            <tr><td><kbd>F11</kbd></td><td>Full screen for the Studio window</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>,</kbd></td><td>Open Settings</td></tr>
           </table>
           <p class="note">These work when the Studio is the window in front and you are not typing in a box. They cannot be changed yet.</p>
         </section>
@@ -365,6 +439,7 @@ const uid = () => Math.random().toString(36).slice(2, 8);
 const byName = (n) => studio.scenes.find((s) => s.name === n);
 const sceneOf = (n) => byName(n);
 function save() {
+  histPush();
   clearTimeout(saveT);
   saveT = setTimeout(async () => {
     saveT = 0;
@@ -668,8 +743,9 @@ function frame() {
   }
   if (trans && now - trans.t0 >= trCfg.ms) trans = null;
   paint(ctx, PW / SW, now);
-  if (recW) paint(rctx, recW / SW, now);
-  if (vcOn) paint(vctx, 1280 / SW, now);
+  // the recording and the virtual camera copy the finished Program picture when it is the same size or bigger (much less work than drawing the scene again)
+  if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); }
+  if (vcOn) { if (cv.width >= 1280) vctx.drawImage(cv, 0, 0, 1280, 720); else paint(vctx, 1280 / SW, now); }
 }
 $('#trType').value = trCfg.type; $('#trMs').value = String(trCfg.ms);
 const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#trMs').value); try { localStorage.setItem('ms_trans', JSON.stringify(trCfg)); } catch {} };
@@ -812,6 +888,34 @@ const dB = (v) => (v <= 0.0001 ? -60 : Math.max(-60, 20 * Math.log10(v)));
     b.onclick = (e) => { e.stopPropagation(); on = !on; paint(); change(on); };
     paint(); return b;
   }
+
+// a vertical fader like OBS: drag, click, mouse wheel, arrow keys; double-click puts it back to 0 dB
+function makeFader(a) {
+  const el = document.createElement('div'); el.className = 'fdr'; el.tabIndex = 0; el.setAttribute('role', 'slider'); el.setAttribute('aria-label', 'Volume of ' + a.name); el.setAttribute('aria-valuemin', '-60'); el.setAttribute('aria-valuemax', '12');
+  el.innerHTML = '<i class="trk"></i><i class="knob"></i>';
+  const read = document.createElement('div'); read.className = 'dbr';
+  const knob = el.querySelector('.knob');
+  let v = dB(a.vol == null ? 1 : a.vol);
+  const show = () => { knob.style.bottom = ((v + 60) / 72 * 100) + '%'; read.textContent = v <= -60 ? '-inf dB' : (v > 0 ? '+' : '') + v.toFixed(1) + ' dB'; el.setAttribute('aria-valuenow', String(Math.round(v))); el.title = read.textContent; };
+  const set = (x, persist) => { x = Math.max(-60, Math.min(12, Math.round(x * 2) / 2)); if (Math.abs(x) <= 1) x = 0; v = x; a.vol = v <= -60 ? 0 : Math.pow(10, v / 20); show(); if (persist !== false) { save(); syncAudio(); } };
+  const at = (e) => { const r = el.getBoundingClientRect(); const p = 1 - (e.clientY - r.top - 6) / Math.max(1, r.height - 12); set(-60 + Math.max(0, Math.min(1, p)) * 72); };
+  el.addEventListener('pointerdown', (e) => { if (e.button !== 0) return; el.setPointerCapture(e.pointerId); el.focus(); at(e); const mv = (ev) => at(ev); const up = () => { el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); }; el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); });
+  el.addEventListener('dblclick', () => set(0));
+  el.addEventListener('wheel', (e) => { e.preventDefault(); set(v + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 5 : 1)); }, { passive: false });
+  el.addEventListener('keydown', (e) => { const k = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 5, PageDown: -5 }[e.key]; if (k) { e.preventDefault(); set(v + k * (e.shiftKey ? 5 : 1)); } else if (e.key === 'Home') { e.preventDefault(); set(0); } });
+  show(); return { el, read };
+}
+// the sound tools of one input, in their own small window
+function openTools(a, fx) {
+  const m = document.createElement('div'); m.className = 'modal';
+  const dlg = document.createElement('div'); dlg.className = 'dlg';
+  dlg.innerHTML = '<div class="dlg-h"><b></b><button type="button" aria-label="Close">×</button></div>';
+  dlg.querySelector('b').textContent = 'Sound tools: ' + a.name;
+  const body = document.createElement('div'); body.className = 'dlg-b'; body.appendChild(fx); dlg.appendChild(body); m.appendChild(dlg);
+  const close = () => { m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
+  dlg.querySelector('button').onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
+  document.body.appendChild(m);
+}
 function renderAudio() {
   const box = $('#audio'); box.textContent = '';
   const s = byName(editing), on = new Set((s && s.audio) || []);
@@ -822,10 +926,10 @@ function renderAudio() {
     const inScene = eyeBtn(on.has(a.id), 'Heard in the scene being edited', (v) => { const sc = byName(editing); if (!sc) return; sc.audio = sc.audio || []; if (v) { if (!sc.audio.includes(a.id)) sc.audio.push(a.id); } else sc.audio = sc.audio.filter((x) => x !== a.id); save(); gateAudio(); renderAudio(); });
     const m = document.createElement('button'); m.className = 'sm' + (a.muted ? ' on' : ''); m.textContent = a.muted ? 'Muted' : 'Mute';
     m.onclick = () => { a.muted = !a.muted; save(); syncAudio(); renderAudio(); };
-    t.append(inScene, n, m);
-    const r = document.createElement('input'); r.type = 'range'; r.min = -60; r.max = 12; r.step = 0.5; r.value = dB(a.vol == null ? 1 : a.vol); r.title = Math.round(r.value) + ' dB';
-    r.oninput = () => { a.vol = r.value <= -60 ? 0 : Math.pow(10, r.value / 20); r.title = Math.round(r.value) + ' dB'; save(); syncAudio(); };
+    t.append(inScene, n);
+    const fd = makeFader(a);
     const mt = document.createElement('div'); mt.className = 'mt'; mt.innerHTML = '<i></i>';
+    const sc = document.createElement('div'); sc.className = 'scale'; [0, -10, -20, -30, -40, -50, -60].forEach((v) => { const e = document.createElement('span'); e.textContent = String(v); e.style.bottom = ((v + 60) / 72 * 100) + '%'; sc.appendChild(e); });
     const sl = document.createElement('select');
     if (a.kind === 'desktop') { sl.add(new Option('The sound this computer plays', '')); sl.disabled = true; }
     else {
@@ -833,13 +937,14 @@ function renderAudio() {
       devices.audio.forEach((x) => sl.add(new Option(x.label || 'Input', x.deviceId)));
       sl.value = pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
     }
-    const fx = document.createElement('details'); fx.className = 'fx'; fx.innerHTML = '<summary>Tools</summary>';
+    const fx = document.createElement('div'); fx.className = 'fxbody';
     const row = (label, el) => { const w = document.createElement('div'); w.className = 'fxr'; const l = document.createElement('span'); l.textContent = label; w.append(l, el); fx.appendChild(w); };
     const slider = (min, max, step, val, fmt, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { o.textContent = fmt(i.value); set(Number(i.value)); save(); syncAudio(); }; w.append(i, o); return w; };
     const sw = (on, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(on); c.onchange = () => { set(c.checked); save(); syncAudio(); }; return c; };
     const F = fxOf(a);
     const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only (not in the stream)'], ['both', 'Monitor and stream']].forEach(([v, t]) => mon.add(new Option(t, v)));
     mon.value = a.monitor || 'off'; mon.onchange = () => { a.monitor = mon.value; save(); syncAudio(); gateAudio(); };
+    if (!sl.disabled) row('Input', sl);
     row('Listen with headphones', mon);
     row('Delay', slider(0, 1000, 10, F.delay || 0, (v) => v + ' ms', (v) => { F.delay = v; }));
     row('Low cut (rumble)', sw(F.lowcut && F.lowcut.on, (v) => { F.lowcut = { ...(F.lowcut || {}), on: v }; }));
@@ -856,8 +961,10 @@ function renderAudio() {
     row('Limiter (stops peaks)', sw(F.lim && F.lim.on, (v) => { F.lim = { ...(F.lim || {}), on: v }; }));
     row('  ceiling', slider(-20, 0, 1, F.lim && F.lim.thr != null ? F.lim.thr : -3, (v) => v + ' dB', (v) => { F.lim = { ...(F.lim || {}), thr: v }; }));
     const hint = document.createElement('p'); hint.className = 'note'; hint.textContent = 'Headphones: hear this input yourself (use headphones). Delay: raise it if the sound arrives before the picture. Low cut: removes rumble. Gate: cuts hiss when nobody speaks. Compressor: keeps the level even. Limiter: stops sudden loud peaks.'; fx.appendChild(hint);
-    fx.open = openFx.has(a.id); fx.ontoggle = () => { fx.open ? openFx.add(a.id) : openFx.delete(a.id); };
-    d.append(t, mt, r, sl, fx); box.appendChild(d);
+    const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'sm'; tb.textContent = 'Tools'; tb.title = 'Input, headphones, delay, low cut, bass/treble, gate, compressor, limiter'; tb.onclick = () => openTools(a, fx);
+    const body = document.createElement('div'); body.className = 'aub'; const wrap = document.createElement('div'); wrap.className = 'aum'; wrap.append(sc, mt, fd.el); body.appendChild(wrap);
+    const bt = document.createElement('div'); bt.className = 'aut'; bt.append(m, tb);
+    d.append(t, body, fd.read, bt); box.appendChild(d);
   });
   $('#audNote').textContent = studio.audio.length ? 'Click the eye to hear that input in the scene you are editing.' : 'No sound inputs yet.';
 }
@@ -873,9 +980,9 @@ const buf = new Float32Array(512);
 setInterval(() => {
   document.querySelectorAll('#audio .au').forEach((d) => {
     const n = asrc.get(d.dataset.id); const bar = d.querySelector('.mt i'); if (!bar) return;
-    if (!n) { bar.style.width = '0'; return; }
+    if (!n) { bar.style.height = '100%'; return; }
     n.an.getFloatTimeDomainData(buf); let pk = 0; for (let i = 0; i < buf.length; i++) pk = Math.max(pk, Math.abs(buf[i]));
-    bar.style.width = Math.max(0, Math.min(100, (dB(pk) + 60) / 60 * 100)) + '%';
+    bar.style.height = (100 - Math.max(0, Math.min(100, (dB(pk) + 60) / 72 * 100))) + '%';
   });
 }, 80);
 
@@ -887,12 +994,55 @@ function renderScenes() {
     const n = document.createElement('span'); n.className = 'n'; n.textContent = s.name; d.appendChild(n);
     // a red dot marks the scene that is on air (Program)
     if (s.name === studio.current) { const a = document.createElement('span'); a.className = 'dot'; a.title = 'On air'; d.appendChild(a); }
-    d.onclick = () => { editing = s.name; sel = ''; renderAll(); };
+    d.onclick = () => { editing = s.name; sel = ''; if (!studioMode && s.name !== studio.current) setCurrent(s.name); else renderAll(); };
     d.ondblclick = () => { const v = prompt('Scene name', s.name); if (v && !studio.scenes.some((x) => x.name === v)) { if (studio.current === s.name) { studio.current = v; dirtyCurrent = true; } s.name = v; editing = v; save(); renderAll(); } };
     box.appendChild(d);
   });
 }
 // Transition: put the Preview scene on air, like OBS Studio Mode
+// Studio Mode (like OBS): on = Preview and Program with a Transition button, off = only the live picture
+let studioMode = true; try { studioMode = localStorage.getItem('ms_studiomode') !== '0'; } catch {}
+function applyMode() {
+  document.body.classList.toggle('single', !studioMode);
+  const b = $('#modeBtn'); b.setAttribute('aria-pressed', String(studioMode)); b.classList.toggle('on', studioMode);
+}
+$('#modeBtn').onclick = () => {
+  studioMode = !studioMode; try { localStorage.setItem('ms_studiomode', studioMode ? '1' : '0'); } catch {}
+  applyMode(); if (!studioMode) editing = studio.current || editing; renderAll();
+};
+applyMode();
+// right-click on the Preview or Program picture (like OBS projectors): show it full screen on a display, or in its own window
+let ctxMenu = null;
+const projWins = {};
+function openProjector(src, displayId) {
+  try { if (projWins[src] && !projWins[src].closed) projWins[src].close(); } catch {}
+  projWins[src] = window.open('/projector.html?src=' + src + (displayId != null ? '&d=' + encodeURIComponent(displayId) : ''), '_blank', 'popup,width=960,height=540');
+}
+function closeCtx() { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } }
+async function showViewMenu(ev, src) {
+  ev.preventDefault(); closeCtx();
+  let ds = []; try { if (window.msNative && window.msNative.displays) ds = await window.msNative.displays(); } catch {}
+  const name = src === 'preview' ? (studioMode ? 'Preview' : 'Live') : 'Program';
+  const m = document.createElement('div'); m.className = 'ctxm'; m.setAttribute('role', 'menu');
+  const head = document.createElement('div'); head.className = 'ctxh'; head.textContent = name; m.appendChild(head);
+  const item = (t, run, sub) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ctxi'; b.setAttribute('role', 'menuitem'); b.textContent = t; if (sub) { const s = document.createElement('small'); s.textContent = sub; b.appendChild(s); } b.onclick = () => { closeCtx(); run(); }; m.appendChild(b); };
+  const sep = () => { const d = document.createElement('div'); d.className = 'ctxs'; m.appendChild(d); };
+  ds.forEach((d) => item('Show ' + name + ' full screen on Display ' + d.n + (d.main ? ' (main)' : ''), () => openProjector(src, d.id), d.w + ' x ' + d.h + '. Esc closes it.'));
+  item('Open ' + name + ' in a window', () => openProjector(src), 'Double-click it for full screen.');
+  if (src !== 'preview' || studioMode) {
+    sep();
+    if (studioMode && editing && editing !== studio.current) item('Put the Preview scene on air (Transition)', () => $('#transBtn').click());
+    item(studioMode ? 'Studio Mode: turn off (live picture only)' : 'Studio Mode: turn on (Preview and Program)', () => $('#modeBtn').click());
+  } else { sep(); item('Studio Mode: turn on (Preview and Program)', () => $('#modeBtn').click()); }
+  document.body.appendChild(m); ctxMenu = m;
+  const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
+  const first = m.querySelector('.ctxi'); if (first) first.focus();
+}
+$('#ev').addEventListener('contextmenu', (e) => showViewMenu(e, 'preview'));
+$('#cv').addEventListener('contextmenu', (e) => showViewMenu(e, 'program'));
+document.addEventListener('pointerdown', (e) => { if (ctxMenu && !ctxMenu.contains(e.target)) closeCtx(); }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCtx(); });
+window.addEventListener('blur', closeCtx);
 $('#transBtn').onclick = () => { if (editing && editing !== studio.current) setCurrent(editing); };
 function moveScene(dir) {
   const i = studio.scenes.findIndex((x) => x.name === editing), j = i + dir;
@@ -916,7 +1066,8 @@ const ICON = { camera: 'Video capture', window: 'Window', image: 'Picture', vide
 function renderLayers() {
   const s = byName(editing), box = $('#layers'); box.textContent = '';
   $('#editName').textContent = editing ? '(' + editing + ')' : ''; $('#airName').textContent = studio.current ? '(' + studio.current + ')' : '';
-  $('#hint').textContent = sel ? 'Drag to move. Drag a corner or edge to resize. Hold Alt and drag an edge to crop.' : 'Pick a scene, then press Transition to put it on air. Click an item in the Preview to move it.';
+  $('#evT').textContent = studioMode ? 'Preview' : 'Live';
+  $('#hint').textContent = sel ? 'Drag to move. Drag a corner or edge to resize. Hold Alt and drag an edge to crop.' : (studioMode ? 'Pick a scene, then press Transition to put it on air. Click an item in the Preview to move it.' : 'Click a scene to put it on air. Click an item in the picture to move it.');
   if (!s) { box.textContent = 'Add a scene first.'; $('#propsBox').hidden = true; return; }
   for (let i = s.layers.length - 1; i >= 0; i--) {
     const l = s.layers[i];
@@ -1634,6 +1785,58 @@ $('#chAdd').onclick = async () => {
 ['#impBtn', '#keysBtn', '#projBtn'].forEach((id) => $(id).addEventListener('click', closeSettings));
 
 // ---------------- hotkeys and the preview window ----------------
+
+// ---------------- OBS keyboard shortcuts (Ctrl+F fit, Ctrl+S stretch, Ctrl+D centre, Ctrl+R reset, Ctrl+E properties, Ctrl+C/V copy and paste, Ctrl+Z undo ...) ----------------
+let hist = [], histAt = -1, histSkip = false, histLast = 0, clip = null;
+function histInit() { if (!hist.length && studio.scenes.length) { hist = [JSON.stringify(studio.scenes)]; histAt = 0; } }
+function histPush() {
+  if (histSkip || !hist.length) return;
+  const cur = JSON.stringify(studio.scenes); if (cur === hist[histAt]) return;
+  const now = Date.now(), joined = now - histLast < 700 && histAt > 0;           // a drag makes many saves: keep them as one step
+  hist = hist.slice(0, histAt + 1); if (joined) hist[histAt] = cur; else { hist.push(cur); histAt++; }
+  if (hist.length > 60) { hist.shift(); histAt--; } histLast = now;
+}
+function histGo(d) {
+  histInit(); const to = histAt + d; if (to < 0 || to >= hist.length) { flash(d < 0 ? 'Nothing to undo.' : 'Nothing to redo.', true); return; }
+  histAt = to; studio.scenes = JSON.parse(hist[to]);
+  if (!studio.scenes.some((x) => x.name === studio.current)) { studio.current = (studio.scenes[0] || {}).name || ''; dirtyCurrent = true; }
+  if (!byName(editing)) editing = studio.current; if (!curLayer()) sel = '';
+  histSkip = true; save(); histSkip = false; renderAll(); flash(d < 0 ? 'Undone.' : 'Redone.', true);
+}
+setTimeout(histInit, 2500);
+function centerOf(l) { const b = boundsOf(l); l.x = Math.round(l.x + (SW - b[2]) / 2 - b[0]); l.y = Math.round(l.y + (SH - b[3]) / 2 - b[1]); }
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  if (e.key === 'F11') { e.preventDefault(); if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); return; }
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+  const ctrl = e.ctrlKey || e.metaKey, cl = curLayer(), sc = byName(editing), k = e.key.toLowerCase();
+  if (ctrl && !e.altKey && e.key === ',') { e.preventDefault(); openSettings(); return; }
+  if (!$('#setBox').hidden || document.querySelector('.modal:not([hidden]):not(#setBox)')) return;
+  if (ctrl && !e.altKey && (k === 'z' || k === 'y')) { e.preventDefault(); histGo(k === 'y' || e.shiftKey ? 1 : -1); return; }
+  if (e.key === 'F2' && cl) { e.preventDefault(); const v = prompt('Source name', cl.name || ICON[cl.type] || cl.type); if (v != null && v.trim()) { cl.name = v.trim(); save(); renderLayers(); } return; }
+  if (e.key === 'Escape' && sel && $('#propsBox').hidden) { sel = ''; renderLayers(); return; }
+  if (!ctrl || e.altKey) return;
+  histLast = 0; // each shortcut is its own undo step
+  if (k === 'v' && !e.shiftKey) { // paste the copied source into the scene being edited
+    if (!clip || !sc) return; e.preventDefault();
+    const c = JSON.parse(clip); c.id = uid(); c.x = Math.round((c.x || 0) + 20); c.y = Math.round((c.y || 0) + 20); c.name = (c.name || ICON[c.type] || c.type) + ' (copy)';
+    sc.layers.push(c); sel = c.id; save(); renderLayers(); flash('Pasted.', true); return;
+  }
+  if (!cl) return;
+  const i = sc ? sc.layers.indexOf(cl) : -1;
+  if (k === 'c' && !e.shiftKey) { e.preventDefault(); clip = JSON.stringify(cl); flash('Copied "' + (cl.name || ICON[cl.type] || cl.type) + '". Ctrl+V pastes it.', true); return; }
+  if (k === 'e') { e.preventDefault(); propsOpen = true; renderLayers(); return; }
+  if (cl.locked) return;
+  if (k === 'f') { e.preventDefault(); cl.fit = MEDIA.has(cl.type) ? 'fit' : cl.fit; cl.x = 0; cl.y = 0; cl.w = SW; cl.h = SH; delete cl.sx; delete cl.sy; save(); renderLayers(); return; }
+  if (k === 's') { e.preventDefault(); if (MEDIA.has(cl.type)) cl.fit = 'stretch'; cl.x = 0; cl.y = 0; cl.w = SW; cl.h = SH; delete cl.sx; delete cl.sy; save(); renderLayers(); return; }
+  if (k === 'd') { e.preventDefault(); centerOf(cl); save(); renderLayers(); return; }
+  if (k === 'r') { e.preventDefault(); if (MEDIA.has(cl.type)) { cl.fit = 'natural'; cl.sx = cl.sy = 1; const F = (cl.pfx = cl.pfx || {}); delete F.crop; F.flip = false; } save(); renderLayers(); return; }
+  if (sc && i >= 0 && ['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) { // move in front of or behind the others
+    e.preventDefault(); const n = sc.layers.length; let to = i;
+    if (e.key === 'ArrowUp') to = Math.min(n - 1, i + 1); else if (e.key === 'ArrowDown') to = Math.max(0, i - 1); else if (e.key === 'Home') to = n - 1; else to = 0;
+    if (to !== i) { sc.layers.splice(i, 1); sc.layers.splice(to, 0, cl); save(); renderLayers(); }
+  }
+});
 document.addEventListener('keydown', (e) => {
   const t = e.target, tag = t && t.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
@@ -1701,22 +1904,27 @@ async function poll() {
     }
   } catch {}
 }
-const small = document.createElement('canvas'); small.width = 640; small.height = 360;
+const small = document.createElement('canvas'); small.width = 480; small.height = 270;
 const sctx = small.getContext('2d');
 const tiny = document.createElement('canvas'); tiny.width = 320; tiny.height = 180; const tctx = tiny.getContext('2d');
-let thumbs = {}, thumbAt = 0, shotBusy = false;
+let thumbs = {}, thumbAt = 0, shotBusy = false, watching = true, pingAt = 0;
 async function shots() {
   if (shotBusy) return; shotBusy = true;
   try {
-    drawScene(sctx, byName(studio.current), 640 / SW, true); const prog = small.toDataURL('image/jpeg', 0.55);
-    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 640 / SW, false); pv = small.toDataURL('image/jpeg', 0.55); }
+    // nobody is looking at the Control Room: skip the drawing, only say "still here" now and then
+    if (!watching) {
+      if (Date.now() - pingAt < 1500) { shotBusy = false; return; }
+      pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;
+    }
+    drawScene(sctx, byName(studio.current), 480 / SW, true); const prog = small.toDataURL('image/jpeg', 0.5);
+    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 480 / SW, false); pv = small.toDataURL('image/jpeg', 0.5); }
     const body = { prog, pv };
-    if (Date.now() - thumbAt > 3000) {
+    if (Date.now() - thumbAt > 4000 || !Object.keys(thumbs).length) {
       thumbAt = Date.now(); thumbs = {};
       studio.scenes.forEach((s) => { drawScene(tctx, s, 320 / SW, false); thumbs[s.name] = tiny.toDataURL('image/jpeg', 0.5); });
       body.thumbs = thumbs;
     }
-    await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); watching = Boolean(r && r.watching); pingAt = Date.now();
   } catch {}
   shotBusy = false;
 }
@@ -1749,9 +1957,10 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   const row = document.querySelector('.docks'); if (!row) return;
   const names = ['scenes', 'sources', 'mixer', 'transitions', 'controls'];
   const docks = [...row.querySelectorAll('.dock')]; docks.forEach((d, i) => { d.dataset.id = names[i]; });
-  const fresh = () => ({ order: names.slice(), float: {} });
+  const fresh = () => ({ order: names.slice(), float: {}, pos: {}, fx: {}, h: 0, wl: 0, wr: 0 });
+  const side = { left: document.getElementById('dockL'), right: document.getElementById('dockR') };
   let L = fresh();
-  try { const j = JSON.parse(localStorage.getItem('ms_layout') || 'null'); if (j && Array.isArray(j.order)) { L.order = j.order.filter((x) => names.includes(x)); names.forEach((n) => { if (!L.order.includes(n)) L.order.push(n); }); if (j.float && typeof j.float === 'object') L.float = j.float; } } catch {}
+  try { const j = JSON.parse(localStorage.getItem('ms_layout') || 'null'); if (j && Array.isArray(j.order)) { L.order = j.order.filter((x) => names.includes(x)); names.forEach((n) => { if (!L.order.includes(n)) L.order.push(n); }); if (j.float && typeof j.float === 'object') L.float = j.float; if (j.pos && typeof j.pos === 'object') L.pos = j.pos; if (j.fx && typeof j.fx === 'object') L.fx = j.fx; ['h', 'wl', 'wr'].forEach((k) => { if (Number.isFinite(j[k])) L[k] = j[k]; }); } } catch {}
   const save = () => { try { localStorage.setItem('ms_layout', JSON.stringify(L)); } catch {} };
   const byId = (id) => docks.find((d) => d.dataset.id === id);
   let z = 30;
@@ -1764,46 +1973,99 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
     if (f) { const c = clamp(f); Object.assign(d.style, { left: c.x + 'px', top: c.y + 'px', width: c.w + 'px', height: c.h + 'px' }); }
     else Object.assign(d.style, { left: '', top: '', width: '', height: '', zIndex: '' });
   }
-  function layout() { L.order.forEach((id) => { const d = byId(id); if (d) row.appendChild(d); }); docks.forEach(paint); }
-  const floatAt = (d, x, y, w, h) => { L.float[d.dataset.id] = { x, y, w: Math.max(w, 260), h: Math.max(h, 200) }; paint(d); front(d); save(); };
-  const dockBack = (d, clientX) => {
-    delete L.float[d.dataset.id];
-    const rest = L.order.filter((id) => id !== d.dataset.id && !L.float[id]);
-    let at = rest.length; for (let i = 0; i < rest.length; i++) { const r = byId(rest[i]).getBoundingClientRect(); if (clientX < r.left + r.width / 2) { at = i; break; } }
-    const before = rest[at]; const o = L.order.filter((id) => id !== d.dataset.id);
-    o.splice(before ? o.indexOf(before) : o.length, 0, d.dataset.id); L.order = o; layout(); save();
+  const splitB = document.getElementById('splitB'), splitL = document.getElementById('splitL'), splitR = document.getElementById('splitR');
+  const maxH = () => Math.max(200, Math.min(innerHeight * 0.6, innerHeight - 300));
+  const clampW = (w) => Math.max(180, Math.min(w, Math.min(420, innerWidth * 0.35)));
+  function applySizes() {
+    const wide = innerWidth > 1000;
+    row.style.height = L.h && wide ? Math.max(180, Math.min(L.h, maxH())) + 'px' : '';
+    [['left', 'wl', splitL], ['right', 'wr', splitR]].forEach(([k, key, sp]) => { const el = side[k]; el.style.width = L[key] && el.childElementCount && wide ? clampW(L[key]) + 'px' : ''; sp.hidden = !el.childElementCount || !wide; });
+    docks.forEach((d) => { d.style.flex = L.fx[d.dataset.id] && !L.float[d.dataset.id] ? L.fx[d.dataset.id] + ' 1 0' : ''; });
+  }
+  // a small handle between two panels (and the splitters around the pictures) to change sizes; each has a smallest and a largest size
+  function handles() {
+    document.querySelectorAll('.rz').forEach((x) => x.remove());
+    [row, side.left, side.right].forEach((cont) => {
+      const horiz = cont === row, list = [...cont.children].filter((c) => c.classList.contains('dock') && !c.classList.contains('float'));
+      list.forEach((d, i) => {
+        if (i === list.length - 1) return;
+        const hd = document.createElement('div'); hd.className = 'rz ' + (horiz ? 'rzx' : 'rzy'); hd.title = 'Drag to resize'; d.appendChild(hd);
+        hd.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); hd.setPointerCapture(e.pointerId); hd.classList.add('drag');
+          const a = d, b = list[i + 1], rect = (x) => x.getBoundingClientRect(), sz = (x) => (horiz ? rect(x).width : rect(x).height), sizes = list.map(sz);
+          const total = sizes[i] + sizes[i + 1], cs = getComputedStyle, mn = (x) => (horiz ? parseFloat(cs(x).minWidth) : parseFloat(cs(x).minHeight)) || (horiz ? 170 : 130);
+          const lo = mn(a), hi = Math.min(total - mn(b), (horiz ? cont.clientWidth : cont.clientHeight) * 0.7), start = horiz ? e.clientX : e.clientY;
+          list.forEach((x, k) => { L.fx[x.dataset.id] = Math.round(sizes[k]); x.style.flex = L.fx[x.dataset.id] + ' 1 0'; });
+          const mv = (ev) => { const na = Math.max(lo, Math.min(sizes[i] + (horiz ? ev.clientX : ev.clientY) - start, hi)); L.fx[a.dataset.id] = Math.round(na); L.fx[b.dataset.id] = Math.round(total - na); a.style.flex = L.fx[a.dataset.id] + ' 1 0'; b.style.flex = L.fx[b.dataset.id] + ' 1 0'; };
+          const up = () => { hd.classList.remove('drag'); hd.removeEventListener('pointermove', mv); hd.removeEventListener('pointerup', up); hd.removeEventListener('pointercancel', up); save(); };
+          hd.addEventListener('pointermove', mv); hd.addEventListener('pointerup', up); hd.addEventListener('pointercancel', up);
+        });
+      });
+    });
+  }
+  function dragSplit(el, kind) {
+    el.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return; e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('drag');
+      const mv = (ev) => {
+        if (kind === 'b') L.h = Math.round(Math.max(180, Math.min(row.getBoundingClientRect().bottom - ev.clientY, maxH())));
+        else if (kind === 'l') L.wl = Math.round(clampW(ev.clientX - side.left.getBoundingClientRect().left));
+        else L.wr = Math.round(clampW(side.right.getBoundingClientRect().right - ev.clientX));
+        applySizes();
+      };
+      const up = () => { el.classList.remove('drag'); el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); save(); };
+      el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    });
+    el.addEventListener('dblclick', () => { if (kind === 'b') L.h = 0; else if (kind === 'l') L.wl = 0; else L.wr = 0; applySizes(); save(); });
+  }
+  dragSplit(splitB, 'b'); dragSplit(splitL, 'l'); dragSplit(splitR, 'r');
+  function layout() { L.order.forEach((id) => { const d = byId(id); if (d) (side[L.pos[id]] || row).appendChild(d); }); docks.forEach(paint); applySizes(); handles(); }
+  const floatAt = (d, x, y, w, h) => { L.fx = {}; L.float[d.dataset.id] = { x, y, w: Math.max(w, 260), h: Math.max(h, 200) }; layout(); front(d); save(); };
+  // put a panel on the bottom row, or in the left or right column, in the place nearest the pointer
+  const dockTo = (d, where, cx, cy) => {
+    const id = d.dataset.id; L.fx = {}; delete L.float[id]; if (where === 'bottom') delete L.pos[id]; else L.pos[id] = where;
+    const horiz = where === 'bottom';
+    const rest = L.order.filter((x) => x !== id && !L.float[x] && (L.pos[x] || 'bottom') === where);
+    let at = rest.length; for (let i = 0; i < rest.length; i++) { const r = byId(rest[i]).getBoundingClientRect(); if ((horiz ? cx < r.left + r.width / 2 : cy < r.top + r.height / 2)) { at = i; break; } }
+    const before = rest[at]; const o = L.order.filter((x) => x !== id);
+    o.splice(before ? o.indexOf(before) : o.length, 0, id); L.order = o; layout(); save();
   };
   docks.forEach((d) => {
     const h = d.querySelector('h2'); const pin = document.createElement('button'); pin.type = 'button'; pin.className = 'pin'; h.appendChild(pin);
     pin.onclick = (e) => {
       e.stopPropagation(); const r = d.getBoundingClientRect();
-      if (L.float[d.dataset.id]) dockBack(d, 1e9); else floatAt(d, Math.max(8, r.left), Math.max(8, r.top - 300), r.width, 280);
+      if (L.float[d.dataset.id]) dockTo(d, 'bottom', 1e9, 1e9); else floatAt(d, Math.max(8, r.left), Math.max(8, r.top - 300), r.width, 280);
     };
     d.addEventListener('pointerdown', () => front(d));
     if ('ResizeObserver' in window) new ResizeObserver(() => { const f = L.float[d.dataset.id]; if (!f || !d.classList.contains('float') || d.classList.contains('drag')) return; const r = d.getBoundingClientRect(); if (Math.abs(r.width - f.w) > 2 || Math.abs(r.height - f.h) > 2) { f.w = Math.round(r.width); f.h = Math.round(r.height); save(); } }).observe(d);
   });
-  row.addEventListener('pointerdown', (e) => {
+  const dz = { left: document.createElement('div'), right: document.createElement('div') };
+  dz.left.className = dz.right.className = 'dz'; dz.left.dataset.t = 'Left'; dz.right.dataset.t = 'Right'; dz.left.style.left = '8px'; dz.right.style.right = '8px'; document.body.append(dz.left, dz.right);
+  document.addEventListener('pointerdown', (e) => {
     const h = e.target.closest('.dock > h2'); if (!h || e.button !== 0 || e.target.closest('button')) return;
     const d = h.parentElement, r0 = d.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, ox = sx - r0.left, oy = sy - r0.top, wasFloat = d.classList.contains('float');
     const rowTop = () => row.getBoundingClientRect().top; let moving = false;
+    const zoneOf = (ev) => (ev.clientY < rowTop() ? (ev.clientX < 110 ? 'left' : ev.clientX > innerWidth - 110 ? 'right' : '') : '');
+    const showZones = (on, ev) => { const bot = (innerHeight - rowTop() + 8) + 'px'; ['left', 'right'].forEach((k) => { dz[k].style.bottom = bot; dz[k].classList.toggle('show', on); dz[k].classList.toggle('hot', on && zoneOf(ev) === k); }); };
     const move = (ev) => {
-      if (!moving) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return; moving = true; d.classList.add('drag'); try { h.setPointerCapture(e.pointerId); } catch {} }
+      if (!moving) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return; moving = true; d.classList.add('drag'); showZones(true, ev); try { h.setPointerCapture(e.pointerId); } catch {} }
       if (wasFloat) { d.style.left = Math.max(0, Math.min(ev.clientX - ox, innerWidth - 120)) + 'px'; d.style.top = Math.max(0, Math.min(ev.clientY - oy, innerHeight - 60)) + 'px'; }
       else d.style.transform = `translate(${ev.clientX - sx}px, ${ev.clientY - sy}px)`;
-      row.classList.toggle('over', wasFloat && ev.clientY > rowTop());
+      row.classList.toggle('over', wasFloat && ev.clientY > rowTop()); showZones(true, ev);
     };
     const up = (ev) => {
       h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up);
       try { h.releasePointerCapture(e.pointerId); } catch {}
-      row.classList.remove('over'); if (!moving) return;
+      row.classList.remove('over'); showZones(false, ev); if (!moving) return;
       d.classList.remove('drag'); d.style.transform = '';
-      if (wasFloat) { if (ev.clientY > rowTop()) dockBack(d, ev.clientX); else { const f = L.float[d.dataset.id]; f.x = Math.round(parseFloat(d.style.left)); f.y = Math.round(parseFloat(d.style.top)); save(); } }
+      const z = zoneOf(ev);
+      if (z) dockTo(d, z, ev.clientX, ev.clientY);
+      else if (wasFloat) { if (ev.clientY > rowTop()) dockTo(d, 'bottom', ev.clientX, ev.clientY); else { const f = L.float[d.dataset.id]; f.x = Math.round(parseFloat(d.style.left)); f.y = Math.round(parseFloat(d.style.top)); save(); } }
       else if (ev.clientY < rowTop() - 24) floatAt(d, Math.max(0, ev.clientX - ox), Math.max(0, ev.clientY - oy), r0.width, Math.max(r0.height, 240));
-      else dockBack(d, ev.clientX);
+      else dockTo(d, 'bottom', ev.clientX, ev.clientY);
     };
     h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
   });
-  window.addEventListener('resize', () => docks.forEach((d) => { if (L.float[d.dataset.id]) paint(d); }));
+  window.addEventListener('resize', () => { docks.forEach((d) => { if (L.float[d.dataset.id]) paint(d); }); applySizes(); });
   const rb = document.getElementById('resetLayout'); if (rb) rb.onclick = () => { L = fresh(); layout(); save(); };
   layout();
 })();
