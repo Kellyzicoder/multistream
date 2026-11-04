@@ -423,8 +423,7 @@
   .cr .cr-grid { flex:none; margin:0; overflow:hidden; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; }
   .cr .cr-grid .tile { display:flex; flex-direction:column; flex:none; min-width:0; border-radius:14px; }
   .cr .cr-grid .tile .im { flex:none; width:100%; height:auto; aspect-ratio:16/9; object-fit:cover; }
-  .cr .cr-grid .tile .nm { flex:none; }
-  .cr .cr-aud, .cr .cr-itembox { margin:0; flex:none; }
+  .cr .cr-aud { margin:0; flex:none; }
   @media (max-width:800px) { .cr:not([hidden]) { height:auto; overflow:visible; } }
   /* ---------- where to show the Control Room ---------- */
   .cr-ch { display:flex; flex-direction:column; gap:8px; margin-top:14px; }
@@ -595,7 +594,6 @@
   </div>
   <div class="cr-grid" id="crTiles"></div>
   <div class="cr-aud" id="crAudio"></div>
-  <div class="cr-itembox" id="crItems" hidden></div>
 </div>
 
 <!-- add channel -->
@@ -1113,7 +1111,7 @@ document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => {
 function fitCrTiles() {
   const box = $('#crTiles'); if (!box || !box.clientWidth || !box.parentElement.clientHeight) return;
   const tiles = [...box.querySelectorAll('.tile')], n = tiles.length; if (!n) return;
-  const W = box.clientWidth, H = Math.floor(box.parentElement.clientHeight * 0.42), gap = 10, bar = 30; // the boxes use up to 42% of the height; Preview and Program take the rest
+  const W = box.clientWidth, H = Math.floor(box.parentElement.clientHeight * 0.42), gap = 10, bar = 0; // the boxes use up to 42% of the height; Preview and Program take the rest
   let best = { w: 0 };
   for (let c = 1; c <= n; c++) {
     const r = Math.ceil(n / c);
@@ -1140,8 +1138,7 @@ function renderCr() {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'tile'; b.dataset.n = name;
       const im = document.createElement('img'); im.className = 'im'; im.alt = ''; im.draggable = false;
-      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = name;
-      b.append(im, nm);
+      b.append(im); b.title = name; b.setAttribute('aria-label', name);
       b.onclick = () => {
         const cur = crData().current;
         if (crMode === 'direct') crSetScene(name); else crPreview(name === cur ? '' : name);
@@ -1159,26 +1156,6 @@ function renderCr() {
   const canTake = crMode === 'take' && crPrev && crPrev !== d.current;
   const pg = document.querySelector('.cr-pane.prog'); pg.classList.toggle('canTake', Boolean(canTake)); pg.title = canTake ? 'Click to put ' + crPrev + ' on air' : '';
   $('#crProgL').textContent = 'PROGRAM: ' + (d.current || '') + (canTake ? '  (click to take ' + crPrev + ')' : '');
-  renderCrItems();
-}
-// items you can switch on and off while a scene is on air (lowerthirds, the lyrics page...), Studio only
-function renderCrItems() {
-  const box = $('#crItems'); const s = engine() === 'studio' && stu.scenes.find((x) => x.name === stu.current);
-  if (!s) { box.hidden = true; return; }
-  const items = s.layers.filter((l) => !l.locked && l.type !== 'camera' && l.type !== 'color');
-  const key = s.name + '|' + items.map((l) => l.id + (l.visible !== false)).join();
-  if (box.dataset.key === key) return;
-  box.dataset.key = key; box.textContent = ''; box.hidden = !items.length;
-  if (!items.length) return;
-  const h = document.createElement('h2'); h.textContent = 'On screen now: ' + s.name; box.appendChild(h);
-  const wrap = document.createElement('div'); wrap.className = 'cr-items';
-  items.slice().reverse().forEach((l) => {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'cr-item'; b.setAttribute('aria-pressed', String(l.visible !== false));
-    b.textContent = (l.visible !== false ? 'Showing: ' : 'Hidden: ') + (l.name || l.type);
-    b.onclick = async () => { const v = !(l.visible !== false); l.visible = v; box.dataset.key = ''; renderCrItems(); await api('/api/studio/layer', 'POST', { scene: s.name, id: l.id, visible: v }); };
-    wrap.appendChild(b);
-  });
-  box.appendChild(wrap);
 }
 let crBusy = false;
 async function pollCr() {
