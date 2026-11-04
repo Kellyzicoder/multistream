@@ -426,16 +426,15 @@
   .cr-ch .b2 { text-align:left; border-radius:16px; padding:12px 16px; font-size:13px; }
   .cr-ch .b2 small { display:block; margin-top:2px; font-size:11px; font-weight:400; opacity:.75; white-space:normal; }
 
-  /* ---------- split screen: dashboard on the left, Studio on the right ---------- */
-  #splitPane { position:fixed; top:66px; right:0; height:calc(100% - 66px); width:calc(100% - var(--sp, 50%)); border:0; background:var(--bg); border-radius:18px 0 0 0; box-shadow:-8px 0 30px rgba(0,0,0,.25); z-index:20; }
+  /* ---------- split screen: Stream on the left, Control Room on the right, drag the bar to choose the sizes ---------- */
   #splitBar { position:fixed; top:66px; bottom:0; left:calc(var(--sp, 50%) - 7px); width:14px; cursor:col-resize; z-index:30; touch-action:none; }
   #splitBar::after { content:""; position:absolute; left:5px; top:50%; width:4px; height:56px; margin-top:-28px; border-radius:4px; background:var(--muted); opacity:.55; }
   #splitBar:hover::after, #splitBar.drag::after { opacity:1; background:var(--blue, #3b82f6); }
-  body.splitting #splitPane { pointer-events:none; }
-  body.split .app { width:var(--sp, 50%); grid-template-columns:minmax(0,1fr); height:calc(100% - 66px); overflow:auto; padding:12px; gap:12px; min-height:0; }
+  body.splitting { user-select:none; cursor:col-resize; }
+  body.split .app { width:var(--sp, 50%); box-sizing:border-box; grid-template-columns:minmax(0,1fr); height:calc(100% - 66px); overflow:auto; padding:12px 18px 12px 12px; gap:12px; min-height:0; }
   body.split .side { display:contents; }
   body.split .stage { min-height:420px; overflow:visible; }
-  body.split .cr { width:var(--sp, 50%); max-width:none; margin:0; padding:4px 12px 16px; box-sizing:border-box; overflow:auto; height:calc(100% - 66px); }
+  body.split #crView { position:fixed; top:66px; right:0; width:calc(100% - var(--sp, 50%)); height:calc(100% - 66px); box-sizing:border-box; max-width:none; margin:0; padding:4px 12px 16px 18px; overflow:auto; }
   body.split #splitTxt { display:none; }
   body.split #splitBtn { color:var(--text); background:var(--btn); }
 </style>
@@ -447,7 +446,7 @@
     <span>Multistream</span>
   </div>
   <nav class="seg" id="pageTabs" aria-label="Pages">
-    <button type="button" data-page="dash" aria-current="page">Dashboard</button>
+    <button type="button" data-page="dash" aria-current="page">Stream</button>
     <button type="button" data-page="studio" title="The built-in studio: scenes, cameras, sound, recording">Studio</button>
     <button type="button" data-page="cr">Control Room</button>
   </nav>
@@ -644,7 +643,7 @@
                 <div class="cust"><span>Custom:</span><span class="hx">#<input id="accHex" maxlength="6" placeholder="22C55E" aria-label="Custom colour, 6 letters or numbers"></span><input type="color" id="accPick" aria-label="Pick a colour"></div></div></div>
           </div>
                   <div class="grp"><h4>Studio</h4>
-            <div class="srow"><label class="lb" for="studioOpenSel">Open the Studio in<small>A new window keeps the dashboard in view. This window replaces the dashboard; a button in the Studio comes back.</small></label>
+            <div class="srow"><label class="lb" for="studioOpenSel">Open the Studio in<small>A new window keeps the Stream page in view. This window replaces the Stream page; a button in the Studio comes back.</small></label>
               <div class="ctl"><select class="t" id="studioOpenSel"><option value="window">A new window</option><option value="same">This window</option></select></div></div>
           </div>
         </section>
@@ -711,7 +710,7 @@
 
         <section class="pane" data-pane="phone" role="tabpanel" aria-label="Phone">
           <div class="grp"><h4>Control from phone</h4>
-            <p>Open this dashboard on a phone or another computer that is on the same Wi-Fi.</p>
+            <p>Open this page on a phone or another computer that is on the same Wi-Fi.</p>
             <div class="srow"><p class="lb">Allow other devices</p>
               <div class="ctl"><label class="sw"><input type="checkbox" id="remOn" aria-label="Allow other devices"><span></span></label></div></div>
             <div class="srow"><label class="lb" for="remPw">Password<small>At least 6 characters</small></label>
@@ -733,7 +732,6 @@
 
 <script src="/vendor/flv.min.js"></script>
 <script src="/demo.js"></script>
-<iframe id="splitPane" title="Studio" hidden allow="camera; microphone; display-capture; autoplay; fullscreen"></iframe>
 <div id="splitBar" hidden role="separator" aria-orientation="vertical" title="Drag to change the sizes. Double-click to make them equal."></div>
 <script>
 const $ = (s) => document.querySelector(s);
@@ -1054,6 +1052,7 @@ function pollThumbs() {}
 
 // Control Room (multiview) and the page switcher
 let page = 'dash';
+let splitOn = false; // split screen: the Stream page and the Control Room are both on screen
 let crMode = 'take';
 let crPrev = '';
 try { crMode = (JSON.parse(localStorage.getItem('ms_cr') || '{}') || {}).mode || 'take'; } catch {}
@@ -1065,14 +1064,14 @@ function showPage(p) {
     return;
   }
   page = p === 'cr' ? 'cr' : 'dash';
-  $('.app').hidden = page === 'cr';
-  $('#crView').hidden = page !== 'cr';
+  $('.app').hidden = page === 'cr' && !splitOn;
+  $('#crView').hidden = page !== 'cr' && !splitOn;
   pageTabs.forEach((b) => { if (b.dataset.page === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   try { history.replaceState(null, '', page === 'cr' ? '#control-room' : location.pathname + location.search); } catch {}
   renderCr();
   pollThumbs();
 }
-pageTabs.forEach((b) => { b.onclick = () => { if (b.dataset.page === 'cr' && page !== 'cr') askControlRoom(); else showPage(b.dataset.page); }; });
+pageTabs.forEach((b) => { b.onclick = () => { if (b.dataset.page === 'cr' && page !== 'cr' && !splitOn) askControlRoom(); else showPage(b.dataset.page); }; });
 // Control Room: ask first where to show it (this window, a new window, or full screen on one of the displays), like OBS projectors
 async function askControlRoom() {
   let ds = []; try { if (window.msNative && window.msNative.displays) ds = await window.msNative.displays(); } catch {}
@@ -1082,7 +1081,7 @@ async function askControlRoom() {
   const list = m.querySelector('.cr-ch');
   const close = () => { ov.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
   const add = (title, sub, run, pri) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'b2' + (pri ? ' pri' : ''); b.innerHTML = '<span></span><small></small>'; b.firstChild.textContent = title; b.lastChild.textContent = sub; b.onclick = () => { close(); run(); }; list.appendChild(b); return b; };
-  add('In this window', 'Replaces the dashboard here. Use Dashboard at the top to come back.', () => showPage('cr'), true);
+  add('In this window', 'Replaces the Stream page here. Use Stream at the top to come back.', () => showPage('cr'), true);
   add('In a new window', 'Its own window that you can move or resize.', () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); });
   ds.forEach((d) => add('Full screen on Display ' + d.n + (d.main ? ' (main)' : ''), d.w + ' x ' + d.h + (d.label && !/^\\\\\./.test(d.label) ? ' - ' + d.label : '') + '. Press Esc to leave full screen.', () => window.msNative.openControlRoom(d.id)));
   const c = document.createElement('button'); c.type = 'button'; c.className = 'b2'; c.textContent = 'Cancel'; c.onclick = close; list.appendChild(c);
@@ -1107,7 +1106,7 @@ $('#crTake').onclick = crTake;
 $('#crPop').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); showPage('dash'); };
 document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => { crMode = b.dataset.v; crPrev = ''; saveCr(); renderCr(); }; });
 function renderCr() {
-  if (page !== 'cr') return;
+  if (page !== 'cr' && !splitOn) return;
   const d = crData();
   document.querySelectorAll('#crMode button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === crMode)));
   const st = $('#crSt');
@@ -1163,7 +1162,7 @@ function renderCrItems() {
 }
 let crBusy = false;
 async function pollCr() {
-  if (page !== 'cr' || crBusy || document.hidden) return;
+  if ((page !== 'cr' && !splitOn) || crBusy || document.hidden) return;
   crBusy = true;
   try {
     const sh = await api('/api/studio/shots?tv=' + (stu.tv || 0)); stu.alive = !!sh.alive; const keep = stu.shots.thumbs; stu.shots = sh; if (!sh.thumbs) stu.shots.thumbs = keep; stu.tv = sh.tv || 0;
@@ -1561,24 +1560,22 @@ setInterval(refresh, 2000);
   }, { passive: false });
 })();
 
-// Split screen (like Arc): the Control Room and the Studio side by side in one window. Drag the bar to change the sizes.
+// Split screen (like Arc): the Stream page and the Control Room side by side. Drag the bar to choose the sizes.
 (function () {
-  const btn = $('#splitBtn'), pane = $('#splitPane'), bar = $('#splitBar');
-  let on = false, pct = 50, before = 'dash';
-  try { const v = Number(localStorage.getItem('ms_split_pct')); if (v >= 30 && v <= 70) pct = v; } catch {}
-  const setPct = (v) => { pct = Math.max(30, Math.min(70, v)); document.documentElement.style.setProperty('--sp', pct + '%'); try { localStorage.setItem('ms_split_pct', String(Math.round(pct))); } catch {} };
-  function busy() { try { return Boolean(pane.contentWindow && pane.contentWindow.msBusy && pane.contentWindow.msBusy()); } catch { return false; } }
+  const btn = $('#splitBtn'), bar = $('#splitBar');
+  let pct = 50;
+  try { const v = Number(localStorage.getItem('ms_split_pct')); if (v >= 25 && v <= 75) pct = v; } catch {}
+  const setPct = (v) => { pct = Math.max(25, Math.min(75, v)); document.documentElement.style.setProperty('--sp', pct + '%'); try { localStorage.setItem('ms_split_pct', String(Math.round(pct))); } catch {} };
   function turn(v) {
-    if (v === on) return;
-    if (!v && busy() && !confirm('Closing the split screen stops streaming and recording from the Studio. Close it?')) return;
-    on = v;
-    document.body.classList.toggle('split', on);
-    pane.hidden = bar.hidden = !on;
-    btn.setAttribute('aria-pressed', String(on)); btn.title = on ? 'Close the split screen' : 'Split screen: the Control Room and the Studio side by side';
-    if (on) { before = page; setPct(pct); pane.src = '/studio.html?split=1'; if (page !== 'cr') showPage('cr'); }
-    else { pane.src = 'about:blank'; document.documentElement.style.removeProperty('--sp'); if (before !== 'cr' && page === 'cr') showPage(before); }
+    if (v === splitOn) return;
+    splitOn = v;
+    document.body.classList.toggle('split', v);
+    bar.hidden = !v;
+    btn.setAttribute('aria-pressed', String(v)); btn.title = v ? 'Close the split screen' : 'Split screen: the Stream page and the Control Room side by side';
+    if (v) setPct(pct); else document.documentElement.style.removeProperty('--sp');
+    showPage(v ? 'dash' : page);
   }
-  btn.onclick = () => turn(!on);
+  btn.onclick = () => turn(!splitOn);
   bar.addEventListener('pointerdown', (e) => {
     bar.setPointerCapture(e.pointerId); bar.classList.add('drag'); document.body.classList.add('splitting');
     const move = (ev) => setPct((ev.clientX / window.innerWidth) * 100);
@@ -1586,7 +1583,6 @@ setInterval(refresh, 2000);
     bar.addEventListener('pointermove', move); bar.addEventListener('pointerup', up);
   });
   bar.ondblclick = () => setPct(50);
-  window.addEventListener('beforeunload', (e) => { if (on && busy()) { e.preventDefault(); e.returnValue = ''; } });
 })();
 </script>
 </body>
