@@ -244,6 +244,9 @@
   .ctxi small { display:block; margin-top:1px; font-size:11px; color:var(--muted); }
   .ctxi:hover, .ctxi:focus-visible { background:var(--sel); color:var(--onsel); outline:none; } .ctxi:hover small, .ctxi:focus-visible small { color:inherit; opacity:.8; }
   .ctxs { height:1px; margin:5px 6px; background:var(--gl-line); }
+#vcPrev{margin-top:6px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#000;position:relative}
+#vcPrev canvas{display:block;width:100%;height:auto;aspect-ratio:16/9}
+#vcPrev span{position:absolute;left:6px;bottom:4px;font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff}
 </style>
 </head>
 <body>
@@ -289,6 +292,7 @@
         <button id="sendBtn">Start Streaming</button>
         <button id="recBtn">Start Recording</button>
         <button id="vcBtn" hidden>Start Virtual Camera</button>
+        <div id="vcPrev" hidden title="This is what Zoom sees from Multistream Camera"><canvas id="vcPv" width="320" height="180"></canvas><span>Multistream Camera</span></div>
         <button id="modeBtn" type="button" aria-pressed="true" title="On: a Preview and a Program picture, and a Transition button (like OBS Studio Mode). Off: only the live picture, and a click on a scene puts it on air.">Studio Mode</button>
         <button id="setBtn">Settings</button>
       </div>
@@ -1444,23 +1448,29 @@ $('#recBtn').onclick = () => (recWs ? endRec(false) : startRec());
 document.addEventListener('click', () => ensureAudio(), { once: true });
 
 // ---------------- virtual camera (Zoom) ----------------
-// Sends the Studio picture to the Windows virtual camera. In Zoom, pick the camera called "Softcam".
+// Sends the Studio picture to the Windows virtual camera. In Zoom, pick the camera called "Multistream Camera".
 let vcWs = null, vcMr = null;
 fetch('/api/vcam').then((r) => r.json()).then((s) => { if (s.available) $('#vcBtn').hidden = false; }).catch(() => {});
+let vcPvT = null;
+function vcPrevStart() {
+  const c = $('#vcPv'), x = c.getContext('2d'); $('#vcPrev').hidden = false;
+  clearInterval(vcPvT); vcPvT = setInterval(() => { if (!document.hidden) x.drawImage(vcv, 0, 0, c.width, c.height); }, 100);
+}
+function vcPrevStop() { clearInterval(vcPvT); vcPvT = null; $('#vcPrev').hidden = true; }
 function vcOff(msg) {
   try { vcMr && vcMr.state !== 'inactive' && vcMr.stop(); } catch {}
   try { vcWs && vcWs.close(); } catch {}
-  vcWs = vcMr = null; vcOn = false; $('#vcBtn').textContent = 'Start Virtual Camera'; $('#vcBtn').className = '';
+  vcWs = vcMr = null; vcOn = false; vcPrevStop(); $('#vcBtn').textContent = 'Start Virtual Camera'; $('#vcBtn').className = '';
   if (msg) { $('#st').textContent = msg; $('#st').className = 'stat bad'; }
 }
 $('#vcBtn').onclick = async () => {
   if (vcWs) { vcOff(); $('#st').textContent = 'Virtual camera is off.'; $('#st').className = 'stat'; return; }
-  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok') === '1'; } catch {}
+  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok2') === '1'; } catch {}
   if (!ok) {
-    if (!confirm('Windows will ask for permission one time, to add a camera called Softcam. Continue?')) return;
+    if (!confirm('Windows will ask for permission one time, to add a camera called Multistream Camera. Continue?')) return;
     const r = await fetch('/api/vcam/install', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then((x) => x.json()).catch(() => ({ error: 'Could not reach the app' }));
     if (r.error) { $('#st').textContent = 'Virtual camera setup: ' + r.error; $('#st').className = 'stat bad'; return; }
-    try { localStorage.setItem('ms_vcam_ok', '1'); } catch {}
+    try { localStorage.setItem('ms_vcam_ok2', '1'); } catch {}
   }
   const ws = vcWs = openPipe('/studio-vcam');
   ws.binaryType = 'arraybuffer';
@@ -1469,9 +1479,9 @@ $('#vcBtn').onclick = async () => {
     vcOn = true;
     vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000 });
     vcMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
-    vcMr.start(100);
+    vcMr.start(100); vcPrevStart();
     $('#vcBtn').textContent = 'Stop Virtual Camera'; $('#vcBtn').className = 'stop';
-    $('#st').textContent = 'Virtual camera is on. In Zoom, choose the camera called Softcam.'; $('#st').className = 'stat ok';
+    $('#st').textContent = 'Virtual camera is on. In Zoom, choose the camera called Multistream Camera.'; $('#st').className = 'stat ok';
   };
   ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) vcOff('Virtual camera: ' + j.error); } catch {} };
   ws.onclose = () => { if (vcWs === ws) vcOff('Virtual camera stopped.'); };

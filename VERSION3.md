@@ -66,3 +66,9 @@ With an item selected: Ctrl+F fit to screen, Ctrl+S stretch to screen, Ctrl+D ce
 
 ## Control Room and Studio load
 The Studio only draws the Control Room pictures while a Control Room is open (it used to draw them all the time, about 2.5 times a second). The pictures are smaller, the small scene pictures are sent only when they change, and the Control Room asks for the scene list only when it changed. While recording, and while the virtual camera is on, the Studio now copies the finished Program picture when it is the same size or bigger, instead of drawing every scene again. This should make the Control Room and the Studio lighter when it sends, records and runs the virtual camera together. It has not been measured on the church PC.
+
+## Virtual camera: name, stopping and preview
+- The camera is now called **Multistream Camera** (it was "DirectShow Softcam"). Windows keeps the old name until the camera is added again, so the first time you press **Start Virtual Camera** after updating, Windows asks for permission once more.
+- Stopping the virtual camera no longer removes the camera from Windows. It keeps showing a plain dark picture, like OBS does, so Zoom does not show a camera error. The camera goes away fully when you close Multistream.
+- While the camera is on, a small live preview of what Zoom sees shows under the button.
+- Not proven on real Windows with Zoom yet. The unit test checks the helper stays running and only gets whole pictures.

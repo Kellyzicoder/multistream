@@ -1069,7 +1069,7 @@ function openPipe(p, toWindow) {
 function shutdown() {
   stopAll();
   try { if (studioFf) studioFf.kill('SIGKILL'); } catch {}
-  try { vcam.stop(); } catch {}
+  try { vcam.quit(); } catch {}
   for (const s of [phoneServer, loginServer]) { try { s && s.close(); } catch {} }
 }
 syncPhoneServer();

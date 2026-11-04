@@ -1,6 +1,6 @@
 // Virtual camera for Zoom and other programs (Windows only).
 // The Studio picture comes in as video, ffmpeg turns it into plain frames, and a small helper (vcam.exe)
-// hands the frames to the "softcam" virtual camera driver.
+// hands the frames to the "softcam" virtual camera driver. The camera is called "Multistream Camera".
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
@@ -13,13 +13,35 @@ function findDir() {
 function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe, exeArgs } = {}) {
   const helper = exe || (dir && path.join(dir, 'vcam.exe'));
   const available = Boolean(helper) && (platform === 'win32' || Boolean(exe));
-  let procs = null, info = { on: false, error: '' };
+  // The helper (vc) stays running once the camera has been started, so Windows keeps the camera in place.
+  // When the Studio stops sending, we hand it a plain dark picture instead. If the helper quit, the camera would
+  // disappear and Zoom would show an error.
+  let vc = null, ff = null, idle = null, info = { on: false, error: '' }, fed = 0, size = 0;
 
-  function stop() {
-    if (!procs) return;
-    const { ff, vc } = procs; procs = null; info.on = false;
-    try { ff.stdin.end(); } catch {}
-    setTimeout(() => { try { ff.kill('SIGKILL'); } catch {} try { vc.kill('SIGKILL'); } catch {} }, 1500);
+  function idleStart() {
+    if (idle || !vc) return;
+    const frame = Buffer.alloc(size, 0x18); // dark grey
+    idle = setInterval(() => { if (vc && vc.stdin.writable) vc.stdin.write(frame); }, 200);
+    if (idle.unref) idle.unref();
+  }
+  function idleStop() { if (idle) { clearInterval(idle); idle = null; } }
+  function finishFrame() { // never leave half a picture behind
+    const rest = (size - (fed % size)) % size;
+    if (rest && vc && vc.stdin.writable) vc.stdin.write(Buffer.alloc(rest));
+    fed = 0;
+  }
+  function stop() { // stops sending; the camera stays, showing the dark picture
+    const f = ff; ff = null; info.on = false;
+    if (f) {
+      try { f.stdout.removeAllListeners('data'); f.stdin.end(); } catch {}
+      setTimeout(() => { try { f.kill('SIGKILL'); } catch {} }, 1500);
+      finishFrame(); idleStart();
+    }
+  }
+  function quit() { // really closes the camera (app is closing)
+    stop(); idleStop();
+    const v = vc; vc = null;
+    if (v) { try { v.stdin.end(); } catch {} setTimeout(() => { try { v.kill('SIGKILL'); } catch {} }, 1000); }
   }
 
   // returns { write(buf), stop() }
@@ -27,18 +49,29 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
     if (!available) throw new Error('The virtual camera is only in the Windows app');
     stop();
     info = { on: true, error: '' };
-    const vc = spawn(helper, exeArgs || [String(w), String(h), String(fps)], { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
-    const ff = spawn(ffmpeg, ['-hide_banner', '-loglevel', 'error', 
+    if (vc && size !== w * h * 3) quit();
+    if (!vc) {
+      size = w * h * 3; fed = 0;
+      const v = spawn(helper, exeArgs || [String(w), String(h), String(fps)], { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
+      vc = v;
+      v.stdin.on('error', () => {});
+      v.stderr.on('data', (d) => { const t = String(d).trim().split('\n').pop(); if (t) info.error = t.slice(0, 200); });
+      const gone = () => { if (vc === v) { vc = null; idleStop(); info.on = false; try { ff && ff.kill('SIGKILL'); } catch {} ff = null; } };
+      v.on('exit', gone); v.on('error', (e) => { info.error = e.message; gone(); });
+    }
+    idleStop(); fed = 0;
+    const f = ff = spawn(ffmpeg, ['-hide_banner', '-loglevel', 'error',
       '-i', 'pipe:0', '-vf', `scale=${w}:${h}`, '-r', String(fps), '-pix_fmt', 'bgr24', '-f', 'rawvideo', 'pipe:1'], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
-    procs = { ff, vc };
-    ff.stdout.pipe(vc.stdin);
-    ff.stdin.on('error', () => {}); vc.stdin.on('error', () => {}); ff.stdout.on('error', () => {});
-    const note = (d) => { const t = String(d).trim().split('\n').pop(); if (t) info.error = t.slice(0, 200); };
-    ff.stderr.on('data', note); vc.stderr.on('data', note);
-    const gone = () => { if (procs && procs.vc === vc) { procs = null; info.on = false; } try { ff.kill('SIGKILL'); } catch {} };
-    vc.on('exit', gone); vc.on('error', (e) => { info.error = e.message; gone(); });
-    ff.on('exit', () => { try { vc.stdin.end(); } catch {} });
-    return { write: (b) => { if (ff.stdin.writable) ff.stdin.write(b); }, stop };
+    f.stdin.on('error', () => {}); f.stdout.on('error', () => {});
+    f.stderr.on('data', (d) => { const t = String(d).trim().split('\n').pop(); if (t) info.error = t.slice(0, 200); });
+    const target = vc;
+    f.stdout.on('data', (b) => {
+      if (!target || !target.stdin.writable) return;
+      fed += b.length;
+      if (!target.stdin.write(b)) { f.stdout.pause(); target.stdin.once('drain', () => f.stdout.resume()); }
+    });
+    f.on('exit', () => { if (ff === f) { ff = null; info.on = false; finishFrame(); idleStart(); } });
+    return { write: (b) => { if (f.stdin.writable) f.stdin.write(b); }, stop };
   }
 
   // Registers the virtual camera with Windows. Windows asks for the administrator's OK once.
@@ -56,7 +89,7 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
     });
   }
 
-  return { available, start, stop, install, state: () => ({ available, ...info }) };
+  return { available, start, stop, quit, install, state: () => ({ available, ...info }) };
 }
 
 module.exports = { createVcam };
