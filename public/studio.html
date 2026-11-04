@@ -269,13 +269,13 @@
   <div class="docks">
     <section class="dock"><h2>Scenes</h2>
       <div class="list" id="scenes"></div>
-      <div class="tb"><button id="addScene" title="Add scene">Add</button><button id="delScene" title="Remove scene">Remove</button><button id="scUp" title="Move up">Up</button><button id="scDown" title="Move down">Down</button></div>
+      <div class="tb"><button id="addScene" title="Add scene">Add</button><button id="delScene" title="Remove scene">Remove</button></div>
     </section>
     <section class="dock"><h2>Sources</h2>
       <div class="list" id="layers"></div>
       <div class="tb">
         <div class="menu"><button id="addBtn" title="Add source">Add</button><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Video Capture Device<small>A webcam, ATEM Mini or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a whole computer screen</small></button><button class="mi" data-add="window">Window<small>One program, like lyrics or slides</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
-        <button id="srcDel" title="Remove source">Remove</button><button id="srcProps" title="Properties">Settings</button><button id="srcUp" title="Move up">Up</button><button id="srcDown" title="Move down">Down</button>
+        <button id="srcDel" title="Remove source">Remove</button><button id="srcProps" title="Properties">Settings</button>
       </div>
     </section>
     <section class="dock wide"><h2>Audio Mixer</h2>
@@ -1054,8 +1054,6 @@ function moveScene(dir) {
   if (i < 0 || j < 0 || j >= studio.scenes.length) return;
   [studio.scenes[i], studio.scenes[j]] = [studio.scenes[j], studio.scenes[i]]; save(); renderAll();
 }
-$('#scUp').onclick = () => moveScene(-1);
-$('#scDown').onclick = () => moveScene(1);
 $('#addScene').onclick = () => {
   let n = 'Scene ' + (studio.scenes.length + 1); while (studio.scenes.some((s) => s.name === n)) n += '+';
   studio.scenes.push({ name: n, layers: [], audio: studio.audio.map((a) => a.id) }); editing = n; if (!studio.current) { studio.current = n; dirtyCurrent = true; } save(); renderAll();
@@ -1100,8 +1098,6 @@ $('#srcProps').onclick = () => { if (sel) { propsOpen = true; renderProps(); } }
 $('#srcDel').onclick = () => { const s = byName(editing), i = selLayer(); if (i == null || i < 0) return; s.layers.splice(i, 1); sel = ''; closeProps(); save(); renderLayers(); };
 // the list shows the front item at the top (like OBS), so "up" moves an item to the front
 function moveLayer(dir) { const s = byName(editing), i = selLayer(); if (i == null || i < 0) return; const j = i + dir; if (j < 0 || j >= s.layers.length) return; [s.layers[i], s.layers[j]] = [s.layers[j], s.layers[i]]; save(); renderLayers(); }
-$('#srcUp').onclick = () => moveLayer(1);
-$('#srcDown').onclick = () => moveLayer(-1);
 function renderProps() {
   const box = $('#props'); box.textContent = '';
   const s = byName(editing), l = s && s.layers.find((x) => x.id === sel);
