@@ -1,7 +1,7 @@
 // Virtual camera for Zoom and other programs (Windows only).
 // The Studio picture comes in as video, ffmpeg turns it into plain frames, and a small helper (vcam.exe)
 // hands the frames to the "softcam" virtual camera driver. The camera is called "Multistream Camera".
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -10,17 +10,32 @@ function findDir() {
   return tries.filter(Boolean).find((d) => { try { return fs.existsSync(path.join(d, 'vcam.exe')); } catch { return false; } }) || '';
 }
 
-function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe, exeArgs } = {}) {
+function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe, exeArgs, logoPath } = {}) {
   const helper = exe || (dir && path.join(dir, 'vcam.exe'));
   const available = Boolean(helper) && (platform === 'win32' || Boolean(exe));
   // The helper (vc) stays running once the camera has been started, so Windows keeps the camera in place.
   // When the Studio stops sending, we hand it a plain dark picture instead. If the helper quit, the camera would
   // disappear and Zoom would show an error.
-  let vc = null, ff = null, idle = null, info = { on: false, error: '' }, fed = 0, size = 0;
+  let vc = null, ff = null, idle = null, info = { on: false, error: '' }, fed = 0, size = 0, vw = 0, vh = 0;
 
+  // the picture shown while the camera is not sending: the Multistream "M" logo on dark (plain dark if that fails)
+  let idleBuf = null, idleSize = 0;
+  function idleFrame() {
+    if (idleBuf && idleSize === size) return idleBuf;
+    idleSize = size; idleBuf = Buffer.alloc(size, 0x18);
+    try {
+      const w = vw, h = vh;
+      const logo = fs.readFileSync(logoPath || path.join(__dirname, 'public', 'vcam-logo.png'));
+      const r = spawnSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-f', 'lavfi', '-i', `color=c=0x181818:s=${w}x${h}`,
+        '-filter_complex', `[0:v]scale=-1:${Math.round(h * 0.4)}[l];[1:v][l]overlay=(W-w)/2:(H-h)/2`, '-frames:v', '1', '-pix_fmt', 'bgr24', '-f', 'rawvideo', 'pipe:1'],
+        { input: logo, maxBuffer: size * 2, windowsHide: true });
+      if (r.status === 0 && r.stdout.length === size) idleBuf = r.stdout;
+    } catch {}
+    return idleBuf;
+  }
   function idleStart() {
     if (idle || !vc) return;
-    const frame = Buffer.alloc(size, 0x18); // dark grey
+    const frame = idleFrame();
     idle = setInterval(() => { if (vc && vc.stdin.writable) vc.stdin.write(frame); }, 200);
     if (idle.unref) idle.unref();
   }
@@ -51,7 +66,7 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
     info = { on: true, error: '' };
     if (vc && size !== w * h * 3) quit();
     if (!vc) {
-      size = w * h * 3; fed = 0;
+      size = w * h * 3; vw = w; vh = h; fed = 0;
       const v = spawn(helper, exeArgs || [String(w), String(h), String(fps)], { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
       vc = v;
       v.stdin.on('error', () => {});

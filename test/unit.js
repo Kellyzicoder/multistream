@@ -145,11 +145,11 @@ function outTests() {
 async function vcamTests() {
   const { createVcam } = require('../vcam');
   const fake = path.join(tmp, 'fakevcam.js'), log = path.join(tmp, 'vcam.log');
-  fs.writeFileSync(fake, `const fs=require('fs');let n=0;process.stdin.on('data',d=>{n+=d.length;fs.writeFileSync(${JSON.stringify(log)},String(n));});process.stdin.on('end',()=>{fs.writeFileSync(${JSON.stringify(log)+'+".end"'},'1');});setInterval(()=>{},1000);`);
+  fs.writeFileSync(fake, `const fs=require('fs');let n=0;process.stdin.on('data',d=>{n+=d.length;fs.writeFileSync(${JSON.stringify(log+'.last')},d);fs.writeFileSync(${JSON.stringify(log)},String(n));});process.stdin.on('end',()=>{fs.writeFileSync(${JSON.stringify(log)+'+".end"'},'1');});setInterval(()=>{},1000);`);
   const webm = path.join(tmp, 'vc.webm');
   assert.strictEqual(spawnSync(FF, ['-loglevel', 'error', '-f', 'lavfi', '-i', 'testsrc=size=320x180:rate=30', '-t', '1', '-c:v', 'libvpx', '-y', webm]).status, 0, 'make a test video');
-  const W = 16, H = 8, FR = W * H * 3;
-  const vc = createVcam({ ffmpeg: FF, exe: process.execPath, exeArgs: [fake] });
+  const W = 64, H = 36, FR = W * H * 3;
+  const vc = createVcam({ ffmpeg: FF, exe: process.execPath, exeArgs: [fake], logoPath: path.join(__dirname, '..', 'public', 'vcam-logo.png') });
   const s = vc.start(W, H, 10);
   s.write(fs.readFileSync(webm)); await new Promise((r) => setTimeout(r, 1800));
   const during = +fs.readFileSync(log, 'utf8');
@@ -159,6 +159,8 @@ async function vcamTests() {
   const after = +fs.readFileSync(log, 'utf8');
   assert.strictEqual(after % FR, 0, 'only whole pictures were sent: ' + after);
   assert.ok(after > during, 'a dark picture keeps going to the camera while stopped');
+  const last = fs.readFileSync(log + '.last'); assert.strictEqual(last.length, FR, 'last idle picture is one whole picture');
+  assert.ok(new Set(last).size > 3, 'the idle picture shows the logo, not just one colour');
   assert.ok(!fs.existsSync(log + '.end'), 'the helper is still running after stop');
   vc.quit(); await new Promise((r) => setTimeout(r, 400));
   ok('virtual camera stays in place when stopped, shows a dark picture, and only sends whole pictures');
