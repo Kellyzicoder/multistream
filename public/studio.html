@@ -248,6 +248,8 @@
 #vcPrev{margin-top:6px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#000;position:relative}
 #vcPrev canvas{display:block;width:100%;height:auto;aspect-ratio:16/9}
 #vcPrev span{position:absolute;left:6px;bottom:4px;font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff}
+.lyr .cog{flex:none;width:28px;height:26px;padding:0;font-size:16px;line-height:1;border-radius:8px;opacity:.9}
+.lyr .cog:hover{opacity:1;background:var(--gl2);border-color:var(--gl-line)}
 </style>
 </head>
 <body>
@@ -275,7 +277,7 @@
       <div class="list" id="layers"></div>
       <div class="tb">
         <div class="menu"><button id="addBtn" title="Add source">Add</button><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Video Capture Device<small>A webcam, ATEM Mini or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a whole computer screen</small></button><button class="mi" data-add="window">Window<small>One program, like lyrics or slides</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
-        <button id="srcDel" title="Remove source">Remove</button><button id="srcProps" title="Properties">Settings</button>
+        <button id="srcDel" title="Remove source">Remove</button>
       </div>
     </section>
     <section class="dock wide"><h2>Audio Mixer</h2>
@@ -1079,7 +1081,9 @@ function renderLayers() {
     const n = document.createElement('span'); n.className = 'n'; n.textContent = (l.name || ICON[l.type] || l.type) + (l.locked ? ' (locked)' : ''); n.title = n.textContent;
     const up = document.createElement('button'); up.className = 'sm'; up.textContent = '\u2191'; up.title = 'Move in front'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
     const x = document.createElement('button'); x.className = 'sm'; x.textContent = '\u00d7'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
-    d.append(eye, n); d.onclick = () => { sel = l.id; renderLayers(); };
+    const cog = document.createElement('button'); cog.className = 'cog'; cog.textContent = '\u2699'; cog.title = 'Settings for ' + (l.name || l.type); cog.setAttribute('aria-label', cog.title);
+    cog.onclick = (e) => { e.stopPropagation(); sel = l.id; propsOpen = true; renderLayers(); };
+    d.append(eye, n, cog); d.onclick = () => { sel = l.id; renderLayers(); };
     d.ondblclick = () => { sel = l.id; propsOpen = true; renderLayers(); };
     box.appendChild(d);
   }
@@ -1094,7 +1098,6 @@ $('#propsClose').onclick = closeProps; $('#propsOk').onclick = closeProps;
 $('#propsBox').addEventListener('mousedown', (e) => { if (e.target === $('#propsBox')) closeProps(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && propsOpen) closeProps(); });
 function selLayer() { const s = byName(editing); return s && s.layers.findIndex((x) => x.id === sel); }
-$('#srcProps').onclick = () => { if (sel) { propsOpen = true; renderProps(); } };
 $('#srcDel').onclick = () => { const s = byName(editing), i = selLayer(); if (i == null || i < 0) return; s.layers.splice(i, 1); sel = ''; closeProps(); save(); renderLayers(); };
 // the list shows the front item at the top (like OBS), so "up" moves an item to the front
 function moveLayer(dir) { const s = byName(editing), i = selLayer(); if (i == null || i < 0) return; const j = i + dir; if (j < 0 || j >= s.layers.length) return; [s.layers[i], s.layers[j]] = [s.layers[j], s.layers[i]]; save(); renderLayers(); }
