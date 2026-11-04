@@ -54,3 +54,6 @@ Rounded corners, frosted translucent panels with blur, light edges and a soft ac
 
 ## Movable panels
 In the Studio, drag a panel's title (Scenes, Sources, Audio Mixer, Scene Transitions, Controls) to put it in a new place on the bottom row. Drag it up, or press the arrow button on its title, to float it as its own window that you can move and resize. Drag it to the far left or right edge to dock it beside the pictures. The audio mixer has vertical faders and meters like OBS; the per-input tools (input, headphones, delay, low cut, bass/treble, gate, compressor, limiter) open from each strip's Tools button. Drop it on the bottom row, or press the arrow again, to dock it. The layout is saved on this device. Settings, General, Put the panels back resets it.
+
+## Studio Mode and panel sizes
+Controls, Studio Mode (like OBS): on shows Preview and Program with a Transition button; off shows only the live picture, and clicking a scene puts it on air straight away. Panels can be resized with limits: drag the line above the bottom row, the lines between panels, or the line beside a left or right column (double-click a line to reset it). Settings, General, Put the panels back resets everything. The Control Room page fills the whole window.

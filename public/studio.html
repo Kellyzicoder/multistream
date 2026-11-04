@@ -223,21 +223,36 @@
   .dz.show { display:block; } .dz.hot { background:color-mix(in srgb, var(--sel) 30%, transparent); }
   .dz::after { content:attr(data-t); position:absolute; left:0; right:0; top:50%; text-align:center; font-size:12px; font-weight:600; color:var(--text); }
   @media (max-width:1000px) { .upper { flex-direction:column; } .sdock:not(:empty) { width:auto; } }
+  /* ---------- adjusting sizes, with limits ---------- */
+  .dock { position:relative; } .dock.float { position:fixed; max-width:92vw; max-height:92vh; }
+  .split { flex:none; position:relative; z-index:4; touch-action:none; }
+  .split.h { height:6px; margin:-3px 0; cursor:ns-resize; } .split.v { width:6px; margin:0 -3px; cursor:ew-resize; }
+  .split::after { content:""; position:absolute; border-radius:999px; background:var(--sel); opacity:0; transition:opacity .12s; }
+  .split.h::after { left:30%; right:30%; top:2px; height:2px; } .split.v::after { top:30%; bottom:30%; left:2px; width:2px; }
+  .split:hover::after, .split.drag::after { opacity:.9; }
+  .rz { position:absolute; z-index:3; touch-action:none; } .rz:hover, .rz.drag { background:color-mix(in srgb, var(--sel) 45%, transparent); }
+  .rzx { top:10px; bottom:10px; right:0; width:7px; cursor:col-resize; border-radius:999px; } .rzy { left:10px; right:10px; bottom:0; height:7px; cursor:row-resize; border-radius:999px; }
+  @media (max-width:1000px) { .split, .rz { display:none; } }
+  /* ---------- Studio Mode off: only the live picture ---------- */
+  body.single .stage > .mid, body.single .stage > .screen:last-child { display:none; }
+  body.single .stage > .screen:first-child { max-width:min(100%, calc((100vh - 360px) * 16 / 9)); margin:0 auto; }
+  body.single #ev { border-color:var(--red); box-shadow:0 0 0 1px var(--red), 0 0 40px rgba(255,77,90,.3), 0 14px 44px rgba(0,0,0,.45); }
 </style>
 </head>
 <body>
 <div class="obs">
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
-  <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside>
+  <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside><div class="split v" id="splitL" title="Drag to make the left panels wider or narrower" hidden></div>
   <div class="stage">
-    <div class="screen"><div class="cap">Preview <span id="editName"></span></div><canvas id="ev" class="v" width="960" height="540"></canvas></div>
+    <div class="screen"><div class="cap"><span id="evT">Preview</span> <span id="editName"></span></div><canvas id="ev" class="v" width="960" height="540"></canvas></div>
     <div class="mid">
       <button id="transBtn" class="trans" title="Put the Preview scene on air (Program)">Transition</button>
       <p class="note" id="hint">Pick a scene, then press Transition to put it on air.</p>
     </div>
     <div class="screen"><div class="cap">Program <span id="airName"></span></div><canvas id="cv" class="v" width="1280" height="720"></canvas></div>
   </div>
-  <aside class="sdock" id="dockR" aria-label="Panels on the right"></aside></div>
+  <div class="split v" id="splitR" title="Drag to make the right panels wider or narrower" hidden></div><aside class="sdock" id="dockR" aria-label="Panels on the right"></aside></div>
+  <div class="split h" id="splitB" title="Drag to make the bottom panels taller or shorter"></div>
 
   <!-- docks along the bottom, like OBS -->
   <div class="docks">
@@ -267,6 +282,7 @@
         <button id="sendBtn">Start Streaming</button>
         <button id="recBtn">Start Recording</button>
         <button id="vcBtn" hidden>Start Virtual Camera</button>
+        <button id="modeBtn" type="button" aria-pressed="true" title="On: a Preview and a Program picture, and a Transition button (like OBS Studio Mode). Off: only the live picture, and a click on a scene puts it on air.">Studio Mode</button>
         <button id="setBtn">Settings</button>
       </div>
     </section>
@@ -955,12 +971,23 @@ function renderScenes() {
     const n = document.createElement('span'); n.className = 'n'; n.textContent = s.name; d.appendChild(n);
     // a red dot marks the scene that is on air (Program)
     if (s.name === studio.current) { const a = document.createElement('span'); a.className = 'dot'; a.title = 'On air'; d.appendChild(a); }
-    d.onclick = () => { editing = s.name; sel = ''; renderAll(); };
+    d.onclick = () => { editing = s.name; sel = ''; if (!studioMode && s.name !== studio.current) setCurrent(s.name); else renderAll(); };
     d.ondblclick = () => { const v = prompt('Scene name', s.name); if (v && !studio.scenes.some((x) => x.name === v)) { if (studio.current === s.name) { studio.current = v; dirtyCurrent = true; } s.name = v; editing = v; save(); renderAll(); } };
     box.appendChild(d);
   });
 }
 // Transition: put the Preview scene on air, like OBS Studio Mode
+// Studio Mode (like OBS): on = Preview and Program with a Transition button, off = only the live picture
+let studioMode = true; try { studioMode = localStorage.getItem('ms_studiomode') !== '0'; } catch {}
+function applyMode() {
+  document.body.classList.toggle('single', !studioMode);
+  const b = $('#modeBtn'); b.setAttribute('aria-pressed', String(studioMode)); b.classList.toggle('on', studioMode);
+}
+$('#modeBtn').onclick = () => {
+  studioMode = !studioMode; try { localStorage.setItem('ms_studiomode', studioMode ? '1' : '0'); } catch {}
+  applyMode(); if (!studioMode) editing = studio.current || editing; renderAll();
+};
+applyMode();
 $('#transBtn').onclick = () => { if (editing && editing !== studio.current) setCurrent(editing); };
 function moveScene(dir) {
   const i = studio.scenes.findIndex((x) => x.name === editing), j = i + dir;
@@ -984,7 +1011,8 @@ const ICON = { camera: 'Video capture', window: 'Window', image: 'Picture', vide
 function renderLayers() {
   const s = byName(editing), box = $('#layers'); box.textContent = '';
   $('#editName').textContent = editing ? '(' + editing + ')' : ''; $('#airName').textContent = studio.current ? '(' + studio.current + ')' : '';
-  $('#hint').textContent = sel ? 'Drag to move. Drag a corner or edge to resize. Hold Alt and drag an edge to crop.' : 'Pick a scene, then press Transition to put it on air. Click an item in the Preview to move it.';
+  $('#evT').textContent = studioMode ? 'Preview' : 'Live';
+  $('#hint').textContent = sel ? 'Drag to move. Drag a corner or edge to resize. Hold Alt and drag an edge to crop.' : (studioMode ? 'Pick a scene, then press Transition to put it on air. Click an item in the Preview to move it.' : 'Click a scene to put it on air. Click an item in the picture to move it.');
   if (!s) { box.textContent = 'Add a scene first.'; $('#propsBox').hidden = true; return; }
   for (let i = s.layers.length - 1; i >= 0; i--) {
     const l = s.layers[i];
@@ -1817,10 +1845,10 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   const row = document.querySelector('.docks'); if (!row) return;
   const names = ['scenes', 'sources', 'mixer', 'transitions', 'controls'];
   const docks = [...row.querySelectorAll('.dock')]; docks.forEach((d, i) => { d.dataset.id = names[i]; });
-  const fresh = () => ({ order: names.slice(), float: {}, pos: {} });
+  const fresh = () => ({ order: names.slice(), float: {}, pos: {}, fx: {}, h: 0, wl: 0, wr: 0 });
   const side = { left: document.getElementById('dockL'), right: document.getElementById('dockR') };
   let L = fresh();
-  try { const j = JSON.parse(localStorage.getItem('ms_layout') || 'null'); if (j && Array.isArray(j.order)) { L.order = j.order.filter((x) => names.includes(x)); names.forEach((n) => { if (!L.order.includes(n)) L.order.push(n); }); if (j.float && typeof j.float === 'object') L.float = j.float; if (j.pos && typeof j.pos === 'object') L.pos = j.pos; } } catch {}
+  try { const j = JSON.parse(localStorage.getItem('ms_layout') || 'null'); if (j && Array.isArray(j.order)) { L.order = j.order.filter((x) => names.includes(x)); names.forEach((n) => { if (!L.order.includes(n)) L.order.push(n); }); if (j.float && typeof j.float === 'object') L.float = j.float; if (j.pos && typeof j.pos === 'object') L.pos = j.pos; if (j.fx && typeof j.fx === 'object') L.fx = j.fx; ['h', 'wl', 'wr'].forEach((k) => { if (Number.isFinite(j[k])) L[k] = j[k]; }); } } catch {}
   const save = () => { try { localStorage.setItem('ms_layout', JSON.stringify(L)); } catch {} };
   const byId = (id) => docks.find((d) => d.dataset.id === id);
   let z = 30;
@@ -1833,11 +1861,56 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
     if (f) { const c = clamp(f); Object.assign(d.style, { left: c.x + 'px', top: c.y + 'px', width: c.w + 'px', height: c.h + 'px' }); }
     else Object.assign(d.style, { left: '', top: '', width: '', height: '', zIndex: '' });
   }
-  function layout() { L.order.forEach((id) => { const d = byId(id); if (d) (side[L.pos[id]] || row).appendChild(d); }); docks.forEach(paint); }
-  const floatAt = (d, x, y, w, h) => { L.float[d.dataset.id] = { x, y, w: Math.max(w, 260), h: Math.max(h, 200) }; paint(d); front(d); save(); };
+  const splitB = document.getElementById('splitB'), splitL = document.getElementById('splitL'), splitR = document.getElementById('splitR');
+  const maxH = () => Math.max(200, Math.min(innerHeight * 0.6, innerHeight - 300));
+  const clampW = (w) => Math.max(180, Math.min(w, Math.min(420, innerWidth * 0.35)));
+  function applySizes() {
+    const wide = innerWidth > 1000;
+    row.style.height = L.h && wide ? Math.max(180, Math.min(L.h, maxH())) + 'px' : '';
+    [['left', 'wl', splitL], ['right', 'wr', splitR]].forEach(([k, key, sp]) => { const el = side[k]; el.style.width = L[key] && el.childElementCount && wide ? clampW(L[key]) + 'px' : ''; sp.hidden = !el.childElementCount || !wide; });
+    docks.forEach((d) => { d.style.flex = L.fx[d.dataset.id] && !L.float[d.dataset.id] ? L.fx[d.dataset.id] + ' 1 0' : ''; });
+  }
+  // a small handle between two panels (and the splitters around the pictures) to change sizes; each has a smallest and a largest size
+  function handles() {
+    document.querySelectorAll('.rz').forEach((x) => x.remove());
+    [row, side.left, side.right].forEach((cont) => {
+      const horiz = cont === row, list = [...cont.children].filter((c) => c.classList.contains('dock') && !c.classList.contains('float'));
+      list.forEach((d, i) => {
+        if (i === list.length - 1) return;
+        const hd = document.createElement('div'); hd.className = 'rz ' + (horiz ? 'rzx' : 'rzy'); hd.title = 'Drag to resize'; d.appendChild(hd);
+        hd.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); hd.setPointerCapture(e.pointerId); hd.classList.add('drag');
+          const a = d, b = list[i + 1], rect = (x) => x.getBoundingClientRect(), sz = (x) => (horiz ? rect(x).width : rect(x).height), sizes = list.map(sz);
+          const total = sizes[i] + sizes[i + 1], cs = getComputedStyle, mn = (x) => (horiz ? parseFloat(cs(x).minWidth) : parseFloat(cs(x).minHeight)) || (horiz ? 170 : 130);
+          const lo = mn(a), hi = Math.min(total - mn(b), (horiz ? cont.clientWidth : cont.clientHeight) * 0.7), start = horiz ? e.clientX : e.clientY;
+          list.forEach((x, k) => { L.fx[x.dataset.id] = Math.round(sizes[k]); x.style.flex = L.fx[x.dataset.id] + ' 1 0'; });
+          const mv = (ev) => { const na = Math.max(lo, Math.min(sizes[i] + (horiz ? ev.clientX : ev.clientY) - start, hi)); L.fx[a.dataset.id] = Math.round(na); L.fx[b.dataset.id] = Math.round(total - na); a.style.flex = L.fx[a.dataset.id] + ' 1 0'; b.style.flex = L.fx[b.dataset.id] + ' 1 0'; };
+          const up = () => { hd.classList.remove('drag'); hd.removeEventListener('pointermove', mv); hd.removeEventListener('pointerup', up); hd.removeEventListener('pointercancel', up); save(); };
+          hd.addEventListener('pointermove', mv); hd.addEventListener('pointerup', up); hd.addEventListener('pointercancel', up);
+        });
+      });
+    });
+  }
+  function dragSplit(el, kind) {
+    el.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return; e.preventDefault(); el.setPointerCapture(e.pointerId); el.classList.add('drag');
+      const mv = (ev) => {
+        if (kind === 'b') L.h = Math.round(Math.max(180, Math.min(row.getBoundingClientRect().bottom - ev.clientY, maxH())));
+        else if (kind === 'l') L.wl = Math.round(clampW(ev.clientX - side.left.getBoundingClientRect().left));
+        else L.wr = Math.round(clampW(side.right.getBoundingClientRect().right - ev.clientX));
+        applySizes();
+      };
+      const up = () => { el.classList.remove('drag'); el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); save(); };
+      el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    });
+    el.addEventListener('dblclick', () => { if (kind === 'b') L.h = 0; else if (kind === 'l') L.wl = 0; else L.wr = 0; applySizes(); save(); });
+  }
+  dragSplit(splitB, 'b'); dragSplit(splitL, 'l'); dragSplit(splitR, 'r');
+  function layout() { L.order.forEach((id) => { const d = byId(id); if (d) (side[L.pos[id]] || row).appendChild(d); }); docks.forEach(paint); applySizes(); handles(); }
+  const floatAt = (d, x, y, w, h) => { L.fx = {}; L.float[d.dataset.id] = { x, y, w: Math.max(w, 260), h: Math.max(h, 200) }; layout(); front(d); save(); };
   // put a panel on the bottom row, or in the left or right column, in the place nearest the pointer
   const dockTo = (d, where, cx, cy) => {
-    const id = d.dataset.id; delete L.float[id]; if (where === 'bottom') delete L.pos[id]; else L.pos[id] = where;
+    const id = d.dataset.id; L.fx = {}; delete L.float[id]; if (where === 'bottom') delete L.pos[id]; else L.pos[id] = where;
     const horiz = where === 'bottom';
     const rest = L.order.filter((x) => x !== id && !L.float[x] && (L.pos[x] || 'bottom') === where);
     let at = rest.length; for (let i = 0; i < rest.length; i++) { const r = byId(rest[i]).getBoundingClientRect(); if ((horiz ? cx < r.left + r.width / 2 : cy < r.top + r.height / 2)) { at = i; break; } }
@@ -1880,7 +1953,7 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
     };
     h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
   });
-  window.addEventListener('resize', () => docks.forEach((d) => { if (L.float[d.dataset.id]) paint(d); }));
+  window.addEventListener('resize', () => { docks.forEach((d) => { if (L.float[d.dataset.id]) paint(d); }); applySizes(); });
   const rb = document.getElementById('resetLayout'); if (rb) rb.onclick = () => { L = fresh(); layout(); save(); };
   layout();
 })();
