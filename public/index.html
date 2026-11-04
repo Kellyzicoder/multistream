@@ -412,6 +412,15 @@
   html.a-contrast { --gl:var(--card); --gl2:var(--card2); --gl-line:var(--line); --gl-hi:transparent; --gl-sh:none; --gl-blur:none; }
   html.a-contrast body { background:var(--bg); }
   @media (prefers-reduced-transparency: reduce) { :root { --gl:var(--card); --gl2:var(--card2); --gl-line:var(--line); --gl-hi:transparent; --gl-blur:none; } }
+  /* ---------- Control Room fills the whole window (no side margins, no black bars) ---------- */
+  .cr:not([hidden]) { max-width:none; margin:0; padding:10px 14px 14px; height:calc(100vh - 66px); display:flex; flex-direction:column; gap:10px; overflow:hidden; }
+  .cr .cr-bar { margin:0; flex:none; }
+  .cr .cr-top { flex:none; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:14px; }
+  .cr .cr-pane { width:100%; height:auto; aspect-ratio:16/9; margin:0; border-radius:20px; }
+  .cr .cr-pane img { object-fit:contain; }
+  .cr .cr-grid { flex:1 1 0; min-height:0; margin:0; overflow:auto; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); align-content:start; }
+  .cr .cr-aud, .cr .cr-itembox { margin:0; flex:none; }
+  @media (max-width:800px) { .cr:not([hidden]) { height:auto; overflow:visible; } }
 </style>
 </head>
 <body>
