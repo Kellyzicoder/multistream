@@ -81,3 +81,4 @@ The Studio only draws the Control Room pictures while a Control Room is open (it
 
 ## Control Room fills the area
 - The Preview, TAKE and Program row and the scene boxes now share all the room in the Control Room, with no empty spaces, like the OBS multiview. The scene boxes pick their rows and columns to fit (for example 4 and 3 for seven scenes) and change when you resize the window or the split screen.
+- The TAKE button between Preview and Program is gone, like OBS. In "Preview, then Take" mode, click a scene to put it in the Preview, then click the Program picture to put it on air (it says "click to take ..." and gets a red outline). "Direct" mode still puts a scene on air with one click.

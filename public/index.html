@@ -362,7 +362,7 @@
   .cr-aud { margin-top:16px; }
   .cr-itembox { margin-top:16px; } .cr-itembox h2 { font-size:10.5px; margin:0 0 8px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); }
   .cr-items { display:flex; flex-wrap:wrap; gap:8px; } .cr-item { border:1px solid var(--line); background:var(--field); color:var(--text); border-radius:999px; padding:9px 16px; font-size:13px; font-weight:500; } .cr-item[aria-pressed=true] { border-color:var(--green); box-shadow:0 0 14px var(--glow); }
-  @media (max-width:800px) { .cr-top { grid-template-columns:1fr 1fr; } .cr-take { grid-column:1 / -1; order:3; } .cr-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  @media (max-width:800px) { .cr-top { grid-template-columns:1fr 1fr; } .cr-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
 
   /* ---------- narrow screens ---------- */
   @media (max-width:1000px) {
@@ -415,10 +415,10 @@
   /* ---------- Control Room fills the whole window (no side margins, no black bars) ---------- */
   .cr:not([hidden]) { max-width:none; margin:0; padding:10px 14px 14px; height:calc(100vh - 66px); display:flex; flex-direction:column; gap:10px; overflow:hidden; }
   .cr .cr-bar { margin:0; flex:none; }
-  .cr .cr-top { flex:1.35 1 0; min-height:0; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:10px; align-items:stretch; }
+  .cr .cr-top { flex:1.35 1 0; min-height:0; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:stretch; }
   .cr .cr-pane { width:100%; height:100%; min-height:0; aspect-ratio:auto; margin:0; border-radius:18px; }
   .cr .cr-pane img { object-fit:contain; }
-  .cr .cr-take { align-self:stretch; padding:0 14px; min-width:96px; }
+  .cr-pane.prog.canTake { cursor:pointer; box-shadow:0 0 0 2px var(--red), 0 0 34px rgba(255,77,90,.3); }
   /* the scene boxes share all the room that is left, with no empty spaces (like the OBS multiview) */
   .cr .cr-grid { flex:1 1 0; min-height:0; margin:0; overflow:hidden; display:grid; gap:10px; grid-auto-rows:minmax(0,1fr); }
   .cr .cr-grid .tile { display:flex; flex-direction:column; height:100%; min-width:0; min-height:0; border-radius:14px; }
@@ -591,7 +591,6 @@
   </div>
   <div class="cr-top">
     <div class="cr-pane prev"><img id="crPrev" alt="Preview scene" draggable="false"><span class="cr-lab" id="crPrevL">PREVIEW</span></div>
-    <button class="cr-take" id="crTake" type="button" disabled>TAKE</button>
     <div class="cr-pane prog"><img id="crProg" alt="Program scene, on air" draggable="false"><span class="cr-lab" id="crProgL">PROGRAM</span></div>
   </div>
   <div class="cr-grid" id="crTiles"></div>
@@ -1107,7 +1106,7 @@ async function crSetScene(name) {
 }
 function crPreview(name) { crPrev = name; if (engine() === 'studio') api('/api/studio/preview', 'POST', { name }); renderCr(); }
 function crTake() { const d = crData(); if (!crPrev || crPrev === d.current) return; crSetScene(crPrev); }
-$('#crTake').onclick = crTake;
+document.querySelector('.cr-pane.prog').onclick = () => { if (crMode === 'take') crTake(); }; // click the Program picture to put the previewed scene on air
 $('#crPop').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); showPage('dash'); };
 document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => { crMode = b.dataset.v; crPrev = ''; saveCr(); renderCr(); }; });
 // Puts the scene boxes in rows and columns that fill the whole area: the last row stretches so nothing is left empty
@@ -1156,10 +1155,10 @@ function renderCr() {
     if (engine() === 'studio') { const u = (stu.shots.thumbs || {})[b.dataset.n]; if (u && b.querySelector('img').src !== u) b.querySelector('img').src = u; }
   });
   fitCrTiles();
-  $('#crProgL').textContent = 'PROGRAM: ' + (d.current || '');
   $('#crPrevL').textContent = (crPrev ? 'PREVIEW: ' : 'PREVIEW (same as program): ') + (crPrev || d.current || '');
-  $('#crTake').disabled = !(crMode === 'take' && crPrev && crPrev !== d.current);
-  $('#crTake').hidden = crMode !== 'take';
+  const canTake = crMode === 'take' && crPrev && crPrev !== d.current;
+  const pg = document.querySelector('.cr-pane.prog'); pg.classList.toggle('canTake', Boolean(canTake)); pg.title = canTake ? 'Click to put ' + crPrev + ' on air' : '';
+  $('#crProgL').textContent = 'PROGRAM: ' + (d.current || '') + (canTake ? '  (click to take ' + crPrev + ')' : '');
   renderCrItems();
 }
 // items you can switch on and off while a scene is on air (lowerthirds, the lyrics page...), Studio only
