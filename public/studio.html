@@ -192,6 +192,26 @@
   @media (min-width:1001px) { .docks { height:clamp(280px, 38vh, 480px); overflow-x:auto; overflow-y:hidden; } }
   .dock { min-width:170px; } .dock.wide { min-width:260px; } .dock.narrow { min-width:200px; } .dock[data-id=controls] { min-width:215px; }
   .dock h2 { white-space:nowrap; } .dock .ctl button, .dock .pad button { white-space:nowrap; }
+  /* ---------- vertical audio mixer (like OBS) ---------- */
+  #audio { display:flex; flex-direction:row; align-items:stretch; gap:8px; padding:8px; overflow-x:auto; overflow-y:hidden; }
+  #audio .au { flex:none; width:104px; display:flex; flex-direction:column; gap:6px; margin:0; padding:8px 6px; border:1px solid var(--gl-line); border-radius:16px; background:var(--gl2); }
+  #audio .au.off { opacity:.5; }
+  #audio .au .t { gap:2px; } #audio .au .t .n { font-size:11px; }
+  .aub { flex:1; min-height:110px; display:flex; justify-content:center; }
+  .aum { display:flex; gap:4px; height:100%; min-height:110px; }
+  .scale { position:relative; width:22px; font-size:9px; color:var(--muted); } .scale span { position:absolute; right:0; transform:translateY(50%); line-height:1; }
+  #audio .mt { position:relative; width:10px; height:100%; margin:0; border-radius:999px; overflow:hidden; background:linear-gradient(0deg,#22c55e 0 52%,#f59e0b 52% 72%,#dc3545 72% 83%,#dc3545 100%); background-size:100% 100%; }
+  #audio .mt i { position:absolute; left:0; right:0; top:0; height:100%; background:var(--mcov); transition:height .06s linear; }
+  .fdr { position:relative; width:26px; height:100%; cursor:pointer; touch-action:none; outline:none; border-radius:8px; }
+  .fdr:focus-visible { outline:2px solid var(--sel); }
+  .fdr .trk { position:absolute; left:50%; top:6px; bottom:6px; width:4px; margin-left:-2px; border-radius:999px; background:var(--track, rgba(150,170,165,.4)); }
+  .fdr .knob { position:absolute; left:1px; right:1px; height:14px; margin-bottom:-7px; border-radius:7px; background:linear-gradient(180deg,#fff,#cfd8d4); border:1px solid rgba(0,0,0,.3); box-shadow:0 2px 6px rgba(0,0,0,.45); }
+  .fdr { --pad:6px; } .fdr .knob { bottom:0; }
+  .dbr { text-align:center; font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .aut { display:flex; gap:4px; justify-content:center; } .aut button { padding:2px 8px; font-size:11px; }
+  :root { --mcov:rgba(8,12,15,.86); --track:rgba(150,170,165,.4); } html.t-light { --mcov:rgba(224,231,227,.92); --track:rgba(90,110,100,.35); }
+  .fxbody .fxr { white-space:normal; } .fxbody select { max-width:260px; }
+  .dock .ctl button { padding:3px 8px; font-size:12px; }
 </style>
 </head>
 <body>
@@ -816,6 +836,34 @@ const dB = (v) => (v <= 0.0001 ? -60 : Math.max(-60, 20 * Math.log10(v)));
     b.onclick = (e) => { e.stopPropagation(); on = !on; paint(); change(on); };
     paint(); return b;
   }
+
+// a vertical fader like OBS: drag, click, mouse wheel, arrow keys; double-click puts it back to 0 dB
+function makeFader(a) {
+  const el = document.createElement('div'); el.className = 'fdr'; el.tabIndex = 0; el.setAttribute('role', 'slider'); el.setAttribute('aria-label', 'Volume of ' + a.name); el.setAttribute('aria-valuemin', '-60'); el.setAttribute('aria-valuemax', '12');
+  el.innerHTML = '<i class="trk"></i><i class="knob"></i>';
+  const read = document.createElement('div'); read.className = 'dbr';
+  const knob = el.querySelector('.knob');
+  let v = dB(a.vol == null ? 1 : a.vol);
+  const show = () => { knob.style.bottom = ((v + 60) / 72 * 100) + '%'; read.textContent = v <= -60 ? '-inf dB' : (v > 0 ? '+' : '') + v.toFixed(1) + ' dB'; el.setAttribute('aria-valuenow', String(Math.round(v))); el.title = read.textContent; };
+  const set = (x, persist) => { x = Math.max(-60, Math.min(12, Math.round(x * 2) / 2)); if (Math.abs(x) <= 1) x = 0; v = x; a.vol = v <= -60 ? 0 : Math.pow(10, v / 20); show(); if (persist !== false) { save(); syncAudio(); } };
+  const at = (e) => { const r = el.getBoundingClientRect(); const p = 1 - (e.clientY - r.top - 6) / Math.max(1, r.height - 12); set(-60 + Math.max(0, Math.min(1, p)) * 72); };
+  el.addEventListener('pointerdown', (e) => { if (e.button !== 0) return; el.setPointerCapture(e.pointerId); el.focus(); at(e); const mv = (ev) => at(ev); const up = () => { el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); }; el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); });
+  el.addEventListener('dblclick', () => set(0));
+  el.addEventListener('wheel', (e) => { e.preventDefault(); set(v + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 5 : 1)); }, { passive: false });
+  el.addEventListener('keydown', (e) => { const k = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: 5, PageDown: -5 }[e.key]; if (k) { e.preventDefault(); set(v + k * (e.shiftKey ? 5 : 1)); } else if (e.key === 'Home') { e.preventDefault(); set(0); } });
+  show(); return { el, read };
+}
+// the sound tools of one input, in their own small window
+function openTools(a, fx) {
+  const m = document.createElement('div'); m.className = 'modal';
+  const dlg = document.createElement('div'); dlg.className = 'dlg';
+  dlg.innerHTML = '<div class="dlg-h"><b></b><button type="button" aria-label="Close">×</button></div>';
+  dlg.querySelector('b').textContent = 'Sound tools: ' + a.name;
+  const body = document.createElement('div'); body.className = 'dlg-b'; body.appendChild(fx); dlg.appendChild(body); m.appendChild(dlg);
+  const close = () => { m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
+  dlg.querySelector('button').onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
+  document.body.appendChild(m);
+}
 function renderAudio() {
   const box = $('#audio'); box.textContent = '';
   const s = byName(editing), on = new Set((s && s.audio) || []);
@@ -826,10 +874,10 @@ function renderAudio() {
     const inScene = eyeBtn(on.has(a.id), 'Heard in the scene being edited', (v) => { const sc = byName(editing); if (!sc) return; sc.audio = sc.audio || []; if (v) { if (!sc.audio.includes(a.id)) sc.audio.push(a.id); } else sc.audio = sc.audio.filter((x) => x !== a.id); save(); gateAudio(); renderAudio(); });
     const m = document.createElement('button'); m.className = 'sm' + (a.muted ? ' on' : ''); m.textContent = a.muted ? 'Muted' : 'Mute';
     m.onclick = () => { a.muted = !a.muted; save(); syncAudio(); renderAudio(); };
-    t.append(inScene, n, m);
-    const r = document.createElement('input'); r.type = 'range'; r.min = -60; r.max = 12; r.step = 0.5; r.value = dB(a.vol == null ? 1 : a.vol); r.title = Math.round(r.value) + ' dB';
-    r.oninput = () => { a.vol = r.value <= -60 ? 0 : Math.pow(10, r.value / 20); r.title = Math.round(r.value) + ' dB'; save(); syncAudio(); };
+    t.append(inScene, n);
+    const fd = makeFader(a);
     const mt = document.createElement('div'); mt.className = 'mt'; mt.innerHTML = '<i></i>';
+    const sc = document.createElement('div'); sc.className = 'scale'; [0, -10, -20, -30, -40, -50, -60].forEach((v) => { const e = document.createElement('span'); e.textContent = String(v); e.style.bottom = ((v + 60) / 72 * 100) + '%'; sc.appendChild(e); });
     const sl = document.createElement('select');
     if (a.kind === 'desktop') { sl.add(new Option('The sound this computer plays', '')); sl.disabled = true; }
     else {
@@ -837,13 +885,14 @@ function renderAudio() {
       devices.audio.forEach((x) => sl.add(new Option(x.label || 'Input', x.deviceId)));
       sl.value = pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
     }
-    const fx = document.createElement('details'); fx.className = 'fx'; fx.innerHTML = '<summary>Tools</summary>';
+    const fx = document.createElement('div'); fx.className = 'fxbody';
     const row = (label, el) => { const w = document.createElement('div'); w.className = 'fxr'; const l = document.createElement('span'); l.textContent = label; w.append(l, el); fx.appendChild(w); };
     const slider = (min, max, step, val, fmt, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { o.textContent = fmt(i.value); set(Number(i.value)); save(); syncAudio(); }; w.append(i, o); return w; };
     const sw = (on, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(on); c.onchange = () => { set(c.checked); save(); syncAudio(); }; return c; };
     const F = fxOf(a);
     const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only (not in the stream)'], ['both', 'Monitor and stream']].forEach(([v, t]) => mon.add(new Option(t, v)));
     mon.value = a.monitor || 'off'; mon.onchange = () => { a.monitor = mon.value; save(); syncAudio(); gateAudio(); };
+    if (!sl.disabled) row('Input', sl);
     row('Listen with headphones', mon);
     row('Delay', slider(0, 1000, 10, F.delay || 0, (v) => v + ' ms', (v) => { F.delay = v; }));
     row('Low cut (rumble)', sw(F.lowcut && F.lowcut.on, (v) => { F.lowcut = { ...(F.lowcut || {}), on: v }; }));
@@ -860,8 +909,10 @@ function renderAudio() {
     row('Limiter (stops peaks)', sw(F.lim && F.lim.on, (v) => { F.lim = { ...(F.lim || {}), on: v }; }));
     row('  ceiling', slider(-20, 0, 1, F.lim && F.lim.thr != null ? F.lim.thr : -3, (v) => v + ' dB', (v) => { F.lim = { ...(F.lim || {}), thr: v }; }));
     const hint = document.createElement('p'); hint.className = 'note'; hint.textContent = 'Headphones: hear this input yourself (use headphones). Delay: raise it if the sound arrives before the picture. Low cut: removes rumble. Gate: cuts hiss when nobody speaks. Compressor: keeps the level even. Limiter: stops sudden loud peaks.'; fx.appendChild(hint);
-    fx.open = openFx.has(a.id); fx.ontoggle = () => { fx.open ? openFx.add(a.id) : openFx.delete(a.id); };
-    d.append(t, mt, r, sl, fx); box.appendChild(d);
+    const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'sm'; tb.textContent = 'Tools'; tb.title = 'Input, headphones, delay, low cut, bass/treble, gate, compressor, limiter'; tb.onclick = () => openTools(a, fx);
+    const body = document.createElement('div'); body.className = 'aub'; const wrap = document.createElement('div'); wrap.className = 'aum'; wrap.append(sc, mt, fd.el); body.appendChild(wrap);
+    const bt = document.createElement('div'); bt.className = 'aut'; bt.append(m, tb);
+    d.append(t, body, fd.read, bt); box.appendChild(d);
   });
   $('#audNote').textContent = studio.audio.length ? 'Click the eye to hear that input in the scene you are editing.' : 'No sound inputs yet.';
 }
@@ -877,9 +928,9 @@ const buf = new Float32Array(512);
 setInterval(() => {
   document.querySelectorAll('#audio .au').forEach((d) => {
     const n = asrc.get(d.dataset.id); const bar = d.querySelector('.mt i'); if (!bar) return;
-    if (!n) { bar.style.width = '0'; return; }
+    if (!n) { bar.style.height = '100%'; return; }
     n.an.getFloatTimeDomainData(buf); let pk = 0; for (let i = 0; i < buf.length; i++) pk = Math.max(pk, Math.abs(buf[i]));
-    bar.style.width = Math.max(0, Math.min(100, (dB(pk) + 60) / 60 * 100)) + '%';
+    bar.style.height = (100 - Math.max(0, Math.min(100, (dB(pk) + 60) / 72 * 100))) + '%';
   });
 }, 80);
 
