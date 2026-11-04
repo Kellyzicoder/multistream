@@ -415,13 +415,13 @@
   /* ---------- Control Room fills the whole window (no side margins, no black bars) ---------- */
   .cr:not([hidden]) { max-width:none; margin:0; padding:10px 14px 14px; height:calc(100vh - 66px); display:flex; flex-direction:column; gap:10px; overflow:hidden; }
   .cr .cr-bar { margin:0; flex:none; }
-  .cr .cr-top { flex:1 1 0; min-height:0; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:stretch; }
+  .cr .cr-top { flex:none; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:stretch; }
   .cr .cr-pane { width:100%; height:100%; min-height:0; aspect-ratio:auto; margin:0; border-radius:18px; }
   .cr .cr-pane img { object-fit:contain; }
   .cr-pane.prog.canTake { cursor:pointer; box-shadow:0 0 0 2px var(--red), 0 0 34px rgba(255,77,90,.3); }
-  /* the scene boxes keep the TV shape (16:9) and are centred, like the OBS multiview; the grid picks the size that fills the most room */
-  .cr .cr-grid { flex:none; margin:0; overflow:hidden; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; }
-  .cr .cr-grid .tile { display:flex; flex-direction:column; flex:none; min-width:0; border-radius:14px; }
+  /* the scene boxes fill the width in an even grid, each one the TV shape (16:9), like the OBS and AirLive multiviews */
+  .cr .cr-grid { flex:none; margin:0; display:grid; gap:10px; align-content:start; justify-content:stretch; }
+  .cr .cr-grid .tile { display:flex; flex-direction:column; min-width:0; border-radius:12px; }
   .cr .cr-grid .tile .im { flex:none; width:100%; height:auto; aspect-ratio:16/9; object-fit:cover; }
   .cr .cr-aud { margin:0; flex:none; }
   @media (max-width:800px) { .cr:not([hidden]) { height:auto; overflow:visible; } }
@@ -1107,21 +1107,26 @@ function crTake() { const d = crData(); if (!crPrev || crPrev === d.current) ret
 document.querySelector('.cr-pane.prog').onclick = () => { if (crMode === 'take') crTake(); }; // click the Program picture to put the previewed scene on air
 $('#crPop').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); showPage('dash'); };
 document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => { crMode = b.dataset.v; crPrev = ''; saveCr(); renderCr(); }; });
-// Sizes the scene boxes: each box keeps the 16:9 TV shape. Try every number of columns and keep the one where the boxes are biggest.
+// Sizes the scene boxes: an even grid of up to 4 columns across the full width. The number of columns is the most that keeps the boxes
+// from taking more than 60% of the height, so Preview and Program always keep room.
 function fitCrTiles() {
   const box = $('#crTiles'); if (!box || !box.clientWidth || !box.parentElement.clientHeight) return;
-  const tiles = [...box.querySelectorAll('.tile')], n = tiles.length; if (!n) return;
-  const W = box.clientWidth, H = Math.floor(box.parentElement.clientHeight * 0.42), gap = 10, bar = 0; // the boxes use up to 42% of the height; Preview and Program take the rest
-  let best = { w: 0 };
-  for (let c = 1; c <= n; c++) {
-    const r = Math.ceil(n / c);
-    const w = Math.min((W - gap * (c - 1)) / c, ((H - gap * (r - 1)) / r - bar) * 16 / 9);
-    if (w > best.w) best = { w, c };
+  const n = box.querySelectorAll('.tile').length; if (!n) return;
+  const W = box.clientWidth, H = box.parentElement.clientHeight, gap = 10;
+  let cols = 1;
+  for (let c = Math.min(4, n); c >= 1; c--) {
+    const tw = (W - gap * (c - 1)) / c, rows = Math.ceil(n / c);
+    if (rows * tw * 9 / 16 + gap * (rows - 1) <= 0.6 * H) { cols = c; break; }
   }
-  const w = Math.max(60, Math.floor(best.w));
-  tiles.forEach((t) => { t.style.width = w + 'px'; });
+  box.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+  // Preview and Program keep the TV shape (16:9), and get the height that is left over
+  const rows = Math.ceil(n / cols), tw = (W - gap * (cols - 1)) / cols;
+  const gridH = rows * tw * 9 / 16 + gap * (rows - 1), topW = (W - gap) / 2 * 9 / 16;
+  const top = document.querySelector('.cr .cr-top');
+  const bar = document.querySelector('.cr .cr-bar'), spare = H - (bar ? bar.offsetHeight : 0) - 40; // title row and spacing
+  if (top) top.style.height = Math.max(160, Math.min(topW, spare - gridH - gap)) + 'px';
 }
-new ResizeObserver(() => fitCrTiles()).observe($('#crTiles'));
+new ResizeObserver(() => fitCrTiles()).observe($('.cr'));
 function renderCr() {
   if (page !== 'cr' && !splitOn) return;
   const d = crData();
