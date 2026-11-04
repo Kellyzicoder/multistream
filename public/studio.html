@@ -188,6 +188,10 @@
   .dock.float { position:fixed; flex:none; z-index:30; resize:both; overflow:auto; min-width:200px; min-height:120px; box-shadow:0 18px 56px rgba(0,0,0,.5), inset 0 1px 0 var(--gl-hi); }
   .dock.float h2 { position:sticky; top:0; z-index:1; }
   .docks.over { outline:2px dashed var(--sel); outline-offset:-3px; border-radius:var(--r); }
+  /* panels keep a readable size: taller on big screens, a minimum width, and a sideways scroll instead of squashing */
+  @media (min-width:1001px) { .docks { height:clamp(280px, 38vh, 480px); overflow-x:auto; overflow-y:hidden; } }
+  .dock { min-width:170px; } .dock.wide { min-width:260px; } .dock.narrow { min-width:200px; } .dock[data-id=controls] { min-width:215px; }
+  .dock h2 { white-space:nowrap; } .dock .ctl button, .dock .pad button { white-space:nowrap; }
 </style>
 </head>
 <body>
