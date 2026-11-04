@@ -411,6 +411,8 @@
 </div>
 <input type="file" id="file" hidden>
 <script>
+// Split screen: the Studio sits in a frame next to the dashboard and borrows the app's native features from it
+try { if (!window.msNative && window.parent !== window && window.parent.msNative) window.msNative = window.parent.msNative; } catch {}
 // Use the same look the dashboard uses (Settings, Appearance): light or dark, and the accent colour.
 (function () {
   const dark = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
@@ -1341,6 +1343,7 @@ function openPipe(p) {
   return o;
 }
 
+window.msBusy = () => Boolean(wantSend || recWs);
 // when the Studio replaced the dashboard in the same window, this goes back
 if (/[?&]same=1/.test(location.search) && window.msNative) {
   $('#backBtn').hidden = false;

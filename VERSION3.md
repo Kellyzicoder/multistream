@@ -72,3 +72,10 @@ The Studio only draws the Control Room pictures while a Control Room is open (it
 - Stopping the virtual camera no longer removes the camera from Windows. It keeps showing the Multistream "M" logo on a dark background, like OBS does, so Zoom does not show a camera error. The camera goes away fully when you close Multistream.
 - While the camera is on, a small live preview of what Zoom sees shows under the button.
 - Not proven on real Windows with Zoom yet. The unit test checks the helper stays running and only gets whole pictures.
+
+## Split screen
+- Click the split icon at the top of the dashboard (next to OFFLINE). The dashboard stays on the left and the Studio opens on the right, in the same window, like Arc.
+- Drag the bar in the middle to change the sizes (it stops at 30% and 70%). Double-click the bar to make both sides equal. Click the icon again to close the Studio side.
+- Closing the split screen while the Studio is streaming or recording asks first, because that stops them.
+- Only open the Studio once: either in the split screen or in its own window, not both at the same time.
+- Tested in a browser test with the pages side by side. Not tried in the real app yet.
