@@ -966,14 +966,25 @@ app.get('/api/studio/ipcam', (req, res) => {
   req.on('close', () => r.destroy());
 });
 // pictures of the scenes, drawn by the studio page and shown in the Control Room
-let studioShots = { at: 0, prog: '', pv: '', thumbs: {} };
+// The Studio only draws these while a Control Room is looking (it asks `watching` in the answer), so a Studio that is
+// sending, recording and running the virtual camera does not also draw pictures nobody sees.
+let studioShots = { at: 0, prog: '', pv: '', thumbs: {}, tv: 0, watched: 0 };
 app.put('/api/studio/shots', (req, res) => {
   if (!isLocal(req)) return res.status(403).end();
   const b = req.body || {};
-  studioShots = { at: Date.now(), prog: String(b.prog || ''), pv: String(b.pv || ''), thumbs: b.thumbs && typeof b.thumbs === 'object' ? b.thumbs : studioShots.thumbs };
-  res.json({ ok: true });
+  if (b.ping) studioShots.at = Date.now();   // only "I am still here"
+  else {
+    const gotThumbs = b.thumbs && typeof b.thumbs === 'object';
+    studioShots = { ...studioShots, at: Date.now(), prog: String(b.prog || ''), pv: String(b.pv || ''), thumbs: gotThumbs ? b.thumbs : studioShots.thumbs, tv: studioShots.tv + (gotThumbs ? 1 : 0) };
+  }
+  res.json({ ok: true, watching: Date.now() - studioShots.watched < 3000, wantThumbs: studioShots.tv === 0 });
 });
-app.get('/api/studio/shots', (req, res) => res.json({ alive: Date.now() - studioShots.at < 5000, prog: studioShots.prog, pv: studioShots.pv, thumbs: studioShots.thumbs }));
+// ?tv=N: the Control Room already has the small scene pictures number N, so they are not sent again
+app.get('/api/studio/shots', (req, res) => {
+  studioShots.watched = Date.now();
+  const tv = Number((req.query || {}).tv);
+  res.json({ alive: Date.now() - studioShots.at < 5000, prog: studioShots.prog, pv: studioShots.pv, tv: studioShots.tv, rev: studioRev, thumbs: tv === studioShots.tv ? undefined : studioShots.thumbs });
+});
 app.post('/api/studio/preview', (req, res) => { studio.preview = String((req.body || {}).name || ''); studioRev++; res.json({ ok: true }); });
 let studioFf = null;
 const studioInfo = { sending: false, error: '' };

@@ -743,8 +743,9 @@ function frame() {
   }
   if (trans && now - trans.t0 >= trCfg.ms) trans = null;
   paint(ctx, PW / SW, now);
-  if (recW) paint(rctx, recW / SW, now);
-  if (vcOn) paint(vctx, 1280 / SW, now);
+  // the recording and the virtual camera copy the finished Program picture when it is the same size or bigger (much less work than drawing the scene again)
+  if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); }
+  if (vcOn) { if (cv.width >= 1280) vctx.drawImage(cv, 0, 0, 1280, 720); else paint(vctx, 1280 / SW, now); }
 }
 $('#trType').value = trCfg.type; $('#trMs').value = String(trCfg.ms);
 const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#trMs').value); try { localStorage.setItem('ms_trans', JSON.stringify(trCfg)); } catch {} };
@@ -1903,22 +1904,27 @@ async function poll() {
     }
   } catch {}
 }
-const small = document.createElement('canvas'); small.width = 640; small.height = 360;
+const small = document.createElement('canvas'); small.width = 480; small.height = 270;
 const sctx = small.getContext('2d');
 const tiny = document.createElement('canvas'); tiny.width = 320; tiny.height = 180; const tctx = tiny.getContext('2d');
-let thumbs = {}, thumbAt = 0, shotBusy = false;
+let thumbs = {}, thumbAt = 0, shotBusy = false, watching = true, pingAt = 0;
 async function shots() {
   if (shotBusy) return; shotBusy = true;
   try {
-    drawScene(sctx, byName(studio.current), 640 / SW, true); const prog = small.toDataURL('image/jpeg', 0.55);
-    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 640 / SW, false); pv = small.toDataURL('image/jpeg', 0.55); }
+    // nobody is looking at the Control Room: skip the drawing, only say "still here" now and then
+    if (!watching) {
+      if (Date.now() - pingAt < 1500) { shotBusy = false; return; }
+      pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;
+    }
+    drawScene(sctx, byName(studio.current), 480 / SW, true); const prog = small.toDataURL('image/jpeg', 0.5);
+    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 480 / SW, false); pv = small.toDataURL('image/jpeg', 0.5); }
     const body = { prog, pv };
-    if (Date.now() - thumbAt > 3000) {
+    if (Date.now() - thumbAt > 4000 || !Object.keys(thumbs).length) {
       thumbAt = Date.now(); thumbs = {};
       studio.scenes.forEach((s) => { drawScene(tctx, s, 320 / SW, false); thumbs[s.name] = tiny.toDataURL('image/jpeg', 0.5); });
       body.thumbs = thumbs;
     }
-    await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); watching = Boolean(r && r.watching); pingAt = Date.now();
   } catch {}
   shotBusy = false;
 }
