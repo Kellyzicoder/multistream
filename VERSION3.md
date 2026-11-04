@@ -78,3 +78,6 @@ The Studio only draws the Control Room pictures while a Control Room is open (it
 - Click the split icon at the top (next to OFFLINE). The Stream page shows on the left and the Control Room on the right, in the same window, like Arc.
 - Drag the bar in the middle to choose the sizes (it stops at 25% and 75%). Double-click the bar to make both sides equal. The size is remembered. Click the icon again to close the split screen.
 - Tested in a browser test. Not tried in the real app yet.
+
+## Control Room fills the area
+- The Preview, TAKE and Program row and the scene boxes now share all the room in the Control Room, with no empty spaces, like the OBS multiview. The scene boxes pick their rows and columns to fit (for example 4 and 3 for seven scenes) and change when you resize the window or the split screen.

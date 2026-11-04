@@ -415,10 +415,15 @@
   /* ---------- Control Room fills the whole window (no side margins, no black bars) ---------- */
   .cr:not([hidden]) { max-width:none; margin:0; padding:10px 14px 14px; height:calc(100vh - 66px); display:flex; flex-direction:column; gap:10px; overflow:hidden; }
   .cr .cr-bar { margin:0; flex:none; }
-  .cr .cr-top { flex:none; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:14px; }
-  .cr .cr-pane { width:100%; height:auto; aspect-ratio:16/9; margin:0; border-radius:20px; }
+  .cr .cr-top { flex:1.35 1 0; min-height:0; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:10px; align-items:stretch; }
+  .cr .cr-pane { width:100%; height:100%; min-height:0; aspect-ratio:auto; margin:0; border-radius:18px; }
   .cr .cr-pane img { object-fit:contain; }
-  .cr .cr-grid { flex:1 1 0; min-height:0; margin:0; overflow:auto; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); align-content:start; }
+  .cr .cr-take { align-self:stretch; padding:0 14px; min-width:96px; }
+  /* the scene boxes share all the room that is left, with no empty spaces (like the OBS multiview) */
+  .cr .cr-grid { flex:1 1 0; min-height:0; margin:0; overflow:hidden; display:grid; gap:10px; grid-auto-rows:minmax(0,1fr); }
+  .cr .cr-grid .tile { display:flex; flex-direction:column; height:100%; min-width:0; min-height:0; border-radius:14px; }
+  .cr .cr-grid .tile .im { flex:1 1 0; min-height:0; height:0; aspect-ratio:auto; object-fit:cover; }
+  .cr .cr-grid .tile .nm { flex:none; }
   .cr .cr-aud, .cr .cr-itembox { margin:0; flex:none; }
   @media (max-width:800px) { .cr:not([hidden]) { height:auto; overflow:visible; } }
   /* ---------- where to show the Control Room ---------- */
@@ -1105,6 +1110,21 @@ function crTake() { const d = crData(); if (!crPrev || crPrev === d.current) ret
 $('#crTake').onclick = crTake;
 $('#crPop').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); showPage('dash'); };
 document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => { crMode = b.dataset.v; crPrev = ''; saveCr(); renderCr(); }; });
+// Puts the scene boxes in rows and columns that fill the whole area: the last row stretches so nothing is left empty
+function fitCrTiles() {
+  const box = $('#crTiles'); if (!box || !box.clientWidth || !box.clientHeight) return;
+  const tiles = [...box.querySelectorAll('.tile')], n = tiles.length; if (!n) return;
+  const W = box.clientWidth, H = box.clientHeight, want = (16 / 9) * 0.8;
+  let best = 1, bestScore = Infinity;
+  for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), asp = (W / c) / (H / r), sc = Math.abs(Math.log(asp / want)); if (sc < bestScore) { bestScore = sc; best = c; } }
+  const rows = Math.ceil(n / best), base = Math.floor(n / rows), extra = n % rows; // rows share the boxes evenly (like 4 and 3)
+  const counts = Array.from({ length: rows }, (_, i) => base + (i < extra ? 1 : 0));
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a), lcm = counts.reduce((a, c) => a * c / gcd(a, c), 1);
+  box.style.gridTemplateColumns = 'repeat(' + lcm + ', minmax(0, 1fr))';
+  box.style.gridTemplateRows = 'repeat(' + rows + ', minmax(0, 1fr))';
+  let i = 0; counts.forEach((c) => { for (let k = 0; k < c; k++) tiles[i++].style.gridColumn = 'span ' + (lcm / c); });
+}
+new ResizeObserver(() => fitCrTiles()).observe($('#crTiles'));
 function renderCr() {
   if (page !== 'cr' && !splitOn) return;
   const d = crData();
@@ -1135,6 +1155,7 @@ function renderCr() {
     b.classList.toggle('pv', b.dataset.n === crPrev);
     if (engine() === 'studio') { const u = (stu.shots.thumbs || {})[b.dataset.n]; if (u && b.querySelector('img').src !== u) b.querySelector('img').src = u; }
   });
+  fitCrTiles();
   $('#crProgL').textContent = 'PROGRAM: ' + (d.current || '');
   $('#crPrevL').textContent = (crPrev ? 'PREVIEW: ' : 'PREVIEW (same as program): ') + (crPrev || d.current || '');
   $('#crTake').disabled = !(crMode === 'take' && crPrev && crPrev !== d.current);
