@@ -415,14 +415,14 @@
   /* ---------- Control Room fills the whole window (no side margins, no black bars) ---------- */
   .cr:not([hidden]) { max-width:none; margin:0; padding:10px 14px 14px; height:calc(100vh - 66px); display:flex; flex-direction:column; gap:10px; overflow:hidden; }
   .cr .cr-bar { margin:0; flex:none; }
-  .cr .cr-top { flex:1.35 1 0; min-height:0; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:stretch; }
+  .cr .cr-top { flex:1 1 0; min-height:0; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:stretch; }
   .cr .cr-pane { width:100%; height:100%; min-height:0; aspect-ratio:auto; margin:0; border-radius:18px; }
   .cr .cr-pane img { object-fit:contain; }
   .cr-pane.prog.canTake { cursor:pointer; box-shadow:0 0 0 2px var(--red), 0 0 34px rgba(255,77,90,.3); }
-  /* the scene boxes share all the room that is left, with no empty spaces (like the OBS multiview) */
-  .cr .cr-grid { flex:1 1 0; min-height:0; margin:0; overflow:hidden; display:grid; gap:10px; grid-auto-rows:minmax(0,1fr); }
-  .cr .cr-grid .tile { display:flex; flex-direction:column; height:100%; min-width:0; min-height:0; border-radius:14px; }
-  .cr .cr-grid .tile .im { flex:1 1 0; min-height:0; height:0; aspect-ratio:auto; object-fit:cover; }
+  /* the scene boxes keep the TV shape (16:9) and are centred, like the OBS multiview; the grid picks the size that fills the most room */
+  .cr .cr-grid { flex:none; margin:0; overflow:hidden; display:flex; flex-wrap:wrap; justify-content:center; align-content:center; gap:10px; }
+  .cr .cr-grid .tile { display:flex; flex-direction:column; flex:none; min-width:0; border-radius:14px; }
+  .cr .cr-grid .tile .im { flex:none; width:100%; height:auto; aspect-ratio:16/9; object-fit:cover; }
   .cr .cr-grid .tile .nm { flex:none; }
   .cr .cr-aud, .cr .cr-itembox { margin:0; flex:none; }
   @media (max-width:800px) { .cr:not([hidden]) { height:auto; overflow:visible; } }
@@ -1109,19 +1109,19 @@ function crTake() { const d = crData(); if (!crPrev || crPrev === d.current) ret
 document.querySelector('.cr-pane.prog').onclick = () => { if (crMode === 'take') crTake(); }; // click the Program picture to put the previewed scene on air
 $('#crPop').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); showPage('dash'); };
 document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => { crMode = b.dataset.v; crPrev = ''; saveCr(); renderCr(); }; });
-// Puts the scene boxes in rows and columns that fill the whole area: the last row stretches so nothing is left empty
+// Sizes the scene boxes: each box keeps the 16:9 TV shape. Try every number of columns and keep the one where the boxes are biggest.
 function fitCrTiles() {
-  const box = $('#crTiles'); if (!box || !box.clientWidth || !box.clientHeight) return;
+  const box = $('#crTiles'); if (!box || !box.clientWidth || !box.parentElement.clientHeight) return;
   const tiles = [...box.querySelectorAll('.tile')], n = tiles.length; if (!n) return;
-  const W = box.clientWidth, H = box.clientHeight, want = (16 / 9) * 0.8;
-  let best = 1, bestScore = Infinity;
-  for (let c = 1; c <= n; c++) { const r = Math.ceil(n / c), asp = (W / c) / (H / r), sc = Math.abs(Math.log(asp / want)); if (sc < bestScore) { bestScore = sc; best = c; } }
-  const rows = Math.ceil(n / best), base = Math.floor(n / rows), extra = n % rows; // rows share the boxes evenly (like 4 and 3)
-  const counts = Array.from({ length: rows }, (_, i) => base + (i < extra ? 1 : 0));
-  const gcd = (a, b) => (b ? gcd(b, a % b) : a), lcm = counts.reduce((a, c) => a * c / gcd(a, c), 1);
-  box.style.gridTemplateColumns = 'repeat(' + lcm + ', minmax(0, 1fr))';
-  box.style.gridTemplateRows = 'repeat(' + rows + ', minmax(0, 1fr))';
-  let i = 0; counts.forEach((c) => { for (let k = 0; k < c; k++) tiles[i++].style.gridColumn = 'span ' + (lcm / c); });
+  const W = box.clientWidth, H = Math.floor(box.parentElement.clientHeight * 0.42), gap = 10, bar = 30; // the boxes use up to 42% of the height; Preview and Program take the rest
+  let best = { w: 0 };
+  for (let c = 1; c <= n; c++) {
+    const r = Math.ceil(n / c);
+    const w = Math.min((W - gap * (c - 1)) / c, ((H - gap * (r - 1)) / r - bar) * 16 / 9);
+    if (w > best.w) best = { w, c };
+  }
+  const w = Math.max(60, Math.floor(best.w));
+  tiles.forEach((t) => { t.style.width = w + 'px'; });
 }
 new ResizeObserver(() => fitCrTiles()).observe($('#crTiles'));
 function renderCr() {
