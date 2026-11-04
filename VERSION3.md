@@ -69,6 +69,6 @@ The Studio only draws the Control Room pictures while a Control Room is open (it
 
 ## Virtual camera: name, stopping and preview
 - The camera is now called **Multistream Camera** (it was "DirectShow Softcam"). Windows keeps the old name until the camera is added again, so the first time you press **Start Virtual Camera** after updating, Windows asks for permission once more.
-- Stopping the virtual camera no longer removes the camera from Windows. It keeps showing a plain dark picture, like OBS does, so Zoom does not show a camera error. The camera goes away fully when you close Multistream.
+- Stopping the virtual camera no longer removes the camera from Windows. It keeps showing the Multistream "M" logo on a dark background, like OBS does, so Zoom does not show a camera error. The camera goes away fully when you close Multistream.
 - While the camera is on, a small live preview of what Zoom sees shows under the button.
 - Not proven on real Windows with Zoom yet. The unit test checks the helper stays running and only gets whole pictures.
