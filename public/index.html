@@ -452,7 +452,7 @@
     <button type="button" data-page="cr">Control Room</button>
   </nav>
   <span class="sp"></span>
-  <button class="ib" id="splitBtn" type="button" title="Split screen: the dashboard and the Studio side by side" aria-pressed="false">
+  <button class="ib" id="splitBtn" type="button" title="Split screen: the Control Room and the Studio side by side" aria-pressed="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M12 4v16"/></svg>
     <span id="splitTxt">Split screen</span>
   </button>
@@ -1561,10 +1561,10 @@ setInterval(refresh, 2000);
   }, { passive: false });
 })();
 
-// Split screen (like Arc): the dashboard and the Studio side by side in one window. Drag the bar to change the sizes.
+// Split screen (like Arc): the Control Room and the Studio side by side in one window. Drag the bar to change the sizes.
 (function () {
   const btn = $('#splitBtn'), pane = $('#splitPane'), bar = $('#splitBar');
-  let on = false, pct = 50;
+  let on = false, pct = 50, before = 'dash';
   try { const v = Number(localStorage.getItem('ms_split_pct')); if (v >= 30 && v <= 70) pct = v; } catch {}
   const setPct = (v) => { pct = Math.max(30, Math.min(70, v)); document.documentElement.style.setProperty('--sp', pct + '%'); try { localStorage.setItem('ms_split_pct', String(Math.round(pct))); } catch {} };
   function busy() { try { return Boolean(pane.contentWindow && pane.contentWindow.msBusy && pane.contentWindow.msBusy()); } catch { return false; } }
@@ -1574,9 +1574,9 @@ setInterval(refresh, 2000);
     on = v;
     document.body.classList.toggle('split', on);
     pane.hidden = bar.hidden = !on;
-    btn.setAttribute('aria-pressed', String(on)); btn.title = on ? 'Close the split screen' : 'Split screen: the dashboard and the Studio side by side';
-    if (on) { setPct(pct); pane.src = '/studio.html?split=1'; }
-    else { pane.src = 'about:blank'; document.documentElement.style.removeProperty('--sp'); }
+    btn.setAttribute('aria-pressed', String(on)); btn.title = on ? 'Close the split screen' : 'Split screen: the Control Room and the Studio side by side';
+    if (on) { before = page; setPct(pct); pane.src = '/studio.html?split=1'; if (page !== 'cr') showPage('cr'); }
+    else { pane.src = 'about:blank'; document.documentElement.style.removeProperty('--sp'); if (before !== 'cr' && page === 'cr') showPage(before); }
   }
   btn.onclick = () => turn(!on);
   bar.addEventListener('pointerdown', (e) => {

@@ -74,7 +74,7 @@ The Studio only draws the Control Room pictures while a Control Room is open (it
 - Not proven on real Windows with Zoom yet. The unit test checks the helper stays running and only gets whole pictures.
 
 ## Split screen
-- Click the split icon at the top of the dashboard (next to OFFLINE). The dashboard stays on the left and the Studio opens on the right, in the same window, like Arc.
+- Click the split icon at the top of the dashboard (next to OFFLINE). The Control Room shows on the left and the Studio opens on the right, in the same window, like Arc. Closing it takes you back to the page you were on.
 - Drag the bar in the middle to change the sizes (it stops at 30% and 70%). Double-click the bar to make both sides equal. Click the icon again to close the Studio side.
 - Closing the split screen while the Studio is streaming or recording asks first, because that stops them.
 - Only open the Studio once: either in the split screen or in its own window, not both at the same time.
