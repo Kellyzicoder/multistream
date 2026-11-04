@@ -88,7 +88,8 @@
   .dock .ctl button { width:100%; padding:5px 8px; }
   input[type=color] { height:28px; padding:2px; min-width:60px; }
   .tb { display:flex; align-items:center; gap:2px; padding:3px; border-top:1px solid var(--line); background:var(--card); }
-  .tb button { padding:2px 8px; min-width:28px; background:transparent; border-color:transparent; }
+  .tb { flex-wrap:wrap; }
+  .tb button { padding:2px 5px; min-width:0; font-size:12px; white-space:nowrap; background:transparent; border-color:transparent; }
   .tb button:hover { border-color:var(--line); background:var(--btn2); }
   .tb .note { margin-left:6px; font-size:11px; }
   .lbl { display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--muted); }
@@ -268,18 +269,18 @@
   <div class="docks">
     <section class="dock"><h2>Scenes</h2>
       <div class="list" id="scenes"></div>
-      <div class="tb"><button id="addScene" title="Add scene">+</button><button id="delScene" title="Remove scene">&minus;</button><button id="scUp" title="Move up">&#9650;</button><button id="scDown" title="Move down">&#9660;</button></div>
+      <div class="tb"><button id="addScene" title="Add scene">Add</button><button id="delScene" title="Remove scene">Remove</button><button id="scUp" title="Move up">Up</button><button id="scDown" title="Move down">Down</button></div>
     </section>
     <section class="dock"><h2>Sources</h2>
       <div class="list" id="layers"></div>
       <div class="tb">
-        <div class="menu"><button id="addBtn" title="Add source">+</button><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Video Capture Device<small>A webcam, ATEM Mini or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a whole computer screen</small></button><button class="mi" data-add="window">Window<small>One program, like lyrics or slides</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
-        <button id="srcDel" title="Remove source">&minus;</button><button id="srcProps" title="Properties">&#9881;</button><button id="srcUp" title="Move up">&#9650;</button><button id="srcDown" title="Move down">&#9660;</button>
+        <div class="menu"><button id="addBtn" title="Add source">Add</button><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Video Capture Device<small>A webcam, ATEM Mini or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a whole computer screen</small></button><button class="mi" data-add="window">Window<small>One program, like lyrics or slides</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
+        <button id="srcDel" title="Remove source">Remove</button><button id="srcProps" title="Properties">Settings</button><button id="srcUp" title="Move up">Up</button><button id="srcDown" title="Move down">Down</button>
       </div>
     </section>
     <section class="dock wide"><h2>Audio Mixer</h2>
       <div class="list" id="audio"></div>
-      <div class="tb"><div class="menu"><button id="addAudio" title="Add sound input">+</button><div class="pop pop-up" id="audPop" hidden><button class="mi" data-addaudio="mic">Sound input<small>A microphone, mixer or the ATEM</small></button><button class="mi" data-addaudio="desktop" id="desktopAudioItem" hidden>Computer sound<small>What this PC plays (Windows)</small></button></div></div><span class="note" id="audNote"></span></div>
+      <div class="tb"><div class="menu"><button id="addAudio" title="Add sound input">Add</button><div class="pop pop-up" id="audPop" hidden><button class="mi" data-addaudio="mic">Sound input<small>A microphone, mixer or the ATEM</small></button><button class="mi" data-addaudio="desktop" id="desktopAudioItem" hidden>Computer sound<small>What this PC plays (Windows)</small></button></div></div><span class="note" id="audNote"></span></div>
     </section>
     <section class="dock narrow"><h2>Scene Transitions</h2>
       <div class="pad">
