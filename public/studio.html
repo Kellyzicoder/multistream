@@ -212,11 +212,23 @@
   :root { --mcov:rgba(8,12,15,.86); --track:rgba(150,170,165,.4); } html.t-light { --mcov:rgba(224,231,227,.92); --track:rgba(90,110,100,.35); }
   .fxbody .fxr { white-space:normal; } .fxbody select { max-width:260px; }
   .dock .ctl button { padding:3px 8px; font-size:12px; }
+  /* ---------- panels can also sit left or right of the pictures ---------- */
+  .upper { flex:1; min-height:0; display:flex; gap:8px; }
+  .upper .stage { flex:1; min-width:0; }
+  .sdock { flex:none; width:0; display:flex; flex-direction:column; gap:8px; min-height:0; }
+  .sdock:not(:empty) { width:clamp(210px, 17vw, 300px); }
+  .sdock .dock { flex:1 1 0; min-width:0; min-height:130px; }
+  .sdock .dock.wide, .sdock .dock.narrow { flex:1 1 0; min-width:0; }
+  .dz { position:fixed; top:8px; width:110px; display:none; z-index:45; pointer-events:none; border:2px dashed var(--sel); border-radius:22px; background:color-mix(in srgb, var(--sel) 10%, transparent); }
+  .dz.show { display:block; } .dz.hot { background:color-mix(in srgb, var(--sel) 30%, transparent); }
+  .dz::after { content:attr(data-t); position:absolute; left:0; right:0; top:50%; text-align:center; font-size:12px; font-weight:600; color:var(--text); }
+  @media (max-width:1000px) { .upper { flex-direction:column; } .sdock:not(:empty) { width:auto; } }
 </style>
 </head>
 <body>
 <div class="obs">
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
+  <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside>
   <div class="stage">
     <div class="screen"><div class="cap">Preview <span id="editName"></span></div><canvas id="ev" class="v" width="960" height="540"></canvas></div>
     <div class="mid">
@@ -225,6 +237,7 @@
     </div>
     <div class="screen"><div class="cap">Program <span id="airName"></span></div><canvas id="cv" class="v" width="1280" height="720"></canvas></div>
   </div>
+  <aside class="sdock" id="dockR" aria-label="Panels on the right"></aside></div>
 
   <!-- docks along the bottom, like OBS -->
   <div class="docks">
@@ -1804,9 +1817,10 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   const row = document.querySelector('.docks'); if (!row) return;
   const names = ['scenes', 'sources', 'mixer', 'transitions', 'controls'];
   const docks = [...row.querySelectorAll('.dock')]; docks.forEach((d, i) => { d.dataset.id = names[i]; });
-  const fresh = () => ({ order: names.slice(), float: {} });
+  const fresh = () => ({ order: names.slice(), float: {}, pos: {} });
+  const side = { left: document.getElementById('dockL'), right: document.getElementById('dockR') };
   let L = fresh();
-  try { const j = JSON.parse(localStorage.getItem('ms_layout') || 'null'); if (j && Array.isArray(j.order)) { L.order = j.order.filter((x) => names.includes(x)); names.forEach((n) => { if (!L.order.includes(n)) L.order.push(n); }); if (j.float && typeof j.float === 'object') L.float = j.float; } } catch {}
+  try { const j = JSON.parse(localStorage.getItem('ms_layout') || 'null'); if (j && Array.isArray(j.order)) { L.order = j.order.filter((x) => names.includes(x)); names.forEach((n) => { if (!L.order.includes(n)) L.order.push(n); }); if (j.float && typeof j.float === 'object') L.float = j.float; if (j.pos && typeof j.pos === 'object') L.pos = j.pos; } } catch {}
   const save = () => { try { localStorage.setItem('ms_layout', JSON.stringify(L)); } catch {} };
   const byId = (id) => docks.find((d) => d.dataset.id === id);
   let z = 30;
@@ -1819,42 +1833,50 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
     if (f) { const c = clamp(f); Object.assign(d.style, { left: c.x + 'px', top: c.y + 'px', width: c.w + 'px', height: c.h + 'px' }); }
     else Object.assign(d.style, { left: '', top: '', width: '', height: '', zIndex: '' });
   }
-  function layout() { L.order.forEach((id) => { const d = byId(id); if (d) row.appendChild(d); }); docks.forEach(paint); }
+  function layout() { L.order.forEach((id) => { const d = byId(id); if (d) (side[L.pos[id]] || row).appendChild(d); }); docks.forEach(paint); }
   const floatAt = (d, x, y, w, h) => { L.float[d.dataset.id] = { x, y, w: Math.max(w, 260), h: Math.max(h, 200) }; paint(d); front(d); save(); };
-  const dockBack = (d, clientX) => {
-    delete L.float[d.dataset.id];
-    const rest = L.order.filter((id) => id !== d.dataset.id && !L.float[id]);
-    let at = rest.length; for (let i = 0; i < rest.length; i++) { const r = byId(rest[i]).getBoundingClientRect(); if (clientX < r.left + r.width / 2) { at = i; break; } }
-    const before = rest[at]; const o = L.order.filter((id) => id !== d.dataset.id);
-    o.splice(before ? o.indexOf(before) : o.length, 0, d.dataset.id); L.order = o; layout(); save();
+  // put a panel on the bottom row, or in the left or right column, in the place nearest the pointer
+  const dockTo = (d, where, cx, cy) => {
+    const id = d.dataset.id; delete L.float[id]; if (where === 'bottom') delete L.pos[id]; else L.pos[id] = where;
+    const horiz = where === 'bottom';
+    const rest = L.order.filter((x) => x !== id && !L.float[x] && (L.pos[x] || 'bottom') === where);
+    let at = rest.length; for (let i = 0; i < rest.length; i++) { const r = byId(rest[i]).getBoundingClientRect(); if ((horiz ? cx < r.left + r.width / 2 : cy < r.top + r.height / 2)) { at = i; break; } }
+    const before = rest[at]; const o = L.order.filter((x) => x !== id);
+    o.splice(before ? o.indexOf(before) : o.length, 0, id); L.order = o; layout(); save();
   };
   docks.forEach((d) => {
     const h = d.querySelector('h2'); const pin = document.createElement('button'); pin.type = 'button'; pin.className = 'pin'; h.appendChild(pin);
     pin.onclick = (e) => {
       e.stopPropagation(); const r = d.getBoundingClientRect();
-      if (L.float[d.dataset.id]) dockBack(d, 1e9); else floatAt(d, Math.max(8, r.left), Math.max(8, r.top - 300), r.width, 280);
+      if (L.float[d.dataset.id]) dockTo(d, 'bottom', 1e9, 1e9); else floatAt(d, Math.max(8, r.left), Math.max(8, r.top - 300), r.width, 280);
     };
     d.addEventListener('pointerdown', () => front(d));
     if ('ResizeObserver' in window) new ResizeObserver(() => { const f = L.float[d.dataset.id]; if (!f || !d.classList.contains('float') || d.classList.contains('drag')) return; const r = d.getBoundingClientRect(); if (Math.abs(r.width - f.w) > 2 || Math.abs(r.height - f.h) > 2) { f.w = Math.round(r.width); f.h = Math.round(r.height); save(); } }).observe(d);
   });
-  row.addEventListener('pointerdown', (e) => {
+  const dz = { left: document.createElement('div'), right: document.createElement('div') };
+  dz.left.className = dz.right.className = 'dz'; dz.left.dataset.t = 'Left'; dz.right.dataset.t = 'Right'; dz.left.style.left = '8px'; dz.right.style.right = '8px'; document.body.append(dz.left, dz.right);
+  document.addEventListener('pointerdown', (e) => {
     const h = e.target.closest('.dock > h2'); if (!h || e.button !== 0 || e.target.closest('button')) return;
     const d = h.parentElement, r0 = d.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, ox = sx - r0.left, oy = sy - r0.top, wasFloat = d.classList.contains('float');
     const rowTop = () => row.getBoundingClientRect().top; let moving = false;
+    const zoneOf = (ev) => (ev.clientY < rowTop() ? (ev.clientX < 110 ? 'left' : ev.clientX > innerWidth - 110 ? 'right' : '') : '');
+    const showZones = (on, ev) => { const bot = (innerHeight - rowTop() + 8) + 'px'; ['left', 'right'].forEach((k) => { dz[k].style.bottom = bot; dz[k].classList.toggle('show', on); dz[k].classList.toggle('hot', on && zoneOf(ev) === k); }); };
     const move = (ev) => {
-      if (!moving) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return; moving = true; d.classList.add('drag'); try { h.setPointerCapture(e.pointerId); } catch {} }
+      if (!moving) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return; moving = true; d.classList.add('drag'); showZones(true, ev); try { h.setPointerCapture(e.pointerId); } catch {} }
       if (wasFloat) { d.style.left = Math.max(0, Math.min(ev.clientX - ox, innerWidth - 120)) + 'px'; d.style.top = Math.max(0, Math.min(ev.clientY - oy, innerHeight - 60)) + 'px'; }
       else d.style.transform = `translate(${ev.clientX - sx}px, ${ev.clientY - sy}px)`;
-      row.classList.toggle('over', wasFloat && ev.clientY > rowTop());
+      row.classList.toggle('over', wasFloat && ev.clientY > rowTop()); showZones(true, ev);
     };
     const up = (ev) => {
       h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up);
       try { h.releasePointerCapture(e.pointerId); } catch {}
-      row.classList.remove('over'); if (!moving) return;
+      row.classList.remove('over'); showZones(false, ev); if (!moving) return;
       d.classList.remove('drag'); d.style.transform = '';
-      if (wasFloat) { if (ev.clientY > rowTop()) dockBack(d, ev.clientX); else { const f = L.float[d.dataset.id]; f.x = Math.round(parseFloat(d.style.left)); f.y = Math.round(parseFloat(d.style.top)); save(); } }
+      const z = zoneOf(ev);
+      if (z) dockTo(d, z, ev.clientX, ev.clientY);
+      else if (wasFloat) { if (ev.clientY > rowTop()) dockTo(d, 'bottom', ev.clientX, ev.clientY); else { const f = L.float[d.dataset.id]; f.x = Math.round(parseFloat(d.style.left)); f.y = Math.round(parseFloat(d.style.top)); save(); } }
       else if (ev.clientY < rowTop() - 24) floatAt(d, Math.max(0, ev.clientX - ox), Math.max(0, ev.clientY - oy), r0.width, Math.max(r0.height, 240));
-      else dockBack(d, ev.clientX);
+      else dockTo(d, 'bottom', ev.clientX, ev.clientY);
     };
     h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
   });
