@@ -54,6 +54,14 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+      - name: Name the camera Multistream Camera (instead of DirectShow Softcam)
+        if: matrix.name == 'Windows'
+        shell: pwsh
+        run: |
+          (Get-Content softcam-src/src/softcam/softcam.cpp) -replace 'L"DirectShow Softcam"', 'L"Multistream Camera"' | Set-Content softcam-src/src/softcam/softcam.cpp
+          (Get-Content softcam-src/src/softcamcore/DShowSoftcam.cpp) -replace 'NAME\("DirectShow Softcam"\)', 'NAME("Multistream Camera")' -replace 'L"DirectShow Softcam Stream"', 'L"Multistream Camera Stream"' | Set-Content softcam-src/src/softcamcore/DShowSoftcam.cpp
+          $n = (Get-ChildItem softcam-src/src -Recurse -Include *.cpp | Select-String -Pattern 'Multistream Camera').Count
+          if ($n -lt 3) { throw "camera rename did not apply ($n)" }
       - name: Build the virtual camera
         if: matrix.name == 'Windows'
         shell: pwsh

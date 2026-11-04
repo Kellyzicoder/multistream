@@ -88,7 +88,8 @@
   .dock .ctl button { width:100%; padding:5px 8px; }
   input[type=color] { height:28px; padding:2px; min-width:60px; }
   .tb { display:flex; align-items:center; gap:2px; padding:3px; border-top:1px solid var(--line); background:var(--card); }
-  .tb button { padding:2px 8px; min-width:28px; background:transparent; border-color:transparent; }
+  .tb { flex-wrap:wrap; }
+  .tb button { padding:2px 5px; min-width:0; font-size:12px; white-space:nowrap; background:transparent; border-color:transparent; }
   .tb button:hover { border-color:var(--line); background:var(--btn2); }
   .tb .note { margin-left:6px; font-size:11px; }
   .lbl { display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--muted); }
@@ -244,6 +245,11 @@
   .ctxi small { display:block; margin-top:1px; font-size:11px; color:var(--muted); }
   .ctxi:hover, .ctxi:focus-visible { background:var(--sel); color:var(--onsel); outline:none; } .ctxi:hover small, .ctxi:focus-visible small { color:inherit; opacity:.8; }
   .ctxs { height:1px; margin:5px 6px; background:var(--gl-line); }
+#vcPrev{margin-top:6px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#000;position:relative}
+#vcPrev canvas{display:block;width:100%;height:auto;aspect-ratio:16/9}
+#vcPrev span{position:absolute;left:6px;bottom:4px;font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff}
+.lyr .cog{flex:none;width:28px;height:26px;padding:0;font-size:16px;line-height:1;border-radius:8px;opacity:.9}
+.lyr .cog:hover{opacity:1;background:var(--gl2);border-color:var(--gl-line)}
 </style>
 </head>
 <body>
@@ -265,18 +271,18 @@
   <div class="docks">
     <section class="dock"><h2>Scenes</h2>
       <div class="list" id="scenes"></div>
-      <div class="tb"><button id="addScene" title="Add scene">+</button><button id="delScene" title="Remove scene">&minus;</button><button id="scUp" title="Move up">&#9650;</button><button id="scDown" title="Move down">&#9660;</button></div>
+      <div class="tb"><button id="addScene" title="Add scene">Add</button><button id="delScene" title="Remove scene">Remove</button></div>
     </section>
     <section class="dock"><h2>Sources</h2>
       <div class="list" id="layers"></div>
       <div class="tb">
-        <div class="menu"><button id="addBtn" title="Add source">+</button><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Video Capture Device<small>A webcam, ATEM Mini or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a whole computer screen</small></button><button class="mi" data-add="window">Window<small>One program, like lyrics or slides</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
-        <button id="srcDel" title="Remove source">&minus;</button><button id="srcProps" title="Properties">&#9881;</button><button id="srcUp" title="Move up">&#9650;</button><button id="srcDown" title="Move down">&#9660;</button>
+        <div class="menu"><button id="addBtn" title="Add source">Add</button><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Video Capture Device<small>A webcam, ATEM Mini or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a whole computer screen</small></button><button class="mi" data-add="window">Window<small>One program, like lyrics or slides</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
+        <button id="srcDel" title="Remove source">Remove</button>
       </div>
     </section>
     <section class="dock wide"><h2>Audio Mixer</h2>
       <div class="list" id="audio"></div>
-      <div class="tb"><div class="menu"><button id="addAudio" title="Add sound input">+</button><div class="pop pop-up" id="audPop" hidden><button class="mi" data-addaudio="mic">Sound input<small>A microphone, mixer or the ATEM</small></button><button class="mi" data-addaudio="desktop" id="desktopAudioItem" hidden>Computer sound<small>What this PC plays (Windows)</small></button></div></div><span class="note" id="audNote"></span></div>
+      <div class="tb"><div class="menu"><button id="addAudio" title="Add sound input">Add</button><div class="pop pop-up" id="audPop" hidden><button class="mi" data-addaudio="mic">Sound input<small>A microphone, mixer or the ATEM</small></button><button class="mi" data-addaudio="desktop" id="desktopAudioItem" hidden>Computer sound<small>What this PC plays (Windows)</small></button></div></div><span class="note" id="audNote"></span></div>
     </section>
     <section class="dock narrow"><h2>Scene Transitions</h2>
       <div class="pad">
@@ -289,6 +295,7 @@
         <button id="sendBtn">Start Streaming</button>
         <button id="recBtn">Start Recording</button>
         <button id="vcBtn" hidden>Start Virtual Camera</button>
+        <div id="vcPrev" hidden title="This is what Zoom sees from Multistream Camera"><canvas id="vcPv" width="320" height="180"></canvas><span>Multistream Camera</span></div>
         <button id="modeBtn" type="button" aria-pressed="true" title="On: a Preview and a Program picture, and a Transition button (like OBS Studio Mode). Off: only the live picture, and a click on a scene puts it on air.">Studio Mode</button>
         <button id="setBtn">Settings</button>
       </div>
@@ -1049,8 +1056,6 @@ function moveScene(dir) {
   if (i < 0 || j < 0 || j >= studio.scenes.length) return;
   [studio.scenes[i], studio.scenes[j]] = [studio.scenes[j], studio.scenes[i]]; save(); renderAll();
 }
-$('#scUp').onclick = () => moveScene(-1);
-$('#scDown').onclick = () => moveScene(1);
 $('#addScene').onclick = () => {
   let n = 'Scene ' + (studio.scenes.length + 1); while (studio.scenes.some((s) => s.name === n)) n += '+';
   studio.scenes.push({ name: n, layers: [], audio: studio.audio.map((a) => a.id) }); editing = n; if (!studio.current) { studio.current = n; dirtyCurrent = true; } save(); renderAll();
@@ -1076,7 +1081,9 @@ function renderLayers() {
     const n = document.createElement('span'); n.className = 'n'; n.textContent = (l.name || ICON[l.type] || l.type) + (l.locked ? ' (locked)' : ''); n.title = n.textContent;
     const up = document.createElement('button'); up.className = 'sm'; up.textContent = '\u2191'; up.title = 'Move in front'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
     const x = document.createElement('button'); x.className = 'sm'; x.textContent = '\u00d7'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
-    d.append(eye, n); d.onclick = () => { sel = l.id; renderLayers(); };
+    const cog = document.createElement('button'); cog.className = 'cog'; cog.textContent = '\u2699'; cog.title = 'Settings for ' + (l.name || l.type); cog.setAttribute('aria-label', cog.title);
+    cog.onclick = (e) => { e.stopPropagation(); sel = l.id; propsOpen = true; renderLayers(); };
+    d.append(eye, n, cog); d.onclick = () => { sel = l.id; renderLayers(); };
     d.ondblclick = () => { sel = l.id; propsOpen = true; renderLayers(); };
     box.appendChild(d);
   }
@@ -1091,12 +1098,9 @@ $('#propsClose').onclick = closeProps; $('#propsOk').onclick = closeProps;
 $('#propsBox').addEventListener('mousedown', (e) => { if (e.target === $('#propsBox')) closeProps(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && propsOpen) closeProps(); });
 function selLayer() { const s = byName(editing); return s && s.layers.findIndex((x) => x.id === sel); }
-$('#srcProps').onclick = () => { if (sel) { propsOpen = true; renderProps(); } };
 $('#srcDel').onclick = () => { const s = byName(editing), i = selLayer(); if (i == null || i < 0) return; s.layers.splice(i, 1); sel = ''; closeProps(); save(); renderLayers(); };
 // the list shows the front item at the top (like OBS), so "up" moves an item to the front
 function moveLayer(dir) { const s = byName(editing), i = selLayer(); if (i == null || i < 0) return; const j = i + dir; if (j < 0 || j >= s.layers.length) return; [s.layers[i], s.layers[j]] = [s.layers[j], s.layers[i]]; save(); renderLayers(); }
-$('#srcUp').onclick = () => moveLayer(1);
-$('#srcDown').onclick = () => moveLayer(-1);
 function renderProps() {
   const box = $('#props'); box.textContent = '';
   const s = byName(editing), l = s && s.layers.find((x) => x.id === sel);
@@ -1444,23 +1448,29 @@ $('#recBtn').onclick = () => (recWs ? endRec(false) : startRec());
 document.addEventListener('click', () => ensureAudio(), { once: true });
 
 // ---------------- virtual camera (Zoom) ----------------
-// Sends the Studio picture to the Windows virtual camera. In Zoom, pick the camera called "Softcam".
+// Sends the Studio picture to the Windows virtual camera. In Zoom, pick the camera called "Multistream Camera".
 let vcWs = null, vcMr = null;
 fetch('/api/vcam').then((r) => r.json()).then((s) => { if (s.available) $('#vcBtn').hidden = false; }).catch(() => {});
+let vcPvT = null;
+function vcPrevStart() {
+  const c = $('#vcPv'), x = c.getContext('2d'); $('#vcPrev').hidden = false;
+  clearInterval(vcPvT); vcPvT = setInterval(() => { if (!document.hidden) x.drawImage(vcv, 0, 0, c.width, c.height); }, 100);
+}
+function vcPrevStop() { clearInterval(vcPvT); vcPvT = null; $('#vcPrev').hidden = true; }
 function vcOff(msg) {
   try { vcMr && vcMr.state !== 'inactive' && vcMr.stop(); } catch {}
   try { vcWs && vcWs.close(); } catch {}
-  vcWs = vcMr = null; vcOn = false; $('#vcBtn').textContent = 'Start Virtual Camera'; $('#vcBtn').className = '';
+  vcWs = vcMr = null; vcOn = false; vcPrevStop(); $('#vcBtn').textContent = 'Start Virtual Camera'; $('#vcBtn').className = '';
   if (msg) { $('#st').textContent = msg; $('#st').className = 'stat bad'; }
 }
 $('#vcBtn').onclick = async () => {
   if (vcWs) { vcOff(); $('#st').textContent = 'Virtual camera is off.'; $('#st').className = 'stat'; return; }
-  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok') === '1'; } catch {}
+  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok2') === '1'; } catch {}
   if (!ok) {
-    if (!confirm('Windows will ask for permission one time, to add a camera called Softcam. Continue?')) return;
+    if (!confirm('Windows will ask for permission one time, to add a camera called Multistream Camera. Continue?')) return;
     const r = await fetch('/api/vcam/install', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then((x) => x.json()).catch(() => ({ error: 'Could not reach the app' }));
     if (r.error) { $('#st').textContent = 'Virtual camera setup: ' + r.error; $('#st').className = 'stat bad'; return; }
-    try { localStorage.setItem('ms_vcam_ok', '1'); } catch {}
+    try { localStorage.setItem('ms_vcam_ok2', '1'); } catch {}
   }
   const ws = vcWs = openPipe('/studio-vcam');
   ws.binaryType = 'arraybuffer';
@@ -1469,9 +1479,9 @@ $('#vcBtn').onclick = async () => {
     vcOn = true;
     vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000 });
     vcMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
-    vcMr.start(100);
+    vcMr.start(100); vcPrevStart();
     $('#vcBtn').textContent = 'Stop Virtual Camera'; $('#vcBtn').className = 'stop';
-    $('#st').textContent = 'Virtual camera is on. In Zoom, choose the camera called Softcam.'; $('#st').className = 'stat ok';
+    $('#st').textContent = 'Virtual camera is on. In Zoom, choose the camera called Multistream Camera.'; $('#st').className = 'stat ok';
   };
   ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) vcOff('Virtual camera: ' + j.error); } catch {} };
   ws.onclose = () => { if (vcWs === ws) vcOff('Virtual camera stopped.'); };
