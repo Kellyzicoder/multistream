@@ -421,6 +421,10 @@
   .cr .cr-grid { flex:1 1 0; min-height:0; margin:0; overflow:auto; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); align-content:start; }
   .cr .cr-aud, .cr .cr-itembox { margin:0; flex:none; }
   @media (max-width:800px) { .cr:not([hidden]) { height:auto; overflow:visible; } }
+  /* ---------- where to show the Control Room ---------- */
+  .cr-ch { display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+  .cr-ch .b2 { text-align:left; border-radius:16px; padding:12px 16px; font-size:13px; }
+  .cr-ch .b2 small { display:block; margin-top:2px; font-size:11px; font-weight:400; opacity:.75; white-space:normal; }
 </style>
 </head>
 <body>
@@ -1049,7 +1053,23 @@ function showPage(p) {
   renderCr();
   pollThumbs();
 }
-pageTabs.forEach((b) => { b.onclick = () => showPage(b.dataset.page); });
+pageTabs.forEach((b) => { b.onclick = () => { if (b.dataset.page === 'cr' && page !== 'cr') askControlRoom(); else showPage(b.dataset.page); }; });
+// Control Room: ask first where to show it (this window, a new window, or full screen on one of the displays), like OBS projectors
+async function askControlRoom() {
+  let ds = []; try { if (window.msNative && window.msNative.displays) ds = await window.msNative.displays(); } catch {}
+  const ov = document.createElement('div'); ov.className = 'overlay'; ov.style.display = 'grid';
+  const m = document.createElement('div'); m.className = 'modal'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-label', 'Show the Control Room');
+  m.innerHTML = '<h3>Show the Control Room</h3><p>Pick where it should open.</p><div class="cr-ch"></div>';
+  const list = m.querySelector('.cr-ch');
+  const close = () => { ov.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
+  const add = (title, sub, run, pri) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'b2' + (pri ? ' pri' : ''); b.innerHTML = '<span></span><small></small>'; b.firstChild.textContent = title; b.lastChild.textContent = sub; b.onclick = () => { close(); run(); }; list.appendChild(b); return b; };
+  add('In this window', 'Replaces the dashboard here. Use Dashboard at the top to come back.', () => showPage('cr'), true);
+  add('In a new window', 'Its own window that you can move or resize.', () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); });
+  ds.forEach((d) => add('Full screen on Display ' + d.n + (d.main ? ' (main)' : ''), d.w + ' x ' + d.h + (d.label && !/^\\\\\./.test(d.label) ? ' - ' + d.label : '') + '. Press Esc to leave full screen.', () => window.msNative.openControlRoom(d.id)));
+  const c = document.createElement('button'); c.type = 'button'; c.className = 'b2'; c.textContent = 'Cancel'; c.onclick = close; list.appendChild(c);
+  ov.onclick = (e) => { if (e.target === ov) close(); }; document.addEventListener('keydown', esc);
+  ov.appendChild(m); document.body.appendChild(ov); const f = list.querySelector('button'); if (f) f.focus();
+}
 // The Control Room drives the Studio.
 const crEng = 'studio';
 let stu = { alive: false, scenes: [], current: '', shots: {} };

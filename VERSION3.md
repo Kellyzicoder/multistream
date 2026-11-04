@@ -57,3 +57,6 @@ In the Studio, drag a panel's title (Scenes, Sources, Audio Mixer, Scene Transit
 
 ## Studio Mode and panel sizes
 Controls, Studio Mode (like OBS): on shows Preview and Program with a Transition button; off shows only the live picture, and clicking a scene puts it on air straight away. Panels can be resized with limits: drag the line above the bottom row, the lines between panels, or the line beside a left or right column (double-click a line to reset it). Settings, General, Put the panels back resets everything. The Control Room page fills the whole window.
+
+## Control Room on a display, and projectors
+Pressing Control Room at the top asks where to show it: in this window, in a new window, or full screen on one of the connected displays (Esc leaves full screen). In the Studio, right-click the Preview or Program picture to show it full screen on a display, or in its own window (Esc closes it, double-click toggles full screen), to put the Preview scene on air, or to turn Studio Mode on or off. The display choices need the desktop app and more than one screen to be useful; I have only tried them with pretend screens, not on real ones.

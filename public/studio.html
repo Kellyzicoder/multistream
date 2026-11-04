@@ -237,6 +237,13 @@
   body.single .stage > .mid, body.single .stage > .screen:last-child { display:none; }
   body.single .stage > .screen:first-child { max-width:min(100%, calc((100vh - 360px) * 16 / 9)); margin:0 auto; }
   body.single #ev { border-color:var(--red); box-shadow:0 0 0 1px var(--red), 0 0 40px rgba(255,77,90,.3), 0 14px 44px rgba(0,0,0,.45); }
+  /* ---------- right-click menu on the pictures ---------- */
+  .ctxm { position:fixed; z-index:70; min-width:250px; max-width:340px; padding:6px; border-radius:16px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
+  .ctxh { padding:6px 10px 4px; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .ctxi { display:block; width:100%; text-align:left; border:0; border-radius:10px; padding:8px 10px; font-size:13px; background:transparent; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .ctxi small { display:block; margin-top:1px; font-size:11px; color:var(--muted); }
+  .ctxi:hover, .ctxi:focus-visible { background:var(--sel); color:var(--onsel); outline:none; } .ctxi:hover small, .ctxi:focus-visible small { color:inherit; opacity:.8; }
+  .ctxs { height:1px; margin:5px 6px; background:var(--gl-line); }
 </style>
 </head>
 <body>
@@ -988,6 +995,38 @@ $('#modeBtn').onclick = () => {
   applyMode(); if (!studioMode) editing = studio.current || editing; renderAll();
 };
 applyMode();
+// right-click on the Preview or Program picture (like OBS projectors): show it full screen on a display, or in its own window
+let ctxMenu = null;
+const projWins = {};
+function openProjector(src, displayId) {
+  try { if (projWins[src] && !projWins[src].closed) projWins[src].close(); } catch {}
+  projWins[src] = window.open('/projector.html?src=' + src + (displayId != null ? '&d=' + encodeURIComponent(displayId) : ''), '_blank', 'popup,width=960,height=540');
+}
+function closeCtx() { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } }
+async function showViewMenu(ev, src) {
+  ev.preventDefault(); closeCtx();
+  let ds = []; try { if (window.msNative && window.msNative.displays) ds = await window.msNative.displays(); } catch {}
+  const name = src === 'preview' ? (studioMode ? 'Preview' : 'Live') : 'Program';
+  const m = document.createElement('div'); m.className = 'ctxm'; m.setAttribute('role', 'menu');
+  const head = document.createElement('div'); head.className = 'ctxh'; head.textContent = name; m.appendChild(head);
+  const item = (t, run, sub) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ctxi'; b.setAttribute('role', 'menuitem'); b.textContent = t; if (sub) { const s = document.createElement('small'); s.textContent = sub; b.appendChild(s); } b.onclick = () => { closeCtx(); run(); }; m.appendChild(b); };
+  const sep = () => { const d = document.createElement('div'); d.className = 'ctxs'; m.appendChild(d); };
+  ds.forEach((d) => item('Show ' + name + ' full screen on Display ' + d.n + (d.main ? ' (main)' : ''), () => openProjector(src, d.id), d.w + ' x ' + d.h + '. Esc closes it.'));
+  item('Open ' + name + ' in a window', () => openProjector(src), 'Double-click it for full screen.');
+  if (src !== 'preview' || studioMode) {
+    sep();
+    if (studioMode && editing && editing !== studio.current) item('Put the Preview scene on air (Transition)', () => $('#transBtn').click());
+    item(studioMode ? 'Studio Mode: turn off (live picture only)' : 'Studio Mode: turn on (Preview and Program)', () => $('#modeBtn').click());
+  } else { sep(); item('Studio Mode: turn on (Preview and Program)', () => $('#modeBtn').click()); }
+  document.body.appendChild(m); ctxMenu = m;
+  const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
+  const first = m.querySelector('.ctxi'); if (first) first.focus();
+}
+$('#ev').addEventListener('contextmenu', (e) => showViewMenu(e, 'preview'));
+$('#cv').addEventListener('contextmenu', (e) => showViewMenu(e, 'program'));
+document.addEventListener('pointerdown', (e) => { if (ctxMenu && !ctxMenu.contains(e.target)) closeCtx(); }, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCtx(); });
+window.addEventListener('blur', closeCtx);
 $('#transBtn').onclick = () => { if (editing && editing !== studio.current) setCurrent(editing); };
 function moveScene(dir) {
   const i = studio.scenes.findIndex((x) => x.name === editing), j = i + dir;
