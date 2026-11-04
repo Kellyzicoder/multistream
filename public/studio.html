@@ -375,6 +375,20 @@
             <tr><td><kbd>F</kbd></td><td>Next transition type</td></tr>
             <tr><td>Arrow keys</td><td>Move the selected item (<kbd>Shift</kbd> = 10 at a time)</td></tr>
             <tr><td><kbd>Delete</kbd></td><td>Remove the selected item</td></tr>
+            <tr><td colspan="2"><b>Like OBS Studio</b> (select an item in the Preview or the Sources list first)</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>F</kbd></td><td>Fit to screen (all of it, keeping its shape)</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td>Stretch to screen</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>D</kbd></td><td>Centre on the screen</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>R</kbd></td><td>Reset the transform (original size, no crop, no flip)</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>E</kbd></td><td>Edit the item (properties)</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>C</kbd> / <kbd>Ctrl</kbd> + <kbd>V</kbd></td><td>Copy the item / paste it into the scene you are editing</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></td><td>Undo / redo a change to scenes and items (also <kbd>Ctrl</kbd> + <kbd>Y</kbd>)</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>&uarr;</kbd> / <kbd>&darr;</kbd></td><td>Move the item in front of / behind the others</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Home</kbd> / <kbd>End</kbd></td><td>Move the item to the very front / back</td></tr>
+            <tr><td><kbd>F2</kbd></td><td>Rename the item</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Select nothing</td></tr>
+            <tr><td><kbd>F11</kbd></td><td>Full screen for the Studio window</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>,</kbd></td><td>Open Settings</td></tr>
           </table>
           <p class="note">These work when the Studio is the window in front and you are not typing in a box. They cannot be changed yet.</p>
         </section>
@@ -425,6 +439,7 @@ const uid = () => Math.random().toString(36).slice(2, 8);
 const byName = (n) => studio.scenes.find((s) => s.name === n);
 const sceneOf = (n) => byName(n);
 function save() {
+  histPush();
   clearTimeout(saveT);
   saveT = setTimeout(async () => {
     saveT = 0;
@@ -1769,6 +1784,58 @@ $('#chAdd').onclick = async () => {
 ['#impBtn', '#keysBtn', '#projBtn'].forEach((id) => $(id).addEventListener('click', closeSettings));
 
 // ---------------- hotkeys and the preview window ----------------
+
+// ---------------- OBS keyboard shortcuts (Ctrl+F fit, Ctrl+S stretch, Ctrl+D centre, Ctrl+R reset, Ctrl+E properties, Ctrl+C/V copy and paste, Ctrl+Z undo ...) ----------------
+let hist = [], histAt = -1, histSkip = false, histLast = 0, clip = null;
+function histInit() { if (!hist.length && studio.scenes.length) { hist = [JSON.stringify(studio.scenes)]; histAt = 0; } }
+function histPush() {
+  if (histSkip || !hist.length) return;
+  const cur = JSON.stringify(studio.scenes); if (cur === hist[histAt]) return;
+  const now = Date.now(), joined = now - histLast < 700 && histAt > 0;           // a drag makes many saves: keep them as one step
+  hist = hist.slice(0, histAt + 1); if (joined) hist[histAt] = cur; else { hist.push(cur); histAt++; }
+  if (hist.length > 60) { hist.shift(); histAt--; } histLast = now;
+}
+function histGo(d) {
+  histInit(); const to = histAt + d; if (to < 0 || to >= hist.length) { flash(d < 0 ? 'Nothing to undo.' : 'Nothing to redo.', true); return; }
+  histAt = to; studio.scenes = JSON.parse(hist[to]);
+  if (!studio.scenes.some((x) => x.name === studio.current)) { studio.current = (studio.scenes[0] || {}).name || ''; dirtyCurrent = true; }
+  if (!byName(editing)) editing = studio.current; if (!curLayer()) sel = '';
+  histSkip = true; save(); histSkip = false; renderAll(); flash(d < 0 ? 'Undone.' : 'Redone.', true);
+}
+setTimeout(histInit, 2500);
+function centerOf(l) { const b = boundsOf(l); l.x = Math.round(l.x + (SW - b[2]) / 2 - b[0]); l.y = Math.round(l.y + (SH - b[3]) / 2 - b[1]); }
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  if (e.key === 'F11') { e.preventDefault(); if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); return; }
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+  const ctrl = e.ctrlKey || e.metaKey, cl = curLayer(), sc = byName(editing), k = e.key.toLowerCase();
+  if (ctrl && !e.altKey && e.key === ',') { e.preventDefault(); openSettings(); return; }
+  if (!$('#setBox').hidden || document.querySelector('.modal:not([hidden]):not(#setBox)')) return;
+  if (ctrl && !e.altKey && (k === 'z' || k === 'y')) { e.preventDefault(); histGo(k === 'y' || e.shiftKey ? 1 : -1); return; }
+  if (e.key === 'F2' && cl) { e.preventDefault(); const v = prompt('Source name', cl.name || ICON[cl.type] || cl.type); if (v != null && v.trim()) { cl.name = v.trim(); save(); renderLayers(); } return; }
+  if (e.key === 'Escape' && sel && $('#propsBox').hidden) { sel = ''; renderLayers(); return; }
+  if (!ctrl || e.altKey) return;
+  histLast = 0; // each shortcut is its own undo step
+  if (k === 'v' && !e.shiftKey) { // paste the copied source into the scene being edited
+    if (!clip || !sc) return; e.preventDefault();
+    const c = JSON.parse(clip); c.id = uid(); c.x = Math.round((c.x || 0) + 20); c.y = Math.round((c.y || 0) + 20); c.name = (c.name || ICON[c.type] || c.type) + ' (copy)';
+    sc.layers.push(c); sel = c.id; save(); renderLayers(); flash('Pasted.', true); return;
+  }
+  if (!cl) return;
+  const i = sc ? sc.layers.indexOf(cl) : -1;
+  if (k === 'c' && !e.shiftKey) { e.preventDefault(); clip = JSON.stringify(cl); flash('Copied "' + (cl.name || ICON[cl.type] || cl.type) + '". Ctrl+V pastes it.', true); return; }
+  if (k === 'e') { e.preventDefault(); propsOpen = true; renderLayers(); return; }
+  if (cl.locked) return;
+  if (k === 'f') { e.preventDefault(); cl.fit = MEDIA.has(cl.type) ? 'fit' : cl.fit; cl.x = 0; cl.y = 0; cl.w = SW; cl.h = SH; delete cl.sx; delete cl.sy; save(); renderLayers(); return; }
+  if (k === 's') { e.preventDefault(); if (MEDIA.has(cl.type)) cl.fit = 'stretch'; cl.x = 0; cl.y = 0; cl.w = SW; cl.h = SH; delete cl.sx; delete cl.sy; save(); renderLayers(); return; }
+  if (k === 'd') { e.preventDefault(); centerOf(cl); save(); renderLayers(); return; }
+  if (k === 'r') { e.preventDefault(); if (MEDIA.has(cl.type)) { cl.fit = 'natural'; cl.sx = cl.sy = 1; const F = (cl.pfx = cl.pfx || {}); delete F.crop; F.flip = false; } save(); renderLayers(); return; }
+  if (sc && i >= 0 && ['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) { // move in front of or behind the others
+    e.preventDefault(); const n = sc.layers.length; let to = i;
+    if (e.key === 'ArrowUp') to = Math.min(n - 1, i + 1); else if (e.key === 'ArrowDown') to = Math.max(0, i - 1); else if (e.key === 'Home') to = n - 1; else to = 0;
+    if (to !== i) { sc.layers.splice(i, 1); sc.layers.splice(to, 0, cl); save(); renderLayers(); }
+  }
+});
 document.addEventListener('keydown', (e) => {
   const t = e.target, tag = t && t.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;

@@ -60,3 +60,6 @@ Controls, Studio Mode (like OBS): on shows Preview and Program with a Transition
 
 ## Control Room on a display, and projectors
 Pressing Control Room at the top asks where to show it: in this window, in a new window, or full screen on one of the connected displays (Esc leaves full screen). In the Studio, right-click the Preview or Program picture to show it full screen on a display, or in its own window (Esc closes it, double-click toggles full screen), to put the Preview scene on air, or to turn Studio Mode on or off. The display choices need the desktop app and more than one screen to be useful; I have only tried them with pretend screens, not on real ones.
+
+## OBS keyboard shortcuts
+With an item selected: Ctrl+F fit to screen, Ctrl+S stretch to screen, Ctrl+D centre, Ctrl+R reset transform, Ctrl+E edit (properties), Ctrl+C / Ctrl+V copy and paste, Ctrl+Up / Down / Home / End move in front or behind, F2 rename, Esc select nothing. Anywhere: Ctrl+Z undo and Ctrl+Shift+Z (or Ctrl+Y) redo for changes to scenes and items (up to 60 steps; not for sound settings), F11 full screen, Ctrl+, Settings. The full list is in Settings, Hotkeys. Streaming and recording hotkeys are not set in OBS by default, so the Studio keeps its own (R, Shift+G, 1-9). They still cannot be changed. Rotate is not in the Studio, so there is no rotate key.
