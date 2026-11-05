@@ -303,7 +303,7 @@
   </div>
 
   <!-- status bar, like OBS -->
-  <footer class="status"><button id="backBtn" hidden title="Go back to the dashboard">&larr; Dashboard</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
+  <footer class="status"><button id="backBtn" hidden title="Go back to the Stream page">&larr; Stream</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
 </div>
 
 <!-- Properties window, like OBS -->
@@ -328,18 +328,18 @@
       <div class="spanes">
         <section class="sp" data-sp="general">
           <h3>Studio</h3>
-          <div class="f"><label>Open the Studio in</label><select id="studioOpen"><option value="window">A new window</option><option value="same">The same window as the dashboard</option></select></div>
-          <p class="note">This is also in the dashboard under Settings, Appearance. It applies the next time you open the Studio.</p>
+          <div class="f"><label>Open the Studio in</label><select id="studioOpen"><option value="window">A new window</option><option value="same">The same window as the Stream page</option></select></div>
+          <p class="note">This is also on the Stream page under Settings, Appearance. It applies the next time you open the Studio.</p>
           <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
           <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
           <div class="f"><label>Panels</label><span><button id="resetLayout" type="button">Put the panels back</button> <span class="note">Drag a panel's title to move it. Drag it up to float it, or drop it on the bottom row to dock it again.</span></span></div>
           <h3>Scenes and windows</h3>
           <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes from OBS...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
-          <p class="note">The colours follow the dashboard (Settings, Appearance).</p>
+          <p class="note">The colours follow the Stream page (Settings, Appearance).</p>
         </section>
         <section class="sp" data-sp="channels">
           <h3>Where your video goes</h3>
-          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the dashboard under Settings.</p>
+          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the Stream page under Settings.</p>
           <div id="chanList"></div>
           <h3>Add a channel</h3>
           <div class="f"><label>Site</label><select id="chType"><option value="youtube">YouTube</option><option value="facebook">Facebook</option><option value="other">Instagram or another site</option></select></div>
@@ -1345,7 +1345,7 @@ function openPipe(p) {
 if (/[?&]same=1/.test(location.search) && window.msNative) {
   $('#backBtn').hidden = false;
   $('#backBtn').onclick = () => {
-    if ((wantSend || recWs) && !confirm('Going back to the dashboard stops streaming and recording. Go back?')) return;
+    if ((wantSend || recWs) && !confirm('Going back to the Stream page stops streaming and recording. Go back?')) return;
     window.msNative.openDashboard();
   };
 }
