@@ -108,4 +108,72 @@ function makeKeyframeTracker(onKey) {
   };
 }
 
-module.exports = { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker };
+// Reads the video and sound details (type, size, frames a second) straight from the FLV video, inside the
+// app, so no extra ffmpeg is needed for the stream check. Fills info.video and info.audio in the same shape
+// as parseStreamLine. The size and frame rate come from the video's own description (onMetaData).
+function readAmfValue(b, o) {
+  const t = b[o];
+  if (t === 0) return [b.readDoubleBE(o + 1), o + 9];
+  if (t === 1) return [b[o + 1] !== 0, o + 2];
+  if (t === 2) { const n = b.readUInt16BE(o + 1); return [b.toString('utf8', o + 3, o + 3 + n), o + 3 + n]; }
+  throw new Error('stop'); // a kind of value we do not need
+}
+function readMetaData(body) {
+  const out = {};
+  try {
+    if (body[0] !== 2) return out;
+    let o = 3 + body.readUInt16BE(1); // the name "onMetaData"
+    const kind = body[o];
+    if (kind === 8) o += 5; else if (kind === 3) o += 1; else return out;
+    while (o + 3 <= body.length) {
+      const n = body.readUInt16BE(o);
+      if (n === 0 && body[o + 2] === 9) break;
+      const key = body.toString('utf8', o + 2, o + 2 + n);
+      const [v, next] = readAmfValue(body, o + 2 + n);
+      out[key] = v; o = next;
+    }
+  } catch {}
+  return out;
+}
+const VIDEO_CODECS = { 7: 'h264', 12: 'hevc' }, FOURCC = { avc1: 'h264', hvc1: 'hevc', av01: 'av1', vp09: 'vp9' };
+const AUDIO_CODECS = { 2: 'mp3', 10: 'aac', 11: 'speex' };
+function makeFlvInfo(info) {
+  let buf = Buffer.alloc(0), gotHeader = false, meta = {};
+  const fill = () => {
+    if (info.video) {
+      if (meta.width) info.video.width = meta.width;
+      if (meta.height) info.video.height = meta.height;
+      if (meta.framerate) info.video.fps = Math.round(meta.framerate * 100) / 100;
+    }
+    if (info.audio && meta.audiosamplerate) info.audio.rate = meta.audiosamplerate;
+    if (info.audio && typeof meta.stereo === 'boolean') info.audio.channels = meta.stereo ? 'stereo' : 'mono'; // (AAC always says stereo in its flags)
+  };
+  return (chunk) => {
+    if (info.video && info.audio && meta.width) return; // all known: nothing more to read
+    buf = buf.length ? Buffer.concat([buf, chunk]) : chunk;
+    if (!gotHeader) {
+      if (buf.length < 13) return;
+      if (buf.toString('latin1', 0, 3) !== 'FLV') { buf = Buffer.alloc(0); return; }
+      const off = buf.readUInt32BE(5);
+      if (buf.length < off + 4) return;
+      buf = buf.subarray(off + 4); gotHeader = true;
+    }
+    while (buf.length >= 11) {
+      const type = buf[0], size = buf.readUIntBE(1, 3);
+      if (buf.length < 11 + size + 4) return;
+      const body = buf.subarray(11, 11 + size);
+      if (type === 18) { meta = { ...meta, ...readMetaData(body) }; fill(); }
+      else if (type === 9 && size && !info.video) {
+        const f = body[0];
+        const codec = (f & 0x80) ? FOURCC[body.toString('latin1', 1, 5)] || body.toString('latin1', 1, 5) : VIDEO_CODECS[f & 0x0f] || 'other';
+        info.video = { codec, width: null, height: null, fps: null }; fill();
+      } else if (type === 8 && size && !info.audio) {
+        const f = body[0];
+        info.audio = { codec: AUDIO_CODECS[f >> 4] || 'other', rate: [5512, 11025, 22050, 44100][(f >> 2) & 3], channels: (f & 1) ? 'stereo' : 'mono' }; fill();
+      }
+      buf = buf.subarray(11 + size + 4);
+    }
+  };
+}
+
+module.exports = { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker, makeFlvInfo };
