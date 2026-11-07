@@ -36,7 +36,9 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
   function idleStart() {
     if (idle || !vc) return;
     const frame = idleFrame();
-    idle = setInterval(() => { if (vc && vc.stdin.writable) vc.stdin.write(frame); }, 200);
+    // Once a second is enough: softcam shows the last picture again by itself when no new one comes (every 0.5 s).
+    // A picture is skipped while the helper has not taken the last ones yet.
+    idle = setInterval(() => { if (vc && vc.stdin.writable && vc.stdin.writableLength < frame.length * 2) vc.stdin.write(frame); }, 1000);
     if (idle.unref) idle.unref();
   }
   function idleStop() { if (idle) { clearInterval(idle); idle = null; } }

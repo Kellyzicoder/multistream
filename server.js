@@ -887,7 +887,11 @@ let studio = { scenes: [], current: '', preview: '', audio: [] };
 try { studio = { ...studio, ...JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) }; } catch {}
 let studioRev = 1;
 function saveStudio() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio)); } catch {} studioRev++; }
-app.get('/api/studio', (req, res) => res.json({ ...studio, rev: studioRev }));
+// ?rev=N: when nothing changed since N, a short answer (the Studio asks often)
+app.get('/api/studio', (req, res) => {
+  if (req.query && String(req.query.rev) === String(studioRev)) return res.json({ same: true, rev: studioRev, preview: studio.preview || '' });
+  res.json({ ...studio, rev: studioRev });
+});
 app.put('/api/studio', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Edit scenes on the church PC' });
   const b = req.body || {};

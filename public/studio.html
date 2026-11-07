@@ -512,6 +512,13 @@ setInterval(() => {
   });
   // a camera that failed (unplugged, busy) is tried again every few seconds
   cams.forEach((c, k) => { if (c.dead && used.has(k) && Date.now() - c.seen > 4000) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} cams.delete(k); } });
+  // screens, windows, web pages and phone cameras that no scene uses any more are let go the same way
+  const usedCap = new Set(), usedBoard = new Set(), usedIp = new Set();
+  studio.scenes.forEach((s) => s.layers.forEach((l) => { usedCap.add(capKey(l)); if (l.url) { usedBoard.add(boardKey(l)); usedIp.add(l.url); } }));
+  const later = (o) => { if (!o.unusedAt) o.unusedAt = Date.now(); return Date.now() - o.unusedAt > 2500; };
+  caps.forEach((c, k) => { if (usedCap.has(k)) { c.unusedAt = 0; return; } if (later(c)) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(k); } });
+  boards.forEach((b, k) => { if (usedBoard.has(k)) { b.unusedAt = 0; return; } if (later(b)) { if (window.msNative) window.msNative.browserClose(k); boards.delete(k); } });
+  ipcams.forEach((i, k) => { if (usedIp.has(k)) { i.unusedAt = 0; return; } if (later(i)) { i.src = ''; ipcams.delete(k); } });
 }, 1000);
 // Screens and windows. Asking the app one at a time, because each ask names what it wants.
 let capQ = Promise.resolve();
@@ -1209,7 +1216,8 @@ function renderProps() {
     const rs = document.createElement('button'); rs.className = 'sm'; rs.textContent = 'Reset picture tools'; rs.onclick = () => { delete l.pfx; save(); renderProps(); }; dt.appendChild(rs);
     box.append(dt);
   }
-  if (l.type === 'browser' || l.type === 'ipcam') { const u = inp('url'); u.placeholder = 'http://...'; box.append(field('Address', u)); }
+  // the address is used once you finish typing (Enter, or click away), not on every letter
+  if (l.type === 'browser' || l.type === 'ipcam') { const u = inp('url'); u.placeholder = 'http://...'; u.oninput = null; u.onchange = () => { l.url = u.value.trim(); save(); }; box.append(field('Address', u)); }
   if (l.type === 'screen' || l.type === 'window') {
     const win = l.type === 'window';
     const sl = document.createElement('select'), im = document.createElement('img');
@@ -1663,7 +1671,14 @@ function drawSelection() {
   if (!l.locked) { ectx.fillStyle = '#ff3b3b'; const z = 8 * css; HANDLES.forEach((h) => { const [x, y] = handlePos(b, h); ectx.fillRect(x * k - z / 2, y * k - z / 2, z, z); }); }
   ectx.restore();
 }
-setInterval(() => { drawScene(ectx, byName(editing), ev.width / SW, false); drawSelection(); }, 50);
+// When you edit the scene that is on air, the finished Program picture is copied (one quick copy)
+// instead of drawing every item of the scene a second time.
+setInterval(() => {
+  const s = byName(editing);
+  if (s && editing === shown && !trans && cv.width >= ev.width) { ectx.save(); ectx.setTransform(1, 0, 0, 1, 0, 0); ectx.drawImage(cv, 0, 0, ev.width, ev.height); ectx.restore(); }
+  else drawScene(ectx, s, ev.width / SW, false);
+  drawSelection();
+}, 50);
 // the line under the Properties window and the camera's real size
 setInterval(() => {
   const el = $('#camInfo'); if (!el) return;
@@ -1907,9 +1922,10 @@ $('#projBtn').onclick = () => {
 // ---------------- follow the phone / Control Room, and give it pictures ----------------
 async function poll() {
   try {
-    const s = await fetch('/api/studio').then((r) => r.json());
+    // ?rev: the app answers with the scenes only when they changed since the last look
+    const s = await fetch('/api/studio?rev=' + encodeURIComponent(lastRev || '')).then((r) => r.json());
     serverPreview = s.preview || '';
-    if (s.rev !== lastRev && !saveT && !drag) {
+    if (!s.same && s.rev !== lastRev && !saveT && !drag) {
       const wasEditing = editing;
       studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '' }; lastRev = s.rev;
       editing = byName(wasEditing) ? wasEditing : studio.current;
@@ -1936,15 +1952,21 @@ async function shots() {
       if (Date.now() - pingAt < 1500) { shotBusy = false; return; }
       pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;
     }
-    drawScene(sctx, byName(studio.current), 480 / SW, true); const prog = small.toDataURL('image/jpeg', 0.5);
+    // the Program picture is a small copy of what is on air (one quick copy, not drawing the scene again)
+    if (cv.width >= 480) sctx.drawImage(cv, 0, 0, 480, 270); else drawScene(sctx, byName(studio.current), 480 / SW, true);
+    const prog = small.toDataURL('image/jpeg', 0.5);
     let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 480 / SW, false); pv = small.toDataURL('image/jpeg', 0.5); }
     const body = { prog, pv };
+    // the small scene pictures are sent only when one of them changed (a scene with a camera changes each time)
     if (Date.now() - thumbAt > 4000 || !Object.keys(thumbs).length) {
-      thumbAt = Date.now(); thumbs = {};
-      studio.scenes.forEach((s) => { drawScene(tctx, s, 320 / SW, false); thumbs[s.name] = tiny.toDataURL('image/jpeg', 0.5); });
-      body.thumbs = thumbs;
+      thumbAt = Date.now(); const next = {};
+      studio.scenes.forEach((s) => { drawScene(tctx, s, 320 / SW, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.5); });
+      const names = Object.keys(next), changed = names.length !== Object.keys(thumbs).length || names.some((n) => next[n] !== thumbs[n]);
+      thumbs = next;
+      if (changed) body.thumbs = thumbs;
     }
     const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); watching = Boolean(r && r.watching); pingAt = Date.now();
+    if (r && r.wantThumbs) thumbs = {}; // the app has none (it started again): send them next time
   } catch {}
   shotBusy = false;
 }

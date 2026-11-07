@@ -861,10 +861,14 @@ function stopPreview(keepMessage) {
   if (!keepMessage) setPreviewMsg($('#pvSwitch').checked ? '' : 'Preview is off');
 }
 
+// The preview only plays while the Stream page is on screen (not on the Control Room, and not while the
+// window is minimised or hidden), so the computer does not decode video nobody is looking at.
 function syncPreview() {
-  if (last.obsLive && $('#pvSwitch').checked) startPreview();
+  let onStream = true; try { onStream = page === 'dash'; } catch {} // (page is set further down)
+  if (last.obsLive && $('#pvSwitch').checked && onStream && !document.hidden) startPreview();
   else stopPreview();
 }
+document.addEventListener('visibilitychange', () => syncPreview());
 
 $('#pv').addEventListener('playing', () => setPreviewMsg(''));
 $('#pvSwitch').addEventListener('change', () => {
@@ -1020,6 +1024,7 @@ function showPage(p) {
   try { history.replaceState(null, '', page === 'cr' ? '#control-room' : location.pathname + location.search); } catch {}
   renderCr();
   pollThumbs();
+  syncPreview();
 }
 pageTabs.forEach((b) => { b.onclick = () => { if (b.dataset.page === 'cr') openCrMenu(b); else showPage(b.dataset.page); }; });
 // Control Room tab: a drop-down with New window and each display (like OBS projectors)
@@ -1490,8 +1495,9 @@ async function pollChat() {
       box.appendChild(d);
     }
     chatSeq = r.seq;
-    const all = box.querySelectorAll('.cm');
-    while (all.length > 200 && box.querySelector('.cm')) box.removeChild(box.querySelector('.cm'));
+    // keep the newest 200 comments (remove only the extra old ones)
+    let extra = box.querySelectorAll('.cm').length - 200;
+    while (extra-- > 0) box.removeChild(box.querySelector('.cm'));
     $('#chatNone').hidden = box.querySelectorAll('.cm').length > 0;
     $('#chatCnt').textContent = box.querySelectorAll('.cm').length ? box.querySelectorAll('.cm').length + ' shown' : '';
     if (stick) box.scrollTop = box.scrollHeight;
