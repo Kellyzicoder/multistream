@@ -365,6 +365,7 @@
           <p class="note" id="outNote"></p>
           <div class="f"><label>Canvas</label><span>1920 x 1080 (items are placed on this, like OBS)</span></div>
           <div class="f"><label>Encoder</label><span id="encName">...</span></div>
+          <div class="f"><label>Encoding</label><span>The picture is encoded once for the stream and the recording. If this computer cannot do that, the app goes back to the older way by itself and tells you.</span></div>
           <div class="f"><label>Keyframes</label><span>Every 2 seconds (what YouTube and Facebook ask for)</span></div>
         </section>
         <section class="sp" data-sp="output">
@@ -512,6 +513,13 @@ setInterval(() => {
   });
   // a camera that failed (unplugged, busy) is tried again every few seconds
   cams.forEach((c, k) => { if (c.dead && used.has(k) && Date.now() - c.seen > 4000) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} cams.delete(k); } });
+  // screens, windows, web pages and phone cameras that no scene uses any more are let go the same way
+  const usedCap = new Set(), usedBoard = new Set(), usedIp = new Set();
+  studio.scenes.forEach((s) => s.layers.forEach((l) => { usedCap.add(capKey(l)); if (l.url) { usedBoard.add(boardKey(l)); usedIp.add(l.url); } }));
+  const later = (o) => { if (!o.unusedAt) o.unusedAt = Date.now(); return Date.now() - o.unusedAt > 2500; };
+  caps.forEach((c, k) => { if (usedCap.has(k)) { c.unusedAt = 0; return; } if (later(c)) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(k); } });
+  boards.forEach((b, k) => { if (usedBoard.has(k)) { b.unusedAt = 0; return; } if (later(b)) { if (window.msNative) window.msNative.browserClose(k); boards.delete(k); } });
+  ipcams.forEach((i, k) => { if (usedIp.has(k)) { i.unusedAt = 0; return; } if (later(i)) { i.src = ''; ipcams.delete(k); } });
 }, 1000);
 // Screens and windows. Asking the app one at a time, because each ask names what it wants.
 let capQ = Promise.resolve();
@@ -556,7 +564,13 @@ function getBoard(l) {
 if (window.msNative) window.msNative.onFrame((id, w, h, buf) => {
   const b = boards.get(id); if (!b) return;
   if (b.c.width !== w || b.c.height !== h) { b.c.width = w; b.c.height = h; }
-  const src = new Uint8ClampedArray(buf.buffer ? buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) : buf);
+  const bytes = buf.buffer ? new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength) : new Uint8Array(buf);
+  b.c.__ver = (b.c.__ver || 0) + 1; // a new picture of the page (see pic())
+  // the picture comes as BGRA: the browser turns it into a picture directly (no slow loop over every pixel)
+  if (window.VideoFrame) {
+    try { const vf = new VideoFrame(bytes, { format: 'BGRA', codedWidth: w, codedHeight: h, timestamp: 0 }); const bx = b.c.getContext('2d'); bx.clearRect(0, 0, w, h); bx.drawImage(vf, 0, 0); vf.close(); b.ready = true; return; } catch {}
+  }
+  const src = new Uint8ClampedArray(bytes);
   for (let i = 0; i < src.length; i += 4) { const r = src[i + 2]; src[i + 2] = src[i]; src[i] = r; }
   b.c.getContext('2d').putImageData(new ImageData(src, w, h), 0, 0); b.ready = true;
 });
@@ -625,7 +639,7 @@ function drawCentered(c, l, text, label) {
 }
 // ---- picture tools: crop, colour, green screen, shape, flip, see-through ----
 // l.pfx = { crop:{l,t,r,b} in %, bri, con, sat (percent, 100 = normal), key:{on,color,sim,smooth}, shape:'', round, flip, op }
-const pcv = new Map();
+const pcv = new Map(), pcvKey = new Map();
 function hasPfx(f) {
   if (!f) return false;
   const k = f.crop || {};
@@ -659,6 +673,12 @@ function pic(c, l, el, sw, sh) {
   // work on a copy no bigger than 1280 wide, so the green screen stays fast
   const k2 = Math.min(1, 1280 / Math.max(1, w)), pw = Math.max(1, Math.round(w * k2)), ph = Math.max(1, Math.round(h * k2));
   let cv2 = pcv.get(l.id); if (!cv2) { cv2 = document.createElement('canvas'); pcv.set(l.id, cv2); }
+  // The worked picture is kept and shared by the Program, the edit preview, the recording and the virtual camera.
+  // A picture is worked once; a video or camera at most about 30 times a second; a web page when it changes.
+  const stamp = el instanceof HTMLImageElement ? (el.currentSrc || el.src) : el.__ver != null ? 'v' + el.__ver : Math.floor(performance.now() / 33);
+  const want = [pw, ph, sx, sy, ssw, ssh, stamp, JSON.stringify(f)].join('|');
+  if (pcvKey.get(l.id) === want) { c.drawImage(cv2, 0, 0, pw, ph, x, y, w, h); c.restore(); return; }
+  pcvKey.set(l.id, want);
   if (cv2.width !== pw || cv2.height !== ph) { cv2.width = pw; cv2.height = ph; }
   const px = cv2.getContext('2d', { willReadFrequently: true });
   px.clearRect(0, 0, pw, ph);
@@ -1209,7 +1229,8 @@ function renderProps() {
     const rs = document.createElement('button'); rs.className = 'sm'; rs.textContent = 'Reset picture tools'; rs.onclick = () => { delete l.pfx; save(); renderProps(); }; dt.appendChild(rs);
     box.append(dt);
   }
-  if (l.type === 'browser' || l.type === 'ipcam') { const u = inp('url'); u.placeholder = 'http://...'; box.append(field('Address', u)); }
+  // the address is used once you finish typing (Enter, or click away), not on every letter
+  if (l.type === 'browser' || l.type === 'ipcam') { const u = inp('url'); u.placeholder = 'http://...'; u.oninput = null; u.onchange = () => { l.url = u.value.trim(); save(); }; box.append(field('Address', u)); }
   if (l.type === 'screen' || l.type === 'window') {
     const win = l.type === 'window';
     const sl = document.createElement('select'), im = document.createElement('img');
@@ -1379,16 +1400,19 @@ async function connectSend() {
   try { ensureAudio(); await syncAudio(); } catch {}
   const out = new MediaStream(cv.captureStream(OUT.fps).getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
-  wsOut = openPipe(`/studio-ingest?h=${OUT.h}&fps=${OUT.fps}&kbps=${OUT.kbps}`);
+  const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
+  const fast = useFast(mt);
+  wsOut = openPipe(`/studio-ingest?h=${OUT.h}&fps=${OUT.fps}&kbps=${OUT.kbps}${fast ? '&copy=1' : ''}`);
   wsOut.binaryType = 'arraybuffer';
   wsOut.onopen = () => {
-    const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
-    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: 128000 });
+    // fast: the browser's bitrate is the one we send, so it is set to the target exactly
+    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: fast ? OUT.kbps * 1000 : Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: 128000 });
     rec.ondataavailable = async (e) => { if (e.data.size && wsOut && wsOut.readyState === 1) wsOut.send(await e.data.arrayBuffer()); };
     rec.start(250);
     cv.classList.add('live');
   };
   const mine = wsOut;
+  wsOut.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.fallback) { fastOff = true; flash('The fast encoding did not work on this computer. Using the older way now.', false); } } catch {} };
   wsOut.onclose = () => { if (wsOut !== mine) return; dropSend(); if (wantSend) scheduleRetry(); };
 }
 function dropSend() {
@@ -1432,10 +1456,11 @@ async function startRec() {
   try { ensureAudio(); await syncAudio(); } catch {}
   const out = new MediaStream(rcv.captureStream(rfps).getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
-  const ws = recWs = openPipe(`/studio-record?h=${rcv.height}&mbit=${mb}&fps=${rfps}`);
+  const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
+  const fast = useFast(mt);
+  const ws = recWs = openPipe(`/studio-record?h=${rcv.height}&mbit=${mb}&fps=${rfps}${fast ? '&copy=1' : ''}`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
-    const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
     recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.min(80, Math.max(mb, 6)) * 1000000, audioBitsPerSecond: 160000 });
     recMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     recMr.start(500);
@@ -1444,7 +1469,7 @@ async function startRec() {
   };
   ws.onclose = () => { if (recWs === ws) endRec(true); };
   ws.onerror = () => {};
-  ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) flash('Recording problem: ' + j.error, false); if (j.saved) flash('Saved: ' + j.saved + ' (in your Videos/Multistream folder)', true); } catch {} };
+  ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.fallback) { fastOff = true; flash('The fast encoding did not work on this computer. Start Recording again to use the older way.', false); } if (j.error) flash('Recording problem: ' + j.error, false); if (j.saved) flash('Saved: ' + j.saved + ' (in your Videos/Multistream folder)', true); } catch {} };
 }
 function endRec(fromClose) {
   clearInterval(recTick); recW = 0;
@@ -1663,7 +1688,14 @@ function drawSelection() {
   if (!l.locked) { ectx.fillStyle = '#ff3b3b'; const z = 8 * css; HANDLES.forEach((h) => { const [x, y] = handlePos(b, h); ectx.fillRect(x * k - z / 2, y * k - z / 2, z, z); }); }
   ectx.restore();
 }
-setInterval(() => { drawScene(ectx, byName(editing), ev.width / SW, false); drawSelection(); }, 50);
+// When you edit the scene that is on air, the finished Program picture is copied (one quick copy)
+// instead of drawing every item of the scene a second time.
+setInterval(() => {
+  const s = byName(editing);
+  if (s && editing === shown && !trans && cv.width >= ev.width) { ectx.save(); ectx.setTransform(1, 0, 0, 1, 0, 0); ectx.drawImage(cv, 0, 0, ev.width, ev.height); ectx.restore(); }
+  else drawScene(ectx, s, ev.width / SW, false);
+  drawSelection();
+}, 50);
 // the line under the Properties window and the camera's real size
 setInterval(() => {
   const el = $('#camInfo'); if (!el) return;
@@ -1732,6 +1764,9 @@ try { snapOn = localStorage.getItem('ms_snap') !== '0'; askStop = localStorage.g
 $('#optSnap').onchange = () => { snapOn = $('#optSnap').checked; try { localStorage.setItem('ms_snap', snapOn ? '1' : '0'); } catch {} };
 $('#optConfirm').onchange = () => { askStop = $('#optConfirm').checked; try { localStorage.setItem('ms_askstop', askStop ? '1' : '0'); } catch {} };
 $('#studioOpen').onchange = () => { try { localStorage.setItem('ms_studio_open', $('#studioOpen').value); } catch {} };
+// Encode once: the browser's H.264 is passed on as it is. fastOff becomes true for this session if that fails here.
+let fastOff = false;
+const useFast = (mt) => !fastOff && /h264/.test(mt || '');
 $('#resetStudio').onclick = () => {
   if (!confirm('Put the video size, recording quality, transition, monitoring output and options back to how they started?')) return;
   ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_studio_open', 'ms_layout'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
@@ -1907,9 +1942,10 @@ $('#projBtn').onclick = () => {
 // ---------------- follow the phone / Control Room, and give it pictures ----------------
 async function poll() {
   try {
-    const s = await fetch('/api/studio').then((r) => r.json());
+    // ?rev: the app answers with the scenes only when they changed since the last look
+    const s = await fetch('/api/studio?rev=' + encodeURIComponent(lastRev || '')).then((r) => r.json());
     serverPreview = s.preview || '';
-    if (s.rev !== lastRev && !saveT && !drag) {
+    if (!s.same && s.rev !== lastRev && !saveT && !drag) {
       const wasEditing = editing;
       studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '' }; lastRev = s.rev;
       editing = byName(wasEditing) ? wasEditing : studio.current;
@@ -1936,15 +1972,21 @@ async function shots() {
       if (Date.now() - pingAt < 1500) { shotBusy = false; return; }
       pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;
     }
-    drawScene(sctx, byName(studio.current), 480 / SW, true); const prog = small.toDataURL('image/jpeg', 0.5);
+    // the Program picture is a small copy of what is on air (one quick copy, not drawing the scene again)
+    if (cv.width >= 480) sctx.drawImage(cv, 0, 0, 480, 270); else drawScene(sctx, byName(studio.current), 480 / SW, true);
+    const prog = small.toDataURL('image/jpeg', 0.5);
     let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 480 / SW, false); pv = small.toDataURL('image/jpeg', 0.5); }
     const body = { prog, pv };
+    // the small scene pictures are sent only when one of them changed (a scene with a camera changes each time)
     if (Date.now() - thumbAt > 4000 || !Object.keys(thumbs).length) {
-      thumbAt = Date.now(); thumbs = {};
-      studio.scenes.forEach((s) => { drawScene(tctx, s, 320 / SW, false); thumbs[s.name] = tiny.toDataURL('image/jpeg', 0.5); });
-      body.thumbs = thumbs;
+      thumbAt = Date.now(); const next = {};
+      studio.scenes.forEach((s) => { drawScene(tctx, s, 320 / SW, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.5); });
+      const names = Object.keys(next), changed = names.length !== Object.keys(thumbs).length || names.some((n) => next[n] !== thumbs[n]);
+      thumbs = next;
+      if (changed) body.thumbs = thumbs;
     }
     const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); watching = Boolean(r && r.watching); pingAt = Date.now();
+    if (r && r.wantThumbs) thumbs = {}; // the app has none (it started again): send them next time
   } catch {}
   shotBusy = false;
 }

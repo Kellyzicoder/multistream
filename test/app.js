@@ -47,7 +47,8 @@ async function until(fn, ms, what) {
   const fakeFb = spawn(FF, ['-hide_banner', '-loglevel', 'error', '-listen', '1', '-i', 'rtmp://127.0.0.1:19351/live/test', '-c', 'copy', '-y', fb], { stdio: 'inherit' });
 
   const app = await electron.launch({
-    args: ['--no-sandbox', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', ROOT],
+    // the test machine has no graphics card: draw with Chromium's software renderer (only in this test)
+    args: ['--no-sandbox', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', ROOT],
     env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', MULTISTREAM_DATA: DATA, MULTISTREAM_RECORDINGS: REC, MULTISTREAM_ENCODER: 'software' },
     timeout: 90000,
   });
