@@ -41,7 +41,8 @@
       "outargs.js",
       "public/**/*",
       "package.json",
-      "vcam.js"
+      "vcam.js",
+      "secret.js"
     ],
     "asarUnpack": [
       "node_modules/ffmpeg-static/**"
