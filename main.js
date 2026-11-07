@@ -89,7 +89,7 @@ function createWindow() {
     height: 780,
     minWidth: 900,
     minHeight: 640,
-    title: 'Multistream 3',
+    title: 'Multistream',
     autoHideMenuBar: true,
     backgroundColor: '#eaf1fb',
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
