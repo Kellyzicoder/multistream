@@ -321,7 +321,12 @@ async function until(fn, ms, what) {
 
   await dash.screenshot({ path: path.join(OUT, '4-dashboard-after.png') });
   await app.close();
-  const bad = errors.filter((e) => !/favicon|Failed to load resource.*404/.test(e));
+  // one 400 is expected: the tcp:// channel address that step 11 sends on purpose
+  let expected400 = 1;
+  const bad = errors.filter((e) => {
+    if (expected400 && /Failed to load resource.*status of 400/.test(e)) { expected400--; return false; }
+    return !/favicon|Failed to load resource.*404/.test(e);
+  });
   if (bad.length) console.log('page errors:\n  ' + bad.join('\n  '));
   assert.strictEqual(bad.length, 0, 'there were page errors');
   ok('no page errors');
