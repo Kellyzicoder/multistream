@@ -250,9 +250,13 @@
 #vcPrev span{position:absolute;left:6px;bottom:4px;font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff}
 .lyr .cog{flex:none;width:28px;height:26px;padding:0;font-size:16px;line-height:1;border-radius:8px;opacity:.9}
 .lyr .cog:hover{opacity:1;background:var(--gl2);border-color:var(--gl-line)}
+  .alertbar { display:none; align-items:center; gap:12px; justify-content:space-between; background:var(--errbg); border-bottom:1px solid var(--errline); color:var(--errsvg); padding:10px 22px; font-size:13px; font-weight:500; position:fixed; top:0; left:0; right:0; z-index:100; }
+  .alertbar.on { display:flex; }
+  .alertbar button { border:1px solid var(--errline); background:transparent; color:inherit; border-radius:999px; padding:5px 12px; font-size:12px; flex:none; }
 </style>
 </head>
 <body>
+<div class="alertbar" id="alertBar" role="alert"><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 <div class="obs">
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
   <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside><div class="split v" id="splitL" title="Drag to make the left panels wider or narrower" hidden></div>
@@ -2078,6 +2082,24 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   window.addEventListener('resize', () => { docks.forEach((d) => { if (L.float[d.dataset.id]) paint(d); }); applySizes(); });
   const rb = document.getElementById('resetLayout'); if (rb) rb.onclick = () => { L = fresh(); layout(); save(); };
   layout();
+})();
+// Errors from the stream show here too, so they are seen while working in the Studio
+(function () {
+  const bar = document.getElementById('alertBar'), txt = document.getElementById('alertTxt');
+  document.getElementById('alertX').onclick = () => { txt.textContent = ''; bar.classList.remove('on'); };
+  const prev = {}; let prevObs = null;
+  function show(t) { txt.textContent = txt.textContent && txt.textContent !== t ? txt.textContent + '  \u2022  ' + t : t; bar.classList.add('on'); }
+  async function check() {
+    let s; try { s = await fetch('/api/state', { cache: 'no-store' }).then((r) => r.json()); } catch { return; }
+    for (const d of s.destinations || []) {
+      const st = (d.status || {}).state;
+      if (st === 'error' && prev[d.id] !== 'error') show(`${d.name} stopped receiving: ${(d.status || {}).message || 'no reason given'}`);
+      prev[d.id] = st;
+    }
+    if (prevObs === true && s.obsLive === false && s.session && (s.session.youtube || s.session.facebook)) show('The video stopped coming in, but the live is still open. Press End live when the service is finished.');
+    prevObs = s.obsLive;
+  }
+  check(); setInterval(check, 2000);
 })();
 </script>
 </body>

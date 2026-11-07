@@ -95,7 +95,7 @@
   .files .none { color:var(--muted); font-size:12.5px; padding:6px 0; }
   #recRow, #pfRow { margin-top:14px; }
   .go.end { background:var(--red); color:#fff; box-shadow:none; }
-  .alertbar { display:flex; align-items:center; gap:12px; justify-content:space-between; background:var(--errbg); border-bottom:1px solid var(--errline); color:var(--errsvg); padding:10px 22px; font-size:13px; font-weight:500; position:relative; z-index:6; }
+  .alertbar { display:flex; align-items:center; gap:12px; justify-content:space-between; background:var(--errbg); border-bottom:1px solid var(--errline); color:var(--errsvg); padding:10px 22px; font-size:13px; font-weight:500; position:fixed; top:0; left:0; right:0; z-index:100; }
   .alertbar button { border:1px solid var(--errline); background:transparent; color:inherit; border-radius:999px; padding:5px 12px; font-size:12px; flex:none; }
   .pf { padding:2px 0 6px; }
   .pf .it { display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--rule); font-size:12.5px; line-height:1.45; }
@@ -434,17 +434,6 @@
   .cr-ch .b2 { text-align:left; border-radius:16px; padding:12px 16px; font-size:13px; }
   .cr-ch .b2 small { display:block; margin-top:2px; font-size:11px; font-weight:400; opacity:.75; white-space:normal; }
 
-  /* ---------- split screen: Stream on the left, Control Room on the right, drag the bar to choose the sizes ---------- */
-  #splitBar { position:fixed; top:66px; bottom:0; left:calc(var(--sp, 50%) - 7px); width:14px; cursor:col-resize; z-index:30; touch-action:none; }
-  #splitBar::after { content:""; position:absolute; left:5px; top:50%; width:4px; height:56px; margin-top:-28px; border-radius:4px; background:var(--muted); opacity:.55; }
-  #splitBar:hover::after, #splitBar.drag::after { opacity:1; background:var(--blue, #3b82f6); }
-  body.splitting { user-select:none; cursor:col-resize; }
-  body.split .app { width:var(--sp, 50%); box-sizing:border-box; grid-template-columns:minmax(0,1fr); height:calc(100% - 66px); overflow:auto; padding:12px 18px 12px 12px; gap:12px; min-height:0; }
-  body.split .side { display:contents; }
-  body.split .stage { min-height:420px; overflow:visible; }
-  body.split #crView { position:fixed; top:66px; right:0; width:calc(100% - var(--sp, 50%)); height:calc(100% - 66px); box-sizing:border-box; max-width:none; margin:0; padding:4px 12px 16px 18px; overflow:auto; }
-  body.split #splitTxt { display:none; }
-  body.split #splitBtn { color:var(--text); background:var(--btn); }
 </style>
 </head>
 <body>
@@ -459,10 +448,6 @@
     <button type="button" data-page="cr">Control Room</button>
   </nav>
   <span class="sp"></span>
-  <button class="ib" id="splitBtn" type="button" title="Split screen: the Control Room and the Studio side by side" aria-pressed="false">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M12 4v16"/></svg>
-    <span id="splitTxt">Split screen</span>
-  </button>
   <span class="chip" id="chip">OFFLINE</span>
   <button class="ib" id="setBtn" type="button" title="Settings">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span>
@@ -734,7 +719,6 @@
 
 <script src="/vendor/flv.min.js"></script>
 <script src="/demo.js"></script>
-<div id="splitBar" hidden role="separator" aria-orientation="vertical" title="Drag to change the sizes. Double-click to make them equal."></div>
 <script>
 const $ = (s) => document.querySelector(s);
 const api = (url, method = 'GET', body) => window.DEMO ? window.demoApi(url, method) :
@@ -1054,7 +1038,6 @@ function pollThumbs() {}
 
 // Control Room (multiview) and the page switcher
 let page = 'dash';
-let splitOn = false; // split screen: the Stream page and the Control Room are both on screen
 let crPrev = '';
 const pageTabs = document.querySelectorAll('#pageTabs button');
 function showPage(p) {
@@ -1064,8 +1047,8 @@ function showPage(p) {
     return;
   }
   page = p === 'cr' ? 'cr' : 'dash';
-  $('.app').hidden = page === 'cr' && !splitOn;
-  $('#crView').hidden = page !== 'cr' && !splitOn;
+  $('.app').hidden = page === 'cr';
+  $('#crView').hidden = page !== 'cr';
   pageTabs.forEach((b) => { if (b.dataset.page === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   try { history.replaceState(null, '', page === 'cr' ? '#control-room' : location.pathname + location.search); } catch {}
   renderCr();
@@ -1124,7 +1107,7 @@ function fitCrTiles() {
 }
 new ResizeObserver(() => fitCrTiles()).observe($('.cr'));
 function renderCr() {
-  if (page !== 'cr' && !splitOn) return;
+  if (page !== 'cr') return;
   const d = crData();
   const box = $('#crTiles');
   if (!d.on) { box.textContent = ''; box.dataset.key = ''; return; }
@@ -1157,7 +1140,7 @@ function renderCr() {
 }
 let crBusy = false;
 async function pollCr() {
-  if ((page !== 'cr' && !splitOn) || crBusy || document.hidden) return;
+  if (page !== 'cr' || crBusy || document.hidden) return;
   crBusy = true;
   try {
     const sh = await api('/api/studio/shots?tv=' + (stu.tv || 0)); stu.alive = !!sh.alive; const keep = stu.shots.thumbs; stu.shots = sh; if (!sh.thumbs) stu.shots.thumbs = keep; stu.tv = sh.tv || 0;
@@ -1493,16 +1476,18 @@ $('#pfBtn').onclick = async () => {
 };
 
 // Alerts: a red bar when something stops
+// Several problems at once are all kept, one after another, until Dismiss is pressed
 function showAlert(text) {
-  $('#alertTxt').textContent = text;
+  const t = $('#alertTxt'), last = t.textContent;
+  t.textContent = last && last !== text ? last + '  •  ' + text : text;
   $('#alertBar').hidden = false;
 }
-$('#alertX').onclick = () => { $('#alertBar').hidden = true; };
+$('#alertX').onclick = () => { $('#alertTxt').textContent = ''; $('#alertBar').hidden = true; };
 let prevDest = {}, prevObs = null, noSigSince = 0, noSigShown = false;
 function checkAlerts(s) {
   for (const d of s.destinations || []) {
     const st = (d.status || {}).state;
-    if ((prevDest[d.id] === 'live' || prevDest[d.id] === 'starting') && st === 'error') showAlert(`${d.name} stopped receiving: ${(d.status || {}).message || 'no reason given'}`);
+    if (st === 'error' && prevDest[d.id] !== 'error') showAlert(`${d.name} stopped receiving: ${(d.status || {}).message || 'no reason given'}`);
     prevDest[d.id] = st;
   }
   const open = s.session && (s.session.youtube || s.session.facebook);
@@ -1555,30 +1540,6 @@ setInterval(refresh, 2000);
   }, { passive: false });
 })();
 
-// Split screen (like Arc): the Stream page and the Control Room side by side. Drag the bar to choose the sizes.
-(function () {
-  const btn = $('#splitBtn'), bar = $('#splitBar');
-  let pct = 50;
-  try { const v = Number(localStorage.getItem('ms_split_pct')); if (v >= 25 && v <= 75) pct = v; } catch {}
-  const setPct = (v) => { pct = Math.max(25, Math.min(75, v)); document.documentElement.style.setProperty('--sp', pct + '%'); try { localStorage.setItem('ms_split_pct', String(Math.round(pct))); } catch {} };
-  function turn(v) {
-    if (v === splitOn) return;
-    splitOn = v;
-    document.body.classList.toggle('split', v);
-    bar.hidden = !v;
-    btn.setAttribute('aria-pressed', String(v)); btn.title = v ? 'Close the split screen' : 'Split screen: the Stream page and the Control Room side by side';
-    if (v) setPct(pct); else document.documentElement.style.removeProperty('--sp');
-    showPage(v ? 'dash' : page);
-  }
-  btn.onclick = () => turn(!splitOn);
-  bar.addEventListener('pointerdown', (e) => {
-    bar.setPointerCapture(e.pointerId); bar.classList.add('drag'); document.body.classList.add('splitting');
-    const move = (ev) => setPct((ev.clientX / window.innerWidth) * 100);
-    const up = () => { bar.classList.remove('drag'); document.body.classList.remove('splitting'); bar.removeEventListener('pointermove', move); bar.removeEventListener('pointerup', up); };
-    bar.addEventListener('pointermove', move); bar.addEventListener('pointerup', up);
-  });
-  bar.ondblclick = () => setPct(50);
-})();
 </script>
 </body>
 </html>
