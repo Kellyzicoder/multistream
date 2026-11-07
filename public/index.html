@@ -619,13 +619,12 @@
         <button type="button" role="tab" data-pane="youtube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg> YouTube</button>
         <button type="button" role="tab" data-pane="facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8.5h2.5V5H14a3.5 3.5 0 0 0-3.5 3.5V11H8v3.5h2.5V21H14v-6.5h2.5L17 11h-3V8.5z"/></svg> Facebook</button>
         <button type="button" role="tab" data-pane="recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6" fill="currentColor"/></svg> Recording</button>
-                <button type="button" role="tab" data-pane="phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg> Phone</button>
       </nav>
       <div class="smain">
 
         <section class="pane" data-pane="appearance" role="tabpanel" aria-label="Appearance">
           <div class="grp"><h4>Look</h4>
-            <p>Changes show straight away. They are saved on this device only, so the phone and the church computer each have their own.</p>
+            <p>Changes show straight away. They are saved on this computer.</p>
             <div class="srow"><p class="lb" id="l-th">Theme</p>
               <div class="themes" id="themes" role="group" aria-labelledby="l-th">
                 <button type="button" data-v="system"><span class="tp sy"><i class="a"></i><i class="b"></i></span>System</button>
@@ -653,7 +652,7 @@
               <div class="ctl"><label class="sw"><input type="checkbox" data-key="cb" aria-label="Colour-blind friendly colours"><span></span></label></div></div>
           </div>
           <div class="grp"><h4>Using it</h4>
-            <div class="srow"><p class="lb">Bigger buttons<small>Easier to tap on a phone</small></p>
+            <div class="srow"><p class="lb">Bigger buttons<small>Easier to tap on a touch screen</small></p>
               <div class="ctl"><label class="sw"><input type="checkbox" data-key="bigbtn" aria-label="Bigger buttons"><span></span></label></div></div>
             <div class="srow"><p class="lb">Stop animations<small>Turns off the pulsing LIVE dot</small></p>
               <div class="ctl"><label class="sw"><input type="checkbox" data-key="nomotion" aria-label="Stop animations"><span></span></label></div></div>
@@ -702,17 +701,6 @@
 
         
 
-        <section class="pane" data-pane="phone" role="tabpanel" aria-label="Phone">
-          <div class="grp"><h4>Control from phone</h4>
-            <p>Open this page on a phone or another computer that is on the same Wi-Fi.</p>
-            <div class="srow"><p class="lb">Allow other devices</p>
-              <div class="ctl"><label class="sw"><input type="checkbox" id="remOn" aria-label="Allow other devices"><span></span></label></div></div>
-            <div class="srow"><label class="lb" for="remPw">Password<small>At least 6 characters</small></label>
-              <div class="ctl"><input class="t" id="remPw" type="password" placeholder="Type a password" autocomplete="new-password"></div></div>
-            <div class="addr" id="remAddr" hidden></div>
-            <div class="srow"><p class="lb">Status</p><div class="ctl"><p class="note" id="remMsg"></p></div></div>
-          </div>
-        </section>
 
       </div>
     </div>
@@ -993,34 +981,6 @@ $('#add').onclick = async () => {
   refresh();
 };
 
-// control from phone
-function showRemote(v) {
-  $('#remOn').checked = v.enabled;
-  $('#remPw').placeholder = v.hasPassword ? 'Leave empty to keep the saved password' : 'Type a password';
-  const a = $('#remAddr');
-  const addrs = v.addresses || v.urls || [];
-  a.hidden = !(v.enabled && addrs.length);
-  a.innerHTML = 'On the phone, open this address in the browser:' + addrs.map((x) => `<code>${esc(x)}</code>`).join('');
-}
-function remNote(text, bad) { const n = $('#remMsg'); n.textContent = text; n.className = 'note' + (bad ? ' bad' : ''); }
-async function loadPhone() {
-  remNote('');
-  $('#remPw').value = '';
-  const v = await api('/api/remote');
-  if (v.error) { remNote(v.error, true); return; }
-  showRemote(v);
-}
-async function savePhone() {
-  const body = { enabled: $('#remOn').checked };
-  if ($('#remPw').value) body.password = $('#remPw').value;
-  const v = await api('/api/remote', 'PUT', body);
-  if (v.error) { remNote(v.error, true); return false; }
-  $('#remPw').value = '';
-  showRemote(v);
-  if (v.enabled && v.error) { remNote(v.error, true); return false; }
-  remNote(v.enabled ? 'Saved. Other devices can log in with the password.' : 'Saved. Other devices are blocked, and nothing is listening on the network.');
-  return true;
-}
 
 // copy buttons
 document.querySelectorAll('[data-copy]').forEach((b) => {
@@ -1379,9 +1339,9 @@ $('#ytLive').onclick = async () => {
 
 // Settings window: sidebar of sections, OK / Cancel / Apply at the bottom
 const setOverlay = $('#setOverlay');
-const paneLoaders = { youtube: loadYt, facebook: loadFb, phone: loadPhone, recording: loadRec };
-const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, phone: savePhone, recording: saveRec };
-const paneOrder = ['appearance', 'facebook', 'phone', 'recording'];
+const paneLoaders = { youtube: loadYt, facebook: loadFb, recording: loadRec };
+const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, recording: saveRec };
+const paneOrder = ['appearance', 'facebook', 'recording'];
 let dirty = {};
 let loaded = {};
 let curPane = '';
@@ -1426,7 +1386,7 @@ $('#setOk').onclick = async () => { if (await applySettings()) closeSettings(tru
 $('#setCancel').onclick = () => closeSettings(false);
 $('#setX').onclick = () => closeSettings(false);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && setOverlay.classList.contains('open')) closeSettings(false); });
-[['#fb-page', 'facebook'], ['#fb-token', 'facebook'], ['#remOn', 'phone'], ['#remPw', 'phone'], ['#recAuto', 'recording']].forEach(([id, k]) => {
+[['#fb-page', 'facebook'], ['#fb-token', 'facebook'], ['#recAuto', 'recording']].forEach(([id, k]) => {
   $(id).addEventListener('input', () => setDirty(k));
   $(id).addEventListener('change', () => setDirty(k));
 });

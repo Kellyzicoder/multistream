@@ -90,20 +90,29 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
   }
 
   // Registers the virtual camera with Windows. Windows asks for the administrator's OK once.
+  // The camera files are first copied to Program Files (only an administrator can change files there) and
+  // registered from that copy, so programs that load the camera (Zoom, Teams) never load a file that a
+  // normal user, or a harmful program running as that user, could have swapped.
   function install(unregister = false) {
     return new Promise((resolve) => {
       if (platform !== 'win32' || !dir) return resolve({ error: 'The virtual camera is only in the Windows app' });
       const inst = path.join(dir, 'softcam_installer.exe'), dll = path.join(dir, 'softcam.dll');
       if (!fs.existsSync(inst) || !fs.existsSync(dll)) return resolve({ error: 'The virtual camera files are missing from this install' });
-      const q = (s) => "'" + s.replace(/'/g, "''") + "'";
-      const ps = `Start-Process -FilePath ${q(inst)} -ArgumentList @(${q(unregister ? 'unregister' : 'register')}, ${q(dll)}) -Verb RunAs -Wait`;
-      const p = spawn('powershell.exe', ['-NoProfile', '-Command', ps], { windowsHide: true });
+      const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
+      const powershell = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+      const safe = "$d = Join-Path $env:ProgramFiles 'Multistream\\Camera'; $i = Join-Path $d 'softcam_installer.exe'; $l = Join-Path $d 'softcam.dll'";
+      // the part that runs as administrator (a copy that Zoom has open is kept, and registered again)
+      const admin = unregister
+        ? `${safe}; if (Test-Path $i) { & $i unregister $l } else { & ${q(inst)} unregister ${q(dll)} }; exit $LASTEXITCODE`
+        : `${safe}; New-Item -ItemType Directory -Force -Path $d | Out-Null; Copy-Item -Force -ErrorAction SilentlyContinue ${q(inst)}, ${q(dll)} -Destination $d; if (!(Test-Path $i) -or !(Test-Path $l)) { exit 2 }; & $i register $l; exit $LASTEXITCODE`;
+      const enc = Buffer.from(admin, 'utf16le').toString('base64');
+      const ps = `$p = Start-Process -FilePath ${q(powershell)} -ArgumentList @('-NoProfile','-NonInteractive','-EncodedCommand',${q(enc)}) -Verb RunAs -WindowStyle Hidden -Wait -PassThru; exit $p.ExitCode`;
+      const p = spawn(powershell, ['-NoProfile', '-NonInteractive', '-Command', ps], { windowsHide: true });
       let err = ''; p.stderr.on('data', (d) => { err += d; });
       p.on('error', (e) => resolve({ error: e.message }));
-      p.on('close', (code) => resolve(code ? { error: err.trim().split('\n')[0] || 'Windows did not allow it' } : { ok: true }));
+      p.on('close', (code) => resolve(code ? { error: err.trim().split('\n')[0] || (code === 2 ? 'The camera files could not be copied' : 'Windows did not allow it') } : { ok: true }));
     });
   }
-
   return { available, start, stop, quit, install, state: () => ({ available, ...info }) };
 }
 

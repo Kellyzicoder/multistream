@@ -17,6 +17,7 @@ const { createVcam } = require('./vcam');
 const { createAutoRetry } = require('./autoretry');
 const { createChat } = require('./chat');
 const { runPreflight } = require('./preflight');
+const secret = require('./secret');
 const { detectEncoder } = require('./encoder');
 const outargs = require('./outargs');
 const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker } = require('./stats');
@@ -49,7 +50,7 @@ if (check.error) {
 fs.mkdirSync(DATA_DIR, { recursive: true });
 let destinations = [];
 try {
-  destinations = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  destinations = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')).map((d) => ({ ...d, key: secret.open(d.key) || '' }));
 } catch {
   destinations = [
     { id: crypto.randomUUID(), name: 'Instagram', url: '', key: '', enabled: true },
@@ -57,7 +58,8 @@ try {
   ];
 }
 function save() {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(destinations, null, 2), { mode: 0o600 });
+  // stream keys are saved encrypted (see secret.js)
+  fs.writeFileSync(DATA_FILE, JSON.stringify(destinations.map((d) => ({ ...d, key: secret.seal(d.key) })), null, 2), { mode: 0o600 });
 }
 save();
 
@@ -122,6 +124,14 @@ function clearAlerts(group) {
 function addAlertClient(client, group) {
   alertClients.set(client, group);
   for (const a of alertNow[group].values()) { try { client.send(JSON.stringify(a)); } catch {} }
+}
+
+// never show a stream key: hide the whole key and each part of it (Facebook keys have parts after ? and &)
+function hideKey(text, key) {
+  let out = String(text);
+  const parts = [String(key || ''), ...String(key || '').split(/[?&=]/)].filter((p) => p.length >= 6).sort((a, b) => b.length - a.length);
+  for (const p of parts) out = out.split(p).join('***');
+  return out;
 }
 
 function setStatus(id, state, message = '') {
@@ -265,7 +275,7 @@ function startDestination(d) {
   }, 3000);
   p.stderr.on('data', (chunk) => {
     const text = chunk.toString().trim().split('\n').pop();
-    if (text) lastLine = text.replace(d.key, '***'); // never show the key
+    if (text) lastLine = hideKey(text, d.key); // never show the key
   });
   p.on('error', (err) => {
     clearTimeout(liveTimer);
@@ -336,48 +346,18 @@ function feedHub(stdout) {
 
 
 
-// ---- remote access (control the dashboard from a phone on the same Wi-Fi) ----
-// The app window on this computer never needs a password. Any other device must switch this on and log in.
-const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
-let settings = { remote: { enabled: false, salt: '', hash: '' } };
-try {
-  const saved = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
-  settings.remote = { ...settings.remote, ...(saved.remote || {}) };
-} catch {}
-function saveSettings() {
-  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2), { mode: 0o600 });
-}
-const hashPw = (pw, salt) => crypto.scryptSync(String(pw), salt, 32).toString('hex');
-const isLocal = (req) => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress || '');
-const sessions = new Map(); // login cookie -> expiry time
-const SESSION_MS = 30 * 24 * 3600 * 1000;
-const fails = new Map(); // ip -> { n, until }
+// ---- who may use the app ----
+// Phone control was removed. Only the app's own windows may use it: their requests are handed over
+// inside the app with no network (see inproc.js), so no website or other device can reach it.
+// The one exception: after YouTube sign-in, Google sends your browser back once to
+// http://127.0.0.1:PORT/api/youtube/callback on this computer (a small listener opens for that only).
+// In test mode (node server.js) the page is opened at http://localhost:PORT on this computer.
+const okHost = (req) => [`127.0.0.1:${DASHBOARD_PORT}`, `localhost:${DASHBOARD_PORT}`].includes(String(req.headers.host || '').toLowerCase());
+const okOrigin = (req) => { const o = req.headers.origin; return !o || o === `http://127.0.0.1:${DASHBOARD_PORT}` || o === `http://localhost:${DASHBOARD_PORT}`; };
+const isLocal = (req) => Boolean(req.socket && req.socket.inApp) || (STANDALONE && okHost(req) && okOrigin(req));
+// the phone-control password from older versions is not needed any more
+try { fs.unlinkSync(path.join(DATA_DIR, 'settings.json')); } catch {}
 
-function cookieOf(req, name) {
-  const m = (req.headers.cookie || '').split(';').map((c) => c.trim()).find((c) => c.startsWith(name + '='));
-  return m ? m.slice(name.length + 1) : '';
-}
-function validSession(req) {
-  const t = cookieOf(req, 'ms_session');
-  const exp = t && sessions.get(t);
-  if (!exp) return false;
-  if (exp < Date.now()) { sessions.delete(t); return false; }
-  return true;
-}
-function samePassword(pw) {
-  const r = settings.remote;
-  if (!r.hash) return false;
-  const a = Buffer.from(hashPw(pw, r.salt), 'hex');
-  const b = Buffer.from(r.hash, 'hex');
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
-}
-function lanAddresses() {
-  const out = [];
-  for (const list of Object.values(os.networkInterfaces())) {
-    for (const i of list || []) if (i.family === 'IPv4' && !i.internal) out.push(`http://${i.address}:${DASHBOARD_PORT}`);
-  }
-  return out;
-}
 function simplePage(title, body) {
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Multistream</title>
 <style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0c110e;color:#eef4f0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
@@ -385,34 +365,14 @@ function simplePage(title, body) {
 input{width:100%;padding:11px 12px;border-radius:4px;border:1px solid #2c3b32;background:#0e1410;color:#eef4f0;font-size:16px;margin-bottom:12px}
 button{width:100%;padding:11px;border:0;border-radius:4px;background:#22c55e;color:#052e14;font-size:15px;font-weight:600}.er{color:#ff8a90;margin:0 0 10px}</style></head><body><div class="box"><h1>${title}</h1>${body}</div></body></html>`;
 }
-function loginPage(error) {
-  return simplePage('Multistream', `<p>Enter the password to control the stream.</p>${error ? `<p class="er">${error}</p>` : ''}
-<form method="post" action="/login"><input type="password" name="password" placeholder="Password" autofocus autocomplete="current-password"><button>Log in</button></form>`);
-}
 
 // ---- dashboard + API ----
 const app = express();
-// Phone control: a web server for other devices on the Wi-Fi. Only runs while "Allow other devices" is on.
-let phoneServer = null, phoneError = '';
-function syncPhoneServer() {
-  const want = Boolean(settings.remote.enabled && settings.remote.hash);
-  if (want && !phoneServer) {
-    phoneError = '';
-    const s = http.createServer(app);
-    s.on('upgrade', (req, sock) => sock.destroy());
-    s.on('error', (e) => { phoneError = e.code === 'EADDRINUSE' ? `Port ${DASHBOARD_PORT} is in use by another program (is Version 1 or 2 open?)` : e.message; if (phoneServer === s) phoneServer = null; });
-    s.listen(DASHBOARD_PORT, '0.0.0.0');
-    phoneServer = s;
-  } else if (!want && phoneServer) {
-    const s = phoneServer; phoneServer = null;
-    try { s.close(); s.closeAllConnections && s.closeAllConnections(); } catch {}
-  }
-}
 // YouTube sign-in: Google sends your browser back to this computer once. A small listener opens
 // for that only, on this computer only, and closes again after sign-in (or after 5 minutes).
 let loginServer = null, loginTimer = null;
 function openLoginListener() {
-  if (phoneServer || loginServer) return;
+  if (loginServer) return;
   const s = http.createServer(app);
   s.on('error', () => { if (loginServer === s) loginServer = null; });
   s.listen(DASHBOARD_PORT, '127.0.0.1');
@@ -424,67 +384,12 @@ function closeLoginListener() {
   const s = loginServer; loginServer = null;
   if (s) setTimeout(() => { try { s.close(); s.closeAllConnections && s.closeAllConnections(); } catch {} }, 1500);
 }
-app.use(express.json({ limit: '8mb' }));
-app.use(express.urlencoded({ extended: false }));
-
-// every request from another device must be allowed and logged in. This computer is always allowed.
 app.use((req, res, next) => {
   if (isLocal(req)) return next();
-  const r = settings.remote;
-  if (!r.enabled || !r.hash) {
-    return res.status(403).type('html').send(simplePage('Remote access is off', '<p>Turn it on in the Multistream app on the church computer: Settings, then Control from phone.</p>'));
-  }
-  if (req.method === 'POST' && req.path === '/login') return next();
-  if (validSession(req)) return next();
-  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Please log in' });
-  return res.type('html').send(loginPage());
+  if (req.method === 'GET' && req.path === '/api/youtube/callback' && okHost(req)) return next();
+  res.status(403).type('text').send('Not allowed');
 });
-
-app.post('/login', (req, res) => {
-  if (isLocal(req)) return res.redirect('/');
-  const ip = req.socket.remoteAddress || '';
-  const f = fails.get(ip) || { n: 0, until: 0 };
-  if (f.until > Date.now()) return res.status(429).type('html').send(loginPage('Too many tries. Wait a minute and try again.'));
-  if (samePassword((req.body || {}).password || '')) {
-    fails.delete(ip);
-    const t = crypto.randomBytes(24).toString('hex');
-    sessions.set(t, Date.now() + SESSION_MS);
-    res.setHeader('Set-Cookie', `ms_session=${t}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_MS / 1000}`);
-    return res.redirect('/');
-  }
-  f.n += 1;
-  if (f.n >= 5) { f.until = Date.now() + 60000; f.n = 0; }
-  fails.set(ip, f);
-  res.status(401).type('html').send(loginPage('Wrong password.'));
-});
-
-// settings for remote access: only the app window on this computer may change them
-function remoteView() {
-  return { enabled: settings.remote.enabled, hasPassword: Boolean(settings.remote.hash), addresses: lanAddresses(), running: Boolean(phoneServer), error: phoneError };
-}
-app.get('/api/remote', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
-  res.json(remoteView());
-});
-app.put('/api/remote', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
-  const { enabled, password } = req.body || {};
-  const r = settings.remote;
-  if (password) {
-    if (String(password).length < 6) return res.status(400).json({ error: 'Use at least 6 characters for the password' });
-    r.salt = crypto.randomBytes(16).toString('hex');
-    r.hash = hashPw(password, r.salt);
-    sessions.clear(); // a new password logs everyone out
-  }
-  if (enabled !== undefined) {
-    if (enabled && !r.hash) return res.status(400).json({ error: 'Set a password first' });
-    r.enabled = Boolean(enabled);
-    if (!r.enabled) sessions.clear();
-  }
-  saveSettings();
-  syncPhoneServer();
-  setTimeout(() => res.json(remoteView()), 300);
-});
+app.use(express.json({ limit: '8mb' }));
 
 app.use(express.static(path.join(__dirname, 'public')));
 // the small video-player library used by the preview
@@ -671,9 +576,10 @@ const FB_FILE = path.join(DATA_DIR, 'facebook.json');
 let fb = { pageId: '', pageName: '', token: '' };
 try {
   fb = { ...fb, ...JSON.parse(fs.readFileSync(FB_FILE, 'utf8')) };
+  fb.token = secret.open(fb.token) || '';
 } catch {}
 function saveFb() {
-  fs.writeFileSync(FB_FILE, JSON.stringify(fb, null, 2), { mode: 0o600 });
+  fs.writeFileSync(FB_FILE, JSON.stringify({ ...fb, token: secret.seal(fb.token) }, null, 2), { mode: 0o600 });
 }
 const GRAPH = 'https://graph.facebook.com/v26.0';
 function fbView() {
@@ -750,13 +656,15 @@ const YT_FILE = path.join(DATA_DIR, 'youtube.json');
 let yt = { clientId: '', clientSecret: '', refreshToken: '', channelTitle: '' };
 try {
   yt = { ...yt, ...JSON.parse(fs.readFileSync(YT_FILE, 'utf8')) };
+  yt.clientSecret = secret.open(yt.clientSecret) || '';
+  yt.refreshToken = secret.open(yt.refreshToken) || '';
 } catch {}
 function saveYt() {
-  fs.writeFileSync(YT_FILE, JSON.stringify(yt, null, 2), { mode: 0o600 });
+  fs.writeFileSync(YT_FILE, JSON.stringify({ ...yt, clientSecret: secret.seal(yt.clientSecret), refreshToken: secret.seal(yt.refreshToken) }, null, 2), { mode: 0o600 });
 }
 const YT_REDIRECT = `http://127.0.0.1:${DASHBOARD_PORT}/api/youtube/callback`;
 const YT_SCOPE = 'https://www.googleapis.com/auth/youtube';
-let ytLoginState = '';
+let ytLoginState = '', ytVerifier = '';
 let ytAccess = { token: '', expires: 0 };
 function ytView() {
   return { hasClient: Boolean(yt.clientId && yt.clientSecret), connected: Boolean(yt.refreshToken), channelTitle: yt.channelTitle };
@@ -811,6 +719,7 @@ app.get('/api/youtube/login', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
   if (!yt.clientId) return res.status(400).json({ error: 'Choose the file from Google first' });
   ytLoginState = crypto.randomBytes(16).toString('hex');
+  ytVerifier = crypto.randomBytes(32).toString('base64url'); // PKCE: only this app can use the code Google sends back
   openLoginListener();
   const url = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
     client_id: yt.clientId,
@@ -820,6 +729,8 @@ app.get('/api/youtube/login', (req, res) => {
     access_type: 'offline',
     prompt: 'consent',
     state: ytLoginState,
+    code_challenge: crypto.createHash('sha256').update(ytVerifier).digest('base64url'),
+    code_challenge_method: 'S256',
   });
   res.json({ url });
 });
@@ -827,13 +738,13 @@ app.get('/api/youtube/login', (req, res) => {
 // Google sends the browser back here after you approve
 app.get('/api/youtube/callback', async (req, res) => {
   const page = (title, text) => res.type('html').send(simplePage(title, `<p>${text}</p>`));
-  if (!isLocal(req)) return page('Not allowed', 'Open this on the church computer.');
   const { code, state, error } = req.query;
   if (error) return page('YouTube not connected', `Google said: ${plain(error)}. You can close this tab and try again.`);
   if (!ytLoginState || state !== ytLoginState) return page('YouTube not connected', 'This sign-in link is old. Go back to the app and click Connect YouTube again.');
   ytLoginState = '';
+  const verifier = ytVerifier; ytVerifier = '';
   try {
-    const j = await googleToken({ grant_type: 'authorization_code', code: String(code), redirect_uri: YT_REDIRECT });
+    const j = await googleToken({ grant_type: 'authorization_code', code: String(code), redirect_uri: YT_REDIRECT, code_verifier: verifier });
     if (!j.refresh_token) throw new Error('Google did not give a long-lasting login. Try again.');
     yt.refreshToken = j.refresh_token;
     ytAccess = { token: j.access_token, expires: Date.now() + (j.expires_in || 3600) * 1000 };
@@ -911,10 +822,14 @@ app.post('/api/youtube/live', async (req, res) => {
 
 
 
+// A channel's address must be an rtmp:// or rtmps:// server (or empty, to fill in later).
+const okStreamUrl = (u) => u === '' || /^rtmps?:\/\/[^\s/]+(\/[^\s]*)?$/i.test(u);
+const hostOf = (u) => { try { return new URL(u).host.toLowerCase(); } catch { return ''; } };
 app.post('/api/destinations', (req, res) => {
   const { name, url, key, cap1080 } = req.body || {};
   if (!name) return res.status(400).json({ error: 'Name is needed' });
-  const d = { id: crypto.randomUUID(), name: String(name), url: String(url || ''), key: String(key || ''), enabled: true };
+  if (!okStreamUrl(String(url || '').trim())) return res.status(400).json({ error: 'The server address must start with rtmp:// or rtmps://' });
+  const d = { id: crypto.randomUUID(), name: String(name), url: String(url || '').trim(), key: String(key || ''), enabled: true };
   if (typeof cap1080 === 'boolean') d.cap1080 = cap1080;
   destinations.push(d);
   save();
@@ -925,7 +840,11 @@ app.post('/api/destinations', (req, res) => {
 app.put('/api/destinations/:id', (req, res) => {
   const d = destinations.find((x) => x.id === req.params.id);
   if (!d) return res.status(404).json({ error: 'Not found' });
-  const { name, url, key, enabled, cap1080 } = req.body || {};
+  const { name, key, enabled, cap1080 } = req.body || {};
+  const url = req.body && req.body.url !== undefined ? String(req.body.url).trim() : undefined;
+  if (url !== undefined && !okStreamUrl(url)) return res.status(400).json({ error: 'The server address must start with rtmp:// or rtmps://' });
+  // moving a channel to a different server needs its key typed again, so a saved key is never sent somewhere new
+  if (url !== undefined && d.key && d.url && hostOf(url) !== hostOf(d.url) && !(key !== undefined && key !== '')) return res.status(400).json({ error: 'You changed the server. Type the stream key again.' });
   if (cap1080 !== undefined) d.cap1080 = cap1080 === null ? undefined : Boolean(cap1080);
   const changedTarget = (url !== undefined && url !== d.url) || (key !== undefined && key !== '' && key !== d.key);
   if (name !== undefined) d.name = String(name);
@@ -963,6 +882,7 @@ app.delete('/api/destinations/:id', (req, res) => {
 // local websocket. We hand it to ffmpeg, which pushes it into our own RTMP ingest, so the relay works as before.
 const STUDIO_FILE = path.join(DATA_DIR, 'studio.json');
 const ASSET_DIR = path.join(DATA_DIR, 'studio-assets');
+const MEDIA_EXT = /\.(png|jpe?g|gif|webp|bmp|avif|mp4|m4v|mov|webm|mkv)$/i; // pictures and videos only
 let studio = { scenes: [], current: '', preview: '', audio: [] };
 try { studio = { ...studio, ...JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) }; } catch {}
 let studioRev = 1;
@@ -994,16 +914,18 @@ app.post('/api/studio/layer', (req, res) => {
 app.put('/api/studio/asset/:name', express.raw({ type: '*/*', limit: '30mb' }), (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Local only' });
   const n = path.basename(req.params.name).replace(/[^\w.\- ]/g, '_');
+  if (!MEDIA_EXT.test(n)) return res.status(400).json({ error: 'Use a picture or video file' });
   try { fs.mkdirSync(ASSET_DIR, { recursive: true }); fs.writeFileSync(path.join(ASSET_DIR, n), req.body); } catch (e) { return res.status(500).json({ error: e.message }); }
   res.json({ ok: true, url: '/api/studio/asset/' + encodeURIComponent(n) });
 });
 app.get('/api/studio/asset/:name', (req, res) => {
   const f = path.join(ASSET_DIR, path.basename(req.params.name));
+  if (!MEDIA_EXT.test(f)) return res.status(404).end();
+  res.setHeader('X-Content-Type-Options', 'nosniff');
   fs.existsSync(f) ? res.sendFile(f) : res.status(404).end();
 });
 
 // local files named in an imported OBS scene file (pictures and videos). Only this PC can ask for them.
-const MEDIA_EXT = /\.(png|jpe?g|gif|webp|bmp|mp4|m4v|mov|webm|mkv)$/i;
 app.get('/api/studio/file', (req, res) => {
   if (!isLocal(req)) return res.status(403).end();
   const p = String((req.query || {}).p || '');
@@ -1015,7 +937,8 @@ app.get('/api/studio/ipcam', (req, res) => {
   if (!isLocal(req)) return res.status(403).end();
   let u; try { u = new URL(String((req.query || {}).url || '')); } catch { return res.status(400).end(); }
   const h = u.hostname;
-  const lan = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(h);
+  const o = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h), n = o ? o.slice(1).map(Number) : null;
+  const lan = Boolean(n && n.every((x) => x <= 255) && (n[0] === 10 || (n[0] === 192 && n[1] === 168) || (n[0] === 172 && n[1] >= 16 && n[1] <= 31)));
   if (u.protocol !== 'http:' || !lan) return res.status(400).json({ error: 'Only http addresses on your own network' });
   const r = require('http').get(u, (up) => { res.writeHead(up.statusCode || 200, { 'Content-Type': up.headers['content-type'] || 'image/jpeg' }); up.pipe(res); });
   r.on('error', () => { try { res.status(502).end(); } catch {} });
@@ -1133,13 +1056,12 @@ function shutdown() {
   stopAll();
   try { if (studioFf) studioFf.kill('SIGKILL'); } catch {}
   try { vcam.quit(); } catch {}
-  for (const s of [phoneServer, loginServer]) { try { s && s.close(); } catch {} }
+  try { loginServer && loginServer.close(); } catch {}
 }
-syncPhoneServer();
 
 if (STANDALONE) {
   // for testing without the desktop app: open the dashboard in a browser at http://localhost:3000
-  if (!phoneServer) { const s = http.createServer(app); s.listen(DASHBOARD_PORT, '127.0.0.1', () => console.log(`Dashboard (test mode): http://localhost:${DASHBOARD_PORT}`)); }
+  { const s = http.createServer(app); s.listen(DASHBOARD_PORT, '127.0.0.1', () => console.log(`Dashboard (test mode): http://localhost:${DASHBOARD_PORT}`)); }
   process.on('SIGINT', () => {
     stopAll();
     process.exit(0);

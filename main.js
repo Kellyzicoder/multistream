@@ -10,6 +10,51 @@ const HOME = 'app://multistream';
 let win = null;
 let relay = null; // the server module, once started
 
+// ---- safety: only the app's own pages may use the app ----
+const isAppUrl = (u) => typeof u === 'string' && (u === HOME || u.startsWith(HOME + '/'));
+// a message from a window is only answered when it comes from one of the app's own pages
+function fromApp(e) { try { return isAppUrl(e.senderFrame && e.senderFrame.url); } catch { return false; } }
+const handleIpc = (name, fn) => ipcMain.handle(name, (e, ...a) => (fromApp(e) ? fn(e, ...a) : undefined));
+const onIpc = (name, fn) => ipcMain.on(name, (e, ...a) => { if (fromApp(e)) fn(e, ...a); });
+// Web pages used as Studio sources (like a lyrics site) run in their own separate space: no camera,
+// microphone or screen, no pop-ups, and they cannot reach the app's pages or settings.
+const WEB_SOURCES = 'persist:web-sources';
+let webSes = null;
+function webSourcesSession() {
+  if (webSes) return webSes;
+  webSes = session.fromPartition(WEB_SOURCES);
+  webSes.setPermissionRequestHandler((wc, perm, cb) => cb(false));
+  webSes.setPermissionCheckHandler(() => false);
+  webSes.setDisplayMediaRequestHandler((req, cb) => cb({}));
+  return webSes;
+}
+// the app's pages may use cameras, microphones and screen capture; nothing else may
+function setupAppSession(ses) {
+  ses.setPermissionRequestHandler((wc, perm, cb, details) => {
+    const from = (details && details.requestingUrl) || (wc && !wc.isDestroyed() ? wc.getURL() : '');
+    cb(isAppUrl(from) && ['media', 'mediaKeySystem', 'display-capture'].includes(perm));
+  });
+}
+app.on('web-contents-created', (e, contents) => {
+  const isWebSource = () => webSes && contents.session === webSes;
+  // the app's own windows stay on the app's pages; a link to a website opens in the normal browser
+  const guard = (ev, url) => {
+    if (isWebSource() || isAppUrl(url)) return;
+    ev.preventDefault();
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+  };
+  contents.on('will-navigate', guard);
+  contents.on('will-redirect', guard);
+  // pop-ups: web sources get none; app windows get the projector, and websites open in the normal browser
+  // (the Stream and Studio windows set their own rules on top of this)
+  contents.setWindowOpenHandler(({ url }) => {
+    if (isWebSource()) return { action: 'deny' };
+    const p = projectorOptions(url); if (p) return p;
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+});
+
 // must be set before the app is ready: app:// behaves like a normal secure web address (camera, fetch, video)
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true, codeCache: true } },
@@ -22,6 +67,8 @@ function serveApp(ses) {
     if (!['GET', 'HEAD'].includes(method)) body = Buffer.from(await request.arrayBuffer());
     const headers = {};
     request.headers.forEach((v, k) => { headers[k] = v; });
+    // only the app's own pages may ask the app for things
+    if (['cross-site', 'same-site'].includes(headers['sec-fetch-site'])) return new Response('Not allowed', { status: 403 });
     const r = await relay.handle({ method, url: u.pathname + u.search, headers, body });
     const noBody = [101, 204, 205, 304].includes(r.status) || method === 'HEAD';
     if (noBody) r.body.resume();
@@ -47,7 +94,6 @@ function createWindow() {
     backgroundColor: '#eaf1fb',
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
-  win.webContents.session.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'mediaKeySystem', 'display-capture'].includes(perm)));
   win.webContents.on('did-fail-load', (e, code, desc, url) => console.error('Page failed to load:', code, desc, url));
   win.loadURL(HOME + '/').catch((e) => console.error('Dashboard did not load:', e && e.message));
   // links that leave the dashboard open in the normal browser
@@ -63,26 +109,25 @@ function createWindow() {
 // ---- Studio helpers ----
 let studioWin = null;
 // same = true: the Studio replaces the dashboard in the same window (a button in the Studio goes back).
-ipcMain.handle('ms-open-studio', (e, same) => {
+handleIpc('ms-open-studio', (e, same) => {
   if (studioWin) { studioWin.focus(); return; }
   if (same && win && !win.isDestroyed()) { win.loadURL(HOME + '/studio.html?same=1'); return; }
   studioWin = new BrowserWindow({
     width: 1400, height: 860, title: 'Multistream Studio', autoHideMenuBar: true, backgroundColor: '#0f1512',
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
-  studioWin.webContents.session.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'display-capture'].includes(perm)));
   studioWin.loadURL(HOME + '/studio.html');
   studioWin.webContents.setWindowOpenHandler(({ url }) => projectorOptions(url) || (url.startsWith(HOME) || url === 'about:blank' || url === '' ? { action: 'allow' } : (/^https?:\/\//i.test(url) && shell.openExternal(url), { action: 'deny' })));
   studioWin.on('closed', () => { studioWin = null; browsers.forEach((b) => b.destroy()); browsers.clear(); });
 });
-ipcMain.handle('ms-open-dashboard', () => {
+handleIpc('ms-open-dashboard', () => {
   if (!win || win.isDestroyed()) return;
   browsers.forEach((b) => b.destroy()); browsers.clear();
   win.loadURL(HOME + '/');
 });
 // the screens that are connected (for showing the Control Room or a Preview/Program picture full screen on one of them)
 const displayList = () => { const main = screen.getPrimaryDisplay().id; return screen.getAllDisplays().map((d, i) => ({ id: d.id, n: i + 1, label: d.label || '', w: d.size.width, h: d.size.height, main: d.id === main })); };
-ipcMain.handle('ms-displays', () => { try { return displayList(); } catch { return []; } });
+handleIpc('ms-displays', () => { try { return displayList(); } catch { return []; } });
 const displayById = (id) => (id == null || id === '' ? null : screen.getAllDisplays().find((d) => String(d.id) === String(id)) || null);
 // window.open of /projector.html (a picture of the Preview or Program): a normal window, or full screen on the chosen display
 function projectorOptions(url) {
@@ -94,7 +139,7 @@ function projectorOptions(url) {
   return { action: 'allow', overrideBrowserWindowOptions: o };
 }
 let crWin = null;
-ipcMain.handle('ms-open-cr', (e, displayId) => {
+handleIpc('ms-open-cr', (e, displayId) => {
   const d = displayById(displayId);
   if (crWin && !crWin.isDestroyed()) crWin.close();
   const o = { width: 1280, height: 800, title: 'Multistream Control Room', autoHideMenuBar: true, backgroundColor: '#07090b', show: !d,
@@ -111,10 +156,10 @@ ipcMain.handle('ms-open-cr', (e, displayId) => {
 });
 // A web page (like the lyrics page) is drawn off-screen. We pass each new picture of it to the studio page.
 const browsers = new Map();
-ipcMain.handle('ms-browser-open', (e, id, url, w, h) => {
+handleIpc('ms-browser-open', (e, id, url, w, h) => {
   if (browsers.has(id)) return;
   if (!/^https?:\/\//i.test(String(url))) return;
-  const b = new BrowserWindow({ show: false, width: w || 1920, height: h || 1080, transparent: true, frame: false, webPreferences: { offscreen: true, backgroundThrottling: false } });
+  const b = new BrowserWindow({ show: false, width: w || 1920, height: h || 1080, transparent: true, frame: false, webPreferences: { offscreen: true, backgroundThrottling: false, session: webSourcesSession(), sandbox: true, contextIsolation: true, nodeIntegration: false } });
   b.webContents.setFrameRate(15);
   b.webContents.on('paint', (ev, dirty, image) => {
     const size = image.getSize();
@@ -124,11 +169,11 @@ ipcMain.handle('ms-browser-open', (e, id, url, w, h) => {
   b.loadURL(String(url)).catch(() => {});
   browsers.set(id, b);
 });
-ipcMain.handle('ms-browser-close', (e, id) => { const b = browsers.get(id); if (b) { b.destroy(); browsers.delete(id); } });
+handleIpc('ms-browser-close', (e, id) => { const b = browsers.get(id); if (b) { b.destroy(); browsers.delete(id); } });
 // Two-way pipes between a window and the app (the Studio's video, recording and virtual camera).
 // They used to be WebSockets on localhost. Now they are plain messages inside the app.
 const pipes = new Map();
-ipcMain.on('ms-pipe-open', (e, id, p) => {
+onIpc('ms-pipe-open', (e, id, p) => {
   const key = e.sender.id + ':' + id;
   const toWindow = (type, data) => { if (!e.sender.isDestroyed()) e.sender.send('ms-pipe-ev', id, type, data); if (type === 'close') pipes.delete(key); };
   const w = relay && relay.openPipe(String(p), toWindow);
@@ -137,17 +182,17 @@ ipcMain.on('ms-pipe-open', (e, id, p) => {
   toWindow('open');
   e.sender.once('destroyed', () => { const x = pipes.get(key); if (x) { pipes.delete(key); x.windowClosed(); } });
 });
-ipcMain.on('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(e.sender.id + ':' + id); if (w) w.fromWindow(data, isText); });
-ipcMain.on('ms-pipe-close', (e, id) => { const key = e.sender.id + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });
+onIpc('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(e.sender.id + ':' + id); if (w) w.fromWindow(data, isText); });
+onIpc('ms-pipe-close', (e, id) => { const key = e.sender.id + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });
 
 // choosing which screen to capture (for the screen with the lyrics)
 let picked = { id: '', name: '', kind: 'screen' };
 // kind: 'screen' (a whole screen) or 'window' (one program). Each comes with a small picture so it is easy to pick.
-ipcMain.handle('ms-sources', async (e, kind) => {
+handleIpc('ms-sources', async (e, kind) => {
   const list = await desktopCapturer.getSources({ types: [kind === 'window' ? 'window' : 'screen'], thumbnailSize: { width: 192, height: 108 }, fetchWindowIcons: false });
   return list.map((s) => ({ id: s.id, name: s.name, thumb: s.thumbnail && !s.thumbnail.isEmpty() ? s.thumbnail.toDataURL() : '' }));
 });
-ipcMain.handle('ms-screens', async () => (await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } })).map((s) => ({ id: s.id, name: s.name })));
+handleIpc('ms-screens', async () => (await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } })).map((s) => ({ id: s.id, name: s.name })));
 // kind: 'screen', 'window' or 'audio' (the sound this PC plays)
 // Finds what was asked for: the exact one, else one with the same name. A window that is gone is NOT swapped for a screen.
 async function findSource(p) {
@@ -158,7 +203,7 @@ async function findSource(p) {
   return pick || null;
 }
 // The page says what it is about to ask for, and hears at once if it is not there (so it can say so clearly).
-ipcMain.handle('ms-pick-screen', async (e, id, name, kind) => {
+handleIpc('ms-pick-screen', async (e, id, name, kind) => {
   picked = { id: String(id || ''), name: String(name || ''), kind: String(kind || 'screen') };
   try { return { found: Boolean(await findSource(picked)) }; } catch { return { found: false }; }
 });
@@ -242,6 +287,7 @@ async function start() {
     return;
   }
   serveApp(session.defaultSession);
+  setupAppSession(session.defaultSession);
   setupScreenCapture(session.defaultSession);
   createWindow();
   startUpdates();
