@@ -435,18 +435,38 @@
   .cr-ch .b2 small { display:block; margin-top:2px; font-size:11px; font-weight:400; opacity:.75; white-space:normal; }
 
   /* ---------- split screen: Stream on the left, Control Room on the right, drag the bar to choose the sizes ---------- */
-  #splitBar { position:fixed; top:66px; bottom:0; left:calc(var(--sp, 50%) - 7px); width:14px; cursor:col-resize; z-index:30; touch-action:none; }
-  #splitBar::after { content:""; position:absolute; left:5px; top:50%; width:4px; height:56px; margin-top:-28px; border-radius:4px; background:var(--muted); opacity:.55; }
-  #splitBar:hover::after, #splitBar.drag::after { opacity:1; background:var(--blue, #3b82f6); }
-  body.splitting { user-select:none; cursor:col-resize; }
-  body.split .app { width:var(--sp, 50%); box-sizing:border-box; grid-template-columns:minmax(0,1fr); height:calc(100% - 66px); overflow:auto; padding:12px 18px 12px 12px; gap:12px; min-height:0; }
-  body.split .side { display:contents; }
-  body.split .stage { min-height:auto; overflow:visible; }
-  body.split .ring { display:none; }
-  body.split #offlineView { padding-top:18px; }
-  body.split #crView { position:fixed; top:66px; right:0; width:calc(100% - var(--sp, 50%)); height:calc(100% - 66px); box-sizing:border-box; max-width:none; margin:0; padding:4px 12px 16px 18px; overflow:auto; }
-  body.split #splitTxt { display:none; }
-  body.split #splitBtn { color:var(--text); background:var(--btn); }
+  /* ---------- panes: 2, 3 or 4 pages side by side. Drag a pane's header to move its tab, drag a bar to resize ---------- */
+  .pw { display:contents; }
+  .pw.st, .pw.hid { display:none !important; }
+  body.panes #panes { position:fixed; top:66px; left:0; right:0; bottom:0; display:grid; padding:0 12px 12px; box-sizing:border-box; gap:0; z-index:20; background:var(--bg); }
+  body.panes .pw { display:flex !important; flex-direction:column; min-width:0; min-height:0; border-radius:14px; overflow:hidden; border:1px solid var(--line); background:var(--bg); margin:4px; }
+  body.panes .pw.st:not(.hid) { display:flex !important; }
+  body.panes .pw.hid { display:none !important; }
+  body.panes .pw .ph { display:flex; align-items:center; gap:8px; flex:none; height:30px; padding:0 8px 0 12px; font-size:12px; color:var(--muted); background:var(--card); border-bottom:1px solid var(--line); cursor:grab; user-select:none; }
+  body.panes .pw .ph .pn { flex:1; font-weight:600; letter-spacing:.3px; }
+  body.panes .pw .ph select { background:var(--btn); color:var(--text); border:1px solid var(--line); border-radius:8px; font-size:12px; padding:2px 6px; }
+  body.panes .pw.dragging { opacity:.55; }
+  body.panes .pw .pb { flex:1 1 0; min-height:0; overflow:hidden; position:relative; }
+  body.panes .pw .pb > .app { height:100%; box-sizing:border-box; overflow:auto; width:100%; }
+  body.panes .pw .pb > #crView { position:static; height:100%; width:100%; max-width:none; margin:0; padding:6px 12px 16px; box-sizing:border-box; overflow:auto; }
+  body.panes .pw .pb > iframe { border:0; width:100%; height:100%; display:block; }
+  body.panes .pw .pb > .app .stage { min-height:auto; overflow:visible; }
+  body.panes .pw .pb > .app .ring { display:none; }
+  body.panes .pw .pb > .app #offlineView { padding-top:18px; }
+  body.panes .pempty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; margin:4px; border-radius:14px; border:1px dashed var(--line); color:var(--muted); font-size:13px; text-align:center; padding:12px; box-sizing:border-box; }
+  body.panes .pempty[hidden] { display:none; }
+  body.panes .pempty select { background:var(--btn); color:var(--text); border:1px solid var(--line); border-radius:8px; font-size:12px; padding:4px 8px; }
+  .pdiv { display:none; }
+  body.panes .pdiv { display:block; position:relative; z-index:3; touch-action:none; }
+  body.panes .pdiv.v { cursor:col-resize; }
+  body.panes .pdiv.h { cursor:row-resize; }
+  body.panes .pdiv::after { content:""; position:absolute; background:var(--muted); opacity:.45; border-radius:4px; }
+  body.panes .pdiv.v::after { left:50%; top:20%; bottom:20%; width:4px; transform:translateX(-50%); }
+  body.panes .pdiv.h::after { top:50%; left:20%; right:20%; height:4px; transform:translateY(-50%); }
+  body.panes .pdiv:hover::after, body.panes .pdiv.drag::after { opacity:1; background:var(--blue, #3b82f6); }
+  body.splitting { user-select:none; }
+  body.panes #splitTxt { display:none; }
+  body.panes #splitBtn { color:var(--text); background:var(--btn); }
 </style>
 </head>
 <body>
@@ -736,7 +756,6 @@
 
 <script src="/vendor/flv.min.js"></script>
 <script src="/demo.js"></script>
-<div id="splitBar" hidden role="separator" aria-orientation="vertical" title="Drag to change the sizes. Double-click to make them equal."></div>
 <script>
 const $ = (s) => document.querySelector(s);
 const api = (url, method = 'GET', body) => window.DEMO ? window.demoApi(url, method) :
@@ -1558,29 +1577,148 @@ setInterval(refresh, 2000);
   }, { passive: false });
 })();
 
-// Split screen (like Arc): the Stream page and the Control Room side by side. Drag the bar to choose the sizes.
+// Panes (like Arc): 2, 3 or 4 pages side by side. Each pane has a header: pick its tab, or drag the header onto another pane.
+// Drag the bars between panes to make them bigger or smaller.
 (function () {
-  const btn = $('#splitBtn'), bar = $('#splitBar');
-  let pct = 50;
-  try { const v = Number(localStorage.getItem('ms_split_pct')); if (v >= 25 && v <= 75) pct = v; } catch {}
-  const setPct = (v) => { pct = Math.max(25, Math.min(75, v)); document.documentElement.style.setProperty('--sp', pct + '%'); try { localStorage.setItem('ms_split_pct', String(Math.round(pct))); } catch {} };
-  function turn(v) {
-    if (v === splitOn) return;
-    splitOn = v;
-    document.body.classList.toggle('split', v);
-    bar.hidden = !v;
-    btn.setAttribute('aria-pressed', String(v)); btn.title = v ? 'Close the split screen' : 'Split screen: the Stream page and the Control Room side by side';
-    if (v) setPct(pct); else document.documentElement.style.removeProperty('--sp');
-    showPage(v ? 'dash' : page);
+  const NAMES = { dash: 'Stream', cr: 'Control Room', studio: 'Studio' };
+  const DEF = { n: 1, V: 50, H: 50, slotOf: { dash: 0, cr: 1, studio: 2 } };
+  let st = Object.assign({}, DEF, { slotOf: Object.assign({}, DEF.slotOf) });
+  try { const v = JSON.parse(localStorage.getItem('ms_panes') || 'null'); if (v && v.slotOf) st = Object.assign({}, DEF, v, { slotOf: Object.assign({}, DEF.slotOf, v.slotOf) }); } catch {}
+  if (!(st.n >= 1 && st.n <= 4)) st.n = 1;
+  const save = () => { try { localStorage.setItem('ms_panes', JSON.stringify(st)); } catch {} };
+
+  // the pages sit in fixed panes; moving a pane only changes where it is drawn, so the Studio never reloads
+  const host = document.createElement('div'); host.id = 'panes';
+  const app = $('.app'), crv = $('#crView');
+  app.parentNode.insertBefore(host, app);
+  const frame = document.createElement('iframe'); frame.title = 'Studio'; frame.allow = 'camera; microphone; display-capture; autoplay; fullscreen';
+  const pane = {};
+  for (const key of ['dash', 'cr', 'studio']) {
+    const w = document.createElement('div'); w.className = 'pw' + (key === 'studio' ? ' st' : ''); w.dataset.page = key;
+    w.innerHTML = '<div class="ph"><span class="pn"></span><select aria-label="Tab in this pane"></select></div><div class="pb"></div>';
+    w.querySelector('.pb').appendChild(key === 'dash' ? app : key === 'cr' ? crv : frame);
+    w.querySelector('.pn').textContent = NAMES[key];
+    const sel = w.querySelector('select');
+    for (const k of ['dash', 'cr', 'studio']) { const o = document.createElement('option'); o.value = k; o.textContent = NAMES[k]; sel.appendChild(o); }
+    sel.value = key;
+    sel.onchange = () => assign(sel.value, st.slotOf[key]);
+    host.appendChild(w); pane[key] = w;
   }
-  btn.onclick = () => turn(!splitOn);
-  bar.addEventListener('pointerdown', (e) => {
-    bar.setPointerCapture(e.pointerId); bar.classList.add('drag'); document.body.classList.add('splitting');
-    const move = (ev) => setPct((ev.clientX / window.innerWidth) * 100);
-    const up = () => { bar.classList.remove('drag'); document.body.classList.remove('splitting'); bar.removeEventListener('pointermove', move); bar.removeEventListener('pointerup', up); };
-    bar.addEventListener('pointermove', move); bar.addEventListener('pointerup', up);
+  const empties = [0, 1, 2, 3].map((k) => {
+    const e = document.createElement('div'); e.className = 'pempty'; e.dataset.slot = k; e.hidden = true;
+    e.innerHTML = '<span>Empty pane. Choose a tab, or drag one here.</span><select aria-label="Tab for this pane"><option value="">Choose a tab</option></select>';
+    const sel = e.querySelector('select');
+    for (const k2 of ['dash', 'cr', 'studio']) { const o = document.createElement('option'); o.value = k2; o.textContent = NAMES[k2]; sel.appendChild(o); }
+    sel.onchange = () => { if (sel.value) assign(sel.value, k); };
+    host.appendChild(e); return e;
   });
-  bar.ondblclick = () => setPct(50);
+  const bars = { v: document.createElement('div'), h: document.createElement('div') };
+  bars.v.className = 'pdiv v'; bars.h.className = 'pdiv h'; host.append(bars.v, bars.h);
+
+  const SLOTS = {
+    2: { cols: 'V', rows: '1fr', areas: ['1 / 1 / 2 / 2', '1 / 3 / 2 / 4'], v: '1 / 2 / 2 / 3', h: null },
+    3: { cols: 'V', rows: 'H', areas: ['1 / 1 / 4 / 2', '1 / 3 / 2 / 4', '3 / 3 / 4 / 4'], v: '1 / 2 / 4 / 3', h: '2 / 3 / 3 / 4' },
+    4: { cols: 'V', rows: 'H', areas: ['1 / 1 / 2 / 2', '1 / 3 / 2 / 4', '3 / 1 / 4 / 2', '3 / 3 / 4 / 4'], v: '1 / 2 / 4 / 3', h: '2 / 1 / 3 / 4' },
+  };
+  const pageIn = (k) => Object.keys(st.slotOf).find((key) => st.slotOf[key] === k);
+
+  function layout() {
+    const on = st.n > 1; document.body.classList.toggle('panes', on);
+    if (!on) { // one page at a time, as before
+      Object.values(pane).forEach((w) => { w.classList.remove('hid'); w.removeAttribute('data-slot'); });
+      empties.forEach((e) => { e.hidden = true; });
+      bars.v.hidden = bars.h.hidden = true; bars.v.style.gridArea = bars.h.style.gridArea = '';
+      if (typeof showPage === 'function') showPage(page);
+      return;
+    }
+    const g = SLOTS[st.n];
+    host.style.gridTemplateColumns = `${st.V}% 8px minmax(0,1fr)`;
+    host.style.gridTemplateRows = st.n === 2 ? 'minmax(0,1fr)' : `${st.H}% 8px minmax(0,1fr)`;
+    bars.v.hidden = false; bars.v.style.gridArea = g.v;
+    bars.h.hidden = !g.h; if (g.h) bars.h.style.gridArea = g.h;
+    for (const key of Object.keys(pane)) {
+      const k = st.slotOf[key], w = pane[key];
+      w.querySelector('select').value = key;
+      if (k < st.n) { w.classList.remove('hid'); w.style.gridArea = g.areas[k]; w.dataset.slot = k; }
+      else { w.classList.add('hid'); w.removeAttribute('data-slot'); }
+    }
+    empties.forEach((e, k) => {
+      const page = pageIn(k), show = k < st.n && !page;
+      e.hidden = !show; e.dataset.slot = k;
+      if (show) { e.style.gridArea = g.areas[k]; e.querySelector('select').value = ''; }
+    });
+    // first time a Studio pane shows, load it
+    if (st.slotOf.studio < st.n && !frame.getAttribute('src')) frame.src = '/studio.html?split=1';
+    // the Stream and Control Room pages show in their panes
+    app.hidden = false; crv.hidden = false;
+    if (typeof renderCr === 'function') renderCr();
+    save();
+  }
+  // put a page in a pane; the page that was there moves to where this one was
+  function assign(key, k) {
+    const from = st.slotOf[key], other = pageIn(k);
+    if (other && other !== key) st.slotOf[other] = from;
+    st.slotOf[key] = k;
+    layout();
+  }
+  window.msPanes = { assign, get n() { return st.n; } };
+
+  // drag a pane by its header onto another pane
+  let drag = null;
+  host.addEventListener('pointerdown', (e) => {
+    const h = e.target.closest('.ph'); if (!h || e.target.tagName === 'SELECT') return;
+    const w = h.parentElement; drag = { key: w.dataset.page, w, x: e.clientX, y: e.clientY, moved: false };
+    h.setPointerCapture(e.pointerId);
+  });
+  host.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6) { drag.moved = true; drag.w.classList.add('dragging'); document.body.classList.add('splitting'); }
+  });
+  host.addEventListener('pointerup', (e) => {
+    if (!drag) return;
+    const d = drag; drag = null; d.w.classList.remove('dragging'); document.body.classList.remove('splitting');
+    if (!d.moved) return;
+    const target = document.elementsFromPoint(e.clientX, e.clientY).find((el) => el.dataset && el.dataset.slot !== undefined && !d.w.contains(el) && el !== d.w);
+    if (target) assign(d.key, Number(target.dataset.slot));
+  });
+
+  // bars: drag to resize
+  for (const [kind, bar] of Object.entries(bars)) {
+    bar.addEventListener('pointerdown', (e) => {
+      bar.setPointerCapture(e.pointerId); bar.classList.add('drag'); document.body.classList.add('splitting');
+      const move = (ev) => {
+        const r = host.getBoundingClientRect();
+        if (kind === 'v') st.V = Math.max(20, Math.min(80, ((ev.clientX - r.left - 12) / (r.width - 24)) * 100));
+        else st.H = Math.max(20, Math.min(80, ((ev.clientY - r.top - 12) / (r.height - 24)) * 100));
+        layout();
+      };
+      const up = () => { bar.classList.remove('drag'); document.body.classList.remove('splitting'); bar.removeEventListener('pointermove', move); bar.removeEventListener('pointerup', up); save(); };
+      bar.addEventListener('pointermove', move); bar.addEventListener('pointerup', up);
+    });
+    bar.ondblclick = () => { if (kind === 'v') st.V = 50; else st.H = 50; layout(); };
+  }
+
+  // the split button: choose how many panes
+  const btn = $('#splitBtn');
+  function setN(n) { st.n = n; splitOn = n > 1; btn.setAttribute('aria-pressed', String(n > 1)); btn.title = n > 1 ? 'Change the panes' : 'Split screen: put two, three or four tabs side by side'; layout(); }
+  let menu = null;
+  function closeMenu() { if (menu) { menu.remove(); menu = null; document.removeEventListener('keydown', escMenu); document.removeEventListener('pointerdown', outMenu, true); } }
+  function escMenu(e) { if (e.key === 'Escape') closeMenu(); }
+  function outMenu(e) { if (menu && !menu.contains(e.target) && !e.target.closest('#splitBtn')) closeMenu(); }
+  btn.onclick = () => {
+    if (menu) { closeMenu(); return; }
+    menu = document.createElement('div'); menu.className = 'cr-menu'; menu.setAttribute('role', 'menu');
+    const r = btn.getBoundingClientRect(); menu.style.left = Math.max(8, r.right - 300) + 'px'; menu.style.top = (r.bottom + 8) + 'px';
+    const items = [[1, 'Off', 'One page at a time'], [2, 'Two panes', 'Side by side'], [3, 'Three panes', 'One big, two stacked'], [4, 'Four panes', 'A grid of four']];
+    for (const [n, t, sub] of items) {
+      const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.innerHTML = '<span></span><small></small>';
+      b.firstChild.textContent = (n === st.n ? '✓ ' : '') + t; b.lastChild.textContent = sub;
+      b.onclick = () => { closeMenu(); setN(n); }; menu.appendChild(b);
+    }
+    document.body.appendChild(menu);
+    document.addEventListener('keydown', escMenu); document.addEventListener('pointerdown', outMenu, true);
+  };
+  setN(st.n);
 })();
 </script>
 </body>
