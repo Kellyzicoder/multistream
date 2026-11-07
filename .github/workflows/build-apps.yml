@@ -5,8 +5,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Builds and tests can only read the code. Only the release job (v3 branch) may publish.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -18,26 +19,66 @@ jobs:
             name: Windows
             args: --win --x64
             files: |
-              dist/Multistream-Setup.exe
+              dist/Multistream3-Setup.exe
               dist/latest.yml
-              dist/Multistream-Setup.exe.blockmap
+              dist/Multistream3-Setup.exe.blockmap
           - os: macos-latest
             name: Mac
             args: --mac --x64 --arm64
-            files: dist/Multistream-Mac-*.dmg
+            files: dist/Multistream3-Mac-*.dmg
           - os: ubuntu-latest
             name: Linux
             args: --linux --x64
-            files: dist/Multistream-Linux.AppImage
+            files: dist/Multistream3-Linux.AppImage
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-      - name: Number this build (1.0.<run number>) so apps can tell which is newer
+      - name: Number this build (3.0.<run number>) so apps can tell which is newer
         shell: bash
-        run: npm version "1.0.${{ github.run_number }}" --no-git-tag-version
+        run: npm version "3.0.${{ github.run_number }}" --no-git-tag-version
+      # Windows only: build the free "softcam" virtual camera (MIT licence) and our small helper that feeds it
+      - name: Get softcam source
+        if: matrix.name == 'Windows'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: tshino/softcam
+          ref: 6f5d8f9b5f7dc37a86a119b881bc75e1860fb3ec
+          path: softcam-src
+      - name: Add MSBuild
+        if: matrix.name == 'Windows'
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
+      - name: Add the C++ compiler to the path
+        if: matrix.name == 'Windows'
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
+        with:
+          arch: x64
+      - name: Name the camera Multistream Camera (instead of DirectShow Softcam)
+        if: matrix.name == 'Windows'
+        shell: pwsh
+        run: |
+          (Get-Content softcam-src/src/softcam/softcam.cpp) -replace 'L"DirectShow Softcam"', 'L"Multistream Camera"' | Set-Content softcam-src/src/softcam/softcam.cpp
+          (Get-Content softcam-src/src/softcamcore/DShowSoftcam.cpp) -replace 'NAME\("DirectShow Softcam"\)', 'NAME("Multistream Camera")' -replace 'L"DirectShow Softcam Stream"', 'L"Multistream Camera Stream"' | Set-Content softcam-src/src/softcamcore/DShowSoftcam.cpp
+          $n = (Get-ChildItem softcam-src/src -Recurse -Include *.cpp | Select-String -Pattern 'Multistream Camera').Count
+          if ($n -lt 3) { throw "camera rename did not apply ($n)" }
+      - name: Build the virtual camera
+        if: matrix.name == 'Windows'
+        shell: pwsh
+        run: |
+          Push-Location softcam-src
+          nuget restore softcam.sln
+          msbuild /m /p:Configuration=Release /p:Platform=x64 softcam.sln
+          msbuild /m /p:Configuration=Release /p:Platform=x64 examples/softcam_installer/softcam_installer.sln
+          Pop-Location
+          New-Item -ItemType Directory -Force vcam/win | Out-Null
+          Copy-Item softcam-src/dist/bin/x64/softcam.dll vcam/win/
+          $inst = Get-ChildItem -Recurse softcam-src/examples/softcam_installer -Filter softcam_installer.exe | Select-Object -First 1
+          Copy-Item $inst.FullName vcam/win/
+          Copy-Item softcam-src/LICENSE vcam/win/softcam-LICENSE.txt
+          cl /nologo /O2 /EHsc /Isoftcam-src\dist\include vcam\vcam.cpp /Fe:vcam\win\vcam.exe /link softcam-src\dist\lib\x64\softcam.lib user32.lib
+          Get-ChildItem vcam/win
       - name: Install
         run: npm install
       - name: Build
@@ -45,25 +86,48 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
       - name: Keep the installer from this run
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Multistream-${{ matrix.name }}
+          name: Multistream3-${{ matrix.name }}
           path: ${{ matrix.files }}
 
-  release:
-    if: github.ref == 'refs/heads/main'
-    needs: build
+  # Runs the real app on a Linux computer with no screen, with a fake YouTube, and checks it end to end
+  test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Install
+        run: npm install
+      - name: Unit tests (video hub and in-app requests)
+        run: npm test
+      - name: App test (real app, fake YouTube)
+        run: xvfb-run -a npm run test:app
+      - name: Keep the screenshots and results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Multistream3-test-results
+          path: test-out
+
+  release:
+    if: github.ref == 'refs/heads/v3' && github.event_name != 'pull_request'
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: out
           merge-multiple: true
       - name: Publish a download link
         run: |
-          echo '{"version":"1.0.${{ github.run_number }}"}' > out/version.json
+          echo '{"version":"3.0.${{ github.run_number }}"}' > out/version.json
           ls -l out
-          gh release delete latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
-          gh release create latest out/* --repo "$GITHUB_REPOSITORY" --title "Multistream (latest)" --notes "Windows: Multistream-Setup.exe. Mac: Multistream-Mac-arm64.dmg (M1 and newer) or Multistream-Mac-x64.dmg (Intel). Linux: Multistream-Linux.AppImage."
+          gh release delete v3-latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+          gh release create v3-latest out/* --repo "$GITHUB_REPOSITORY" --latest=false --title "Multistream 3 (latest)" --notes "Version 3 (test): no localhost. Windows: Multistream3-Setup.exe. Mac: Multistream3-Mac-arm64.dmg (M1 and newer) or Multistream3-Mac-x64.dmg (Intel). Linux: Multistream3-Linux.AppImage. Version 1 and 2 stay on their own releases."
         env:
           GH_TOKEN: ${{ github.token }}

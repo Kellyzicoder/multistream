@@ -63,7 +63,7 @@
   .tp.d { background:#0c110e; } .tp.d i.s { left:0; top:0; bottom:0; width:26%; background:#141b17; } .tp.d i.a { left:32%; right:8%; top:12px; height:6px; background:#34463b; } .tp.d i.b { left:32%; right:8%; top:26px; bottom:8px; background:#1d2721; }
   .tp.sy { background:linear-gradient(90deg,#f4f6f5 50%,#0c110e 50%); } .tp.sy i.a { left:32%; right:8%; top:12px; height:6px; background:#8a948f; } .tp.sy i.b { left:32%; right:8%; top:26px; bottom:8px; background:rgba(128,128,128,.35); }
 
-  /* ---------- settings window (sidebar + grouped options, like OBS) ---------- */
+  /* ---------- settings window (sidebar + grouped options) ---------- */
   .swin { width:min(900px,100%); height:min(640px,calc(100vh - 40px)); display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:0 30px 90px rgba(0,0,0,.55); overflow:hidden; }
   .swin-h { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--rule); font-size:14px; font-weight:600; }
   .swin-x { border:0; background:transparent; color:var(--muted); font-size:20px; line-height:1; padding:4px 8px; border-radius:8px; }
@@ -95,7 +95,14 @@
   .files .none { color:var(--muted); font-size:12.5px; padding:6px 0; }
   #recRow, #pfRow { margin-top:14px; }
   .go.end { background:var(--red); color:#fff; box-shadow:none; }
-  .alertbar { display:flex; align-items:center; gap:12px; justify-content:space-between; background:var(--errbg); border-bottom:1px solid var(--errline); color:var(--errsvg); padding:10px 22px; font-size:13px; font-weight:500; position:relative; z-index:6; }
+  .alertbar { display:flex; align-items:flex-start; gap:12px; justify-content:space-between; position:fixed; right:16px; bottom:16px; z-index:100; width:min(440px, calc(100vw - 32px)); box-sizing:border-box; background:var(--errbg); border:1px solid var(--errline); color:var(--errsvg); padding:12px 14px; border-radius:16px; box-shadow:0 14px 36px rgba(0,0,0,.22); font-size:13px; font-weight:500; line-height:1.4; }
+  .alertbar[hidden] { display:none; }
+  .alertbar #alertTxt { flex:1; min-width:0; overflow-wrap:anywhere; }
+  .alertbar #alertTxt > div + div { margin-top:4px; }
+  .alertbar #alertTxt strong { font-weight:700; }
+  .alertbar #alertTxt span { opacity:.75; }
+  .alertbar #alertTxt .ok { opacity:.7; }
+  .alertbar #alertTxt .ok::before { content:'\2713  '; }
   .alertbar button { border:1px solid var(--errline); background:transparent; color:inherit; border-radius:999px; padding:5px 12px; font-size:12px; flex:none; }
   .pf { padding:2px 0 6px; }
   .pf .it { display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--rule); font-size:12.5px; line-height:1.45; }
@@ -149,7 +156,8 @@
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; }
   .stage { position:relative; display:flex; justify-content:center; align-items:flex-start; padding:0 6px; overflow:auto; }
   .stage-in { width:100%; max-width:760px; text-align:center; }
-  #offlineView { max-width:460px; margin:0 auto; }
+  #offlineView { max-width:460px; margin:0 auto; text-align:center; }
+  #offlineView .lead { margin:10px auto 22px; text-align:center; }
   .side { display:flex; flex-direction:column; gap:14px; min-height:0; overflow:auto; }
   .sec-t { font-size:10.5px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
   .grow { flex:1; }
@@ -361,7 +369,7 @@
   .cr-aud { margin-top:16px; }
   .cr-itembox { margin-top:16px; } .cr-itembox h2 { font-size:10.5px; margin:0 0 8px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); }
   .cr-items { display:flex; flex-wrap:wrap; gap:8px; } .cr-item { border:1px solid var(--line); background:var(--field); color:var(--text); border-radius:999px; padding:9px 16px; font-size:13px; font-weight:500; } .cr-item[aria-pressed=true] { border-color:var(--green); box-shadow:0 0 14px var(--glow); }
-  @media (max-width:800px) { .cr-top { grid-template-columns:1fr 1fr; } .cr-take { grid-column:1 / -1; order:3; } .cr-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  @media (max-width:800px) { .cr-top { grid-template-columns:1fr 1fr; } .cr-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
 
   /* ---------- narrow screens ---------- */
   @media (max-width:1000px) {
@@ -383,6 +391,56 @@
     .gl, .chs, .cht { padding-left:16px; padding-right:16px; }
     .cr { padding:4px 12px 16px; }
   }
+  /* Version 3: extra options folded away so the main card stays simple */
+  details.more { margin-top:12px; border-top:1px solid var(--line, #2a352d); padding-top:8px; }
+  details.more > summary { cursor:pointer; font-size:13px; opacity:.75; list-style:none; padding:4px 0; }
+  details.more > summary::before { content:'+ '; }
+  details.more[open] > summary::before { content:'\2212  '; }
+  /* ---------- Liquid Glass: rounded, frosted, translucent (off in High contrast) ---------- */
+  :root { --gl:rgba(16,24,29,.55); --gl2:rgba(30,42,50,.48); --gl-line:rgba(255,255,255,.13); --gl-hi:rgba(255,255,255,.20); --gl-sh:0 12px 40px rgba(0,0,0,.4); --gl-blur:blur(28px) saturate(180%); }
+  html.t-light { --gl:rgba(255,255,255,.6); --gl2:rgba(255,255,255,.5); --gl-line:rgba(255,255,255,.8); --gl-hi:rgba(255,255,255,.95); --gl-sh:0 12px 34px rgba(40,70,60,.16); }
+  body { background:
+    radial-gradient(900px 520px at 88% -10%, color-mix(in srgb, var(--blue) 26%, transparent), transparent 62%),
+    radial-gradient(760px 480px at -6% 108%, color-mix(in srgb, var(--blue) 18%, transparent), transparent 62%),
+    radial-gradient(520px 360px at 55% 45%, rgba(90,120,255,.09), transparent 70%), var(--bg); background-attachment:fixed; }
+  .card, .swin, .modal, .bar, .spark, .viewbox, .top { background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border-color:var(--gl-line); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
+  .card { border-radius:24px; } .swin { border-radius:30px; } .modal { border-radius:30px; } .bar, .spark { border-radius:20px; } .viewbox { border-radius:20px; background:var(--gl2); }
+  .top { margin:10px 14px 0; height:56px; border-radius:999px; border:1px solid var(--gl-line); padding:0 18px; } .app { height:calc(100% - 66px); }
+  .overlay { background:rgba(2,6,8,.38); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+  html.t-light .overlay { background:rgba(200,215,210,.4); }
+  .snav { border-right-color:var(--gl-line); } .snav button { border-radius:999px; } .snav button[aria-selected="true"] { box-shadow:0 4px 16px color-mix(in srgb, var(--blue) 40%, transparent); }
+  .seg { background:var(--gl2); border-color:var(--gl-line); box-shadow:inset 0 1px 0 var(--gl-hi); } .seg button[aria-current="page"] { background:var(--gl-hi); box-shadow:0 2px 8px rgba(0,0,0,.18); }
+  .b2 { background:var(--gl2); border-color:var(--gl-line); box-shadow:inset 0 1px 0 var(--gl-hi); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+  .b2.pri { background:linear-gradient(180deg, color-mix(in srgb, var(--blue) 85%, #fff), var(--blue)); box-shadow:inset 0 1px 0 rgba(255,255,255,.35), 0 4px 16px color-mix(in srgb, var(--blue) 45%, transparent); }
+  .tile { border-radius:18px; border-color:var(--gl-line); background:var(--gl2); } .opt button { border-radius:999px; }
+  input, select, textarea { border-radius:12px; }
+  .themes .tp { border-radius:14px; }
+  ::-webkit-scrollbar { width:10px; height:10px; } ::-webkit-scrollbar-thumb { background:rgba(150,170,165,.35); border-radius:999px; border:3px solid transparent; background-clip:content-box; } ::-webkit-scrollbar-track { background:transparent; }
+  html.a-contrast { --gl:var(--card); --gl2:var(--card2); --gl-line:var(--line); --gl-hi:transparent; --gl-sh:none; --gl-blur:none; }
+  html.a-contrast body { background:var(--bg); }
+  @media (prefers-reduced-transparency: reduce) { :root { --gl:var(--card); --gl2:var(--card2); --gl-line:var(--line); --gl-hi:transparent; --gl-blur:none; } }
+  /* ---------- Control Room fills the whole window (no side margins, no black bars) ---------- */
+  .cr:not([hidden]) { max-width:none; margin:0; padding:10px 14px 14px; height:calc(100vh - 66px); display:flex; flex-direction:column; gap:10px; overflow:hidden; }
+  .cr .cr-bar { margin:0; flex:none; }
+  .cr .cr-top { flex:none; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:stretch; }
+  .cr .cr-pane { width:100%; height:100%; min-height:0; aspect-ratio:auto; margin:0; border-radius:18px; }
+  .cr .cr-pane img { object-fit:contain; }
+  .cr-pane.prog.canTake { cursor:pointer; box-shadow:0 0 0 2px var(--red), 0 0 34px rgba(255,77,90,.3); }
+  /* the scene boxes fill the width in an even grid, each one the TV shape (16:9), like the OBS and AirLive multiviews */
+  .cr .cr-grid { flex:none; margin:0; display:grid; gap:10px; align-content:start; justify-content:stretch; }
+  .cr .cr-grid .tile { display:flex; flex-direction:column; min-width:0; border-radius:12px; }
+  .cr .cr-grid .tile .im { flex:none; width:100%; height:auto; aspect-ratio:16/9; object-fit:cover; }
+  .cr .cr-aud { margin:0; flex:none; }
+  @media (max-width:800px) { .cr:not([hidden]) { height:auto; overflow:visible; } }
+  /* ---------- where to show the Control Room ---------- */
+  .cr-menu { position:fixed; z-index:80; min-width:300px; padding:8px; border-radius:16px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); display:flex; flex-direction:column; gap:4px; }
+  .cr-menu button { text-align:left; border:0; background:transparent; color:var(--text); border-radius:10px; padding:10px 12px; font-size:13px; font-weight:600; cursor:pointer; }
+  .cr-menu button:hover, .cr-menu button:focus { background:var(--gl2); outline:none; }
+  .cr-menu small { display:block; margin-top:2px; font-size:11px; font-weight:400; color:var(--muted); }
+  .cr-ch { display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+  .cr-ch .b2 { text-align:left; border-radius:16px; padding:12px 16px; font-size:13px; }
+  .cr-ch .b2 small { display:block; margin-top:2px; font-size:11px; font-weight:400; opacity:.75; white-space:normal; }
+
 </style>
 </head>
 <body>
@@ -392,7 +450,8 @@
     <span>Multistream</span>
   </div>
   <nav class="seg" id="pageTabs" aria-label="Pages">
-    <button type="button" data-page="dash" aria-current="page">Dashboard</button>
+    <button type="button" data-page="dash" aria-current="page">Stream</button>
+    <button type="button" data-page="studio" title="The built-in studio: scenes, cameras, sound, recording">Studio</button>
     <button type="button" data-page="cr">Control Room</button>
   </nav>
   <span class="sp"></span>
@@ -409,36 +468,13 @@
     <div class="stage-in" id="stageIn">
      <div id="offlineView">
       <div class="ring" aria-hidden="true"><i></i></div>
-      <h1 id="h1">Waiting for OBS</h1>
-      <p class="lead" id="lead">Start streaming in OBS. Copy these two into OBS first.</p>
+      <h1 id="h1">Waiting for the Studio</h1>
+      <p class="lead" id="lead">Open the Studio and press <b>Start Streaming</b>. The channels below start by themselves.</p>
+      <p style="text-align:center;margin:0 0 18px"><button type="button" class="b2 pri" id="openStudioBtn">Open Studio</button></p>
 
-      <div class="fld">
-        <label>RTMP URL</label>
-        <div class="inp"><input id="srv" readonly value="rtmp://localhost:1935/live"><button data-copy="srv" title="Copy" aria-label="Copy URL"></button></div>
-      </div>
-      <div class="fld">
-        <label>Stream key</label>
-        <div class="inp"><input id="skey" readonly value="obs"><button data-copy="skey" title="Copy" aria-label="Copy key"></button></div>
-      </div>
-
-      <div class="how">
-        <a id="howLink">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor"/></svg>
-          How to connect OBS
-        </a>
-        <div class="steps" id="steps">
-          <ol>
-            <li>In OBS open <b>Settings → Stream</b>.</li>
-            <li>Set <b>Service</b> to <code>Custom</code>.</li>
-            <li>Paste the <b>RTMP URL</b> into <b>Server</b> and the <b>Stream key</b> above.</li>
-            <li>Click <b>Start Streaming</b> in OBS.</li>
-            <li>On Facebook and Instagram, press <b>Go live</b> on their page.</li>
-          </ol>
-        </div>
-      </div>
      </div>
 
-     <!-- shown while OBS is sending video -->
+     <!-- shown while the Studio is sending video -->
      <div id="liveView" hidden>
       <div class="pv-box">
         <video id="pv" muted autoplay playsinline></video>
@@ -457,41 +493,14 @@
         <div class="bi" id="kfBox"><b id="sgKey">…</b><span>Keyframe</span></div>
         <div class="bi"><b id="sgAudio">…</b><span>Audio</span></div>
       </div>
-      <p class="kfnote" id="kfNote" hidden>Facebook and YouTube want a keyframe every 2 seconds (4 at most). In OBS: Settings → Output → Streaming → Keyframe Interval → 2.</p>
+      <p class="kfnote" id="kfNote" hidden>Facebook and YouTube want a keyframe every 2 seconds (4 at most). The Studio already sends one every 2 seconds.</p>
       <div class="spark">
         <svg viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><polyline id="sparkLine" fill="none" stroke="#4ade80" stroke-width="2" vector-effect="non-scaling-stroke" points=""/></svg>
         <small id="sparkNote">Bitrate, last minute</small>
       </div>
      </div>
 
-     <!-- OBS scenes -->
-     <section class="scn" id="scn" aria-label="OBS scenes">
-      <div class="scn-h">
-        <h2>Scenes</h2><span class="st" id="scnSt"></span><span class="grow"></span>
-        <div class="scn-tools">
-          <details class="view">
-            <summary>View</summary>
-            <div class="viewbox">
-              <div class="opt" id="scnSize" role="group" aria-label="Tile size">
-                <button type="button" data-v="s">Small</button><button type="button" data-v="m">Medium</button><button type="button" data-v="l">Large</button>
-              </div>
-              <div class="row"><span>Show pictures</span><label class="sw"><input type="checkbox" id="scnPics" aria-label="Show scene pictures"><span></span></label></div>
-            </div>
-          </details>
-          <button class="ghost" id="obsCfgBtn" type="button">Connect OBS</button>
-        </div>
-      </div>
-      <div class="tiles" id="tiles"></div>
-     </section>
 
-     <!-- OBS audio levels -->
-     <section class="aud" id="aud" aria-label="OBS audio levels" hidden>
-      <div class="scn-h">
-        <h2>Audio levels</h2><span class="grow"></span>
-        <span class="st">Show</span><label class="sw"><input type="checkbox" id="audOn" aria-label="Show audio levels"><span></span></label>
-      </div>
-      <div class="arows" id="arows"></div>
-     </section>
     </div>
   </main>
 
@@ -502,17 +511,24 @@
       <div class="gr">
         <div class="who"><b>YouTube</b><span id="ytSub">Not connected</span></div>
         <button class="ghost" id="ytBtn" type="button" title="Connect the YouTube account">Set up</button>
-        <button class="go" id="ytLive" type="button" disabled title="Start OBS streaming first, and connect YouTube">Go live</button>
+        <button class="go" id="ytLive" type="button" disabled title="Start Streaming in the Studio first, and connect YouTube">Go live</button>
       </div>
       <div class="gr">
         <div class="who"><b>Facebook</b><span id="fbSub">No Page added</span></div>
         <button class="ghost" id="fbBtn" type="button" title="Add the Facebook Page ID and token">Set up</button>
-        <button class="go" id="fbLive" type="button" disabled title="Start OBS streaming first, and add the Facebook Page">Go live</button>
+        <button class="go" id="fbLive" type="button" disabled title="Start Streaming in the Studio first, and add the Facebook Page">Go live</button>
       </div>
       <div class="gt">
         <label class="fl" for="glTitle">Title</label>
         <input class="t2" id="glTitle" type="text" maxlength="100" placeholder="Live from FCCHQ (and the date)" autocomplete="off">
-        <div class="th">
+      </div>
+      <label class="tm" id="tmBox">
+        <span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span>
+        <span><b>Private test</b><small id="tmState">Only you can see it. Turn this off for the real service.</small></span>
+      </label>
+      <details class="more">
+        <summary>More options</summary>
+        <div class="th" style="margin-top:10px">
           <div class="thp"><img id="thImg" alt="Thumbnail" hidden><span id="thNone">No picture</span></div>
           <div class="tha">
             <span class="fl">Thumbnail</span>
@@ -522,20 +538,16 @@
             <input type="file" id="thFile" accept="image/png,image/jpeg" hidden>
           </div>
         </div>
-      </div>
-      <label class="tm" id="tmBox">
-        <span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span>
-        <span><b>Private test</b><small id="tmState">Only you can see it. Turn this off for the real service.</small></span>
-      </label>
       <div class="gr" id="recRow">
         <div class="who"><b>Recording</b><span id="recSub">Saves a copy on this computer</span></div>
-        <button class="go" id="recBtn" type="button" disabled title="Start OBS streaming first">Record</button>
+        <button class="go" id="recBtn" type="button" disabled title="Start Streaming in the Studio first">Record</button>
       </div>
       <div class="gr" id="pfRow">
         <div class="who"><b>Check everything</b><span id="pfSub">Do this before the service</span></div>
         <button class="ghost" id="pfBtn" type="button">Run check</button>
       </div>
       <div class="pf" id="pfList" hidden></div>
+      </details>
       <p class="hint" id="glHint"></p>
       <p class="note" id="fbNote" hidden></p>
     </section>
@@ -566,20 +578,14 @@
 <!-- control room -->
 <div class="cr" id="crView" hidden>
   <div class="cr-bar">
-    <h1>Control Room</h1><span class="st" id="crSt"></span><span class="grow"></span>
-    <button type="button" id="crPop" class="cr-pop">Open in its own window</button> <label class="st" for="crEng">Engine</label> <select id="crEng" aria-label="What the Control Room controls"><option value="auto">Automatic</option><option value="studio">Studio</option><option value="obs">OBS</option></select>
-    <div class="opt" id="crMode" role="group" aria-label="How a scene goes on air">
-      <button type="button" data-v="take">Preview, then Take</button><button type="button" data-v="direct">Direct</button>
-    </div>
+    <h1>Control Room</h1>
   </div>
   <div class="cr-top">
     <div class="cr-pane prev"><img id="crPrev" alt="Preview scene" draggable="false"><span class="cr-lab" id="crPrevL">PREVIEW</span></div>
-    <button class="cr-take" id="crTake" type="button" disabled>TAKE</button>
     <div class="cr-pane prog"><img id="crProg" alt="Program scene, on air" draggable="false"><span class="cr-lab" id="crProgL">PROGRAM</span></div>
   </div>
   <div class="cr-grid" id="crTiles"></div>
   <div class="cr-aud" id="crAudio"></div>
-  <div class="cr-itembox" id="crItems" hidden></div>
 </div>
 
 <!-- add channel -->
@@ -613,14 +619,12 @@
         <button type="button" role="tab" data-pane="youtube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg> YouTube</button>
         <button type="button" role="tab" data-pane="facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8.5h2.5V5H14a3.5 3.5 0 0 0-3.5 3.5V11H8v3.5h2.5V21H14v-6.5h2.5L17 11h-3V8.5z"/></svg> Facebook</button>
         <button type="button" role="tab" data-pane="recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6" fill="currentColor"/></svg> Recording</button>
-        <button type="button" role="tab" data-pane="obs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/></svg> OBS</button>
-                <button type="button" role="tab" data-pane="phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg> Phone</button>
       </nav>
       <div class="smain">
 
         <section class="pane" data-pane="appearance" role="tabpanel" aria-label="Appearance">
           <div class="grp"><h4>Look</h4>
-            <p>Changes show straight away. They are saved on this device only, so the phone and the church computer each have their own.</p>
+            <p>Changes show straight away. They are saved on this computer.</p>
             <div class="srow"><p class="lb" id="l-th">Theme</p>
               <div class="themes" id="themes" role="group" aria-labelledby="l-th">
                 <button type="button" data-v="system"><span class="tp sy"><i class="a"></i><i class="b"></i></span>System</button>
@@ -630,6 +634,10 @@
             <div class="srow"><p class="lb" id="l-col">Main colour</p>
               <div class="ctl"><div class="sws" id="sws" role="group" aria-labelledby="l-col"></div>
                 <div class="cust"><span>Custom:</span><span class="hx">#<input id="accHex" maxlength="6" placeholder="22C55E" aria-label="Custom colour, 6 letters or numbers"></span><input type="color" id="accPick" aria-label="Pick a colour"></div></div></div>
+          </div>
+                  <div class="grp"><h4>Studio</h4>
+            <div class="srow"><label class="lb" for="studioOpenSel">Open the Studio in<small>A new window keeps the Stream page in view. This window replaces the Stream page; a button in the Studio comes back.</small></label>
+              <div class="ctl"><select class="t" id="studioOpenSel"><option value="window">A new window</option><option value="same">This window</option></select></div></div>
           </div>
         </section>
 
@@ -644,7 +652,7 @@
               <div class="ctl"><label class="sw"><input type="checkbox" data-key="cb" aria-label="Colour-blind friendly colours"><span></span></label></div></div>
           </div>
           <div class="grp"><h4>Using it</h4>
-            <div class="srow"><p class="lb">Bigger buttons<small>Easier to tap on a phone</small></p>
+            <div class="srow"><p class="lb">Bigger buttons<small>Easier to tap on a touch screen</small></p>
               <div class="ctl"><label class="sw"><input type="checkbox" data-key="bigbtn" aria-label="Bigger buttons"><span></span></label></div></div>
             <div class="srow"><p class="lb">Stop animations<small>Turns off the pulsing LIVE dot</small></p>
               <div class="ctl"><label class="sw"><input type="checkbox" data-key="nomotion" aria-label="Stop animations"><span></span></label></div></div>
@@ -678,9 +686,9 @@
 
         <section class="pane" data-pane="recording" role="tabpanel" aria-label="Recording">
           <div class="grp"><h4>Recording</h4>
-            <p>Saves the video from OBS to a file on this computer while you stream. It is the same picture and sound OBS sends. The file is an .mkv, so it still plays if the power goes out. VLC plays it.</p>
-            <div class="srow"><p class="lb">Record when OBS starts<small>No button to press</small></p>
-              <div class="ctl"><label class="sw"><input type="checkbox" id="recAuto" aria-label="Record when OBS starts"><span></span></label></div></div>
+            <p>Saves the video to a file on this computer while you stream. It is the same picture and sound that goes to your channels. The file is an .mkv, so it still plays if the power goes out. VLC plays it.</p>
+            <div class="srow"><p class="lb">Record when sending starts<small>No button to press</small></p>
+              <div class="ctl"><label class="sw"><input type="checkbox" id="recAuto" aria-label="Record when sending starts"><span></span></label></div></div>
             <div class="srow"><p class="lb">Saved in</p>
               <div class="ctl"><code id="recDir" class="path"></code><button class="b2" id="recOpen" type="button">Open folder</button><p class="note" id="recMsg" hidden></p></div></div>
           </div>
@@ -689,32 +697,10 @@
           </div>
         </section>
 
-        <section class="pane" data-pane="obs" role="tabpanel" aria-label="OBS">
-          <div class="grp"><h4>Connect to OBS</h4>
-            <p>This lets Multistream show your scenes and switch them. In OBS, open <b>Tools → WebSocket Server Settings</b>, tick <b>Enable WebSocket server</b>, and set a password. Then type the same password here.</p>
-            <div class="srow"><p class="lb">Connect to OBS</p>
-              <div class="ctl"><label class="sw"><input type="checkbox" id="obsOn" aria-label="Connect to OBS"><span></span></label></div></div>
-            <div class="srow"><label class="lb" for="obsPort">Port<small>OBS shows 4455</small></label>
-              <div class="ctl"><input class="t" id="obsPort" inputmode="numeric" placeholder="4455"></div></div>
-            <div class="srow"><label class="lb" for="obsPw">Password</label>
-              <div class="ctl"><input class="t" id="obsPw" type="password" placeholder="Leave empty to keep the saved password" autocomplete="new-password"></div></div>
-            <div class="srow"><p class="lb">Status</p><div class="ctl"><p class="note" id="obsMsg"></p></div></div>
-          </div>
-        </section>
+
 
         
 
-        <section class="pane" data-pane="phone" role="tabpanel" aria-label="Phone">
-          <div class="grp"><h4>Control from phone</h4>
-            <p>Open this dashboard on a phone or another computer that is on the same Wi-Fi.</p>
-            <div class="srow"><p class="lb">Allow other devices</p>
-              <div class="ctl"><label class="sw"><input type="checkbox" id="remOn" aria-label="Allow other devices"><span></span></label></div></div>
-            <div class="srow"><label class="lb" for="remPw">Password<small>At least 6 characters</small></label>
-              <div class="ctl"><input class="t" id="remPw" type="password" placeholder="Type a password" autocomplete="new-password"></div></div>
-            <div class="addr" id="remAddr" hidden></div>
-            <div class="srow"><p class="lb">Status</p><div class="ctl"><p class="note" id="remMsg"></p></div></div>
-          </div>
-        </section>
 
       </div>
     </div>
@@ -845,7 +831,7 @@ function renderSignal(state) {
 setInterval(() => { if (last.obsLive && last.signal && last.signal.startedAt) $('#ovTime').textContent = fmtTime(Date.now() - last.signal.startedAt); }, 1000);
 
 // ---------- video preview ----------
-// The window plays the same stream OBS sends. It is only decoded for display, never re-encoded.
+// The window plays the same stream the Studio sends. It is only decoded for display, never re-encoded.
 let player = null;
 try { $('#pvSwitch').checked = localStorage.getItem('previewOn') !== '0'; } catch {}
 
@@ -857,7 +843,7 @@ function startPreview() {
   const i = last.ingest;
   setPreviewMsg('Starting preview…');
   player = flvjs.createPlayer(
-    { type: 'flv', isLive: true, url: `http://${location.hostname}:${i.httpPort}${i.path}.flv` },
+    { type: 'flv', isLive: true, url: i.preview || '/live.flv' },
     { enableWorker: false, enableStashBuffer: false, stashInitialSize: 128, lazyLoad: false, autoCleanupSourceBuffer: true }
   );
   player.attachMediaElement($('#pv'));
@@ -900,10 +886,6 @@ function render(state) {
   const n = state.destinations.filter((d) => d.enabled).length;
   const nLive = state.destinations.filter((d) => d.enabled && d.status.state === 'live').length;
 
-  // on a phone, "localhost" would mean the phone itself, so show this computer's address instead
-  const host = location.hostname;
-  $('#srv').value = ['localhost', '127.0.0.1'].includes(host) ? state.ingest.server : state.ingest.server.replace('localhost', host);
-  $('#skey').value = state.ingest.key;
   const chip = $('#chip');
   chip.textContent = live ? 'LIVE' : 'OFFLINE';
   chip.className = 'chip' + (live ? ' live' : '');
@@ -911,7 +893,7 @@ function render(state) {
   $('#offlineView').hidden = live;
   $('#liveView').hidden = !live;
   $('#stageIn').classList.toggle('wide', live);
-  $('#glHint').textContent = live ? '' : 'Start streaming in OBS first. Then Go live turns on.';
+  $('#glHint').textContent = live ? '' : 'Start Streaming in the Studio first. Then Go live turns on.';
   $('#lvLead').textContent = `Your stream is going to ${nLive} of ${n} active channel${n === 1 ? '' : 's'}.`;
   renderSignal(state);
   syncPreview();
@@ -947,11 +929,12 @@ $('#list').addEventListener('click', async (e) => {
   const saveId = t.dataset.save, cancelId = t.dataset.cancel, restartId = t.dataset.restart, deleteId = t.dataset.delete;
   if (saveId) {
     const f = document.getElementById('edit-' + saveId);
-    await api('/api/destinations/' + saveId, 'PUT', {
+    const r = await api('/api/destinations/' + saveId, 'PUT', {
       name: f.querySelector('.e-name').value,
       url: f.querySelector('.e-url').value.trim(),
       key: f.querySelector('.e-key').value.trim(),
     });
+    if (r && r.error) return alert(r.error); // keep the form open so it can be fixed
     editing.delete(saveId);
     return refresh();
   }
@@ -993,39 +976,13 @@ overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.cla
 $('#add').onclick = async () => {
   const name = $('#n-name').value.trim();
   if (!name) return alert('Please type a name');
-  await api('/api/destinations', 'POST', { name, url: $('#n-url').value.trim(), key: $('#n-key').value.trim() });
+  const r = await api('/api/destinations', 'POST', { name, url: $('#n-url').value.trim(), key: $('#n-key').value.trim() });
+  if (r && r.error) return alert(r.error);
   $('#n-name').value = $('#n-url').value = $('#n-key').value = '';
   overlay.classList.remove('open');
   refresh();
 };
 
-// control from phone
-function showRemote(v) {
-  $('#remOn').checked = v.enabled;
-  $('#remPw').placeholder = v.hasPassword ? 'Leave empty to keep the saved password' : 'Type a password';
-  const a = $('#remAddr');
-  const addrs = v.addresses || v.urls || [];
-  a.hidden = !(v.enabled && addrs.length);
-  a.innerHTML = 'On the phone, open this address in the browser:' + addrs.map((x) => `<code>${esc(x)}</code>`).join('');
-}
-function remNote(text, bad) { const n = $('#remMsg'); n.textContent = text; n.className = 'note' + (bad ? ' bad' : ''); }
-async function loadPhone() {
-  remNote('');
-  $('#remPw').value = '';
-  const v = await api('/api/remote');
-  if (v.error) { remNote(v.error, true); return; }
-  showRemote(v);
-}
-async function savePhone() {
-  const body = { enabled: $('#remOn').checked };
-  if ($('#remPw').value) body.password = $('#remPw').value;
-  const v = await api('/api/remote', 'PUT', body);
-  if (v.error) { remNote(v.error, true); return false; }
-  $('#remPw').value = '';
-  showRemote(v);
-  remNote(v.enabled ? 'Saved. Other devices can log in with the password.' : 'Saved. Other devices are blocked.');
-  return true;
-}
 
 // copy buttons
 document.querySelectorAll('[data-copy]').forEach((b) => {
@@ -1038,184 +995,89 @@ document.querySelectorAll('[data-copy]').forEach((b) => {
   };
 });
 
-// how to connect OBS
-$('#howLink').onclick = () => {
-  const s = $('#steps');
-  s.style.display = s.style.display === 'block' ? 'none' : 'block';
-};
-
-// Facebook Page
-// OBS scenes
-let obsInfo = null;
-const SCN_W = { s: 120, m: 200, l: 280 };
-let scn = { size: 's', pics: true };
-try { scn = { ...scn, ...(JSON.parse(localStorage.getItem('ms_scenes') || '{}') || {}) }; } catch {}
-function saveScn() { try { localStorage.setItem('ms_scenes', JSON.stringify(scn)); } catch {} }
-function renderScn() {
-  const o = obsInfo;
-  renderAud();
-  document.querySelectorAll('#scnSize button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === scn.size)));
-  $('#scnPics').checked = scn.pics;
-  $('#tiles').style.setProperty('--tw', SCN_W[scn.size] + 'px');
-  const st = $('#scnSt');
-  if (!o || !o.enabled) { st.textContent = 'Not connected'; st.className = 'st'; $('#tiles').textContent = ''; $('#tiles').dataset.key = ''; return; }
-  st.textContent = o.connected ? 'Connected to OBS' : (o.error || 'Connecting...');
-  st.className = 'st' + (o.connected ? ' ok' : '');
-  const key = o.scenes.join('\n') + '|' + scn.pics;
-  const box = $('#tiles');
-  if (box.dataset.key !== key) {
-    box.dataset.key = key;
-    box.textContent = '';
-    o.scenes.forEach((name) => {
-      const b = document.createElement('button');
-      b.type = 'button'; b.className = 'tile' + (scn.pics ? '' : ' noimg'); b.dataset.n = name;
-      const im = document.createElement('img'); im.className = 'im'; im.alt = ''; im.draggable = false;
-      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = name;
-      b.append(im, nm);
-      b.onclick = async () => {
-        const r = await api('/api/obs/scene', 'POST', { name });
-        if (r.error) { st.textContent = r.error; st.className = 'st'; }
-        else if (obsInfo) { obsInfo.current = name; renderScn(); }
-        refresh();
-      };
-      box.appendChild(b);
-    });
-  }
-  box.querySelectorAll('.tile').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.n === o.current)));
-}
-let thumbBusy = false;
-async function pollThumbs() {
-  if (thumbBusy || (!scn.pics && page !== 'cr') || !obsInfo || !obsInfo.connected || document.hidden) return;
-  thumbBusy = true;
-  try {
-    const d = await api('/api/obs/thumbs?w=' + Math.round(SCN_W[scn.size] * 1.3));
-    document.querySelectorAll('#tiles .tile, #crTiles .tile').forEach((b) => { const u = d[b.dataset.n]; if (u) b.querySelector('img').src = u; });
-  } catch {}
-  thumbBusy = false;
-}
-setInterval(pollThumbs, 1500);
-document.querySelectorAll('#scnSize button').forEach((b) => { b.onclick = () => { scn.size = b.dataset.v; saveScn(); renderScn(); pollThumbs(); }; });
-$('#scnPics').onchange = (e) => { scn.pics = e.target.checked; saveScn(); renderScn(); pollThumbs(); };
-// Audio levels (read only). Meters are only requested while this panel is showing.
-let audOn = true;
-try { audOn = JSON.parse(localStorage.getItem('ms_audio') || 'true'); } catch {}
-const rowsEl = $('#arows');
-const dbPct = (d) => Math.max(0, Math.min(100, ((d + 60) / 60) * 100));
-let audBusy = false;
-function renderAud() {
-  const box = $('#aud');
-  const show = Boolean(obsInfo && obsInfo.enabled && obsInfo.connected);
-  box.hidden = !show;
-  $('#audOn').checked = audOn;
-  if (!audOn || !show) rowsEl.hidden = true; else rowsEl.hidden = false;
-}
-async function pollAud() {
-  if (audBusy || !audOn || !obsInfo || !obsInfo.connected || document.hidden) return;
-  audBusy = true;
-  try {
-    const r = await api('/api/obs/levels');
-    const names = Object.keys(r.levels || {}).sort();
-    if (rowsEl.dataset.key !== names.join('\n')) {
-      rowsEl.dataset.key = names.join('\n');
-      rowsEl.textContent = '';
-      if (!names.length) { const p = document.createElement('p'); p.className = 'empty'; p.textContent = 'No audio found in OBS yet.'; rowsEl.appendChild(p); }
-      names.forEach((n) => {
-        const row = document.createElement('div'); row.className = 'ar'; row.dataset.n = n;
-        row.innerHTML = '<span class="an"></span><span class="mt" role="meter" aria-valuemin="-60" aria-valuemax="0"><i class="cv"></i><i class="pk"></i></span><span class="db"></span>';
-        row.querySelector('.an').textContent = n;
-        row.querySelector('.mt').setAttribute('aria-label', n + ' level');
-        rowsEl.appendChild(row);
-      });
-    }
-    rowsEl.querySelectorAll('.ar').forEach((row) => {
-      const v = r.levels[row.dataset.n];
-      if (!v) return;
-      const muted = Boolean(r.muted && r.muted[row.dataset.n]);
-      row.classList.toggle('mute', muted);
-      const an = row.querySelector('.an');
-      if (muted && !an.querySelector('em')) an.insertAdjacentHTML('beforeend', '<em>MUTED</em>');
-      if (!muted && an.querySelector('em')) an.querySelector('em').remove();
-      row.querySelector('.cv').style.width = (100 - dbPct(v.mag)) + '%';
-      row.querySelector('.pk').style.left = 'calc(' + dbPct(v.peak) + '% - 2px)';
-      row.querySelector('.mt').setAttribute('aria-valuenow', String(Math.max(-60, Math.round(v.mag))));
-      row.querySelector('.db').textContent = v.mag <= -60 ? '-inf' : v.mag.toFixed(0) + ' dB';
-    });
-  } catch {}
-  audBusy = false;
-}
-setInterval(pollAud, 200);
-$('#audOn').onchange = (e) => { audOn = e.target.checked; try { localStorage.setItem('ms_audio', JSON.stringify(audOn)); } catch {} renderAud(); };
-
-async function loadObs() {
-  const o = await api('/api/obs');
-  $('#obsOn').checked = o.enabled; $('#obsPort').value = o.port || 4455; $('#obsPw').value = '';
-  $('#obsPw').placeholder = o.hasPassword ? 'Password saved. Leave empty to keep it' : 'Type the OBS password';
-  $('#obsMsg').textContent = o.connected ? 'Connected to OBS.' : (o.enabled ? o.error : '');
-  $('#obsMsg').className = 'note' + (o.enabled && !o.connected ? ' bad' : '');
-}
-async function saveObs() {
-  const msg = $('#obsMsg');
-  const body = { enabled: $('#obsOn').checked, port: $('#obsPort').value.trim() || 4455 };
-  if ($('#obsPw').value) body.password = $('#obsPw').value;
-  const r = await api('/api/obs', 'PUT', body);
-  if (r.error) { msg.textContent = r.error; msg.className = 'note bad'; return false; }
-  $('#obsPw').value = '';
-  msg.textContent = r.enabled ? 'Saved. Connecting...' : 'Saved. OBS control is off.'; msg.className = 'note';
-  setTimeout(async () => { const o = await api('/api/obs'); obsInfo = o; renderScn(); if (o.enabled) { msg.textContent = o.connected ? 'Connected to OBS.' : o.error; msg.className = 'note' + (o.connected ? '' : ' bad'); } }, 1500);
-  return true;
-}
-renderScn();
+$('#openStudioBtn').onclick = () => showPage('studio');
+(function () {
+  const sel = $('#studioOpenSel'); if (!sel) return;
+  try { sel.value = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+  sel.onchange = () => { try { localStorage.setItem('ms_studio_open', sel.value); } catch {} };
+})();
+// Version 3 has no OBS connection. These stay as empty helpers so older code paths are harmless.
+function renderScn() {}
+function pollThumbs() {}
 
 // Control Room (multiview) and the page switcher
 let page = 'dash';
-let crMode = 'take';
 let crPrev = '';
-try { crMode = (JSON.parse(localStorage.getItem('ms_cr') || '{}') || {}).mode || 'take'; } catch {}
 const pageTabs = document.querySelectorAll('#pageTabs button');
 function showPage(p) {
-  if (p === 'studio') { if (window.msNative) window.msNative.openStudio(); else window.open('/studio.html', '_blank'); return; }
+  if (p === 'studio') {
+    let m = 'window'; try { m = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+    if (window.msNative) window.msNative.openStudio(m === 'same'); else window.open('/studio.html', m === 'same' ? '_self' : '_blank');
+    return;
+  }
   page = p === 'cr' ? 'cr' : 'dash';
   $('.app').hidden = page === 'cr';
   $('#crView').hidden = page !== 'cr';
   pageTabs.forEach((b) => { if (b.dataset.page === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-  const aud = $('#aud');
-  if (page === 'cr') $('#crAudio').appendChild(aud);
-  else $('#scn').after(aud);
   try { history.replaceState(null, '', page === 'cr' ? '#control-room' : location.pathname + location.search); } catch {}
   renderCr();
   pollThumbs();
 }
-pageTabs.forEach((b) => { b.onclick = () => showPage(b.dataset.page); });
-// Which engine the Control Room drives: the built-in Studio, or OBS (the fallback).
-let crEng = 'auto';
-try { crEng = (JSON.parse(localStorage.getItem('ms_cr') || '{}') || {}).eng || 'auto'; } catch {}
-let stu = { alive: false, scenes: [], current: '', shots: {} };
-function engine() { return crEng === 'auto' ? (stu.alive ? 'studio' : 'obs') : crEng; }
-function saveCr() { try { localStorage.setItem('ms_cr', JSON.stringify({ mode: crMode, eng: crEng })); } catch {} }
+pageTabs.forEach((b) => { b.onclick = () => { if (b.dataset.page === 'cr') openCrMenu(b); else showPage(b.dataset.page); }; });
+// Control Room tab: a drop-down with New window and each display (like OBS projectors)
+let crMenu = null;
+function closeCrMenu() { if (crMenu) { crMenu.remove(); crMenu = null; document.removeEventListener('keydown', crMenuEsc); document.removeEventListener('pointerdown', crMenuOut, true); } }
+function crMenuEsc(e) { if (e.key === 'Escape') closeCrMenu(); }
+function crMenuOut(e) { if (crMenu && !crMenu.contains(e.target) && !e.target.closest('#pageTabs')) closeCrMenu(); }
+async function openCrMenu(anchor) {
+  if (crMenu) { closeCrMenu(); return; }
+  let ds = []; try { if (window.msNative && window.msNative.displays) ds = await window.msNative.displays(); } catch {}
+  const m = crMenu = document.createElement('div'); m.className = 'cr-menu'; m.setAttribute('role', 'menu');
+  const r = anchor.getBoundingClientRect(); m.style.left = Math.max(8, r.left) + 'px'; m.style.top = (r.bottom + 8) + 'px';
+  const add = (title, sub, run) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.innerHTML = '<span></span><small></small>'; b.firstChild.textContent = title; b.lastChild.textContent = sub; b.onclick = () => { closeCrMenu(); run(); }; m.appendChild(b); };
+  add('New window', 'Opens the Control Room in its own window', () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); });
+  ds.forEach((d) => add('Display ' + d.n + (d.main ? ' (main)' : ''), 'Full screen on this display. ' + d.w + ' x ' + d.h + '. Press Esc to leave full screen.', () => window.msNative.openControlRoom(d.id)));
+  document.body.appendChild(m);
+  document.addEventListener('keydown', crMenuEsc); document.addEventListener('pointerdown', crMenuOut, true);
+  const f = m.querySelector('button'); if (f) f.focus();
+}
+// The Control Room drives the Studio.
+const crEng = 'studio';
+let stu = { alive: false, scenes: [], current: '', shots: {}, tv: 0, rev: null };
+function engine() { return 'studio'; }
 function crData() {
-  if (engine() === 'studio') return { on: true, ok: stu.alive, msg: stu.alive ? 'Studio is running' : 'The Studio is not open. On the church PC open the menu, then Studio.', scenes: stu.scenes.map((s) => s.name), current: stu.current };
-  const o = obsInfo;
-  if (!o || !o.enabled) return { on: false, msg: 'OBS is not connected. Use Dashboard, then Connect OBS.', scenes: [], current: '' };
-  return { on: true, ok: o.connected, msg: o.connected ? 'Connected to OBS' : (o.error || 'Connecting...'), scenes: o.scenes, current: o.current };
+  return { on: true, ok: stu.alive, scenes: stu.scenes.map((s) => s.name), current: stu.current };
 }
 async function crSetScene(name) {
-  if (engine() === 'studio') { const r = await api('/api/studio/scene', 'POST', { name }); if (!r.error) stu.current = name; }
-  else { const r = await api('/api/obs/scene', 'POST', { name }); if (!r.error && obsInfo) obsInfo.current = name; }
+  const r = await api('/api/studio/scene', 'POST', { name }); if (!r.error) stu.current = name;
   crPrev = ''; if (engine() === 'studio') api('/api/studio/preview', 'POST', { name: '' }); renderCr(); refresh();
 }
 function crPreview(name) { crPrev = name; if (engine() === 'studio') api('/api/studio/preview', 'POST', { name }); renderCr(); }
 function crTake() { const d = crData(); if (!crPrev || crPrev === d.current) return; crSetScene(crPrev); }
-$('#crTake').onclick = crTake;
-$('#crPop').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); showPage('dash'); };
-document.querySelectorAll('#crMode button').forEach((b) => { b.onclick = () => { crMode = b.dataset.v; crPrev = ''; saveCr(); renderCr(); }; });
-$('#crEng').value = crEng;
-$('#crEng').onchange = (e) => { crEng = e.target.value; crPrev = ''; saveCr(); $('#crTiles').dataset.key = ''; renderCr(); };
+document.querySelector('.cr-pane.prog').onclick = () => crTake(); // click the Program picture to put the previewed scene on air
+// Sizes the scene boxes: an even grid of up to 4 columns across the full width. The number of columns is the most that keeps the boxes
+// from taking more than 60% of the height, so Preview and Program always keep room.
+function fitCrTiles() {
+  const box = $('#crTiles'); if (!box || !box.clientWidth || !box.parentElement.clientHeight) return;
+  const n = box.querySelectorAll('.tile').length; if (!n) return;
+  const W = box.clientWidth, H = box.parentElement.clientHeight, gap = 10;
+  let cols = 1;
+  for (let c = Math.min(4, n); c >= 1; c--) {
+    const tw = (W - gap * (c - 1)) / c, rows = Math.ceil(n / c);
+    if (rows * tw * 9 / 16 + gap * (rows - 1) <= 0.6 * H) { cols = c; break; }
+  }
+  box.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+  // Preview and Program keep the TV shape (16:9), and get the height that is left over
+  const rows = Math.ceil(n / cols), tw = (W - gap * (cols - 1)) / cols;
+  const gridH = rows * tw * 9 / 16 + gap * (rows - 1), topW = (W - gap) / 2 * 9 / 16;
+  const top = document.querySelector('.cr .cr-top');
+  const bar = document.querySelector('.cr .cr-bar'), spare = H - (bar ? bar.offsetHeight : 0) - 40; // title row and spacing
+  if (top) top.style.height = Math.max(160, Math.min(topW, spare - gridH - gap)) + 'px';
+}
+new ResizeObserver(() => fitCrTiles()).observe($('.cr'));
 function renderCr() {
   if (page !== 'cr') return;
   const d = crData();
-  document.querySelectorAll('#crMode button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === crMode)));
-  const st = $('#crSt');
-  st.textContent = d.msg + (d.on ? ' (' + (engine() === 'studio' ? 'Studio' : 'OBS') + ')' : ''); st.className = 'st' + (d.ok ? ' ok' : '');
   const box = $('#crTiles');
   if (!d.on) { box.textContent = ''; box.dataset.key = ''; return; }
   if (crPrev && !d.scenes.includes(crPrev)) crPrev = '';
@@ -1226,11 +1088,10 @@ function renderCr() {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'tile'; b.dataset.n = name;
       const im = document.createElement('img'); im.className = 'im'; im.alt = ''; im.draggable = false;
-      const nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = name;
-      b.append(im, nm);
+      b.append(im); b.title = name; b.setAttribute('aria-label', name);
       b.onclick = () => {
         const cur = crData().current;
-        if (crMode === 'direct') crSetScene(name); else crPreview(name === cur ? '' : name);
+        crPreview(name === cur ? '' : name);
       };
       box.appendChild(b);
     });
@@ -1240,46 +1101,23 @@ function renderCr() {
     b.classList.toggle('pv', b.dataset.n === crPrev);
     if (engine() === 'studio') { const u = (stu.shots.thumbs || {})[b.dataset.n]; if (u && b.querySelector('img').src !== u) b.querySelector('img').src = u; }
   });
-  $('#crProgL').textContent = 'PROGRAM: ' + (d.current || '');
+  fitCrTiles();
   $('#crPrevL').textContent = (crPrev ? 'PREVIEW: ' : 'PREVIEW (same as program): ') + (crPrev || d.current || '');
-  $('#crTake').disabled = !(crMode === 'take' && crPrev && crPrev !== d.current);
-  $('#crTake').hidden = crMode !== 'take';
-  renderCrItems();
-}
-// items you can switch on and off while a scene is on air (lowerthirds, the lyrics page...), Studio only
-function renderCrItems() {
-  const box = $('#crItems'); const s = engine() === 'studio' && stu.scenes.find((x) => x.name === stu.current);
-  if (!s) { box.hidden = true; return; }
-  const items = s.layers.filter((l) => !l.locked && l.type !== 'camera' && l.type !== 'color');
-  const key = s.name + '|' + items.map((l) => l.id + (l.visible !== false)).join();
-  if (box.dataset.key === key) return;
-  box.dataset.key = key; box.textContent = ''; box.hidden = !items.length;
-  if (!items.length) return;
-  const h = document.createElement('h2'); h.textContent = 'On screen now: ' + s.name; box.appendChild(h);
-  const wrap = document.createElement('div'); wrap.className = 'cr-items';
-  items.slice().reverse().forEach((l) => {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'cr-item'; b.setAttribute('aria-pressed', String(l.visible !== false));
-    b.textContent = (l.visible !== false ? 'Showing: ' : 'Hidden: ') + (l.name || l.type);
-    b.onclick = async () => { const v = !(l.visible !== false); l.visible = v; box.dataset.key = ''; renderCrItems(); await api('/api/studio/layer', 'POST', { scene: s.name, id: l.id, visible: v }); };
-    wrap.appendChild(b);
-  });
-  box.appendChild(wrap);
+  const canTake = crPrev && crPrev !== d.current;
+  const pg = document.querySelector('.cr-pane.prog'); pg.classList.toggle('canTake', Boolean(canTake)); pg.title = canTake ? 'Click to put ' + crPrev + ' on air' : '';
+  $('#crProgL').textContent = 'PROGRAM: ' + (d.current || '') + (canTake ? '  (click to take ' + crPrev + ')' : '');
 }
 let crBusy = false;
 async function pollCr() {
   if (page !== 'cr' || crBusy || document.hidden) return;
   crBusy = true;
   try {
-    const sh = await api('/api/studio/shots'); stu.alive = !!sh.alive; stu.shots = sh;
-    if (stu.alive || crEng === 'studio') { const s = await api('/api/studio'); stu.scenes = s.scenes || []; stu.current = s.current || ''; }
+    const sh = await api('/api/studio/shots?tv=' + (stu.tv || 0)); stu.alive = !!sh.alive; const keep = stu.shots.thumbs; stu.shots = sh; if (!sh.thumbs) stu.shots.thumbs = keep; stu.tv = sh.tv || 0;
+    // the scenes (a big answer) are fetched only when they changed in the Studio
+    if ((stu.alive || crEng === 'studio') && (sh.rev == null || sh.rev !== stu.rev)) { const s = await api('/api/studio'); stu.scenes = s.scenes || []; stu.current = s.current || ''; stu.rev = s.rev != null ? s.rev : sh.rev; }
     if (engine() === 'studio') {
       if (sh.prog) $('#crProg').src = sh.prog;
       if (sh.pv || sh.prog) $('#crPrev').src = crPrev ? (sh.pv || sh.prog) : sh.prog;
-    } else if (obsInfo && obsInfo.connected) {
-      const a = obsInfo.current; const b = crPrev || obsInfo.current;
-      const d = await api('/api/obs/shots?a=' + encodeURIComponent(a) + '&b=' + encodeURIComponent(b) + '&w=640');
-      if (d.a) $('#crProg').src = d.a;
-      if (d.b) $('#crPrev').src = d.b;
     }
     renderCr();
   } catch {}
@@ -1412,7 +1250,7 @@ function renderFb(fbState, live, inSession) {
   const ready = Boolean(fbState && fbState.hasToken && fbState.pageId);
   goBtn('#fbLive', Boolean(inSession));
   $('#fbLive').disabled = inSession ? false : !(live && ready);
-  $('#fbLive').title = inSession ? 'Stop sending and end the live video on Facebook' : !live ? 'Start OBS streaming first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
+  $('#fbLive').title = inSession ? 'Stop sending and end the live video on Facebook' : !live ? 'Start Streaming in the Studio first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
   $('#fbSub').textContent = ready ? (fbState.pageName || 'Page ' + fbState.pageId) : 'No Page added';
 }
 async function loadFb() {
@@ -1459,7 +1297,7 @@ function renderYt(ytState, live, inSession) {
   goBtn('#ytLive', Boolean(inSession));
   $('#ytLive').disabled = inSession ? false : !(live && ytState && ytState.connected);
   $('#ytSub').textContent = ytState && ytState.connected ? (ytState.channelTitle || 'Connected') : 'Not connected';
-  $('#ytLive').title = inSession ? 'Stop sending and end the live broadcast on YouTube' : !live ? 'Start OBS streaming first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
+  $('#ytLive').title = inSession ? 'Stop sending and end the live broadcast on YouTube' : !live ? 'Start Streaming in the Studio first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
   if (settingsPane() === 'youtube' && ytState) ytNote('#yt-status', ytStatusText(ytState), false);
 }
 async function loadYt() {
@@ -1503,9 +1341,9 @@ $('#ytLive').onclick = async () => {
 
 // Settings window: sidebar of sections, OK / Cancel / Apply at the bottom
 const setOverlay = $('#setOverlay');
-const paneLoaders = { youtube: loadYt, facebook: loadFb, obs: loadObs, phone: loadPhone, recording: loadRec };
-const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, obs: saveObs, phone: savePhone, recording: saveRec };
-const paneOrder = ['appearance', 'facebook', 'obs', 'phone', 'recording'];
+const paneLoaders = { youtube: loadYt, facebook: loadFb, recording: loadRec };
+const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb, recording: saveRec };
+const paneOrder = ['appearance', 'facebook', 'recording'];
 let dirty = {};
 let loaded = {};
 let curPane = '';
@@ -1545,13 +1383,12 @@ $('#setNav').addEventListener('click', (e) => { const b = e.target.closest('butt
 $('#setBtn').onclick = () => openSettings('appearance');
 $('#ytBtn').onclick = () => openSettings('youtube');
 $('#fbBtn').onclick = () => openSettings('facebook');
-$('#obsCfgBtn').onclick = () => openSettings('obs');
 $('#setApply').onclick = async () => { const b = $('#setApply'); b.disabled = true; if (!(await applySettings())) b.disabled = false; };
 $('#setOk').onclick = async () => { if (await applySettings()) closeSettings(true); };
 $('#setCancel').onclick = () => closeSettings(false);
 $('#setX').onclick = () => closeSettings(false);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && setOverlay.classList.contains('open')) closeSettings(false); });
-[['#fb-page', 'facebook'], ['#fb-token', 'facebook'], ['#obsOn', 'obs'], ['#obsPort', 'obs'], ['#obsPw', 'obs'], ['#remOn', 'phone'], ['#remPw', 'phone'], ['#recAuto', 'recording']].forEach(([id, k]) => {
+[['#fb-page', 'facebook'], ['#fb-token', 'facebook'], ['#recAuto', 'recording']].forEach(([id, k]) => {
   $(id).addEventListener('input', () => setDirty(k));
   $(id).addEventListener('change', () => setDirty(k));
 });
@@ -1565,7 +1402,7 @@ function renderRec(rec, live) {
   b.classList.toggle('on', Boolean(rec.on));
   b.textContent = rec.on ? 'Stop' : 'Record';
   b.disabled = !rec.on && !live;
-  b.title = rec.on ? 'Stop recording' : live ? 'Save a copy of this stream on this computer' : 'Start OBS streaming first';
+  b.title = rec.on ? 'Stop recording' : live ? 'Save a copy of this stream on this computer' : 'Start Streaming in the Studio first';
   $('#recSub').textContent = rec.on ? 'Recording ' + fmtClock(Date.now() - rec.startedAt) : rec.error ? 'Problem: ' + rec.error : 'Saves a copy on this computer';
 }
 async function loadRec() {
@@ -1608,29 +1445,39 @@ $('#pfBtn').onclick = async () => {
 };
 
 // Alerts: a red bar when something stops
-function showAlert(text) {
-  $('#alertTxt').textContent = text;
-  $('#alertBar').hidden = false;
-}
-$('#alertX').onclick = () => { $('#alertBar').hidden = true; };
-let prevDest = {}, prevObs = null, noSigSince = 0, noSigShown = false;
-function checkAlerts(s) {
-  for (const d of s.destinations || []) {
-    const st = (d.status || {}).state;
-    if ((prevDest[d.id] === 'live' || prevDest[d.id] === 'starting') && st === 'error') showAlert(`${d.name} stopped receiving: ${(d.status || {}).message || 'no reason given'}`);
-    prevDest[d.id] = st;
+// Each alert names its source (a channel or the Studio) and the time, so it is easy to trace.
+// Alerts kept until Dismiss. Stream problems show here (Stream and Control Room); Studio problems show in the Studio.
+// Alerts are pushed by the app as they happen (no polling). In the app they come through a pipe;
+// in a browser on the church Wi-Fi they come through an event stream. If the link drops it comes back.
+function listenAlerts(group, onMsg) {
+  const take = (t) => { try { onMsg(JSON.parse(typeof t === 'string' ? t : new TextDecoder().decode(t))); } catch {} };
+  if (window.msNative && window.msNative.pipe) {
+    const open = () => window.msNative.pipe('/alerts?group=' + group, (type, data) => {
+      if (type === 'message') take(data);
+      else if (type === 'close') setTimeout(open, 3000);
+    });
+    open();
+  } else if (window.EventSource) {
+    new EventSource('/api/alerts?group=' + group).onmessage = (e) => take(e.data);
   }
-  const open = s.session && (s.session.youtube || s.session.facebook);
-  if (prevObs === true && s.obsLive === false && open) showAlert('OBS stopped, but the live is still open on ' + [s.session.youtube && 'YouTube', s.session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.');
-  prevObs = s.obsLive;
-  if (s.obsLive && s.signal && !s.signal.ok) {
-    if (!noSigSince) noSigSince = Date.now();
-    else if (Date.now() - noSigSince > 8000 && !noSigShown) { noSigShown = true; showAlert('OBS is connected, but no video is arriving.'); }
-  } else { noSigSince = 0; noSigShown = false; }
 }
+function drawAlertRows(box, list) {
+  box.textContent = '';
+  for (const a of list) {
+    const row = document.createElement('div'); if (a.ok) row.className = 'ok';
+    const src = document.createElement('strong'); src.textContent = a.source + ' ';
+    const when = document.createElement('span'); when.textContent = new Date(a.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' \u2014 ';
+    row.append(src, when, document.createTextNode(a.text)); box.appendChild(row);
+  }
+}
+// one row per source: a new message from the same source replaces its row
+function mergeAlert(list, a) { const i = list.findIndex((x) => x.source === a.source); if (i >= 0) list.splice(i, 1); list.push(a); if (list.length > 20) list.shift(); }
+let alertList = [];
+function drawAlerts() { drawAlertRows($('#alertTxt'), alertList); $('#alertBar').hidden = alertList.length === 0; }
+function clearAlerts() { alertList = []; drawAlerts(); }
+$('#alertX').onclick = () => { clearAlerts(); fetch('/api/alerts/clear?group=stream', { method: 'POST' }).catch(() => {}); };
+listenAlerts('stream', (d) => { if (d.clear) clearAlerts(); else { mergeAlert(alertList, d); drawAlerts(); } });
 
-// Chat (read only)
-let chatSeq = 0;
 async function pollChat() {
   try {
     const r = await api('/api/chat?after=' + chatSeq);
@@ -1656,9 +1503,20 @@ async function pollChat() {
 }
 setInterval(pollChat, 3000);
 
-async function refresh() { try { const s = await api('/api/state'); render(s); renderRec(s.recording, s.obsLive); renderFb(s.facebook, s.obsLive, s.session && s.session.facebook); renderYt(s.youtube, s.obsLive, s.session && s.session.youtube); checkAlerts(s); obsInfo = s.obs; renderScn(); renderCr(); } catch {} }
+async function refresh() { try { const s = await api('/api/state'); render(s); renderRec(s.recording, s.obsLive); renderFb(s.facebook, s.obsLive, s.session && s.session.facebook); renderYt(s.youtube, s.obsLive, s.session && s.session.youtube); renderCr(); } catch {} }
 refresh();
 setInterval(refresh, 2000);
+// scroll the right-hand column with the wheel even when the mouse is over the middle (when the middle has nothing to scroll itself)
+(function () {
+  const stage = document.querySelector('.stage'), side = document.querySelector('.side'); if (!stage || !side) return;
+  stage.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.defaultPrevented) return;
+    if (stage.scrollHeight > stage.clientHeight + 1) return; // the middle scrolls by itself
+    if (side.scrollHeight <= side.clientHeight + 1) return;
+    side.scrollTop += e.deltaY; e.preventDefault();
+  }, { passive: false });
+})();
+
 </script>
 </body>
 </html>

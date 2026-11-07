@@ -1,56 +1,75 @@
 {
   "name": "multistream",
-  "version": "1.0.0",
-  "description": "Send one OBS stream to Facebook, YouTube, Instagram (and more) at the same time",
+  "version": "3.0.0",
+  "description": "Multistream 3: make the show in the Studio and send it to Facebook, YouTube and Instagram at the same time. Nothing runs on localhost unless you switch it on.",
   "main": "main.js",
   "author": "Kelvin Mensah",
   "scripts": {
     "start": "node server.js",
     "app": "electron .",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "test": "node test/unit.js",
+    "test:app": "node test/app.js"
   },
   "dependencies": {
     "express": "^4.19.2",
     "ffmpeg-static": "^5.2.0",
     "flv.js": "^1.6.2",
-    "node-media-server": "^2.7.0",
     "ws": "^8.18.0",
     "electron-updater": "^6.3.9"
   },
   "devDependencies": {
     "electron": "^33.0.0",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "playwright-core": "1.48.2"
   },
   "build": {
-    "appId": "com.multistream.app",
-    "productName": "Multistream",
+    "appId": "com.multistream.app.v3",
+    "productName": "Multistream 3",
     "files": [
       "main.js",
       "preload.js",
       "server.js",
+      "flvhub.js",
+      "inproc.js",
       "stats.js",
       "recorder.js",
       "chat.js",
       "autoretry.js",
       "preflight.js",
+      "encoder.js",
+      "outargs.js",
       "public/**/*",
-      "package.json"
+      "package.json",
+      "vcam.js",
+      "secret.js"
     ],
     "asarUnpack": [
       "node_modules/ffmpeg-static/**"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "extraResources": [
+        {
+          "from": "vcam/win",
+          "to": "vcam",
+          "filter": [
+            "softcam.dll",
+            "softcam_installer.exe",
+            "vcam.exe"
+          ]
+        }
+      ]
     },
     "nsis": {
-      "artifactName": "Multistream-Setup.exe"
+      "artifactName": "Multistream3-Setup.exe"
     },
     "dmg": {
-      "artifactName": "Multistream-Mac-${arch}.dmg"
+      "artifactName": "Multistream3-Mac-${arch}.dmg"
     },
     "linux": {
       "target": "AppImage",
-      "artifactName": "Multistream-Linux.AppImage",
+      "artifactName": "Multistream3-Linux.AppImage",
       "category": "AudioVideo"
     },
     "mac": {
@@ -64,10 +83,8 @@
     "afterPack": "adhoc-sign.js",
     "publish": [
       {
-        "provider": "github",
-        "owner": "Kellyzicoder",
-        "repo": "multistream",
-        "releaseType": "release"
+        "provider": "generic",
+        "url": "https://github.com/Kellyzicoder/multistream/releases/download/v3-latest"
       }
     ]
   }

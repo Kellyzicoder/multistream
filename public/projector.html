@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multistream Projector</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden;cursor:none}canvas{width:100%;height:100%;display:block}</style>
+</head><body><canvas id="c"></canvas>
+<script>
+// shows the Studio's Preview or Program picture in this window. Esc closes it, double-click toggles full screen.
+const src = new URLSearchParams(location.search).get('src') === 'preview' ? 'ev' : 'cv';
+const c = document.getElementById('c'), x = c.getContext('2d');
+function frame() {
+  const o = window.opener; if (!o || o.closed) { window.close(); return; }
+  let s = null; try { s = o.document.getElementById(src); } catch {}
+  if (s && s.width) {
+    const w = Math.round(innerWidth * devicePixelRatio), h = Math.round(innerHeight * devicePixelRatio);
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    x.fillStyle = '#000'; x.fillRect(0, 0, w, h);
+    const r = Math.min(w / s.width, h / s.height), dw = s.width * r, dh = s.height * r;
+    x.drawImage(s, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  }
+  requestAnimationFrame(frame);
+}
+addEventListener('keydown', (e) => { if (e.key === 'Escape') window.close(); });
+addEventListener('dblclick', () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); });
+frame();
+</script></body></html>

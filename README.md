@@ -40,20 +40,12 @@ To make a Mac app instead, run the same two commands on a Mac. The file in `dist
    - Facebook: press **Set up** next to Facebook (it opens **Settings → Facebook**), type the Page ID and token, then press **OK**.
    - YouTube: press **Set up** next to YouTube (it opens **Settings → YouTube**), choose the .json file from Google, then **Connect YouTube** and sign in with the church account. If there is no channel named "YouTube" (or "Facebook") yet, Go live adds it for you.
    - There is no lock. When Private test is off, the app asks "Continue?" once before it goes live in public.
-   - From a phone on the same Wi-Fi (set up in **Settings → Phone**) you can press Go live too. The logins stay on the church computer.
    - **Title and thumbnail:** type the title in the **Title** box (leave it empty to use "Live from FCCHQ" and the date). Press **Choose picture** to pick a PNG or JPG thumbnail (1280×720 is best). The title goes to YouTube and Facebook. The thumbnail goes to YouTube only. The title is remembered. Choose the picture on the church computer. If YouTube refuses the picture, you still go live and the app tells you why.
    - Instagram stays manual: press **Go live** in Instagram.
 
-## Control it from a phone (same Wi-Fi)
+## Phone control
 
-1. In the app click **Settings** (top right), open **Phone**, turn on **Allow other devices** and type a password (at least 6 characters). Click **OK**.
-2. The box shows an address like `http://192.168.1.20:3000`. Open that address in the browser on your phone or another computer on the same Wi-Fi.
-3. Log in with the password. You see the same screen as the app and can switch channels on and off.
-
-- Only the app on the church computer can change this setting. Other devices cannot.
-- Turning it off, or setting a new password, logs everyone out.
-- The video preview on the phone uses port 8000 on the church computer. Windows may ask to allow the app on the network. Choose **Private networks**.
-- This works only on the same Wi-Fi. It is not on the internet.
+Phone control has been removed. Only the app on the church computer can control the stream, so no other device or website can reach it.
 
 ## Notes
 
@@ -61,7 +53,6 @@ To make a Mac app instead, run the same two commands on a Mac. The file in `dist
 - If one platform fails, the others keep going. Use **Restart** to retry just that one.
 - Windows may ask if the app can use the network the first time. If OBS runs on the same PC, either answer works. If OBS runs on a different PC, allow it.
 - The app needs ports 3000, 1935 and 8000 to be free. Port 8000 is the video preview (it is built in with the flv.js player, installed by `npm install`). Anyone on the same network can open it while you are live, so only use it on a network you trust. It will tell you if another program is using one.
-- Keep Remote access off when you do not need it.
 - You can still run it without the window: `npm start`, then open http://localhost:3000. This way needs ffmpeg installed on the computer.
 
 ## OBS scenes (switch scenes from the dashboard or a phone)
@@ -116,5 +107,10 @@ The Vercel link is a demo only: it shows the pages with sample data. The real ap
 - **End live:** after you press Go live, that button turns red and says **End live**. Press it to stop sending and end the live on that site. It asks first. If you stop OBS and forget, a bar reminds you the live is still open.
 - **Alerts:** a red bar shows at the top if a channel stops receiving, or if OBS is connected but no video arrives. There is no sound.
 
+## Virtual camera for Zoom (Multistream 2, Windows)
+Click **Virtual camera** in the Studio. The first time, Windows asks for permission once to add a camera called **Multistream Camera**. Then in Zoom choose Settings, Video, Camera, **Multistream Camera**. It uses the free [softcam](https://github.com/tshino/softcam) (MIT licence). OBS Virtual Camera still works as a backup. It sends the picture only, not the sound.
 ## If YouTube or Facebook drops
 If a destination stops while OBS is still live, Multistream starts it again by itself: after 3 seconds, then 6, 9 ... up to 30 seconds. It gives up after 10 tries in a row (so a wrong stream key is not tried over and over) and shows "Press Restart". Pressing Restart or End live cancels the waiting.
+
+## Multistream 3 (no localhost)
+Version 3 runs everything inside the app: the windows, the Studio video, the preview and the recording do not use localhost or any port. It has no OBS connection and no phone control. The Studio is laid out like OBS. See [VERSION3.md](VERSION3.md).
