@@ -929,11 +929,12 @@ $('#list').addEventListener('click', async (e) => {
   const saveId = t.dataset.save, cancelId = t.dataset.cancel, restartId = t.dataset.restart, deleteId = t.dataset.delete;
   if (saveId) {
     const f = document.getElementById('edit-' + saveId);
-    await api('/api/destinations/' + saveId, 'PUT', {
+    const r = await api('/api/destinations/' + saveId, 'PUT', {
       name: f.querySelector('.e-name').value,
       url: f.querySelector('.e-url').value.trim(),
       key: f.querySelector('.e-key').value.trim(),
     });
+    if (r && r.error) return alert(r.error); // keep the form open so it can be fixed
     editing.delete(saveId);
     return refresh();
   }
@@ -975,7 +976,8 @@ overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.cla
 $('#add').onclick = async () => {
   const name = $('#n-name').value.trim();
   if (!name) return alert('Please type a name');
-  await api('/api/destinations', 'POST', { name, url: $('#n-url').value.trim(), key: $('#n-key').value.trim() });
+  const r = await api('/api/destinations', 'POST', { name, url: $('#n-url').value.trim(), key: $('#n-key').value.trim() });
+  if (r && r.error) return alert(r.error);
   $('#n-name').value = $('#n-url').value = $('#n-key').value = '';
   overlay.classList.remove('open');
   refresh();

@@ -170,6 +170,7 @@ handleIpc('ms-browser-open', (e, id, url, w, h) => {
   browsers.set(id, b);
 });
 handleIpc('ms-browser-close', (e, id) => { const b = browsers.get(id); if (b) { b.destroy(); browsers.delete(id); } });
+// (sending on, or closing, a pipe only works for a pipe that window opened, so these need no page check)
 // Two-way pipes between a window and the app (the Studio's video, recording and virtual camera).
 // They used to be WebSockets on localhost. Now they are plain messages inside the app.
 const pipes = new Map();
@@ -182,8 +183,8 @@ onIpc('ms-pipe-open', (e, id, p) => {
   toWindow('open');
   e.sender.once('destroyed', () => { const x = pipes.get(key); if (x) { pipes.delete(key); x.windowClosed(); } });
 });
-onIpc('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(e.sender.id + ':' + id); if (w) w.fromWindow(data, isText); });
-onIpc('ms-pipe-close', (e, id) => { const key = e.sender.id + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });
+ipcMain.on('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(e.sender.id + ':' + id); if (w) w.fromWindow(data, isText); });
+ipcMain.on('ms-pipe-close', (e, id) => { const key = e.sender.id + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });
 
 // choosing which screen to capture (for the screen with the lyrics)
 let picked = { id: '', name: '', kind: 'screen' };

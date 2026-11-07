@@ -18,6 +18,12 @@ const { createAutoRetry } = require('./autoretry');
 const { createChat } = require('./chat');
 const { runPreflight } = require('./preflight');
 const secret = require('./secret');
+// A saved login or key that cannot be opened on this computer (for example the Mac Keychain said no) is kept
+// exactly as it is in the file and written back unchanged, so it is never wiped. It is only replaced when you
+// type a new one (or remove it on purpose).
+const keptSealed = new Map(); // name -> the encrypted text from the file
+function openKept(name, v) { const o = secret.open(v); if (o === null) { keptSealed.set(name, v); return ''; } keptSealed.delete(name); return o || ''; }
+function sealKept(name, v) { if (v) { keptSealed.delete(name); return secret.seal(v); } return keptSealed.get(name) || ''; }
 const { detectEncoder } = require('./encoder');
 const outargs = require('./outargs');
 const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker } = require('./stats');
@@ -50,7 +56,7 @@ if (check.error) {
 fs.mkdirSync(DATA_DIR, { recursive: true });
 let destinations = [];
 try {
-  destinations = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')).map((d) => ({ ...d, key: secret.open(d.key) || '' }));
+  destinations = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')).map((d) => ({ ...d, key: openKept('dest:' + d.id, d.key) }));
 } catch {
   destinations = [
     { id: crypto.randomUUID(), name: 'Instagram', url: '', key: '', enabled: true },
@@ -59,7 +65,7 @@ try {
 }
 function save() {
   // stream keys are saved encrypted (see secret.js)
-  fs.writeFileSync(DATA_FILE, JSON.stringify(destinations.map((d) => ({ ...d, key: secret.seal(d.key) })), null, 2), { mode: 0o600 });
+  fs.writeFileSync(DATA_FILE, JSON.stringify(destinations.map((d) => ({ ...d, key: sealKept('dest:' + d.id, d.key) })), null, 2), { mode: 0o600 });
 }
 save();
 
@@ -576,10 +582,10 @@ const FB_FILE = path.join(DATA_DIR, 'facebook.json');
 let fb = { pageId: '', pageName: '', token: '' };
 try {
   fb = { ...fb, ...JSON.parse(fs.readFileSync(FB_FILE, 'utf8')) };
-  fb.token = secret.open(fb.token) || '';
+  fb.token = openKept('fb.token', fb.token);
 } catch {}
 function saveFb() {
-  fs.writeFileSync(FB_FILE, JSON.stringify({ ...fb, token: secret.seal(fb.token) }, null, 2), { mode: 0o600 });
+  fs.writeFileSync(FB_FILE, JSON.stringify({ ...fb, token: sealKept('fb.token', fb.token) }, null, 2), { mode: 0o600 });
 }
 const GRAPH = 'https://graph.facebook.com/v26.0';
 function fbView() {
@@ -656,11 +662,11 @@ const YT_FILE = path.join(DATA_DIR, 'youtube.json');
 let yt = { clientId: '', clientSecret: '', refreshToken: '', channelTitle: '' };
 try {
   yt = { ...yt, ...JSON.parse(fs.readFileSync(YT_FILE, 'utf8')) };
-  yt.clientSecret = secret.open(yt.clientSecret) || '';
-  yt.refreshToken = secret.open(yt.refreshToken) || '';
+  yt.clientSecret = openKept('yt.clientSecret', yt.clientSecret);
+  yt.refreshToken = openKept('yt.refreshToken', yt.refreshToken);
 } catch {}
 function saveYt() {
-  fs.writeFileSync(YT_FILE, JSON.stringify({ ...yt, clientSecret: secret.seal(yt.clientSecret), refreshToken: secret.seal(yt.refreshToken) }, null, 2), { mode: 0o600 });
+  fs.writeFileSync(YT_FILE, JSON.stringify({ ...yt, clientSecret: sealKept('yt.clientSecret', yt.clientSecret), refreshToken: sealKept('yt.refreshToken', yt.refreshToken) }, null, 2), { mode: 0o600 });
 }
 const YT_REDIRECT = `http://127.0.0.1:${DASHBOARD_PORT}/api/youtube/callback`;
 const YT_SCOPE = 'https://www.googleapis.com/auth/youtube';
@@ -710,6 +716,7 @@ app.put('/api/youtube/client', (req, res) => {
   const c = f.installed || f.web || {};
   if (!c.client_id || !c.client_secret) return res.status(400).json({ error: 'This does not look like the file Google gave you' });
   yt = { clientId: String(c.client_id), clientSecret: String(c.client_secret), refreshToken: '', channelTitle: '' };
+  keptSealed.delete('yt.refreshToken'); // a new Google file means signing in again
   ytAccess = { token: '', expires: 0 };
   saveYt();
   res.json(ytView());
@@ -844,7 +851,8 @@ app.put('/api/destinations/:id', (req, res) => {
   const url = req.body && req.body.url !== undefined ? String(req.body.url).trim() : undefined;
   if (url !== undefined && !okStreamUrl(url)) return res.status(400).json({ error: 'The server address must start with rtmp:// or rtmps://' });
   // moving a channel to a different server needs its key typed again, so a saved key is never sent somewhere new
-  if (url !== undefined && d.key && d.url && hostOf(url) !== hostOf(d.url) && !(key !== undefined && key !== '')) return res.status(400).json({ error: 'You changed the server. Type the stream key again.' });
+  const hasKey = Boolean(d.key || keptSealed.has('dest:' + d.id));
+  if (url !== undefined && hasKey && hostOf(url) !== hostOf(d.url) && !(key !== undefined && key !== '')) return res.status(400).json({ error: 'You changed the server. Type the stream key again.' });
   if (cap1080 !== undefined) d.cap1080 = cap1080 === null ? undefined : Boolean(cap1080);
   const changedTarget = (url !== undefined && url !== d.url) || (key !== undefined && key !== '' && key !== d.key);
   if (name !== undefined) d.name = String(name);
