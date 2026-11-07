@@ -89,7 +89,7 @@ function createWindow() {
     height: 780,
     minWidth: 900,
     minHeight: 640,
-    title: 'Multistream 3',
+    title: 'Multistream',
     autoHideMenuBar: true,
     backgroundColor: '#eaf1fb',
     // the Stream page may slow down while minimised or hidden (it only shows things); the Studio makes the video,
