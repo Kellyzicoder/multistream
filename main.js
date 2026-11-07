@@ -92,7 +92,9 @@ function createWindow() {
     title: 'Multistream 3',
     autoHideMenuBar: true,
     backgroundColor: '#eaf1fb',
-    webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
+    // the Stream page may slow down while minimised or hidden (it only shows things); the Studio makes the video,
+    // so it never slows down (see ms-open-studio)
+    webPreferences: { contextIsolation: true, nodeIntegration: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
   win.webContents.on('did-fail-load', (e, code, desc, url) => console.error('Page failed to load:', code, desc, url));
   win.loadURL(HOME + '/').catch((e) => console.error('Dashboard did not load:', e && e.message));
@@ -111,7 +113,7 @@ let studioWin = null;
 // same = true: the Studio replaces the dashboard in the same window (a button in the Studio goes back).
 handleIpc('ms-open-studio', (e, same) => {
   if (studioWin) { studioWin.focus(); return; }
-  if (same && win && !win.isDestroyed()) { win.loadURL(HOME + '/studio.html?same=1'); return; }
+  if (same && win && !win.isDestroyed()) { win.webContents.setBackgroundThrottling(false); win.loadURL(HOME + '/studio.html?same=1'); return; }
   studioWin = new BrowserWindow({
     width: 1400, height: 860, title: 'Multistream Studio', autoHideMenuBar: true, backgroundColor: '#0f1512',
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
@@ -123,6 +125,7 @@ handleIpc('ms-open-studio', (e, same) => {
 handleIpc('ms-open-dashboard', () => {
   if (!win || win.isDestroyed()) return;
   browsers.forEach((b) => b.destroy()); browsers.clear();
+  win.webContents.setBackgroundThrottling(true);
   win.loadURL(HOME + '/');
 });
 // the screens that are connected (for showing the Control Room or a Preview/Program picture full screen on one of them)
@@ -133,7 +136,7 @@ const displayById = (id) => (id == null || id === '' ? null : screen.getAllDispl
 function projectorOptions(url) {
   let u; try { u = new URL(url); } catch { return null; }
   if (u.protocol !== 'app:' || u.pathname !== '/projector.html') return null;
-  const d = displayById(u.searchParams.get('d')), o = { backgroundColor: '#000000', autoHideMenuBar: true, title: 'Multistream Projector', webPreferences: { backgroundThrottling: false } };
+  const d = displayById(u.searchParams.get('d')), o = { backgroundColor: '#000000', autoHideMenuBar: true, title: 'Multistream Projector' };
   if (d) Object.assign(o, { x: d.bounds.x, y: d.bounds.y, width: d.bounds.width, height: d.bounds.height, fullscreen: true, frame: false });
   else Object.assign(o, { width: 960, height: 540 });
   return { action: 'allow', overrideBrowserWindowOptions: o };
@@ -143,7 +146,7 @@ handleIpc('ms-open-cr', (e, displayId) => {
   const d = displayById(displayId);
   if (crWin && !crWin.isDestroyed()) crWin.close();
   const o = { width: 1280, height: 800, title: 'Multistream Control Room', autoHideMenuBar: true, backgroundColor: '#07090b', show: !d,
-    webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, preload: path.join(__dirname, 'preload.js') } };
+    webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(__dirname, 'preload.js') } };
   if (d) Object.assign(o, { x: d.bounds.x, y: d.bounds.y, width: d.bounds.width, height: d.bounds.height });
   const w = crWin = new BrowserWindow(o);
   if (d) {
@@ -174,14 +177,26 @@ handleIpc('ms-browser-close', (e, id) => { const b = browsers.get(id); if (b) { 
 // Two-way pipes between a window and the app (the Studio's video, recording and virtual camera).
 // They used to be WebSockets on localhost. Now they are plain messages inside the app.
 const pipes = new Map();
+// One listener per window (not one per pipe) closes that window's pipes when the window goes away.
+const pipeWatch = new Set();
+function closePipesOf(senderId) {
+  for (const [key, w] of pipes) if (key.startsWith(senderId + ':')) { pipes.delete(key); w.windowClosed(); }
+}
 onIpc('ms-pipe-open', (e, id, p) => {
-  const key = e.sender.id + ':' + id;
+  const key = e.sender.id + ':' + id, sid = e.sender.id;
   const toWindow = (type, data) => { if (!e.sender.isDestroyed()) e.sender.send('ms-pipe-ev', id, type, data); if (type === 'close') pipes.delete(key); };
   const w = relay && relay.openPipe(String(p), toWindow);
   if (!w) { toWindow('close'); return; }
   pipes.set(key, w);
   toWindow('open');
-  e.sender.once('destroyed', () => { const x = pipes.get(key); if (x) { pipes.delete(key); x.windowClosed(); } });
+  if (!pipeWatch.has(sid)) {
+    pipeWatch.add(sid);
+    const wc = e.sender;
+    // the window loads another page (Stream <-> Studio in the same window): the old page's pipes end too
+    const moved = (ev) => { if (ev && ev.isMainFrame && !ev.isSameDocument) closePipesOf(sid); };
+    wc.on('did-start-navigation', moved);
+    wc.once('destroyed', () => { pipeWatch.delete(sid); closePipesOf(sid); });
+  }
 });
 ipcMain.on('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(e.sender.id + ':' + id); if (w) w.fromWindow(data, isText); });
 ipcMain.on('ms-pipe-close', (e, id) => { const key = e.sender.id + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });

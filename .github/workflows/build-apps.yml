@@ -22,9 +22,14 @@ jobs:
               dist/Multistream3-Setup.exe
               dist/latest.yml
               dist/Multistream3-Setup.exe.blockmap
+          # Each Mac build is its own job, so each gets the ffmpeg made for that kind of Mac
           - os: macos-latest
             name: Mac
-            args: --mac --x64 --arm64
+            args: --mac --arm64
+            files: dist/Multistream3-Mac-*.dmg
+          - os: macos-latest
+            name: Mac Intel
+            args: --mac --x64
             files: dist/Multistream3-Mac-*.dmg
           - os: ubuntu-latest
             name: Linux
@@ -81,6 +86,12 @@ jobs:
           Get-ChildItem vcam/win
       - name: Install
         run: npm install
+      - name: Use the Intel ffmpeg for the Intel Mac
+        if: matrix.name == 'Mac Intel'
+        run: |
+          rm -f node_modules/ffmpeg-static/ffmpeg
+          npm_config_arch=x64 node node_modules/ffmpeg-static/install.js
+          file node_modules/ffmpeg-static/ffmpeg | tee /dev/stderr | grep -q x86_64
       - name: Build
         run: npx electron-builder ${{ matrix.args }} --publish never
         env:
