@@ -8,6 +8,7 @@ const { EventEmitter } = require('events');
 function fakeSocket() {
   const s = new PassThrough();
   s.remoteAddress = '127.0.0.1';
+  s.inApp = true; // only requests from the app's own windows come through here
   s.encrypted = false;
   s.setTimeout = () => s; s.setNoDelay = () => s; s.setKeepAlive = () => s; s.destroySoon = () => {};
   s.cork = () => {}; s.uncork = () => {};
