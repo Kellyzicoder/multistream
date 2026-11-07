@@ -86,16 +86,5 @@ The Studio only draws the Control Room pictures while a Control Room is open (it
 ## Control Room tidy-up
 - The status line ("Studio is running") is gone. The Studio is always open, so it was not needed.
 - The Preview/Take/Direct switch and the "Open in its own window" button are gone, like OBS. Click a scene to put it in the Preview, then click the Program picture to put it on air.
-- Clicking the **Control Room** tab opens a small menu: **New window**, then each display (full screen on that display). It is like OBS projectors.
-
-## Safety
-- Phone control is gone. Only the app's own windows can control it. Older versions' phone password file is deleted.
-- Saved logins (YouTube, Facebook) and stream keys are saved encrypted, tied to this Windows user (or the Mac Keychain). If you copy the app's data to another computer, you have to log in and type the keys again there.
-- A channel's server address must start with `rtmp://` or `rtmps://`. If you change a channel to a different server, you have to type its stream key again, so a saved key is never sent somewhere new.
-- Stream keys are hidden in error messages and alerts, including each part of a Facebook key.
-- Web pages used as Studio sources (like a lyrics site) run on their own: they cannot use the camera, microphone or screen, open pop-ups, or reach the app.
-- App windows only ever show the app's own pages. A link to a website opens in your normal browser.
-- The virtual camera is now registered from a copy in Program Files, which only an administrator can change. Windows asks for permission once more after this update.
-- YouTube sign-in uses an extra check (PKCE), so only this app can use the code Google sends back.
-- Pictures and videos only can be uploaded to the Studio. Phone cameras (DroidCam) must be at an address on your own network.
-- Builds can only read the code; only the release step can publish, and the build tools are pinned to exact versions.
+- Clicking the **Control Room** tab opens a small menu: **New window**, then each display (full screen on that display). It is like OBS projectors. Use **Split screen** to see the Control Room next to the Stream page in the same window.
+- If Zoom still shows DirectShow Softcam after updating, press **Start Virtual Camera** once more. Windows asks for permission one time, and then the camera is added again under the name Multistream Camera. Restart Zoom after that.
