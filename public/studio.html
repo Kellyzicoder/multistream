@@ -256,6 +256,8 @@
   .alertbar #alertTxt > div + div { margin-top:4px; }
   .alertbar #alertTxt strong { font-weight:700; }
   .alertbar #alertTxt span { opacity:.75; }
+  .alertbar #alertTxt .ok { opacity:.7; }
+  .alertbar #alertTxt .ok::before { content:'\2713  '; }
   .alertbar button { border:1px solid var(--errline); background:transparent; color:inherit; border-radius:999px; padding:5px 12px; font-size:12px; flex:none; }
 </style>
 </head>
@@ -2087,28 +2089,39 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   const rb = document.getElementById('resetLayout'); if (rb) rb.onclick = () => { L = fresh(); layout(); save(); };
   layout();
 })();
-// Stream alerts come from the server as they happen (one open connection, no polling)
+// Studio alerts (no video arriving, video stopped) show here. Stream problems show on the Stream page.
 (function () {
-  const bar = document.getElementById('alertBar'), box = document.getElementById('alertTxt');
-  let list = [];
-  function draw() {
+  // Alerts are pushed by the app as they happen (no polling). In the app they come through a pipe;
+  // in a browser on the church Wi-Fi they come through an event stream. If the link drops it comes back.
+  function listenAlerts(group, onMsg) {
+    const take = (t) => { try { onMsg(JSON.parse(typeof t === 'string' ? t : new TextDecoder().decode(t))); } catch {} };
+    if (window.msNative && window.msNative.pipe) {
+      const open = () => window.msNative.pipe('/alerts?group=' + group, (type, data) => {
+        if (type === 'message') take(data);
+        else if (type === 'close') setTimeout(open, 3000);
+      });
+      open();
+    } else if (window.EventSource) {
+      new EventSource('/api/alerts?group=' + group).onmessage = (e) => take(e.data);
+    }
+  }
+  function drawAlertRows(box, list) {
     box.textContent = '';
     for (const a of list) {
-      const row = document.createElement('div');
+      const row = document.createElement('div'); if (a.ok) row.className = 'ok';
       const src = document.createElement('strong'); src.textContent = a.source + ' ';
       const when = document.createElement('span'); when.textContent = new Date(a.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' \u2014 ';
       row.append(src, when, document.createTextNode(a.text)); box.appendChild(row);
     }
-    bar.classList.toggle('on', list.length > 0);
   }
+  // one row per source: a new message from the same source replaces its row
+  function mergeAlert(list, a) { const i = list.findIndex((x) => x.source === a.source); if (i >= 0) list.splice(i, 1); list.push(a); if (list.length > 20) list.shift(); }
+
+  const bar = document.getElementById('alertBar'), box = document.getElementById('alertTxt');
+  let list = [];
+  const draw = () => { drawAlertRows(box, list); bar.classList.toggle('on', list.length > 0); };
   document.getElementById('alertX').onclick = () => { list = []; draw(); fetch('/api/alerts/clear?group=studio', { method: 'POST' }).catch(() => {}); };
-  if (!window.EventSource) return;
-  const feed = new EventSource('/api/alerts?group=studio');
-  feed.onmessage = (e) => {
-    let d; try { d = JSON.parse(e.data); } catch { return; }
-    if (d.clear) { list = []; } else { list.push(d); if (list.length > 20) list.shift(); }
-    draw();
-  };
+  listenAlerts('studio', (d) => { if (d.clear) list = []; else mergeAlert(list, d); draw(); });
 })();
 </script>
 </body>

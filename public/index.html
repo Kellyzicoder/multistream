@@ -101,6 +101,8 @@
   .alertbar #alertTxt > div + div { margin-top:4px; }
   .alertbar #alertTxt strong { font-weight:700; }
   .alertbar #alertTxt span { opacity:.75; }
+  .alertbar #alertTxt .ok { opacity:.7; }
+  .alertbar #alertTxt .ok::before { content:'\2713  '; }
   .alertbar button { border:1px solid var(--errline); background:transparent; color:inherit; border-radius:999px; padding:5px 12px; font-size:12px; flex:none; }
   .pf { padding:2px 0 6px; }
   .pf .it { display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--rule); font-size:12.5px; line-height:1.45; }
@@ -1482,29 +1484,38 @@ $('#pfBtn').onclick = async () => {
 
 // Alerts: a red bar when something stops
 // Each alert names its source (a channel or the Studio) and the time, so it is easy to trace.
-// Several are kept until Dismiss, which clears them on every page.
-let alertList = [];
-function drawAlerts() {
-  const box = $('#alertTxt'); box.textContent = '';
-  for (const a of alertList) {
-    const row = document.createElement('div');
+// Alerts kept until Dismiss. Stream problems show here (Stream and Control Room); Studio problems show in the Studio.
+// Alerts are pushed by the app as they happen (no polling). In the app they come through a pipe;
+// in a browser on the church Wi-Fi they come through an event stream. If the link drops it comes back.
+function listenAlerts(group, onMsg) {
+  const take = (t) => { try { onMsg(JSON.parse(typeof t === 'string' ? t : new TextDecoder().decode(t))); } catch {} };
+  if (window.msNative && window.msNative.pipe) {
+    const open = () => window.msNative.pipe('/alerts?group=' + group, (type, data) => {
+      if (type === 'message') take(data);
+      else if (type === 'close') setTimeout(open, 3000);
+    });
+    open();
+  } else if (window.EventSource) {
+    new EventSource('/api/alerts?group=' + group).onmessage = (e) => take(e.data);
+  }
+}
+function drawAlertRows(box, list) {
+  box.textContent = '';
+  for (const a of list) {
+    const row = document.createElement('div'); if (a.ok) row.className = 'ok';
     const src = document.createElement('strong'); src.textContent = a.source + ' ';
     const when = document.createElement('span'); when.textContent = new Date(a.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' \u2014 ';
     row.append(src, when, document.createTextNode(a.text)); box.appendChild(row);
   }
-  $('#alertBar').hidden = alertList.length === 0;
 }
-function showAlert(a) { alertList.push(a); if (alertList.length > 20) alertList.shift(); drawAlerts(); }
+// one row per source: a new message from the same source replaces its row
+function mergeAlert(list, a) { const i = list.findIndex((x) => x.source === a.source); if (i >= 0) list.splice(i, 1); list.push(a); if (list.length > 20) list.shift(); }
+let alertList = [];
+function drawAlerts() { drawAlertRows($('#alertTxt'), alertList); $('#alertBar').hidden = alertList.length === 0; }
 function clearAlerts() { alertList = []; drawAlerts(); }
 $('#alertX').onclick = () => { clearAlerts(); fetch('/api/alerts/clear?group=stream', { method: 'POST' }).catch(() => {}); };
-// Alerts come from the server as they happen (one open connection, no polling)
-let alertFeed = null;
-function startAlerts() {
-  if (alertFeed || !window.EventSource) return;
-  alertFeed = new EventSource('/api/alerts?group=stream');
-  alertFeed.onmessage = (e) => { try { const d = JSON.parse(e.data); if (d.clear) clearAlerts(); else showAlert(d); } catch {} };
-}
-startAlerts();
+listenAlerts('stream', (d) => { if (d.clear) clearAlerts(); else { mergeAlert(alertList, d); drawAlerts(); } });
+
 async function pollChat() {
   try {
     const r = await api('/api/chat?after=' + chatSeq);
