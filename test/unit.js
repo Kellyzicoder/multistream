@@ -115,6 +115,14 @@ function outTests() {
   assert.ok(ra.includes('scale=2560:1440') && ra.includes('16000k') && ra[ra.indexOf('-r') + 1] === '60' && ra[ra.length - 1] === 'x.mkv', ra.join(' '));
   assert.ok(oa.recordArgs('nvenc', { h: '2160', mbit: '500' }, 'y.mkv').includes('80000k'), 'recording bitrate is capped');
   ok('ffmpeg arguments for sending and recording at the chosen size');
+  // Encode once: the picture is copied (no second encode); audio is still AAC; no scale
+  const ca = oa.ingestArgs('nvenc', oa.parseOut(q({ h: '1080', fps: '30', kbps: '6000' })), true);
+  assert.ok(ca.includes('copy') && ca[ca.indexOf('-c:v') + 1] === 'copy' && !ca.includes('scale=1920:1080') && !ca.includes('h264_nvenc'), ca.join(' '));
+  assert.ok(ca[ca.indexOf('-c:a') + 1] === 'aac' && ca[ca.length - 1] === 'pipe:1', ca.join(' '));
+  assert.ok(oa.ingestArgs('nvenc', oa.parseOut(q({ h: '1080' }))).includes('h264_nvenc'), 'normal way still encodes');
+  const cr = oa.recordArgs('nvenc', { h: '1080', mbit: '8', fps: '30' }, 'z.mkv', true);
+  assert.ok(cr[cr.indexOf('-c:v') + 1] === 'copy' && cr[cr.length - 1] === 'z.mkv' && !cr.includes('scale=1920:1080'), cr.join(' '));
+  ok('faster video: copy the picture, no second encode, normal way unchanged');
   // Facebook / Instagram get at most 1080p and 9000 kbps; YouTube gets everything
   const fb = { url: 'rtmps://live-api-s.facebook.com:443/rtmp/' }, ig = { url: 'rtmps://edgetee-upload.instagram.com:443/rtmp/' }, yt = { url: 'rtmp://a.rtmp.youtube.com/live2' };
   const big = oa.parseOut(q({ h: '2160', fps: '30', kbps: '20000' })), ok1080 = oa.parseOut(q({ h: '1080', fps: '60', kbps: '9000' })), heavy = oa.parseOut(q({ h: '1080', fps: '30', kbps: '12000' }));

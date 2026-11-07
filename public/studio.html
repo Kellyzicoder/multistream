@@ -365,6 +365,7 @@
           <p class="note" id="outNote"></p>
           <div class="f"><label>Canvas</label><span>1920 x 1080 (items are placed on this, like OBS)</span></div>
           <div class="f"><label>Encoder</label><span id="encName">...</span></div>
+          <div class="f"><label>Encoding</label><span>The picture is encoded once for the stream and the recording. If this computer cannot do that, the app goes back to the older way by itself and tells you.</span></div>
           <div class="f"><label>Keyframes</label><span>Every 2 seconds (what YouTube and Facebook ask for)</span></div>
         </section>
         <section class="sp" data-sp="output">
@@ -1399,16 +1400,19 @@ async function connectSend() {
   try { ensureAudio(); await syncAudio(); } catch {}
   const out = new MediaStream(cv.captureStream(OUT.fps).getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
-  wsOut = openPipe(`/studio-ingest?h=${OUT.h}&fps=${OUT.fps}&kbps=${OUT.kbps}`);
+  const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
+  const fast = useFast(mt);
+  wsOut = openPipe(`/studio-ingest?h=${OUT.h}&fps=${OUT.fps}&kbps=${OUT.kbps}${fast ? '&copy=1' : ''}`);
   wsOut.binaryType = 'arraybuffer';
   wsOut.onopen = () => {
-    const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
-    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: 128000 });
+    // fast: the browser's bitrate is the one we send, so it is set to the target exactly
+    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: fast ? OUT.kbps * 1000 : Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: 128000 });
     rec.ondataavailable = async (e) => { if (e.data.size && wsOut && wsOut.readyState === 1) wsOut.send(await e.data.arrayBuffer()); };
     rec.start(250);
     cv.classList.add('live');
   };
   const mine = wsOut;
+  wsOut.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.fallback) { fastOff = true; flash('The fast encoding did not work on this computer. Using the older way now.', false); } } catch {} };
   wsOut.onclose = () => { if (wsOut !== mine) return; dropSend(); if (wantSend) scheduleRetry(); };
 }
 function dropSend() {
@@ -1452,10 +1456,11 @@ async function startRec() {
   try { ensureAudio(); await syncAudio(); } catch {}
   const out = new MediaStream(rcv.captureStream(rfps).getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
-  const ws = recWs = openPipe(`/studio-record?h=${rcv.height}&mbit=${mb}&fps=${rfps}`);
+  const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
+  const fast = useFast(mt);
+  const ws = recWs = openPipe(`/studio-record?h=${rcv.height}&mbit=${mb}&fps=${rfps}${fast ? '&copy=1' : ''}`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
-    const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
     recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.min(80, Math.max(mb, 6)) * 1000000, audioBitsPerSecond: 160000 });
     recMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     recMr.start(500);
@@ -1464,7 +1469,7 @@ async function startRec() {
   };
   ws.onclose = () => { if (recWs === ws) endRec(true); };
   ws.onerror = () => {};
-  ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) flash('Recording problem: ' + j.error, false); if (j.saved) flash('Saved: ' + j.saved + ' (in your Videos/Multistream folder)', true); } catch {} };
+  ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.fallback) { fastOff = true; flash('The fast encoding did not work on this computer. Start Recording again to use the older way.', false); } if (j.error) flash('Recording problem: ' + j.error, false); if (j.saved) flash('Saved: ' + j.saved + ' (in your Videos/Multistream folder)', true); } catch {} };
 }
 function endRec(fromClose) {
   clearInterval(recTick); recW = 0;
@@ -1759,6 +1764,9 @@ try { snapOn = localStorage.getItem('ms_snap') !== '0'; askStop = localStorage.g
 $('#optSnap').onchange = () => { snapOn = $('#optSnap').checked; try { localStorage.setItem('ms_snap', snapOn ? '1' : '0'); } catch {} };
 $('#optConfirm').onchange = () => { askStop = $('#optConfirm').checked; try { localStorage.setItem('ms_askstop', askStop ? '1' : '0'); } catch {} };
 $('#studioOpen').onchange = () => { try { localStorage.setItem('ms_studio_open', $('#studioOpen').value); } catch {} };
+// Encode once: the browser's H.264 is passed on as it is. fastOff becomes true for this session if that fails here.
+let fastOff = false;
+const useFast = (mt) => !fastOff && /h264/.test(mt || '');
 $('#resetStudio').onclick = () => {
   if (!confirm('Put the video size, recording quality, transition, monitoring output and options back to how they started?')) return;
   ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_studio_open', 'ms_layout'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });

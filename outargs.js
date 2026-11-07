@@ -25,17 +25,24 @@ function label(out) {
 }
 
 // the Studio's video (from the page) -> H.264 + AAC as FLV on pipe:1
-function ingestArgs(encKey, out) {
+// copy = true (encode once, the normal case): the page already encoded H.264 at the right size, so ffmpeg only
+// wraps it. Audio is still made AAC, because FLV does not take the Opus audio the browser makes.
+function ingestArgs(encKey, out, copy = false) {
+  if (copy) return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-c:v', 'copy',
+    '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'];
   return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0',
     '-vf', `scale=${out.w}:${out.h}`, ...videoArgs(encKey, out.kbps, out.fps * 2), '-pix_fmt', 'yuv420p', '-r', String(out.fps),
     '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'];
 }
 
 // the Studio's video -> a file
-function recordArgs(encKey, { h, mbit, fps }, file) {
+// copy = true: the recording canvas is already the right size and H.264, so the file is only wrapped (no second encode)
+function recordArgs(encKey, { h, mbit, fps }, file, copy = false) {
   const hh = SIZES.includes(Number(h)) ? Number(h) : 720;
   const mb = Math.min(80, Math.max(2, Number(mbit) || 8));
   const f = Number(fps) === 60 ? 60 : 30;
+  if (copy) return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-c:v', 'copy',
+    '-c:a', 'aac', '-b:a', '160k', '-f', 'matroska', file];
   return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-vf', `scale=${widthFor(hh)}:${hh}`,
     ...videoArgs(encKey, mb * 1000, f * 2), '-pix_fmt', 'yuv420p', '-r', String(f), '-c:a', 'aac', '-b:a', '160k', '-f', 'matroska', file];
 }
