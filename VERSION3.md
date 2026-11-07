@@ -87,3 +87,4 @@ The Studio only draws the Control Room pictures while a Control Room is open (it
 - The status line ("Studio is running") is gone. The Studio is always open, so it was not needed.
 - The Preview/Take/Direct switch and the "Open in its own window" button are gone, like OBS. Click a scene to put it in the Preview, then click the Program picture to put it on air.
 - Clicking the **Control Room** tab opens a small menu: **New window**, then each display (full screen on that display). It is like OBS projectors. Use **Split screen** to see the Control Room next to the Stream page in the same window.
+- If Zoom still shows DirectShow Softcam after updating, press **Start Virtual Camera** once more. Windows asks for permission one time, and then the camera is added again under the name Multistream Camera. Restart Zoom after that.
