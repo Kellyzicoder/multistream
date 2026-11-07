@@ -26,7 +26,8 @@ function openKept(name, v) { const o = secret.open(v); if (o === null) { keptSea
 function sealKept(name, v) { if (v) { keptSealed.delete(name); return secret.seal(v); } return keptSealed.get(name) || ''; }
 const { detectEncoder } = require('./encoder');
 const outargs = require('./outargs');
-const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker } = require('./stats');
+const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker, makeFlvInfo } = require('./stats');
+const { Writable } = require('stream');
 
 // Version 3: nothing listens on the network unless you switch it on.
 // The app windows talk to this file directly (see inproc.js), and video moves through the hub (flvhub.js).
@@ -169,15 +170,7 @@ function startMonitor() {
   if (monitor || !obsLive) return;
   resetSignal();
   signal.startedAt = Date.now();
-  const args = [
-    '-loglevel', 'info', '-nostats',
-    ...HUB_IN,
-    '-map', '0', '-c', 'copy', '-f', 'flv', 'pipe:1',
-  ];
-  const p = spawn(FFMPEG, args, { windowsHide: true });
-  monitor = p;
-  p.stdin.on('error', () => {});
-  hub.subscribe(p.stdin, () => { try { p.kill('SIGKILL'); } catch {} });
+  // The stream check reads the video inside the app (it used to start an extra ffmpeg just to count it).
   let bytes = 0;
   const rate = makeRateTracker();
   // seconds between keyframes: average of the last few gaps
@@ -191,8 +184,9 @@ function startMonitor() {
     }
     lastKey = ts;
   });
-  p.stdout.on('data', (c) => { bytes += c.length; keys(c); });
-  p.stderr.on('data', (c) => c.toString().split(/\r?\n/).forEach((l) => parseStreamLine(l, signal)));
+  const details = makeFlvInfo(signal); // video and sound type, size, frames a second
+  const sink = new Writable({ write(c, enc, cb) { bytes += c.length; try { keys(c); details(c); } catch {} cb(); } });
+  const m = {};
   const timer = setInterval(() => {
     if (obsLive && signal.lastDataAt && Date.now() - signal.lastDataAt > 8000 && !noSignalSent) {
       noSignalSent = true;
@@ -206,21 +200,21 @@ function startMonitor() {
     signal.history.push(signal.kbps);
     if (signal.history.length > 90) signal.history.shift();
   }, 1000);
-  p.on('error', () => {});
-  p.on('close', () => {
-    clearInterval(timer);
-    const wanted = !p.stoppedByUs;
-    if (monitor === p) monitor = null;
-    if (wanted && obsLive) setTimeout(startMonitor, 2000); // came up too early or dropped: try again
+  m.stop = () => { clearInterval(timer); off(); sink.destroy(); };
+  const off = hub.subscribe(sink, () => {
+    // dropped by the hub (should not happen, it reads at once): start again
+    if (monitor !== m) return;
+    m.stop(); monitor = null;
+    if (obsLive) setTimeout(startMonitor, 2000);
   });
+  monitor = m;
 }
 
 function stopMonitor() {
   if (!monitor) return;
-  const p = monitor;
+  const m = monitor;
   monitor = null;
-  p.stoppedByUs = true;
-  p.kill('SIGTERM');
+  m.stop();
 }
 
 // a destination that drops while the Studio is still sending starts again by itself
@@ -893,9 +887,23 @@ const ASSET_DIR = path.join(DATA_DIR, 'studio-assets');
 const MEDIA_EXT = /\.(png|jpe?g|gif|webp|bmp|avif|mp4|m4v|mov|webm|mkv)$/i; // pictures and videos only
 let studio = { scenes: [], current: '', preview: '', audio: [] };
 try { studio = { ...studio, ...JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) }; } catch {}
+// Uploaded pictures and videos that no scene uses any more are removed when the app starts
+// (only ones older than a day, so something you just added is never touched).
+try {
+  const used = JSON.stringify(studio);
+  for (const n of fs.readdirSync(ASSET_DIR)) {
+    if (used.includes(n) || used.includes(encodeURIComponent(n))) continue;
+    const f = path.join(ASSET_DIR, n);
+    if (Date.now() - fs.statSync(f).mtimeMs > 24 * 3600 * 1000) fs.unlinkSync(f);
+  }
+} catch {}
 let studioRev = 1;
 function saveStudio() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio)); } catch {} studioRev++; }
-app.get('/api/studio', (req, res) => res.json({ ...studio, rev: studioRev }));
+// ?rev=N: when nothing changed since N, a short answer (the Studio asks often)
+app.get('/api/studio', (req, res) => {
+  if (req.query && String(req.query.rev) === String(studioRev)) return res.json({ same: true, rev: studioRev, preview: studio.preview || '' });
+  res.json({ ...studio, rev: studioRev });
+});
 app.put('/api/studio', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Edit scenes on the church PC' });
   const b = req.body || {};

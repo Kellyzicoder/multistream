@@ -6,7 +6,7 @@
 // and the frames since the last keyframe, so its picture starts clean straight away.
 const { EventEmitter } = require('events');
 
-const MAX_BACKLOG = 48 * 1024 * 1024; // a taker this far behind is dropped (it starts again by itself)
+const MAX_BACKLOG = 24 * 1024 * 1024; // a taker this far behind (about 20 s at 9 Mbit) is dropped (it starts again by itself)
 const MAX_GOP_TAGS = 3000;
 
 function createHub() {
