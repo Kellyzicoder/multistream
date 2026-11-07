@@ -21,7 +21,7 @@ Version 3 is a separate app. Version 1 (`main`) and Version 2 (`v2`) are not cha
 Version 3 has **no OBS connection** at all (no OBS backup, no OBS control). You can still copy scenes from an exported OBS scene file with **Import Scenes...** (that is only reading a file).
 
 Ports are only opened when you ask for them:
-- **Phone control** (Settings, Phone): port 3000, so a phone on the Wi-Fi can open the dashboard. Off by default.
+- **Phone control** has been removed, so no other device on the Wi-Fi (and no website) can control the app.
 - **YouTube sign-in**: Google sends your browser back to this computer once. A listener opens on this computer only while you sign in, then closes (after 5 minutes at most).
 
 ## Screens
