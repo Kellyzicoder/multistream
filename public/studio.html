@@ -250,9 +250,19 @@
 #vcPrev span{position:absolute;left:6px;bottom:4px;font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff}
 .lyr .cog{flex:none;width:28px;height:26px;padding:0;font-size:16px;line-height:1;border-radius:8px;opacity:.9}
 .lyr .cog:hover{opacity:1;background:var(--gl2);border-color:var(--gl-line)}
+  .alertbar { display:none; align-items:flex-start; gap:12px; justify-content:space-between; position:fixed; right:16px; bottom:16px; z-index:100; width:min(440px, calc(100vw - 32px)); box-sizing:border-box; background:var(--errbg); border:1px solid var(--errline); color:var(--errsvg); padding:12px 14px; border-radius:16px; box-shadow:0 14px 36px rgba(0,0,0,.22); font-size:13px; font-weight:500; line-height:1.4; }
+  .alertbar.on { display:flex; }
+  .alertbar #alertTxt { flex:1; min-width:0; overflow-wrap:anywhere; }
+  .alertbar #alertTxt > div + div { margin-top:4px; }
+  .alertbar #alertTxt strong { font-weight:700; }
+  .alertbar #alertTxt span { opacity:.75; }
+  .alertbar #alertTxt .ok { opacity:.7; }
+  .alertbar #alertTxt .ok::before { content:'\2713  '; }
+  .alertbar button { border:1px solid var(--errline); background:transparent; color:inherit; border-radius:999px; padding:5px 12px; font-size:12px; flex:none; }
 </style>
 </head>
 <body>
+<div class="alertbar" id="alertBar" role="alert"><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 <div class="obs">
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
   <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside><div class="split v" id="splitL" title="Drag to make the left panels wider or narrower" hidden></div>
@@ -1774,7 +1784,7 @@ function renderChans() {
       const body = { name: iN.value.trim() || d.name, url: iU.value.trim(), cap1080: lim.value === 'yes' ? true : lim.value === 'no' ? false : null };
       if (iK.value) body.key = iK.value.trim();
       const r = await fetch('/api/destinations/' + d.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()).catch(() => ({}));
-      if (r.id) { iK.value = ''; msg.textContent = 'Saved.'; chanOpen = d.id; loadChans(); } else msg.textContent = 'Could not save.';
+      if (r.id) { iK.value = ''; msg.textContent = 'Saved.'; chanOpen = d.id; loadChans(); } else msg.textContent = r.error || 'Could not save.';
     };
     row.append(sv, msg); det.appendChild(row); c.appendChild(det);
     ed.onclick = () => { det.hidden = !det.hidden; chanOpen = det.hidden ? '' : d.id; };
@@ -1788,7 +1798,7 @@ $('#chAdd').onclick = async () => {
   const name = $('#chName').value.trim() || 'Channel', url = $('#chUrl').value.trim(), key = $('#chKey').value.trim();
   if (!url || !key) { $('#chMsg').textContent = 'Add the stream URL and the stream key.'; return; }
   const r = await fetch('/api/destinations', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, url, key }) }).then((x) => x.json()).catch(() => ({}));
-  if (r.id) { $('#chKey').value = ''; $('#chName').value = ''; fillSite(); $('#chMsg').textContent = 'Added.'; loadChans(); } else $('#chMsg').textContent = 'Could not add it.';
+  if (r.id) { $('#chKey').value = ''; $('#chName').value = ''; fillSite(); $('#chMsg').textContent = 'Added.'; loadChans(); } else $('#chMsg').textContent = r.error || 'Could not add it.';
 };
 
 // the buttons inside Settings close it first, so the window they open is not hidden behind it
@@ -2078,6 +2088,50 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   window.addEventListener('resize', () => { docks.forEach((d) => { if (L.float[d.dataset.id]) paint(d); }); applySizes(); });
   const rb = document.getElementById('resetLayout'); if (rb) rb.onclick = () => { L = fresh(); layout(); save(); };
   layout();
+})();
+// Studio alerts (no video arriving, video stopped) and Stream alerts (a channel stopped) both show here,
+// because the Stream is the most important. Dismiss here clears both; Dismiss on the Stream page clears its own.
+(function () {
+  // Alerts are pushed by the app as they happen (no polling). In the app they come through a pipe;
+  // in a browser on the church Wi-Fi they come through an event stream. If the link drops it comes back.
+  function listenAlerts(group, onMsg) {
+    const take = (t) => { try { onMsg(JSON.parse(typeof t === 'string' ? t : new TextDecoder().decode(t))); } catch {} };
+    if (window.msNative && window.msNative.pipe) {
+      const open = () => window.msNative.pipe('/alerts?group=' + group, (type, data) => {
+        if (type === 'message') take(data);
+        else if (type === 'close') setTimeout(open, 3000);
+      });
+      open();
+    } else if (window.EventSource) {
+      new EventSource('/api/alerts?group=' + group).onmessage = (e) => take(e.data);
+    }
+  }
+  function drawAlertRows(box, list) {
+    box.textContent = '';
+    for (const a of list) {
+      const row = document.createElement('div'); if (a.ok) row.className = 'ok';
+      const src = document.createElement('strong'); src.textContent = a.source + ' ';
+      const when = document.createElement('span'); when.textContent = new Date(a.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' \u2014 ';
+      row.append(src, when, document.createTextNode(a.text)); box.appendChild(row);
+    }
+  }
+  // one row per source: a new message from the same source replaces its row
+  function mergeAlert(list, a) { const i = list.findIndex((x) => x.source === a.source); if (i >= 0) list.splice(i, 1); list.push(a); if (list.length > 20) list.shift(); }
+
+  const bar = document.getElementById('alertBar'), box = document.getElementById('alertTxt');
+  let list = [];
+  const draw = () => { drawAlertRows(box, list); bar.classList.toggle('on', list.length > 0); };
+  document.getElementById('alertX').onclick = () => {
+    list = []; draw();
+    for (const g of ['studio', 'stream']) fetch('/api/alerts/clear?group=' + g, { method: 'POST' }).catch(() => {});
+  };
+  const take = (d) => {
+    if (d.clear) list = list.filter((a) => a.group !== d.group);
+    else { const i = list.findIndex((x) => x.group === d.group && x.source === d.source); if (i >= 0) list.splice(i, 1); list.push(d); if (list.length > 20) list.shift(); }
+    draw();
+  };
+  listenAlerts('studio', take);
+  listenAlerts('stream', take);
 })();
 </script>
 </body>
