@@ -93,14 +93,17 @@ const status = new Map(); // id -> { state, message }
 const destStats = new Map(); // id -> { kbps, speed }  (what we are really sending to each platform)
 
 // ---- alerts: pushed to every open page (Stream, Control Room, Studio) over one connection, no polling ----
-const alertClients = new Set();
-// source = the page or channel the problem came from (for example "YouTube" or "Studio")
-function sendAlert(source, text) {
+// Each page joins one group: 'stream' (Stream and Control Room) or 'studio' (the Studio window).
+// A channel problem goes to 'stream'; a problem with the video from the Studio goes to 'studio'.
+const alertClients = new Map(); // response -> group
+const ALERT_GROUPS = ['stream', 'studio'];
+function sendAlert(group, source, text) {
   const data = `data: ${JSON.stringify({ source, text, at: Date.now() })}\n\n`;
-  for (const res of alertClients) res.write(data);
+  for (const [res, g] of alertClients) if (g === group) res.write(data);
 }
-function clearAlerts() {
-  for (const res of alertClients) res.write(`data: ${JSON.stringify({ clear: true })}\n\n`);
+function clearAlerts(group) {
+  const data = `data: ${JSON.stringify({ clear: true })}\n\n`;
+  for (const [res, g] of alertClients) if (g === group) res.write(data);
 }
 
 function setStatus(id, state, message = '') {
@@ -108,7 +111,7 @@ function setStatus(id, state, message = '') {
   status.set(id, { state, message });
   if (state === 'error' && before !== 'error') {
     const d = destinations.find((x) => x.id === id);
-    sendAlert(d ? d.name : 'A channel', `stopped receiving: ${message || 'no reason given'}`);
+    sendAlert('stream', d ? d.name : 'A channel', `stopped receiving: ${message || 'no reason given'}`);
   }
 }
 
@@ -160,7 +163,7 @@ function startMonitor() {
   const timer = setInterval(() => {
     if (obsLive && signal.lastDataAt && Date.now() - signal.lastDataAt > 8000 && !noSignalSent) {
       noSignalSent = true;
-      sendAlert('Studio', 'connected, but no video is arriving.');
+      sendAlert('studio', 'Studio', 'connected, but no video is arriving.');
     }
     if (Date.now() - signal.lastDataAt < 4000) noSignalSent = false;
     const k = rate(bytes);
@@ -300,7 +303,7 @@ hub.on('start', () => {
 });
 hub.on('end', () => {
   console.log('Video stopped coming in. Stopping destinations.');
-  if (session.youtube || session.facebook) sendAlert('Studio', 'the video stopped coming in, but the live is still open on ' + [session.youtube && 'YouTube', session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.');
+  if (session.youtube || session.facebook) sendAlert('studio', 'Studio', 'the video stopped coming in, but the live is still open on ' + [session.youtube && 'YouTube', session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.');
   obsLive = false;
   stopAll();
   resetSignal();
@@ -489,13 +492,14 @@ function publicView(d) {
 }
 
 // Dismiss on any page clears the alert on every page
-app.post('/api/alerts/clear', (req, res) => { clearAlerts(); res.json({ ok: true }); });
+app.post('/api/alerts/clear', (req, res) => { const g = ALERT_GROUPS.includes(req.query.group) ? req.query.group : 'stream'; clearAlerts(g); res.json({ ok: true }); });
 
 app.get('/api/alerts', (req, res) => {
   res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
   res.flushHeaders();
   res.write(': connected\n\n');
-  alertClients.add(res);
+  const group = ALERT_GROUPS.includes(req.query.group) ? req.query.group : 'stream';
+  alertClients.set(res, group);
   req.on('close', () => alertClients.delete(res));
 });
 

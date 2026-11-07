@@ -2101,9 +2101,9 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
     }
     bar.classList.toggle('on', list.length > 0);
   }
-  document.getElementById('alertX').onclick = () => { list = []; draw(); fetch('/api/alerts/clear', { method: 'POST' }).catch(() => {}); };
+  document.getElementById('alertX').onclick = () => { list = []; draw(); fetch('/api/alerts/clear?group=studio', { method: 'POST' }).catch(() => {}); };
   if (!window.EventSource) return;
-  const feed = new EventSource('/api/alerts');
+  const feed = new EventSource('/api/alerts?group=studio');
   feed.onmessage = (e) => {
     let d; try { d = JSON.parse(e.data); } catch { return; }
     if (d.clear) { list = []; } else { list.push(d); if (list.length > 20) list.shift(); }

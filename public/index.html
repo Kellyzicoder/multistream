@@ -1496,12 +1496,12 @@ function drawAlerts() {
 }
 function showAlert(a) { alertList.push(a); if (alertList.length > 20) alertList.shift(); drawAlerts(); }
 function clearAlerts() { alertList = []; drawAlerts(); }
-$('#alertX').onclick = () => { clearAlerts(); fetch('/api/alerts/clear', { method: 'POST' }).catch(() => {}); };
+$('#alertX').onclick = () => { clearAlerts(); fetch('/api/alerts/clear?group=stream', { method: 'POST' }).catch(() => {}); };
 // Alerts come from the server as they happen (one open connection, no polling)
 let alertFeed = null;
 function startAlerts() {
   if (alertFeed || !window.EventSource) return;
-  alertFeed = new EventSource('/api/alerts');
+  alertFeed = new EventSource('/api/alerts?group=stream');
   alertFeed.onmessage = (e) => { try { const d = JSON.parse(e.data); if (d.clear) clearAlerts(); else showAlert(d); } catch {} };
 }
 startAlerts();
