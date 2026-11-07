@@ -1799,7 +1799,7 @@ function renderChans() {
       const body = { name: iN.value.trim() || d.name, url: iU.value.trim(), cap1080: lim.value === 'yes' ? true : lim.value === 'no' ? false : null };
       if (iK.value) body.key = iK.value.trim();
       const r = await fetch('/api/destinations/' + d.id, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()).catch(() => ({}));
-      if (r.id) { iK.value = ''; msg.textContent = 'Saved.'; chanOpen = d.id; loadChans(); } else msg.textContent = 'Could not save.';
+      if (r.id) { iK.value = ''; msg.textContent = 'Saved.'; chanOpen = d.id; loadChans(); } else msg.textContent = r.error || 'Could not save.';
     };
     row.append(sv, msg); det.appendChild(row); c.appendChild(det);
     ed.onclick = () => { det.hidden = !det.hidden; chanOpen = det.hidden ? '' : d.id; };
@@ -1813,7 +1813,7 @@ $('#chAdd').onclick = async () => {
   const name = $('#chName').value.trim() || 'Channel', url = $('#chUrl').value.trim(), key = $('#chKey').value.trim();
   if (!url || !key) { $('#chMsg').textContent = 'Add the stream URL and the stream key.'; return; }
   const r = await fetch('/api/destinations', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, url, key }) }).then((x) => x.json()).catch(() => ({}));
-  if (r.id) { $('#chKey').value = ''; $('#chName').value = ''; fillSite(); $('#chMsg').textContent = 'Added.'; loadChans(); } else $('#chMsg').textContent = 'Could not add it.';
+  if (r.id) { $('#chKey').value = ''; $('#chName').value = ''; fillSite(); $('#chMsg').textContent = 'Added.'; loadChans(); } else $('#chMsg').textContent = r.error || 'Could not add it.';
 };
 
 // the buttons inside Settings close it first, so the window they open is not hidden behind it

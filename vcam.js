@@ -108,7 +108,8 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
         ? `${safe}; if (Test-Path $i) { & $i unregister $l } else { & ${q(inst)} unregister ${q(dll)} }; exit $LASTEXITCODE`
         : `${safe}; New-Item -ItemType Directory -Force -Path $d | Out-Null; Copy-Item -Force -ErrorAction SilentlyContinue ${q(inst)}, ${q(dll)} -Destination $d; if (!(Test-Path $i) -or !(Test-Path $l)) { exit 2 }; & $i register $l; exit $LASTEXITCODE`;
       const enc = Buffer.from(admin, 'utf16le').toString('base64');
-      const ps = `$p = Start-Process -FilePath ${q(powershell)} -ArgumentList @('-NoProfile','-NonInteractive','-EncodedCommand',${q(enc)}) -Verb RunAs -WindowStyle Hidden -Wait -PassThru; exit $p.ExitCode`;
+      // if the Windows permission box is cancelled, Start-Process fails: report it, not success
+      const ps = `$ErrorActionPreference = 'Stop'; try { $p = Start-Process -FilePath ${q(powershell)} -ArgumentList @('-NoProfile','-NonInteractive','-EncodedCommand',${q(enc)}) -Verb RunAs -WindowStyle Hidden -Wait -PassThru; if ($null -eq $p) { exit 1 }; exit $p.ExitCode } catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }`;
       const p = spawn(powershell, ['-NoProfile', '-NonInteractive', '-Command', ps], { windowsHide: true });
       let err = ''; p.stderr.on('data', (d) => { err += d; });
       p.on('error', (e) => resolve({ error: e.message }));
