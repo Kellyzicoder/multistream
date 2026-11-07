@@ -95,7 +95,9 @@
   .files .none { color:var(--muted); font-size:12.5px; padding:6px 0; }
   #recRow, #pfRow { margin-top:14px; }
   .go.end { background:var(--red); color:#fff; box-shadow:none; }
-  .alertbar { display:flex; align-items:center; gap:12px; justify-content:space-between; background:var(--errbg); border-bottom:1px solid var(--errline); color:var(--errsvg); padding:10px 22px; font-size:13px; font-weight:500; position:fixed; top:0; left:0; right:0; z-index:100; }
+  .alertbar { display:flex; align-items:flex-start; gap:12px; justify-content:space-between; position:fixed; right:16px; bottom:16px; z-index:100; width:min(440px, calc(100vw - 32px)); box-sizing:border-box; background:var(--errbg); border:1px solid var(--errline); color:var(--errsvg); padding:12px 14px; border-radius:16px; box-shadow:0 14px 36px rgba(0,0,0,.22); font-size:13px; font-weight:500; line-height:1.4; }
+  .alertbar[hidden] { display:none; }
+  .alertbar #alertTxt { flex:1; min-width:0; overflow-wrap:anywhere; }
   .alertbar button { border:1px solid var(--errline); background:transparent; color:inherit; border-radius:999px; padding:5px 12px; font-size:12px; flex:none; }
   .pf { padding:2px 0 6px; }
   .pf .it { display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--rule); font-size:12.5px; line-height:1.45; }
@@ -1483,24 +1485,14 @@ function showAlert(text) {
   $('#alertBar').hidden = false;
 }
 $('#alertX').onclick = () => { $('#alertTxt').textContent = ''; $('#alertBar').hidden = true; };
-let prevDest = {}, prevObs = null, noSigSince = 0, noSigShown = false;
-function checkAlerts(s) {
-  for (const d of s.destinations || []) {
-    const st = (d.status || {}).state;
-    if (st === 'error' && prevDest[d.id] !== 'error') showAlert(`${d.name} stopped receiving: ${(d.status || {}).message || 'no reason given'}`);
-    prevDest[d.id] = st;
-  }
-  const open = s.session && (s.session.youtube || s.session.facebook);
-  if (prevObs === true && s.obsLive === false && open) showAlert('The video stopped coming in, but the live is still open on ' + [s.session.youtube && 'YouTube', s.session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.');
-  prevObs = s.obsLive;
-  if (s.obsLive && s.signal && !s.signal.ok) {
-    if (!noSigSince) noSigSince = Date.now();
-    else if (Date.now() - noSigSince > 8000 && !noSigShown) { noSigShown = true; showAlert('The video source is connected, but no video is arriving.'); }
-  } else { noSigSince = 0; noSigShown = false; }
+// Alerts come from the server as they happen (one open connection, no polling)
+let alertFeed = null;
+function startAlerts() {
+  if (alertFeed || !window.EventSource) return;
+  alertFeed = new EventSource('/api/alerts');
+  alertFeed.onmessage = (e) => { try { showAlert(JSON.parse(e.data).text); } catch {} };
 }
-
-// Chat (read only)
-let chatSeq = 0;
+startAlerts();
 async function pollChat() {
   try {
     const r = await api('/api/chat?after=' + chatSeq);
@@ -1526,7 +1518,7 @@ async function pollChat() {
 }
 setInterval(pollChat, 3000);
 
-async function refresh() { try { const s = await api('/api/state'); render(s); renderRec(s.recording, s.obsLive); renderFb(s.facebook, s.obsLive, s.session && s.session.facebook); renderYt(s.youtube, s.obsLive, s.session && s.session.youtube); checkAlerts(s); renderCr(); } catch {} }
+async function refresh() { try { const s = await api('/api/state'); render(s); renderRec(s.recording, s.obsLive); renderFb(s.facebook, s.obsLive, s.session && s.session.facebook); renderYt(s.youtube, s.obsLive, s.session && s.session.youtube); renderCr(); } catch {} }
 refresh();
 setInterval(refresh, 2000);
 // scroll the right-hand column with the wheel even when the mouse is over the middle (when the middle has nothing to scroll itself)

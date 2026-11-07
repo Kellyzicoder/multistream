@@ -92,8 +92,20 @@ let studioOut = { h: 720, w: 1280, fps: 30, kbps: 4500 }; // the size the Studio
 const status = new Map(); // id -> { state, message }
 const destStats = new Map(); // id -> { kbps, speed }  (what we are really sending to each platform)
 
+// ---- alerts: pushed to every open page (Stream, Control Room, Studio) over one connection, no polling ----
+const alertClients = new Set();
+function sendAlert(text) {
+  const data = `data: ${JSON.stringify({ text, at: Date.now() })}\n\n`;
+  for (const res of alertClients) res.write(data);
+}
+
 function setStatus(id, state, message = '') {
+  const before = (status.get(id) || {}).state;
   status.set(id, { state, message });
+  if (state === 'error' && before !== 'error') {
+    const d = destinations.find((x) => x.id === id);
+    sendAlert(`${d ? d.name : 'A channel'} stopped receiving: ${message || 'no reason given'}`);
+  }
 }
 
 // ---- signal numbers for the stream coming in from the Studio ----
@@ -101,6 +113,7 @@ function setStatus(id, state, message = '') {
 // It does not decode video, so it costs very little.
 const signal = { startedAt: 0, video: null, audio: null, kbps: 0, lastDataAt: 0, history: [], keyframe: null };
 let monitor = null;
+let noSignalSent = false; // so the "no video" alert is sent once, not every second
 
 function resetSignal() {
   signal.startedAt = 0;
@@ -141,6 +154,11 @@ function startMonitor() {
   p.stdout.on('data', (c) => { bytes += c.length; keys(c); });
   p.stderr.on('data', (c) => c.toString().split(/\r?\n/).forEach((l) => parseStreamLine(l, signal)));
   const timer = setInterval(() => {
+    if (obsLive && signal.lastDataAt && Date.now() - signal.lastDataAt > 8000 && !noSignalSent) {
+      noSignalSent = true;
+      sendAlert('The video source is connected, but no video is arriving.');
+    }
+    if (Date.now() - signal.lastDataAt < 4000) noSignalSent = false;
     const k = rate(bytes);
     if (k == null) return;
     signal.kbps = Math.round(k);
@@ -278,6 +296,7 @@ hub.on('start', () => {
 });
 hub.on('end', () => {
   console.log('Video stopped coming in. Stopping destinations.');
+  if (session.youtube || session.facebook) sendAlert('The video stopped coming in, but the live is still open on ' + [session.youtube && 'YouTube', session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.');
   obsLive = false;
   stopAll();
   resetSignal();
@@ -464,6 +483,14 @@ function publicView(d) {
     stats: destStats.get(d.id) || null,
   };
 }
+
+app.get('/api/alerts', (req, res) => {
+  res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+  res.flushHeaders();
+  res.write(': connected\n\n');
+  alertClients.add(res);
+  req.on('close', () => alertClients.delete(res));
+});
 
 app.get('/api/state', (req, res) => {
   res.json({
