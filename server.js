@@ -1007,12 +1007,18 @@ studioRecWss.on('connection', (w, req) => {
   try { fs.mkdirSync(REC_DIR, { recursive: true }); } catch (e) { w.send(JSON.stringify({ error: 'Cannot make the folder: ' + e.message })); return w.close(); }
   const d = new Date(), two = (n) => String(n).padStart(2, '0');
   const name = `Studio ${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}.mkv`;
-  const args = outargs.recordArgs(studioEncoder.key, { h: q.get('h'), mbit: q.get('mbit'), fps: q.get('fps') }, path.join(REC_DIR, name));
+  const copy = q.get('copy') === '1'; // the browser already made H.264 at the right size (encode once)
+  const args = outargs.recordArgs(studioEncoder.key, { h: q.get('h'), mbit: q.get('mbit'), fps: q.get('fps') }, path.join(REC_DIR, name), copy);
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
   let last = '';
   ff.stderr.on('data', (c) => { last = String(c).trim().split('\n').pop().slice(0, 200); });
   ff.stdin.on('error', () => {});
-  ff.on('exit', (code) => { try { w.send(JSON.stringify(code ? { error: last || 'Recording stopped (code ' + code + ')' } : { saved: name })); } catch {} try { w.close(); } catch {} });
+  ff.on('exit', (code) => {
+    // the fast way failed on this computer: tell the Studio, so the next recording uses the normal way
+    const fallback = copy && code ? { fallback: true } : {};
+    try { w.send(JSON.stringify(code ? { ...fallback, error: last || 'Recording stopped (code ' + code + ')' } : { saved: name })); } catch {}
+    try { w.close(); } catch {}
+  });
   w.on('message', (m, isBin) => {
     if (isBin === false) { if (String(m) === 'stop') { try { ff.stdin.end(); } catch {} } return; }
     if (ff.stdin.writable) ff.stdin.write(m);
@@ -1035,16 +1041,24 @@ vcamWss.on('connection', (w) => {
 });
 studioWss.on('connection', (w, req) => {
   if (studioFf) { try { studioFf.kill('SIGKILL'); } catch {} }
-  const out = outargs.parseOut(new URL((req && req.url) || '/', 'http://x').searchParams);
-  studioOut = out; studioInfo.out = outargs.label(out);
-  const args = outargs.ingestArgs(studioEncoder.key, out);
+  const sp = new URL((req && req.url) || '/', 'http://x').searchParams;
+  const out = outargs.parseOut(sp);
+  const copy = sp.get('copy') === '1'; // the browser already made H.264 at the right size (encode once)
+  studioOut = out; studioInfo.out = outargs.label(out) + (copy ? ' (fast)' : '');
+  const args = outargs.ingestArgs(studioEncoder.key, out, copy);
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
   studioFf = ff; studioInfo.sending = true; studioInfo.error = '';
   const unfeed = feedHub(ff.stdout);
   ff.on('close', unfeed);
-  ff.stderr.on('data', (d) => { studioInfo.error = String(d).trim().split('\n').pop().slice(0, 200); });
+  let last = '';
+  ff.stderr.on('data', (d) => { last = String(d).trim().split('\n').pop().slice(0, 200); studioInfo.error = last; });
   ff.stdin.on('error', () => {});
-  ff.on('exit', () => { if (studioFf === ff) { studioFf = null; studioInfo.sending = false; } try { w.close(); } catch {} });
+  ff.on('exit', (code) => {
+    if (studioFf === ff) { studioFf = null; studioInfo.sending = false; }
+    // the fast way failed here: the Studio falls back to the normal way when it reconnects
+    if (copy && code) { try { w.send(JSON.stringify({ fallback: true, error: last })); } catch {} }
+    try { w.close(); } catch {}
+  });
   w.on('message', (m) => { if (ff.stdin.writable) ff.stdin.write(m); });
   w.on('close', () => { try { ff.stdin.end(); setTimeout(() => ff.kill('SIGKILL'), 1500); } catch {} });
 });
