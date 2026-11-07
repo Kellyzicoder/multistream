@@ -2089,7 +2089,8 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   const rb = document.getElementById('resetLayout'); if (rb) rb.onclick = () => { L = fresh(); layout(); save(); };
   layout();
 })();
-// Studio alerts (no video arriving, video stopped) show here. Stream problems show on the Stream page.
+// Studio alerts (no video arriving, video stopped) and Stream alerts (a channel stopped) both show here,
+// because the Stream is the most important. Dismiss here clears both; Dismiss on the Stream page clears its own.
 (function () {
   // Alerts are pushed by the app as they happen (no polling). In the app they come through a pipe;
   // in a browser on the church Wi-Fi they come through an event stream. If the link drops it comes back.
@@ -2120,8 +2121,17 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   const bar = document.getElementById('alertBar'), box = document.getElementById('alertTxt');
   let list = [];
   const draw = () => { drawAlertRows(box, list); bar.classList.toggle('on', list.length > 0); };
-  document.getElementById('alertX').onclick = () => { list = []; draw(); fetch('/api/alerts/clear?group=studio', { method: 'POST' }).catch(() => {}); };
-  listenAlerts('studio', (d) => { if (d.clear) list = []; else mergeAlert(list, d); draw(); });
+  document.getElementById('alertX').onclick = () => {
+    list = []; draw();
+    for (const g of ['studio', 'stream']) fetch('/api/alerts/clear?group=' + g, { method: 'POST' }).catch(() => {});
+  };
+  const take = (d) => {
+    if (d.clear) list = list.filter((a) => a.group !== d.group);
+    else { const i = list.findIndex((x) => x.group === d.group && x.source === d.source); if (i >= 0) list.splice(i, 1); list.push(d); if (list.length > 20) list.shift(); }
+    draw();
+  };
+  listenAlerts('studio', take);
+  listenAlerts('stream', take);
 })();
 </script>
 </body>

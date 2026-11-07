@@ -1,7 +1,7 @@
 // Desktop app (Windows + Mac). Version 3: the windows talk to the app directly, with no localhost.
 // Pages load from app://multistream/... and every request is answered inside the app (server.js handle()).
 
-const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet, screen } = require('electron');
+const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet, screen, Notification } = require('electron');
 const path = require('path');
 const { Readable } = require('stream');
 
@@ -62,6 +62,28 @@ function createWindow() {
 
 // ---- Studio helpers ----
 let studioWin = null;
+
+// Alerts when the app is not in front (for example while Zoom is): a standard Windows notification
+// (silent, no sound) and a flashing taskbar button. Stream problems also show in the Studio.
+const shownNotes = new Set(); // keep a hold of them so a click still works later
+function flash(w) {
+  if (!w || w.isDestroyed() || w.isFocused()) return;
+  w.flashFrame(true);
+  w.once('focus', () => { if (!w.isDestroyed()) w.flashFrame(false); });
+}
+function notifyAlert(group, source, text) {
+  if (BrowserWindow.getAllWindows().some((w) => !w.isDestroyed() && w.isFocused())) return; // the card on screen is enough
+  const target = group === 'studio' ? (studioWin || win) : (win || studioWin);
+  flash(target);
+  if (group === 'stream') flash(studioWin);
+  if (!Notification.isSupported()) return;
+  const n = new Notification({ title: 'Multistream: ' + source, body: text, silent: true });
+  shownNotes.add(n);
+  const done = () => shownNotes.delete(n);
+  n.on('click', () => { done(); if (target && !target.isDestroyed()) { if (target.isMinimized()) target.restore(); target.show(); target.focus(); } });
+  n.on('close', done);
+  n.show();
+}
 // same = true: the Studio replaces the dashboard in the same window (a button in the Studio goes back).
 ipcMain.handle('ms-open-studio', (e, same) => {
   if (studioWin) { studioWin.focus(); return; }
@@ -236,6 +258,7 @@ async function start() {
     process.env.MULTISTREAM_RECORDINGS = process.env.MULTISTREAM_RECORDINGS || path.join(app.getPath('videos'), 'Multistream');
     relay = require('./server');
     relay.setOpenFolder((p) => shell.openPath(p));
+    relay.setAlertHook(notifyAlert);
   } catch (err) {
     dialog.showErrorBox('Multistream cannot start', String(err && err.message ? err.message : err));
     app.quit();
@@ -248,6 +271,9 @@ async function start() {
 }
 
 // only one copy at a time
+// Windows shows notifications under this name (the same id the installer uses)
+if (process.platform === 'win32') app.setAppUserModelId('com.multistream.app.v3');
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {

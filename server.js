@@ -105,10 +105,12 @@ function alertBroadcast(group, msg) {
   const data = JSON.stringify(msg);
   for (const [c, g] of alertClients) if (g === group) { try { c.send(data); } catch {} }
 }
+let alertHook = null; // the desktop app shows a Windows notification (see main.js)
 function sendAlert(group, source, text, ok = false) {
-  const a = { source, text, at: Date.now(), ok };
+  const a = { group, source, text, at: Date.now(), ok };
   alertNow[group].set(source, a);
   alertBroadcast(group, a);
+  if (!ok && alertHook) { try { alertHook(group, source, text); } catch {} }
 }
 // "back on" note: only when that source still has an alert showing
 function resolveAlert(group, source, text) {
@@ -117,7 +119,7 @@ function resolveAlert(group, source, text) {
 }
 function clearAlerts(group) {
   alertNow[group].clear();
-  alertBroadcast(group, { clear: true });
+  alertBroadcast(group, { clear: true, group });
 }
 function addAlertClient(client, group) {
   alertClients.set(client, group);
@@ -1147,4 +1149,4 @@ if (STANDALONE) {
 }
 
 // used by the desktop app (main.js)
-module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => { openFolderHook = fn; } };
+module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => { openFolderHook = fn; }, setAlertHook: (fn) => { alertHook = fn; } };
