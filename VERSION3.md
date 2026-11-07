@@ -75,7 +75,7 @@ The Studio only draws the Control Room pictures while a Control Room is open (it
 
 ## Stream errors are shown everywhere
 - The first page is now called **Stream** (it was "Dashboard").
-- There is no split screen. Instead, a red card floats in the bottom-right corner when a channel stops receiving, the video stops coming in, or no video arrives. It shows on the Stream page, the Control Room and the Studio window at the same time, and stays until you press **Dismiss**. Several problems are listed one after another.
+- There is no split screen. Instead, a red card floats in the bottom-right corner when a channel stops receiving, the video stops coming in, or no video arrives. It shows on the Stream page, the Control Room and the Studio window at the same time, and stays until you press **Dismiss**, which clears it on every page. Each alert names where it came from (the channel, such as YouTube, or the Studio) and the time, so it is easy to trace. Several problems are listed one after another.
 - The alerts are pushed by the app as they happen, so the pages do not keep asking for news.
 - Tested in a browser test. Not tried in the real app yet.
 

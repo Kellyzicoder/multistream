@@ -94,9 +94,13 @@ const destStats = new Map(); // id -> { kbps, speed }  (what we are really sendi
 
 // ---- alerts: pushed to every open page (Stream, Control Room, Studio) over one connection, no polling ----
 const alertClients = new Set();
-function sendAlert(text) {
-  const data = `data: ${JSON.stringify({ text, at: Date.now() })}\n\n`;
+// source = the page or channel the problem came from (for example "YouTube" or "Studio")
+function sendAlert(source, text) {
+  const data = `data: ${JSON.stringify({ source, text, at: Date.now() })}\n\n`;
   for (const res of alertClients) res.write(data);
+}
+function clearAlerts() {
+  for (const res of alertClients) res.write(`data: ${JSON.stringify({ clear: true })}\n\n`);
 }
 
 function setStatus(id, state, message = '') {
@@ -104,7 +108,7 @@ function setStatus(id, state, message = '') {
   status.set(id, { state, message });
   if (state === 'error' && before !== 'error') {
     const d = destinations.find((x) => x.id === id);
-    sendAlert(`${d ? d.name : 'A channel'} stopped receiving: ${message || 'no reason given'}`);
+    sendAlert(d ? d.name : 'A channel', `stopped receiving: ${message || 'no reason given'}`);
   }
 }
 
@@ -156,7 +160,7 @@ function startMonitor() {
   const timer = setInterval(() => {
     if (obsLive && signal.lastDataAt && Date.now() - signal.lastDataAt > 8000 && !noSignalSent) {
       noSignalSent = true;
-      sendAlert('The video source is connected, but no video is arriving.');
+      sendAlert('Studio', 'connected, but no video is arriving.');
     }
     if (Date.now() - signal.lastDataAt < 4000) noSignalSent = false;
     const k = rate(bytes);
@@ -296,7 +300,7 @@ hub.on('start', () => {
 });
 hub.on('end', () => {
   console.log('Video stopped coming in. Stopping destinations.');
-  if (session.youtube || session.facebook) sendAlert('The video stopped coming in, but the live is still open on ' + [session.youtube && 'YouTube', session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.');
+  if (session.youtube || session.facebook) sendAlert('Studio', 'the video stopped coming in, but the live is still open on ' + [session.youtube && 'YouTube', session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.');
   obsLive = false;
   stopAll();
   resetSignal();
@@ -483,6 +487,9 @@ function publicView(d) {
     stats: destStats.get(d.id) || null,
   };
 }
+
+// Dismiss on any page clears the alert on every page
+app.post('/api/alerts/clear', (req, res) => { clearAlerts(); res.json({ ok: true }); });
 
 app.get('/api/alerts', (req, res) => {
   res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });

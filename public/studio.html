@@ -253,6 +253,9 @@
   .alertbar { display:none; align-items:flex-start; gap:12px; justify-content:space-between; position:fixed; right:16px; bottom:16px; z-index:100; width:min(440px, calc(100vw - 32px)); box-sizing:border-box; background:var(--errbg); border:1px solid var(--errline); color:var(--errsvg); padding:12px 14px; border-radius:16px; box-shadow:0 14px 36px rgba(0,0,0,.22); font-size:13px; font-weight:500; line-height:1.4; }
   .alertbar.on { display:flex; }
   .alertbar #alertTxt { flex:1; min-width:0; overflow-wrap:anywhere; }
+  .alertbar #alertTxt > div + div { margin-top:4px; }
+  .alertbar #alertTxt strong { font-weight:700; }
+  .alertbar #alertTxt span { opacity:.75; }
   .alertbar button { border:1px solid var(--errline); background:transparent; color:inherit; border-radius:999px; padding:5px 12px; font-size:12px; flex:none; }
 </style>
 </head>
@@ -2086,14 +2089,25 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
 })();
 // Stream alerts come from the server as they happen (one open connection, no polling)
 (function () {
-  const bar = document.getElementById('alertBar'), txt = document.getElementById('alertTxt');
-  document.getElementById('alertX').onclick = () => { txt.textContent = ''; bar.classList.remove('on'); };
+  const bar = document.getElementById('alertBar'), box = document.getElementById('alertTxt');
+  let list = [];
+  function draw() {
+    box.textContent = '';
+    for (const a of list) {
+      const row = document.createElement('div');
+      const src = document.createElement('strong'); src.textContent = a.source + ' ';
+      const when = document.createElement('span'); when.textContent = new Date(a.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' \u2014 ';
+      row.append(src, when, document.createTextNode(a.text)); box.appendChild(row);
+    }
+    bar.classList.toggle('on', list.length > 0);
+  }
+  document.getElementById('alertX').onclick = () => { list = []; draw(); fetch('/api/alerts/clear', { method: 'POST' }).catch(() => {}); };
   if (!window.EventSource) return;
   const feed = new EventSource('/api/alerts');
   feed.onmessage = (e) => {
-    let t; try { t = JSON.parse(e.data).text; } catch { return; }
-    txt.textContent = txt.textContent && txt.textContent !== t ? txt.textContent + '  \u2022  ' + t : t;
-    bar.classList.add('on');
+    let d; try { d = JSON.parse(e.data); } catch { return; }
+    if (d.clear) { list = []; } else { list.push(d); if (list.length > 20) list.shift(); }
+    draw();
   };
 })();
 </script>

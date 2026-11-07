@@ -98,6 +98,9 @@
   .alertbar { display:flex; align-items:flex-start; gap:12px; justify-content:space-between; position:fixed; right:16px; bottom:16px; z-index:100; width:min(440px, calc(100vw - 32px)); box-sizing:border-box; background:var(--errbg); border:1px solid var(--errline); color:var(--errsvg); padding:12px 14px; border-radius:16px; box-shadow:0 14px 36px rgba(0,0,0,.22); font-size:13px; font-weight:500; line-height:1.4; }
   .alertbar[hidden] { display:none; }
   .alertbar #alertTxt { flex:1; min-width:0; overflow-wrap:anywhere; }
+  .alertbar #alertTxt > div + div { margin-top:4px; }
+  .alertbar #alertTxt strong { font-weight:700; }
+  .alertbar #alertTxt span { opacity:.75; }
   .alertbar button { border:1px solid var(--errline); background:transparent; color:inherit; border-radius:999px; padding:5px 12px; font-size:12px; flex:none; }
   .pf { padding:2px 0 6px; }
   .pf .it { display:flex; gap:10px; padding:8px 0; border-top:1px solid var(--rule); font-size:12.5px; line-height:1.45; }
@@ -1478,19 +1481,28 @@ $('#pfBtn').onclick = async () => {
 };
 
 // Alerts: a red bar when something stops
-// Several problems at once are all kept, one after another, until Dismiss is pressed
-function showAlert(text) {
-  const t = $('#alertTxt'), last = t.textContent;
-  t.textContent = last && last !== text ? last + '  •  ' + text : text;
-  $('#alertBar').hidden = false;
+// Each alert names its source (a channel or the Studio) and the time, so it is easy to trace.
+// Several are kept until Dismiss, which clears them on every page.
+let alertList = [];
+function drawAlerts() {
+  const box = $('#alertTxt'); box.textContent = '';
+  for (const a of alertList) {
+    const row = document.createElement('div');
+    const src = document.createElement('strong'); src.textContent = a.source + ' ';
+    const when = document.createElement('span'); when.textContent = new Date(a.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' \u2014 ';
+    row.append(src, when, document.createTextNode(a.text)); box.appendChild(row);
+  }
+  $('#alertBar').hidden = alertList.length === 0;
 }
-$('#alertX').onclick = () => { $('#alertTxt').textContent = ''; $('#alertBar').hidden = true; };
+function showAlert(a) { alertList.push(a); if (alertList.length > 20) alertList.shift(); drawAlerts(); }
+function clearAlerts() { alertList = []; drawAlerts(); }
+$('#alertX').onclick = () => { clearAlerts(); fetch('/api/alerts/clear', { method: 'POST' }).catch(() => {}); };
 // Alerts come from the server as they happen (one open connection, no polling)
 let alertFeed = null;
 function startAlerts() {
   if (alertFeed || !window.EventSource) return;
   alertFeed = new EventSource('/api/alerts');
-  alertFeed.onmessage = (e) => { try { showAlert(JSON.parse(e.data).text); } catch {} };
+  alertFeed.onmessage = (e) => { try { const d = JSON.parse(e.data); if (d.clear) clearAlerts(); else showAlert(d); } catch {} };
 }
 startAlerts();
 async function pollChat() {
