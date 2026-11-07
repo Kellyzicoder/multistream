@@ -166,8 +166,25 @@ async function vcamTests() {
   ok('virtual camera stays in place when stopped, shows a dark picture, and only sends whole pictures');
 }
 
+// the stream check reads the video's details inside the app; they must match what ffmpeg itself reports
+function flvInfoTests() {
+  const st = require('../stats');
+  for (const [size, fps, rate, ch] of [['1280x720', 30, 48000, 2], ['1920x1080', 60, 44100, 1]]) {
+    const file = path.join(tmp, 'info-' + size + '.flv');
+    spawnSync(FF, ['-v', 'error', '-y', '-f', 'lavfi', '-i', `testsrc2=size=${size}:rate=${fps}`, '-f', 'lavfi', '-i', `sine=sample_rate=${rate}`, '-ac', String(ch),
+      '-t', '2', '-c:v', 'libx264', '-preset', 'ultrafast', '-c:a', 'aac', '-f', 'flv', file]);
+    const b = fs.readFileSync(file), mine = {}, ff = {};
+    const f = st.makeFlvInfo(mine);
+    for (let i = 0; i < b.length; i += 777) f(b.subarray(i, i + 777)); // in small pieces, like the hub sends
+    (spawnSync(FF, ['-hide_banner', '-i', file], { encoding: 'utf8' }).stderr || '').split('\n').forEach((l) => st.parseStreamLine(l, ff));
+    assert.deepStrictEqual(mine, ff, size + ': the details read in the app match ffmpeg');
+  }
+  ok('stream check reads the video and sound details inside the app (same as ffmpeg)');
+}
+
 (async () => {
   outTests();
+  flvInfoTests();
   await injectTests();
   await hubTests();
   await vcamTests();

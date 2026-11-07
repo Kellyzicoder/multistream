@@ -26,7 +26,8 @@ function openKept(name, v) { const o = secret.open(v); if (o === null) { keptSea
 function sealKept(name, v) { if (v) { keptSealed.delete(name); return secret.seal(v); } return keptSealed.get(name) || ''; }
 const { detectEncoder } = require('./encoder');
 const outargs = require('./outargs');
-const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker } = require('./stats');
+const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker, makeFlvInfo } = require('./stats');
+const { Writable } = require('stream');
 
 // Version 3: nothing listens on the network unless you switch it on.
 // The app windows talk to this file directly (see inproc.js), and video moves through the hub (flvhub.js).
@@ -169,15 +170,7 @@ function startMonitor() {
   if (monitor || !obsLive) return;
   resetSignal();
   signal.startedAt = Date.now();
-  const args = [
-    '-loglevel', 'info', '-nostats',
-    ...HUB_IN,
-    '-map', '0', '-c', 'copy', '-f', 'flv', 'pipe:1',
-  ];
-  const p = spawn(FFMPEG, args, { windowsHide: true });
-  monitor = p;
-  p.stdin.on('error', () => {});
-  hub.subscribe(p.stdin, () => { try { p.kill('SIGKILL'); } catch {} });
+  // The stream check reads the video inside the app (it used to start an extra ffmpeg just to count it).
   let bytes = 0;
   const rate = makeRateTracker();
   // seconds between keyframes: average of the last few gaps
@@ -191,8 +184,9 @@ function startMonitor() {
     }
     lastKey = ts;
   });
-  p.stdout.on('data', (c) => { bytes += c.length; keys(c); });
-  p.stderr.on('data', (c) => c.toString().split(/\r?\n/).forEach((l) => parseStreamLine(l, signal)));
+  const details = makeFlvInfo(signal); // video and sound type, size, frames a second
+  const sink = new Writable({ write(c, enc, cb) { bytes += c.length; try { keys(c); details(c); } catch {} cb(); } });
+  const m = {};
   const timer = setInterval(() => {
     if (obsLive && signal.lastDataAt && Date.now() - signal.lastDataAt > 8000 && !noSignalSent) {
       noSignalSent = true;
@@ -206,21 +200,21 @@ function startMonitor() {
     signal.history.push(signal.kbps);
     if (signal.history.length > 90) signal.history.shift();
   }, 1000);
-  p.on('error', () => {});
-  p.on('close', () => {
-    clearInterval(timer);
-    const wanted = !p.stoppedByUs;
-    if (monitor === p) monitor = null;
-    if (wanted && obsLive) setTimeout(startMonitor, 2000); // came up too early or dropped: try again
+  m.stop = () => { clearInterval(timer); off(); sink.destroy(); };
+  const off = hub.subscribe(sink, () => {
+    // dropped by the hub (should not happen, it reads at once): start again
+    if (monitor !== m) return;
+    m.stop(); monitor = null;
+    if (obsLive) setTimeout(startMonitor, 2000);
   });
+  monitor = m;
 }
 
 function stopMonitor() {
   if (!monitor) return;
-  const p = monitor;
+  const m = monitor;
   monitor = null;
-  p.stoppedByUs = true;
-  p.kill('SIGTERM');
+  m.stop();
 }
 
 // a destination that drops while the Studio is still sending starts again by itself

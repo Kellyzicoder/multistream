@@ -189,7 +189,14 @@ onIpc('ms-pipe-open', (e, id, p) => {
   if (!w) { toWindow('close'); return; }
   pipes.set(key, w);
   toWindow('open');
-  if (!pipeWatch.has(sid)) { pipeWatch.add(sid); e.sender.once('destroyed', () => { pipeWatch.delete(sid); closePipesOf(sid); }); }
+  if (!pipeWatch.has(sid)) {
+    pipeWatch.add(sid);
+    const wc = e.sender;
+    // the window loads another page (Stream <-> Studio in the same window): the old page's pipes end too
+    const moved = (ev) => { if (ev && ev.isMainFrame && !ev.isSameDocument) closePipesOf(sid); };
+    wc.on('did-start-navigation', moved);
+    wc.once('destroyed', () => { pipeWatch.delete(sid); closePipesOf(sid); });
+  }
 });
 ipcMain.on('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(e.sender.id + ':' + id); if (w) w.fromWindow(data, isText); });
 ipcMain.on('ms-pipe-close', (e, id) => { const key = e.sender.id + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });
