@@ -309,12 +309,15 @@ async function until(fn, ms, what) {
   assert.notStrictEqual(obsApi, 200, 'the OBS backup setting is gone');
   ok('no OBS connection (port 1935 stays closed, no OBS settings)');
 
-  // 11. phone control: on = port 3000 open; off = closed
-  await dash.evaluate(() => fetch('/api/remote', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"password":"test-pass-123","enabled":true}' }));
-  await until(() => portOpen(3000), 10000, 'phone port');
-  await dash.evaluate(() => fetch('/api/remote', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"enabled":false}' }));
-  await until(async () => !(await portOpen(3000)), 10000, 'phone port to close');
-  ok('phone control: port opens only while switched on');
+  // 11. phone control is removed: no setting, and port 3000 stays closed
+  const remoteApi = await dash.evaluate(() => fetch('/api/remote', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: '{"password":"test-pass-123","enabled":true}' }).then((r) => r.status));
+  assert.notStrictEqual(remoteApi, 200, 'the phone control setting is gone');
+  await sleep(1000);
+  assert.strictEqual(await portOpen(3000), false, 'port 3000 stays closed');
+  // a channel address that is not rtmp:// or rtmps:// is refused
+  const badUrl = await dash.evaluate(() => fetch('/api/destinations', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Bad', url: 'tcp://127.0.0.1:9', key: 'k' }) }).then((r) => r.status));
+  assert.strictEqual(badUrl, 400, 'a tcp:// channel address is refused');
+  ok('phone control is gone (port 3000 stays closed) and channel addresses must be rtmp(s)');
 
   await dash.screenshot({ path: path.join(OUT, '4-dashboard-after.png') });
   await app.close();
