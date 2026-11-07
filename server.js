@@ -887,6 +887,16 @@ const ASSET_DIR = path.join(DATA_DIR, 'studio-assets');
 const MEDIA_EXT = /\.(png|jpe?g|gif|webp|bmp|avif|mp4|m4v|mov|webm|mkv)$/i; // pictures and videos only
 let studio = { scenes: [], current: '', preview: '', audio: [] };
 try { studio = { ...studio, ...JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) }; } catch {}
+// Uploaded pictures and videos that no scene uses any more are removed when the app starts
+// (only ones older than a day, so something you just added is never touched).
+try {
+  const used = JSON.stringify(studio);
+  for (const n of fs.readdirSync(ASSET_DIR)) {
+    if (used.includes(n) || used.includes(encodeURIComponent(n))) continue;
+    const f = path.join(ASSET_DIR, n);
+    if (Date.now() - fs.statSync(f).mtimeMs > 24 * 3600 * 1000) fs.unlinkSync(f);
+  }
+} catch {}
 let studioRev = 1;
 function saveStudio() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio)); } catch {} studioRev++; }
 // ?rev=N: when nothing changed since N, a short answer (the Studio asks often)

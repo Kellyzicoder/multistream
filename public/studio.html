@@ -563,7 +563,13 @@ function getBoard(l) {
 if (window.msNative) window.msNative.onFrame((id, w, h, buf) => {
   const b = boards.get(id); if (!b) return;
   if (b.c.width !== w || b.c.height !== h) { b.c.width = w; b.c.height = h; }
-  const src = new Uint8ClampedArray(buf.buffer ? buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) : buf);
+  const bytes = buf.buffer ? new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength) : new Uint8Array(buf);
+  b.c.__ver = (b.c.__ver || 0) + 1; // a new picture of the page (see pic())
+  // the picture comes as BGRA: the browser turns it into a picture directly (no slow loop over every pixel)
+  if (window.VideoFrame) {
+    try { const vf = new VideoFrame(bytes, { format: 'BGRA', codedWidth: w, codedHeight: h, timestamp: 0 }); const bx = b.c.getContext('2d'); bx.clearRect(0, 0, w, h); bx.drawImage(vf, 0, 0); vf.close(); b.ready = true; return; } catch {}
+  }
+  const src = new Uint8ClampedArray(bytes);
   for (let i = 0; i < src.length; i += 4) { const r = src[i + 2]; src[i + 2] = src[i]; src[i] = r; }
   b.c.getContext('2d').putImageData(new ImageData(src, w, h), 0, 0); b.ready = true;
 });
@@ -632,7 +638,7 @@ function drawCentered(c, l, text, label) {
 }
 // ---- picture tools: crop, colour, green screen, shape, flip, see-through ----
 // l.pfx = { crop:{l,t,r,b} in %, bri, con, sat (percent, 100 = normal), key:{on,color,sim,smooth}, shape:'', round, flip, op }
-const pcv = new Map();
+const pcv = new Map(), pcvKey = new Map();
 function hasPfx(f) {
   if (!f) return false;
   const k = f.crop || {};
@@ -666,6 +672,12 @@ function pic(c, l, el, sw, sh) {
   // work on a copy no bigger than 1280 wide, so the green screen stays fast
   const k2 = Math.min(1, 1280 / Math.max(1, w)), pw = Math.max(1, Math.round(w * k2)), ph = Math.max(1, Math.round(h * k2));
   let cv2 = pcv.get(l.id); if (!cv2) { cv2 = document.createElement('canvas'); pcv.set(l.id, cv2); }
+  // The worked picture is kept and shared by the Program, the edit preview, the recording and the virtual camera.
+  // A picture is worked once; a video or camera at most about 30 times a second; a web page when it changes.
+  const stamp = el instanceof HTMLImageElement ? (el.currentSrc || el.src) : el.__ver != null ? 'v' + el.__ver : Math.floor(performance.now() / 33);
+  const want = [pw, ph, sx, sy, ssw, ssh, stamp, JSON.stringify(f)].join('|');
+  if (pcvKey.get(l.id) === want) { c.drawImage(cv2, 0, 0, pw, ph, x, y, w, h); c.restore(); return; }
+  pcvKey.set(l.id, want);
   if (cv2.width !== pw || cv2.height !== ph) { cv2.width = pw; cv2.height = ph; }
   const px = cv2.getContext('2d', { willReadFrequently: true });
   px.clearRect(0, 0, pw, ph);
