@@ -92,8 +92,44 @@ let studioOut = { h: 720, w: 1280, fps: 30, kbps: 4500 }; // the size the Studio
 const status = new Map(); // id -> { state, message }
 const destStats = new Map(); // id -> { kbps, speed }  (what we are really sending to each platform)
 
+// ---- alerts: pushed to the open pages as they happen (no polling) ----
+// Each page joins one group: 'stream' (Stream and Control Room) or 'studio' (the Studio window).
+// A channel problem goes to 'stream'; a problem with the video from the Studio goes to 'studio'.
+// The app keeps one alert per source (for example "YouTube"), so retries update it instead of piling up,
+// and a page that opens later (or reloads) still gets the alerts that are not dismissed yet.
+const ALERT_GROUPS = ['stream', 'studio'];
+const alertNow = { stream: new Map(), studio: new Map() }; // source -> { source, text, at, ok }
+const alertClients = new Map(); // client { send(text) } -> group
+const alertGroup = (g) => (ALERT_GROUPS.includes(g) ? g : 'stream');
+function alertBroadcast(group, msg) {
+  const data = JSON.stringify(msg);
+  for (const [c, g] of alertClients) if (g === group) { try { c.send(data); } catch {} }
+}
+function sendAlert(group, source, text, ok = false) {
+  const a = { group, source, text, at: Date.now(), ok };
+  alertNow[group].set(source, a);
+  alertBroadcast(group, a);
+}
+// "back on" note: only when that source still has an alert showing
+function resolveAlert(group, source, text) {
+  const a = alertNow[group].get(source);
+  if (a && !a.ok) sendAlert(group, source, text, true);
+}
+function clearAlerts(group) {
+  alertNow[group].clear();
+  alertBroadcast(group, { clear: true, group });
+}
+function addAlertClient(client, group) {
+  alertClients.set(client, group);
+  for (const a of alertNow[group].values()) { try { client.send(JSON.stringify(a)); } catch {} }
+}
+
 function setStatus(id, state, message = '') {
+  const before = (status.get(id) || {}).state;
   status.set(id, { state, message });
+  const d = destinations.find((x) => x.id === id), name = d ? d.name : 'A channel';
+  if (state === 'error' && (before !== 'error' || message)) sendAlert('stream', name, `stopped receiving: ${message || 'no reason given'}`);
+  else if (state === 'live' && before !== 'live') resolveAlert('stream', name, 'back on air');
 }
 
 // ---- signal numbers for the stream coming in from the Studio ----
@@ -101,6 +137,7 @@ function setStatus(id, state, message = '') {
 // It does not decode video, so it costs very little.
 const signal = { startedAt: 0, video: null, audio: null, kbps: 0, lastDataAt: 0, history: [], keyframe: null };
 let monitor = null;
+let noSignalSent = false; // so the "no video" alert is sent once, not every second
 
 function resetSignal() {
   signal.startedAt = 0;
@@ -141,6 +178,11 @@ function startMonitor() {
   p.stdout.on('data', (c) => { bytes += c.length; keys(c); });
   p.stderr.on('data', (c) => c.toString().split(/\r?\n/).forEach((l) => parseStreamLine(l, signal)));
   const timer = setInterval(() => {
+    if (obsLive && signal.lastDataAt && Date.now() - signal.lastDataAt > 8000 && !noSignalSent) {
+      noSignalSent = true;
+      sendAlert('studio', 'Studio', 'connected, but no video is arriving.');
+    }
+    if (noSignalSent && Date.now() - signal.lastDataAt < 4000) { noSignalSent = false; resolveAlert('studio', 'Studio', 'video is arriving again'); }
     const k = rate(bytes);
     if (k == null) return;
     signal.kbps = Math.round(k);
@@ -278,6 +320,7 @@ hub.on('start', () => {
 });
 hub.on('end', () => {
   console.log('Video stopped coming in. Stopping destinations.');
+  if (session.youtube || session.facebook) sendAlert('studio', 'Studio', 'the video stopped coming in, but the live is still open on ' + [session.youtube && 'YouTube', session.facebook && 'Facebook'].filter(Boolean).join(' and ') + '. Press End live when the service is finished.');
   obsLive = false;
   stopAll();
   resetSignal();
@@ -464,6 +507,19 @@ function publicView(d) {
     stats: destStats.get(d.id) || null,
   };
 }
+
+// Dismiss on any page clears the alert on every page
+app.post('/api/alerts/clear', (req, res) => { clearAlerts(alertGroup(req.query.group)); res.json({ ok: true }); });
+
+app.get('/api/alerts', (req, res) => {
+  res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+  res.flushHeaders();
+  res.write(': connected\n\n');
+  // used by phones and browsers on the church Wi-Fi; the app windows use a pipe (see openPipe)
+  const client = { send: (t) => res.write(`data: ${t}\n\n`) };
+  addAlertClient(client, alertGroup(req.query.group));
+  req.on('close', () => alertClients.delete(client));
+});
 
 app.get('/api/state', (req, res) => {
   res.json({
@@ -1060,6 +1116,13 @@ function handle(r) { return inject(app, r); }
 // A two-way pipe from an app window (instead of a WebSocket). toWindow(type, data) sends back to the window.
 function openPipe(p, toWindow) {
   const url = String(p || '');
+  if (url.startsWith('/alerts')) {
+    const w = new FakeWs(toWindow);
+    const group = alertGroup(new URL(url, 'http://x').searchParams.get('group'));
+    w.on('close', () => alertClients.delete(w));
+    setImmediate(() => addAlertClient(w, group));
+    return w;
+  }
   const target = url.startsWith('/studio-record') ? studioRecWss : url.startsWith('/studio-vcam') ? vcamWss : url.startsWith('/studio-ingest') ? studioWss : null;
   if (!target) return null;
   const w = new FakeWs(toWindow);

@@ -73,17 +73,17 @@ The Studio only draws the Control Room pictures while a Control Room is open (it
 - While the camera is on, a small live preview of what Zoom sees shows under the button.
 - Not proven on real Windows with Zoom yet. The unit test checks the helper stays running and only gets whole pictures.
 
-## Split screen
+## Stream errors are shown everywhere
 - The first page is now called **Stream** (it was "Dashboard").
-- Click the split icon at the top (next to OFFLINE). The Stream page shows on the left and the Control Room on the right, in the same window, like Arc.
-- Drag the bar in the middle to choose the sizes (it stops at 25% and 75%). Double-click the bar to make both sides equal. The size is remembered. Click the icon again to close the split screen.
+- There is no split screen. Instead, a red card floats in the bottom-right corner when something goes wrong. Stream problems (a channel stopping, or the video stopping while the live is open) show on the **Stream** page, the **Control Room** and the **Studio** (the stream matters most). Studio problems (no video arriving) show in the **Studio** only. Each alert names where it came from and the time, keeps one line per source (a retry updates its line), and shows a tick with "back on air" when it fixes itself. **Dismiss** in the Studio clears both kinds; Dismiss on the Stream page clears the Stream ones.
+- The alerts are pushed by the app as they happen, so the pages do not keep asking for news. A page that opens later still shows alerts not dismissed yet.
 - Tested in a browser test. Not tried in the real app yet.
 
 ## Control Room fills the area
-- The Preview and Program row fills the top of the Control Room. The scene boxes fill the width in an even grid of up to 4 across, each in the TV shape (16:9), like the OBS and AirLive multiviews. Preview and Program sit above them in the TV shape too. They change when you resize the window or the split screen. The scene boxes have no names under them now: a red outline is the scene on air and a green outline is the one in Preview. The "Showing" item buttons under the boxes are gone from the Control Room.
+- The Preview and Program row fills the top of the Control Room. The scene boxes fill the width in an even grid of up to 4 across, each in the TV shape (16:9), like the OBS and AirLive multiviews. Preview and Program sit above them in the TV shape too. They change when you resize the window. The scene boxes have no names under them now: a red outline is the scene on air and a green outline is the one in Preview. The "Showing" item buttons under the boxes are gone from the Control Room.
 - The TAKE button between Preview and Program is gone, like OBS. In "Preview, then Take" mode, click a scene to put it in the Preview, then click the Program picture to put it on air (it says "click to take ..." and gets a red outline). "Direct" mode still puts a scene on air with one click.
 
 ## Control Room tidy-up
 - The status line ("Studio is running") is gone. The Studio is always open, so it was not needed.
 - The Preview/Take/Direct switch and the "Open in its own window" button are gone, like OBS. Click a scene to put it in the Preview, then click the Program picture to put it on air.
-- Clicking the **Control Room** tab opens a small menu: **New window**, then each display (full screen on that display). It is like OBS projectors. Use **Split screen** to see the Control Room next to the Stream page in the same window.
+- Clicking the **Control Room** tab opens a small menu: **New window**, then each display (full screen on that display). It is like OBS projectors.
