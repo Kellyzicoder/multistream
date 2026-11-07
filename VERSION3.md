@@ -76,7 +76,6 @@ The Studio only draws the Control Room pictures while a Control Room is open (it
 ## Stream errors are shown everywhere
 - The first page is now called **Stream** (it was "Dashboard").
 - There is no split screen. Instead, a red card floats in the bottom-right corner when something goes wrong. Stream problems (a channel stopping, or the video stopping while the live is open) show on the **Stream** page, the **Control Room** and the **Studio** (the stream matters most). Studio problems (no video arriving) show in the **Studio** only. Each alert names where it came from and the time, keeps one line per source (a retry updates its line), and shows a tick with "back on air" when it fixes itself. **Dismiss** in the Studio clears both kinds; Dismiss on the Stream page clears the Stream ones.
-- When the app is not in front (for example Zoom is), a standard Windows notification appears (silent, no sound) and the taskbar button flashes. Click the notification to bring the right window forward.
 - The alerts are pushed by the app as they happen, so the pages do not keep asking for news. A page that opens later still shows alerts not dismissed yet.
 - Tested in a browser test. Not tried in the real app yet.
 
