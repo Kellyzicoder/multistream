@@ -144,15 +144,15 @@ function hideKey(text, key) {
 
 // ---- Stream health: what happened while live, reconnects and how long each channel has been live ----
 const healthLog = []; // { t, text } newest last
-function logHealth(text) { healthLog.push({ t: Date.now(), text }); if (healthLog.length > 60) healthLog.shift(); }
+function logHealth(text, kind) { healthLog.push({ t: Date.now(), text, kind: kind || '' }); if (healthLog.length > 60) healthLog.shift(); }
 const reconnects = new Map(); // id -> times a channel dropped and was started again
 const liveSince = new Map(); // id -> when it went live
 function setStatus(id, state, message = '') {
   const before = (status.get(id) || {}).state;
   status.set(id, { state, message });
   const d = destinations.find((x) => x.id === id), name = d ? d.name : 'A channel';
-  if (state === 'live' && before !== 'live') { if (!liveSince.has(id)) liveSince.set(id, Date.now()); logHealth(before === 'error' ? `${name} reconnected by itself.` : `${name} is live.`); }
-  if (state === 'error' && before !== 'error') { if (obsLive) reconnects.set(id, (reconnects.get(id) || 0) + 1); logHealth(`${name} dropped: ${message || 'no reason given'}`); }
+  if (state === 'live' && before !== 'live') { if (!liveSince.has(id)) liveSince.set(id, Date.now()); logHealth(before === 'error' ? `${name} dropped and reconnected by itself.` : `${name} is live.`, before === 'error' ? 'warn' : ''); }
+  if (state === 'error' && before !== 'error') { if (obsLive) reconnects.set(id, (reconnects.get(id) || 0) + 1); logHealth(`${name} dropped: ${message || 'no reason given'}`, 'warn'); }
   if (state === 'off' && before && before !== 'off') liveSince.delete(id);
   if (state === 'error' && (before !== 'error' || message)) sendAlert('stream', name, `stopped receiving: ${message || 'no reason given'}`);
   else if (state === 'live' && before !== 'live') resolveAlert('stream', name, 'back on air');
@@ -161,8 +161,9 @@ function setStatus(id, state, message = '') {
 // ---- signal numbers for the stream coming in from the Studio ----
 // A second ffmpeg reads the incoming stream, copies it to nowhere, and we count the bytes.
 // It does not decode video, so it costs very little.
-const signal = { startedAt: 0, video: null, audio: null, kbps: 0, lastDataAt: 0, history: [], keyframe: null };
+const signal = { startedAt: 0, video: null, audio: null, kbps: 0, lastDataAt: 0, history: [], drops: [], keyframe: null };
 let monitor = null;
+let lastDropTotal = 0; // dropped frames so far, so each second's new drops can be drawn
 let noSignalSent = false; // so the "no video" alert is sent once, not every second
 
 function resetSignal() {
@@ -172,6 +173,7 @@ function resetSignal() {
   signal.kbps = 0;
   signal.lastDataAt = 0;
   signal.history = [];
+  signal.drops = []; lastDropTotal = 0;
   signal.keyframe = null;
 }
 
@@ -208,6 +210,9 @@ function startMonitor() {
     if (bytes > 0) signal.lastDataAt = Date.now();
     signal.history.push(signal.kbps);
     if (signal.history.length > 90) signal.history.shift();
+    let dt = 0; destStats.forEach((x) => { dt += x.drops || 0; });
+    signal.drops.push(Math.max(0, dt - lastDropTotal)); lastDropTotal = dt;
+    if (signal.drops.length > 90) signal.drops.shift();
   }, 1000);
   m.stop = () => { clearInterval(timer); off(); sink.destroy(); };
   const off = hub.subscribe(sink, () => {
@@ -330,7 +335,7 @@ hub.on('start', () => {
   console.log('Video is coming in. Starting destinations...');
   obsLive = true;
   reconnects.clear(); liveSince.clear();
-  logHealth('Started sending: ' + (destinations.filter((d) => d.enabled).map((d) => d.name).join(', ') || 'no channels are on') + '.');
+  { const on = destinations.filter((d) => d.enabled).map((d) => d.name); logHealth('Started streaming to ' + (on.length ? on.join(' and ').replace(/ and (?=.* and )/g, ', ') : 'no channels') + '.'); }
   chat.clear();
   // small delay so the first keyframe is in the hub before the channels join
   setTimeout(() => {
@@ -470,7 +475,35 @@ function cpuPercent() {
   cpuPrev = now;
   return total > 0 ? Math.round((1 - idle / total) * 100) : 0;
 }
+// graphics card load (NVIDIA cards: nvidia-smi comes with the driver). Other cards: not shown.
+let gpu = { pct: null, at: 0, none: false };
+function readGpu() {
+  if (gpu.none || Date.now() - gpu.at < 4000) return; gpu.at = Date.now();
+  try {
+    const p = spawn('nvidia-smi', ['--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
+    let out = ''; p.stdout.on('data', (c) => { out += c; }); p.on('error', () => { gpu.none = true; });
+    p.on('close', (code) => { const v = parseInt(out, 10); if (code === 0 && Number.isFinite(v)) gpu.pct = v; else gpu.none = true; });
+  } catch { gpu.none = true; }
+}
+// internet upload test: sends 15 MB to Cloudflare's speed test and times it (about 2 to 10 seconds)
+let netTest = { mbps: null, at: 0, running: false, error: '' };
+app.post('/api/health/speedtest', async (req, res) => {
+  if (netTest.running) return res.json(netTest);
+  if (obsLive) return res.status(400).json({ error: 'Test the internet before going live, so the test does not slow the stream' });
+  netTest.running = true; netTest.error = '';
+  try {
+    const size = 15 * 1024 * 1024, body = Buffer.alloc(size, 7), t0 = Date.now();
+    const r = await fetch('https://speed.cloudflare.com/__up', { method: 'POST', body, headers: { 'Content-Type': 'application/octet-stream' } });
+    await r.arrayBuffer().catch(() => {});
+    if (!r.ok) throw new Error('the test site answered ' + r.status);
+    const secs = Math.max(0.05, (Date.now() - t0) / 1000);
+    netTest = { mbps: Math.round((size * 8) / secs / 1e6), at: Date.now(), running: false, error: '' };
+    logHealth('Internet test: ' + netTest.mbps + ' Mbit/s upload.');
+  } catch (e) { netTest = { ...netTest, running: false, error: 'Could not test the internet: ' + e.message }; }
+  res.json(netTest);
+});
 app.get('/api/health', (req, res) => {
+  readGpu();
   const chans = destinations.map((d) => {
     const st = status.get(d.id) || { state: 'off', message: '' }, ds = destStats.get(d.id) || null;
     return { id: d.id, name: d.name, enabled: d.enabled, state: st.state, message: st.message, kbps: ds ? ds.kbps : 0, speed: ds ? ds.speed : null, frames: ds ? ds.frames : 0, drops: ds ? ds.drops : 0, reconnects: reconnects.get(d.id) || 0, liveSince: liveSince.get(d.id) || 0 };
@@ -481,6 +514,9 @@ app.get('/api/health', (req, res) => {
     kbps: signal.kbps,
     ok: Date.now() - signal.lastDataAt < 4000,
     history: signal.history.slice(-90),
+    drops90: signal.drops.slice(-90),
+    gpu: gpu.pct,
+    net: netTest,
     fps: signal.video && signal.video.fps ? signal.video.fps : null,
     size: signal.video && signal.video.width ? signal.video.width + 'x' + signal.video.height : '',
     keyframe: signal.keyframe,

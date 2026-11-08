@@ -230,38 +230,28 @@
   .segc { display:inline-flex; gap:2px; padding:2px; border-radius:9px; background:rgba(0,0,0,.25); border:1px solid var(--line); }
   .segc button { padding:5px 12px; font-size:12.5px; border:0; border-radius:7px; background:transparent; color:var(--muted); box-shadow:none; }
   .segc button.on { background:var(--blue); color:var(--onblue); }
-  /* ---------- Stream health ---------- */
-  .xpage { padding:4px 18px 24px; display:flex; flex-direction:column; gap:14px; animation:xpIn .2s ease-out; }
+  /* ---------- Stream health (as in the design) ---------- */
+  .xpage { padding:16px 28px 24px; display:flex; flex-direction:column; gap:16px; animation:xpIn .2s ease-out; }
   @keyframes xpIn { from { opacity:0; transform:translateY(6px); } }
-  .hl-top { display:flex; align-items:center; gap:12px; }
-  .hl-badge { padding:5px 12px; border-radius:999px; font-size:12.5px; font-weight:700; background:var(--card2); color:var(--muted); }
-  .hl-badge.good { background:rgba(52,211,153,.14); color:#4ade80; } .hl-badge.ok { background:rgba(250,204,21,.14); color:#facc15; } .hl-badge.bad { background:rgba(248,113,113,.15); color:#f87171; }
-  .hl-since { font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .hl-cards { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; }
-  @media (max-width:900px) { .hl-cards { grid-template-columns:repeat(2, minmax(0,1fr)); } }
-  .hl-c { padding:14px 16px; display:flex; flex-direction:column; gap:4px; }
-  .hl-c small { font-size:12px; color:var(--muted); font-weight:600; }
-  .hl-c b { font-size:30px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.01em; } .hl-c b i { font-style:normal; font-size:13px; font-weight:600; color:var(--muted); margin-left:5px; }
-  .hl-c em { font-style:normal; font-size:12px; color:var(--muted); } .hl-c em.good { color:#4ade80; } .hl-c em.bad { color:#f87171; }
-  .hl-h { font-size:13px; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:10px; }
-  .hl-k { margin-left:auto; font-size:11.5px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:6px; } .hl-k i { width:14px; height:3px; border-radius:2px; background:var(--blue); }
-  .hl-chart { padding:14px 16px; } .hl-chart svg { width:100%; height:160px; display:block; }
-  .hl-ax { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); margin-top:4px; }
-  .hl-row { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:12px; } @media (max-width:1000px) { .hl-row { grid-template-columns:1fr; } }
-  .hl-tb, .hl-log { padding:14px 16px; }
-  .hl-tb table { width:100%; border-collapse:collapse; font-size:13px; } .hl-tb th { text-align:left; font-size:11.5px; color:var(--muted); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--line); }
-  .hl-tb td { padding:9px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; } .hl-tb tr:last-child td { border-bottom:0; }
-  .hl-st { font-weight:600; } .hl-st.live { color:#4ade80; } .hl-st.error { color:#f87171; } .hl-st.starting { color:#facc15; } .hl-st.off { color:var(--muted); }
-  .hl-log ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; max-height:280px; overflow:auto; }
-  .hl-log li { display:flex; gap:12px; font-size:13px; line-height:1.4; } .hl-log li time { flex:none; width:74px; white-space:nowrap; color:var(--muted); font-variant-numeric:tabular-nums; }
-  .stage { position:relative; display:flex; justify-content:center; align-items:flex-start; padding:0 6px; overflow:auto; }
-  .stage-in { width:100%; max-width:760px; text-align:center; }
-  #offlineView { text-align:center; } #offlineView > * { max-width:460px; }
-  #offlineView .lead { margin:10px auto 22px; text-align:center; }
-  .side { display:flex; flex-direction:column; gap:14px; min-height:0; overflow:auto; }
-  .sec-t { font-size:10.5px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
-  .grow { flex:1; }
-
+  .hbx > b.hl-t { font-size:14px; } #healthView { min-height:calc(100vh - 70px); box-sizing:border-box; } .hl-tb .tr.off .hl-st { font-weight:400; }
+  .hl { gap:16px; }
+  .hbx { border-radius:20px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); padding:16px 18px; display:flex; flex-direction:column; gap:8px; color:var(--text); text-align:left; }
+  .hbx small { color:var(--muted); font-size:12px; } .hbx > b { font-size:26px; font-variant-numeric:tabular-nums; } .hbx > b i { font-style:normal; font-size:14px; }
+  .hbx em { font-style:normal; font-size:12px; color:var(--muted); } .hbx em.good { color:#4ade80; font-weight:700; } .hbx em.bad { color:#ff8a90; }
+  button.hbx { font:inherit; cursor:pointer; } button.hbx:hover { border-color:color-mix(in srgb, var(--blue) 50%, transparent); }
+  .hl-cards { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:14px; }
+  @media (max-width:1100px) { .hl-cards { grid-template-columns:repeat(3, minmax(0,1fr)); } }
+  .hl-chart { gap:10px; } .hl-h { display:flex; align-items:center; gap:16px; font-size:12px; color:var(--muted); } .hl-h b { font-size:14px; color:var(--text); margin-right:auto; }
+  .hl-k i { display:inline-block; width:10px; height:3px; background:var(--blue); margin-right:6px; vertical-align:middle; } .hl-k.r i { background:#ff4d5a; }
+  .hl-chart svg { width:100%; height:120px; display:block; } .hl-ax { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+  .hl-row { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:14px; flex:1; min-height:240px; } @media (max-width:1000px) { .hl-row { grid-template-columns:1fr; } }
+  .hl-tb { gap:4px; } .hl-t { font-size:14px; margin-bottom:6px; } .hl-log { gap:12px; }
+  .hl-tb .tr { display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr 1fr; align-items:center; padding:11px 14px; border-radius:12px; font-size:13.5px; gap:10px; font-variant-numeric:tabular-nums; }
+  .hl-tb .tr.th { color:var(--muted); font-size:12px; padding-top:0; padding-bottom:4px; } .hl-tb .tr.on { background:rgba(255,255,255,.04); } .hl-tb .tr.off { color:var(--muted); }
+  .hl-st { font-weight:700; } .hl-st.live { color:#4ade80; } .hl-st.error { color:#ff8a90; } .hl-st.starting { color:#fbbf24; }
+  #hlLog { display:flex; flex-direction:column; gap:12px; } .ev { display:flex; gap:12px; align-items:flex-start; font-size:13px; line-height:1.45; } .ev i { font-style:normal; color:var(--muted); width:58px; flex:none; font-variant-numeric:tabular-nums; } .ev.warn span { color:#fbbf24; }
+  .hl-badge { padding:5px 12px; border-radius:999px; font-size:13px; font-weight:700; background:rgba(255,255,255,.08); color:var(--muted); }
+  .hl-badge.good { background:rgba(74,222,128,.15); color:#4ade80; } .hl-badge.ok { background:rgba(250,204,21,.14); color:#facc15; } .hl-badge.bad { background:rgba(248,113,113,.15); color:#f87171; }
   /* ---------- offline view ---------- */
   .ring { position:relative; width:68px; height:68px; margin:9vh auto 26px; border-radius:50%; border:1px solid var(--blue); box-shadow:0 0 34px var(--glow), inset 0 0 22px var(--glow); }
   .ring::before, .ring::after { content:""; position:absolute; inset:-1px; border-radius:50%; border:1px solid var(--blue); opacity:0; animation:ripple 3s infinite; }
@@ -936,17 +926,17 @@
 
 <!-- multiview -->
 <section class="xpage hl" id="healthView" hidden aria-label="Stream health">
-  <div class="hl-top"><span class="hl-badge" id="hlBadge">Not live</span><span class="hl-since" id="hlSince"></span></div>
   <div class="hl-cards">
-    <div class="card hl-c"><small>Sending</small><b><span id="hlKbps">0</span><i>Mbit/s</i></b><em id="hlKbpsN">Not sending</em></div>
-    <div class="card hl-c"><small>Frame rate</small><b><span id="hlFps">–</span><i>fps</i></b><em id="hlFpsN"></em></div>
-    <div class="card hl-c"><small>Dropped frames</small><b><span id="hlDrop">0</span></b><em id="hlDropN"></em></div>
-    <div class="card hl-c"><small>Computer</small><b><span id="hlCpu">0</span><i>%</i></b><em id="hlCpuN"></em></div>
+    <div class="hbx"><small>Sending</small><b><span id="hlKbps">0</span> <i>Mbit/s</i></b><em id="hlKbpsN">Not sending</em></div>
+    <div class="hbx"><small>Frame rate</small><b><span id="hlFps">–</span> <i>fps</i></b><em id="hlFpsN"></em></div>
+    <div class="hbx"><small>Dropped frames</small><b><span id="hlDrop">0</span></b><em id="hlDropN"></em></div>
+    <div class="hbx"><small>Computer</small><b><span id="hlCpu">0</span><i>%</i></b><em id="hlCpuN"></em></div>
+    <button type="button" class="hbx" id="hlNet" title="Test the internet upload speed"><small>Internet upload</small><b><span id="hlNetV">–</span> <i>Mbit/s</i></b><em id="hlNetN">Press to test</em></button>
   </div>
-  <div class="card hl-chart"><div class="hl-h">Sending speed over time <span class="hl-k"><i></i> Sending</span></div><svg id="hlSvg" viewBox="0 0 600 160" preserveAspectRatio="none" aria-hidden="true"></svg><div class="hl-ax" id="hlAx"></div></div>
+  <div class="hbx hl-chart"><div class="hl-h"><b>Sending speed over time</b><span class="hl-k"><i></i>Sending</span><span class="hl-k r"><i></i>Dropped frames</span></div><svg id="hlSvg" viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true"></svg><div class="hl-ax" id="hlAx"></div></div>
   <div class="hl-row">
-    <div class="card hl-tb"><div class="hl-h">Each channel</div><table><thead><tr><th>Channel</th><th>Status</th><th>Speed</th><th>Reconnects</th><th>Live for</th></tr></thead><tbody id="hlChans"></tbody></table></div>
-    <div class="card hl-log"><div class="hl-h">What happened</div><ul id="hlLog"></ul></div>
+    <div class="hbx hl-tb"><b class="hl-t">Each channel</b><div class="tr th"><span>Channel</span><span>Status</span><span>Speed</span><span>Reconnects</span><span>Live for</span></div><div id="hlChans"></div></div>
+    <div class="hbx hl-log"><b class="hl-t">What happened</b><div id="hlLog"></div></div>
   </div>
 </section>
 <section class="xpage rc" id="recView" hidden aria-label="Recordings">
@@ -2028,52 +2018,60 @@ const XPAGES = {};
 })();
 // Stream health: how the stream is doing right now, updated every 2 seconds while the page is open
 (() => {
-  let t = null;
-  const fmtDur = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
-  const clock = (ts) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  let t = null, start = 0;
+  const pad = (n) => String(n).padStart(2, '0');
+  const fmtDur = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return (h ? h + ':' + pad(m) : m) + ':' + pad(x); };
+  const clock = (ts) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?[ap]m$/i, '');
   const STATE = { live: 'Good', starting: 'Starting', error: 'Trouble', off: 'Off' };
   async function tick() {
     let h; try { h = await api('/api/health'); } catch { return; }
+    start = h.startedAt;
     const mb = (k) => (k / 1000).toFixed(1);
-    const live = h.live && h.ok, bad = h.channels.some((c) => c.enabled && c.state === 'error'), dropPct = h.frames ? (h.drops / h.frames) * 100 : 0;
-    const badge = $('#hlBadge');
+    const bad = h.channels.some((c) => c.enabled && c.state === 'error'), dropPct = h.frames ? (h.drops / h.frames) * 100 : 0;
+    const badge = $('#pageBadge'); badge.hidden = page !== 'health';
     badge.className = 'hl-badge' + (!h.live ? '' : bad || !h.ok ? ' bad' : dropPct > 1 || h.cpu > 85 ? ' ok' : ' good');
     badge.textContent = !h.live ? 'Not live' : bad || !h.ok ? '● Needs a look' : dropPct > 1 || h.cpu > 85 ? '● OK' : '● Excellent';
-    $('#hlSince').textContent = h.live && h.startedAt ? 'Live for ' + fmtDur(Date.now() - h.startedAt) : '';
     $('#hlKbps').textContent = mb(h.kbps);
-    const hist = h.history || [], avg = hist.length ? hist.reduce((a, b) => a + b, 0) / hist.length : 0, vary = avg ? Math.max(...hist.map((k) => Math.abs(k - avg))) / avg : 0;
-    const kn = $('#hlKbpsN'); kn.textContent = !live ? 'Not sending' : vary < 0.35 ? 'Steady' : 'Going up and down'; kn.className = live && vary < 0.35 ? 'good' : '';
+    const hist = h.history || [], avg = hist.length ? hist.reduce((a, b) => a + b, 0) / hist.length : 0, vary = avg ? Math.max(...hist.map((k) => Math.abs(k - avg))) / avg : 0, live = h.live && h.ok;
+    const kn = $('#hlKbpsN'); kn.textContent = !live ? 'Not sending' : vary < 0.35 ? 'Steady' : 'Going up and down'; kn.className = live && vary < 0.35 ? 'good' : live ? 'bad' : '';
     $('#hlFps').textContent = h.fps ? Math.round(h.fps) : '–';
-    $('#hlFpsN').textContent = h.size ? h.size : '';
+    const fn = $('#hlFpsN'); fn.textContent = h.fps ? (dropPct > 1 ? 'Some frames lost' : 'Smooth') : ''; fn.className = h.fps && dropPct <= 1 ? 'good' : 'bad';
     $('#hlDrop').textContent = h.drops.toLocaleString();
     const dn = $('#hlDropN'); dn.textContent = h.frames ? dropPct.toFixed(1) + '% of ' + h.frames.toLocaleString() : 'None yet'; dn.className = dropPct > 1 ? 'bad' : '';
     $('#hlCpu').textContent = h.cpu;
-    const cn = $('#hlCpuN'); cn.textContent = 'Memory ' + h.memory + '%' + (h.cpu > 85 ? ' · very busy' : ''); cn.className = h.cpu > 85 ? 'bad' : '';
-    // chart: the last 90 seconds
-    const W = 600, H = 160, max = Math.max(1000, ...hist) * 1.15;
-    const pts = hist.map((k, i) => [hist.length > 1 ? (i / (hist.length - 1)) * W : 0, H - (k / max) * H]);
+    const cn = $('#hlCpuN'); cn.textContent = (h.gpu != null ? 'Graphics card ' + h.gpu + '% · ' : '') + 'memory ' + h.memory + '%'; cn.className = h.cpu > 85 ? 'bad' : '';
+    const n = h.net || {}; $('#hlNetV').textContent = n.mbps != null ? n.mbps : '–';
+    $('#hlNetN').textContent = n.running ? 'Testing...' : n.error ? n.error : n.at ? 'Tested at ' + new Date(n.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : h.live ? 'Test it before going live' : 'Press to test';
+    // chart: sending (line) and dropped frames (red bars), last 90 seconds
+    const W = 600, H = 120, max = Math.max(1000, ...hist) * 1.15, n2 = hist.length, dr = h.drops90 || [];
+    const X = (i) => (n2 > 1 ? (i / (n2 - 1)) * W : 0);
+    const pts = hist.map((k, i) => [X(i), H - (k / max) * (H - 6)]);
     const line = pts.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' ');
-    $('#hlSvg').innerHTML = '<defs><linearGradient id="hlG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--blue)" stop-opacity=".35"/><stop offset="1" stop-color="var(--blue)" stop-opacity="0"/></linearGradient></defs>'
-      + [0.25, 0.5, 0.75].map((f) => '<line x1="0" x2="' + W + '" y1="' + H * f + '" y2="' + H * f + '" stroke="var(--line)" stroke-width="1"/>').join('')
-      + (pts.length > 1 ? '<path d="' + line + ' L' + W + ' ' + H + ' L0 ' + H + 'Z" fill="url(#hlG)"/><path d="' + line + '" fill="none" stroke="var(--blue)" stroke-width="2.2" vector-effect="non-scaling-stroke"/>' : '');
-    $('#hlAx').innerHTML = hist.length > 1 ? '<span>' + hist.length + ' seconds ago</span><span>now</span>' : '<span>The chart starts when you go live</span>';
-    // channels
+    const dmax = Math.max(1, ...dr);
+    $('#hlSvg').innerHTML = '<line x1="0" x2="' + W + '" y1="' + H / 2 + '" y2="' + H / 2 + '" stroke="var(--gl-line)" stroke-width="1"/>'
+      + (pts.length > 1 ? '<path d="' + line + ' L' + W + ' ' + H + ' L0 ' + H + 'Z" fill="var(--blue)" fill-opacity=".25"/><path d="' + line + '" fill="none" stroke="var(--blue)" stroke-width="2.4" vector-effect="non-scaling-stroke"/>' : '')
+      + dr.slice(-n2).map((d, i) => d ? '<rect x="' + (X(i) - 4).toFixed(1) + '" y="' + (H - 6 - (d / dmax) * 18) + '" width="8" height="' + ((d / dmax) * 18 + 6) + '" fill="#ff4d5a"/>' : '').join('');
+    if (n2 > 1 && h.startedAt) { const end = Date.now() - h.startedAt, from = end - n2 * 1000; $('#hlAx').innerHTML = [0, .25, .5, .75, 1].map((f) => '<span>' + fmtDur(Math.max(0, from + f * (end - from))) + '</span>').join(''); }
+    else $('#hlAx').innerHTML = '<span>The chart starts when you go live</span>';
+    // each channel
     const tb = $('#hlChans'); tb.textContent = '';
     h.channels.forEach((c) => {
-      const tr = document.createElement('tr');
-      const st = c.enabled ? c.state : 'off';
-      const cells = [c.name, (st === 'off' ? '' : '● ') + (STATE[st] || st), c.kbps ? mb(c.kbps) + ' Mbit/s' : '–', st === 'off' ? '–' : String(c.reconnects), c.liveSince && st === 'live' ? fmtDur(Date.now() - c.liveSince) : '–'];
-      cells.forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i === 1) { td.className = 'hl-st ' + st; if (c.message) td.title = c.message; } tr.appendChild(td); });
-      tb.appendChild(tr);
+      const stt = c.enabled ? c.state : 'off', on = stt !== 'off';
+      const r = document.createElement('div'); r.className = 'tr ' + (on ? 'on' : 'off');
+      [c.name, (on ? '● ' : '') + (STATE[stt] || stt), c.kbps ? mb(c.kbps) + ' Mbit/s' : '–', on ? String(c.reconnects) : '–', c.liveSince && stt === 'live' ? fmtDur(Date.now() - c.liveSince) : '–'].forEach((v, i) => { const sp = document.createElement('span'); sp.textContent = v; if (i === 1) { sp.className = 'hl-st ' + stt; if (c.message) sp.title = c.message; } r.appendChild(sp); });
+      tb.appendChild(r);
     });
-    if (!h.channels.length) tb.innerHTML = '<tr><td colspan="5">No channels yet. Add one on the Go Live page.</td></tr>';
-    // what happened
-    const ul = $('#hlLog'); ul.textContent = '';
-    if (h.live && !bad) { const li = document.createElement('li'); li.innerHTML = '<time></time><span></span>'; li.firstChild.textContent = clock(Date.now()); li.lastChild.textContent = 'All good. Nothing to do.'; ul.appendChild(li); }
-    h.log.forEach((e) => { const li = document.createElement('li'); li.innerHTML = '<time></time><span></span>'; li.firstChild.textContent = clock(e.t); li.lastChild.textContent = e.text; ul.appendChild(li); });
-    if (!ul.children.length) ul.innerHTML = '<li><span>Nothing yet. Things that happen while you are live show here.</span></li>';
+    if (!h.channels.length) tb.innerHTML = '<div class="tr off"><span>No channels yet</span></div>';
+    // what happened (time from the start of the stream; before it, the clock time)
+    const lg = $('#hlLog'); lg.textContent = '';
+    const when = (ts) => (start && ts >= start ? fmtDur(ts - start) : clock(ts));
+    const add = (ts, text, kind) => { const d = document.createElement('div'); d.className = 'ev' + (kind ? ' ' + kind : ''); d.innerHTML = '<i></i><span></span>'; d.firstChild.textContent = when(ts); d.lastChild.textContent = text; lg.appendChild(d); };
+    if (h.live && !bad) add(Date.now(), 'All good. Nothing to do.');
+    h.log.forEach((e) => add(e.t, e.text, e.kind));
+    if (!lg.children.length) lg.innerHTML = '<div class="ev"><span>Nothing yet. Things that happen while you are live show here.</span></div>';
   }
-  XPAGES.health = { title: 'Stream health', el: 'healthView', open() { if (!t) { tick(); t = setInterval(tick, 2000); } }, close() { clearInterval(t); t = null; } };
+  $('#hlNet').onclick = async () => { $('#hlNetN').textContent = 'Testing...'; const r = await api('/api/health/speedtest', 'POST').catch(() => ({})); if (r && r.error) $('#hlNetN').textContent = r.error; tick(); };
+  XPAGES.health = { title: 'Stream health', el: 'healthView', open() { if (!t) { tick(); t = setInterval(tick, 2000); } }, close() { clearInterval(t); t = null; $('#pageBadge').hidden = true; } };
 })();
 function showPage(p) {
   if (p === 'studio') {
