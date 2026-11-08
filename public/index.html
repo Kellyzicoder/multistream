@@ -210,26 +210,24 @@
   .scd .shp button small { font-size:11px; color:var(--muted); } .scd .shp button.on { border-color:var(--blue); box-shadow:0 0 0 2px rgba(59,108,255,.35); }
   .scd .chs { display:flex; flex-wrap:wrap; gap:8px; } .scd .chs label { flex-direction:row; align-items:center; gap:6px; color:var(--text); font-size:13px; padding:6px 10px; border-radius:10px; background:var(--card2); }
   .scd .ft { display:flex; justify-content:flex-end; gap:8px; }
-  /* ---------- Recordings ---------- */
-  .rc-top { display:flex; align-items:center; gap:10px; } .rc-where { font-size:13px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .rc-top .sp { flex:1; }
-  .rc-list { display:flex; flex-direction:column; gap:8px; }
-  .rc-row { display:grid; grid-template-columns:96px minmax(0,1fr) auto; gap:16px; align-items:center; padding:12px 14px; }
-  .rc-th { height:54px; border-radius:10px; background:linear-gradient(135deg,#1c2550,#0d1230); display:grid; place-items:end start; padding:6px; font-size:11.5px; font-weight:700; font-variant-numeric:tabular-nums; color:#fff; }
-  .rc-th span { background:rgba(0,0,0,.55); padding:2px 6px; border-radius:6px; }
-  .rc-t { min-width:0; } .rc-t b { display:block; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .rc-t small { display:block; font-size:12px; color:var(--muted); margin-top:2px; }
-  .rc-s { font-size:12px; margin-top:6px; display:flex; align-items:center; gap:8px; } .rc-s.ok { color:#4ade80; } .rc-s.err { color:#f87171; } .rc-s.up { color:var(--link); }
-  .rc-s a { color:var(--link); } .rc-bar { flex:0 0 160px; height:5px; border-radius:3px; background:var(--card2); overflow:hidden; } .rc-bar i { display:block; height:100%; background:var(--blue); }
-  .rc-b { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; } .rc-b button { padding:6px 12px; font-size:12.5px; color:var(--text); } .rc-b button:hover, #rcOpen:hover { border-color:var(--blue); }
-  .rc-empty { padding:28px; text-align:center; color:var(--muted); font-size:13px; }
-  .rc-auto { padding:14px 16px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; justify-content:space-between; }
-  .rc-sw { display:flex; align-items:center; gap:12px; cursor:pointer; } .rc-sw input { position:absolute; opacity:0; pointer-events:none; }
-  .rc-tg { width:40px; height:22px; border-radius:999px; background:var(--card2); position:relative; flex:none; transition:background .15s; } .rc-tg::after { content:""; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .15s; }
-  .rc-sw input:checked + .rc-tg { background:var(--blue); } .rc-sw input:checked + .rc-tg::after { left:21px; } .rc-sw input:focus-visible + .rc-tg { outline:2px solid var(--blue); outline-offset:2px; }
-  .rc-sw b { display:block; font-size:13.5px; } .rc-sw small { display:block; font-size:12px; color:var(--muted); margin-top:2px; }
-  .rc-pv { display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--muted); }
-  .segc { display:inline-flex; gap:2px; padding:2px; border-radius:9px; background:rgba(0,0,0,.25); border:1px solid var(--line); }
-  .segc button { padding:5px 12px; font-size:12.5px; border:0; border-radius:7px; background:transparent; color:var(--muted); box-shadow:none; }
-  .segc button.on { background:var(--blue); color:var(--onblue); }
+  /* ---------- Recordings (as in the design) ---------- */
+  .rc { gap:18px; }
+  .rc-where { color:var(--muted); font-size:13px; margin-right:8px; }
+  .hb.pl { padding:9px 16px; background:var(--gl); border:1px solid var(--gl-line); color:var(--soft); }
+  .rc-f { display:flex; gap:8px; flex-wrap:wrap; } .rc-f button { padding:9px 16px; border-radius:999px; background:var(--gl); border:1px solid var(--gl-line); color:var(--soft); font-size:13px; font-weight:600; } .rc-f button.on { background:#eef1f8; color:#0a0e1f; border-color:#eef1f8; }
+  .rc-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:16px; align-items:start; } @media (max-width:1200px) { .rc-grid { grid-template-columns:repeat(3, minmax(0,1fr)); } } @media (max-width:900px) { .rc-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  .rcc { display:flex; flex-direction:column; gap:10px; padding:12px; border-radius:20px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); min-width:0; }
+  .rcc .th { aspect-ratio:16/9; border-radius:14px; position:relative; overflow:hidden; } .rcc .th em { position:absolute; right:8px; bottom:8px; padding:3px 8px; border-radius:6px; background:rgba(10,14,31,.75); font-style:normal; font-size:11.5px; font-weight:700; color:#fff; }
+  .rcc > b { font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .rcc .mt2 { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
+  .rcc .up { display:flex; flex-direction:column; gap:5px; font-size:12px; } .rcc .up > div:first-child { display:flex; align-items:center; gap:6px; color:var(--soft); } .rcc .up .tile { width:16px; height:16px; border-radius:5px; } .rcc .up .tile svg { width:9px; height:9px; }
+  .rcc .up .pc { margin-left:auto; color:var(--link); font-weight:700; } .rcc .bar { height:5px; border-radius:3px; background:rgba(255,255,255,.08); overflow:hidden; } .rcc .bar i { display:block; height:100%; background:var(--blue); }
+  .rcc .okl { display:flex; align-items:center; gap:6px; font-size:12px; color:#4ade80; font-weight:600; } .rcc .okl a { margin-left:auto; font-weight:600; text-decoration:none; color:var(--link); cursor:pointer; } .rcc .errl { font-size:12px; color:#ff8a90; }
+  .rcc .bt { display:flex; gap:6px; flex-wrap:wrap; } .mini { padding:7px 12px; border-radius:999px; border:0; background:rgba(255,255,255,.08); color:var(--text); font-size:12px; font-weight:600; } .mini.pri { background:var(--blue); color:#fff; }
+  .rc-empty { grid-column:1 / -1; padding:28px; text-align:center; color:var(--muted); font-size:13px; }
+  .rc-auto { margin-top:auto; display:flex; align-items:center; gap:16px; padding:14px 18px; border-radius:16px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); font-size:13px; color:var(--soft); }
+  .rc-auto .tile { width:36px; height:36px; border-radius:11px; } .rc-a1 { flex:1; line-height:1.45; } .rc-a1 b { color:var(--text); font-size:14px; display:block; } .rc-a1 small { color:var(--muted); font-size:12px; } .rc-a1 small:empty { display:none; }
+  .rc-who { display:flex; flex-direction:column; gap:5px; font-size:12px; color:var(--muted); } .rc-who select { padding:8px 12px; border-radius:10px; background:rgba(10,14,31,.6); border:1px solid var(--gl-line); color:var(--text); font-size:13px; font-weight:500; }
+  #recView { min-height:calc(100vh - 70px); box-sizing:border-box; }
   /* ---------- Stream health (as in the design) ---------- */
   .xpage { padding:16px 28px 24px; display:flex; flex-direction:column; gap:16px; animation:xpIn .2s ease-out; }
   @keyframes xpIn { from { opacity:0; transform:translateY(6px); } }
@@ -819,6 +817,8 @@
 <header class="top">
   <h1 class="pgt" id="pageTitle">Go Live</h1><span class="hl-badge" id="pageBadge" hidden></span>
   <span class="sp"></span>
+  <span class="gl-acts" id="rcActs" hidden><span class="rc-where" id="rcWhere"></span><button type="button" class="hb pl" id="rcOpen">Open folder</button><button type="button" class="hb pl" id="rcRemux">Remux to MP4</button></span>
+  <span class="gl-acts" id="scActs" hidden><button type="button" class="hb pl" id="scObs">Import from OBS</button><button type="button" class="hb pl" id="scImp">Import file</button><button type="button" class="hb sb" id="scNew">+ New collection</button></span>
   <span class="gl-acts" id="glActs">
     <button type="button" class="hb" id="glUpd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Update title for all channels</button>
     <button type="button" class="hb" id="ptBtn" title="Private test: only you can see the live">Private test: on</button>
@@ -940,15 +940,16 @@
   </div>
 </section>
 <section class="xpage rc" id="recView" hidden aria-label="Recordings">
-  <div class="rc-top"><span class="rc-where" id="rcWhere"></span><span class="sp"></span><button type="button" class="ghost" id="rcOpen">Open folder</button></div>
-  <div class="rc-list" id="rcList"></div>
-  <div class="card rc-auto">
-    <label class="rc-sw"><input type="checkbox" id="rcAuto"><span class="rc-tg" aria-hidden="true"></span><span><b>Upload to YouTube when a recording ends</b><small id="rcAutoN">The recording goes to your YouTube channel by itself.</small></span></label>
-    <div class="rc-pv"><span>Who can watch</span><div class="segc" id="rcPriv"><button type="button" data-v="unlisted">Unlisted</button><button type="button" data-v="private">Private</button><button type="button" data-v="public">Public</button></div></div>
+  <div class="rc-f" id="rcFilt"></div>
+  <div class="rc-grid" id="rcList"></div>
+  <div class="rc-auto">
+    <span class="tile-yt2" id="rcYt"></span>
+    <div class="rc-a1"><b>Upload to YouTube when the stream ends</b><small id="rcAutoN"></small></div>
+    <label class="rc-who">Who can watch<select id="rcPriv"><option value="unlisted">Unlisted</option><option value="private">Private</option><option value="public">Public</option></select></label>
+    <button type="button" class="tg2" id="rcAuto" role="switch" aria-label="Upload to YouTube when the stream ends"></button>
   </div>
 </section>
 <section class="xpage sc" id="collView" hidden aria-label="Scene collections">
-  <div class="rc-top"><span class="rc-where">Each collection is a set of scenes. A tall (9:16) one is for Instagram or TikTok.</span><span class="sp"></span><button type="button" class="ghost" id="scObs">Import from OBS</button><button type="button" class="ghost" id="scImp">Import file</button><button type="button" class="go" id="scNew">+ New collection</button></div>
   <div class="sc-grid" id="scGrid"></div>
   <input type="file" id="scFile" accept=".json,application/json" hidden>
 </section>
@@ -1972,48 +1973,60 @@ const XPAGES = {};
   };
   XPAGES.coll = { title: 'Scene collections', el: 'collView', open() { draw(); }, close() {} };
 })();
-// Recordings: every recording on this computer; play, show, make an MP4, upload to YouTube
+// Recordings: every recording on this computer, as cards; play, show, make an MP4, upload to YouTube
 (() => {
-  let t = null;
+  let t = null, filt = 'all', data = null;
   const gb = (b) => b >= 1e9 ? (b / 1e9).toFixed(1) + ' GB' : Math.max(1, Math.round(b / 1e6)) + ' MB';
   const dur = (s) => { if (s == null) return ''; const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
   const when = (ts) => { const d = new Date(ts), days = Math.floor((Date.now() - ts) / 86400000); return days < 1 && d.getDate() === new Date().getDate() ? 'Today' : days < 7 ? d.toLocaleDateString([], { weekday: 'short' }) : days < 14 ? 'Last week' : Math.floor(days / 7) + ' weeks ago'; };
-  const title = (f) => { const m = /(\d{4})-(\d{2})-(\d{2})/.exec(f.name); const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(f.at); return (/^Studio/.test(f.name) ? 'Recording' : f.name.replace(/\.[^.]+$/, '')) + ' – ' + d.toLocaleDateString([], { day: 'numeric', month: 'short' }); };
+  const dayOf = (f) => { const m = /(\d{4})-(\d{2})-(\d{2})/.exec(f.name); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(f.at); };
+  const group = (f) => (f.title || '').replace(/\s*[–-]\s*\d.*$/, '').trim() || 'Recording';
+  const title = (f) => group(f) + ' – ' + dayOf(f).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const GR = ['linear-gradient(135deg,#262a63,#3a1f5e 60%,#14363a)', 'linear-gradient(135deg,#0f766e,#164e63)', 'linear-gradient(135deg,#b45309,#7c2d12)', 'linear-gradient(135deg,#1d4ed8,#312e81)', 'linear-gradient(135deg,#be185d,#4c1d95)'];
   const PRIV = { unlisted: 'Unlisted', private: 'Private', public: 'Public' };
   const act = (a, name) => api('/api/recordings/' + a, 'POST', { name }).then((r) => { if (r && r.error) alert(r.error); tick(); });
-  async function tick() {
-    let r; try { r = await api('/api/recordings'); } catch { return; }
-    $('#rcWhere').textContent = 'Saved to ' + (r.folder || '') + (r.free != null ? ' · ' + gb(r.free) + ' free' : '');
+  function draw() {
+    const r = data; if (!r) return;
+    $('#rcWhere').textContent = 'Saved to ' + (r.folder || '') + (r.free != null ? ' · ' + Math.round(r.free / 1e9) + ' GB free' : '');
+    const groups = [...new Set((r.files || []).map(group))];
+    if (filt !== 'all' && !groups.includes(filt)) filt = 'all';
+    const fb = $('#rcFilt'); fb.textContent = '';
+    ['all', ...groups].forEach((g) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = g === 'all' ? 'All' : g; b.className = g === filt ? 'on' : ''; b.onclick = () => { filt = g; draw(); }; fb.appendChild(b); });
+    fb.hidden = groups.length < 2;
     const box = $('#rcList'); box.textContent = '';
-    (r.files || []).forEach((f) => {
-      const row = document.createElement('div'); row.className = 'card rc-row';
-      const th = document.createElement('div'); th.className = 'rc-th'; if (f.secs != null) { const sp = document.createElement('span'); sp.textContent = dur(f.secs); th.appendChild(sp); }
-      const tx = document.createElement('div'); tx.className = 'rc-t';
-      const b = document.createElement('b'); b.textContent = title(f); b.title = f.name;
-      const sm = document.createElement('small'); sm.textContent = when(f.at) + ' · ' + f.name.split('.').pop().toUpperCase() + ' · ' + gb(f.size);
-      tx.append(b, sm);
-      const st = document.createElement('div'); st.className = 'rc-s';
-      if (f.job && f.job.error) { st.classList.add('err'); st.textContent = f.job.error; }
-      else if (f.job && f.job.kind === 'upload') { st.classList.add('up'); st.innerHTML = '<span></span><span class="rc-bar"><i></i></span><span></span>'; st.children[0].textContent = 'Uploading to YouTube · ' + (PRIV[r.privacy] || ''); st.querySelector('i').style.width = f.job.pct + '%'; st.children[2].textContent = f.job.pct + '%'; }
-      else if (f.job && f.job.kind === 'mp4') { st.classList.add('up'); st.innerHTML = '<span>Making the MP4</span><span class="rc-bar"><i></i></span><span></span>'; st.querySelector('i').style.width = f.job.pct + '%'; st.children[2].textContent = f.job.pct + '%'; }
-      else if (f.queued) { st.classList.add('up'); st.textContent = 'Waiting to upload to YouTube'; }
-      else if (f.youtube) { st.classList.add('ok'); st.textContent = '✓ On YouTube · ' + (PRIV[f.youtube.privacy] || '') + ' '; if (f.youtube.id) { const a = document.createElement('a'); a.href = 'https://youtu.be/' + f.youtube.id; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open'; st.appendChild(a); } }
-      if (st.textContent || st.children.length) tx.appendChild(st);
-      const bt = document.createElement('div'); bt.className = 'rc-b';
-      const btn = (label, fn) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'ghost'; x.textContent = label; x.onclick = fn; bt.appendChild(x); };
-      btn('Play', () => act('play', f.name)); btn('Show file', () => act('show', f.name));
+    (r.files || []).filter((f) => filt === 'all' || group(f) === filt).forEach((f) => {
+      const c = document.createElement('div'); c.className = 'rcc';
+      const gi = groups.indexOf(group(f)) % GR.length;
+      c.innerHTML = '<div class="th"><em></em></div><b></b><div class="mt2"></div>';
+      c.querySelector('.th').style.background = GR[gi];
+      const em = c.querySelector('em'); if (f.secs != null) em.textContent = dur(f.secs); else em.remove();
+      c.querySelector('b').textContent = title(f); c.querySelector('b').title = f.name;
+      c.querySelector('.mt2').textContent = when(f.at) + ' · ' + f.name.split('.').pop().toUpperCase() + ' · ' + gb(f.size);
+      if (f.job && f.job.error) { const e = document.createElement('div'); e.className = 'errl'; e.textContent = f.job.error; c.appendChild(e); }
+      else if (f.job) {
+        const u = document.createElement('div'); u.className = 'up';
+        u.innerHTML = '<div>' + (f.job.kind === 'upload' ? tileHTML('yt') : '') + '<span class="lb"></span><span class="pc"></span></div><div class="bar"><i></i></div>';
+        u.querySelector('.lb').textContent = f.job.kind === 'upload' ? 'Uploading to YouTube · ' + (PRIV[r.privacy] || '') : 'Making the MP4';
+        u.querySelector('.pc').textContent = f.job.pct + '%'; u.querySelector('.bar i').style.width = f.job.pct + '%'; c.appendChild(u);
+      } else if (f.queued) { const q = document.createElement('div'); q.className = 'okl'; q.style.color = 'var(--link)'; q.textContent = 'Waiting to upload to YouTube'; c.appendChild(q); }
+      else if (f.youtube) { const o = document.createElement('div'); o.className = 'okl'; o.textContent = '\u2713 On YouTube · ' + (PRIV[f.youtube.privacy] || ''); if (f.youtube.id) { const a = document.createElement('a'); a.textContent = 'Open'; a.onclick = () => window.open('https://youtu.be/' + f.youtube.id, '_blank'); o.appendChild(a); } c.appendChild(o); }
+      const bt = document.createElement('div'); bt.className = 'bt';
+      const btn = (label, fn, pri) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'mini' + (pri ? ' pri' : ''); x.textContent = label; x.onclick = fn; bt.appendChild(x); };
+      btn('Play', () => act('play', f.name), true); btn('Show file', () => act('show', f.name));
       if (/\.mkv$/i.test(f.name) && !f.hasMp4 && !(f.job && f.job.kind === 'mp4' && !f.job.error)) btn('Make MP4', () => act('mp4', f.name));
-      if (r.youtube && !f.youtube && !f.queued && !(f.job && f.job.kind === 'upload' && !f.job.error)) btn('Upload to YouTube', () => act('upload', f.name));
-      row.append(th, tx, bt); box.appendChild(row);
+      c.appendChild(bt); box.appendChild(c);
     });
-    if (!(r.files || []).length) box.innerHTML = '<div class="card rc-empty">No recordings yet. Press Start Recording in the Studio.</div>';
-    $('#rcAuto').checked = Boolean(r.auto);
-    $('#rcAutoN').textContent = r.youtube ? 'The recording goes to your YouTube channel by itself.' : 'Connect YouTube on the Go Live page first.';
-    document.querySelectorAll('#rcPriv button').forEach((x) => x.classList.toggle('on', x.dataset.v === r.privacy));
+    if (!(r.files || []).length) box.innerHTML = '<div class="rc-empty">No recordings yet. Press Start recording in the Studio.</div>';
+    $('#rcYt').innerHTML = tileHTML('yt');
+    const tg = $('#rcAuto'); tg.classList.toggle('on', Boolean(r.auto)); tg.setAttribute('aria-checked', String(Boolean(r.auto)));
+    $('#rcAutoN').textContent = r.youtube ? '' : 'Connect YouTube on the Go Live page first.';
+    $('#rcPriv').value = r.privacy || 'unlisted';
   }
+  async function tick() { try { data = await api('/api/recordings'); } catch { return; } draw(); }
   $('#rcOpen').onclick = () => api('/api/recording/open', 'POST').then((r) => { if (r && r.error) alert(r.error); });
-  $('#rcAuto').onchange = () => api('/api/recordings', 'PUT', { auto: $('#rcAuto').checked }).then(tick);
-  document.querySelectorAll('#rcPriv button').forEach((x) => { x.onclick = () => api('/api/recordings', 'PUT', { privacy: x.dataset.v }).then(tick); });
+  $('#rcRemux').onclick = () => { if (!confirm('Copy every MKV recording to an MP4 (same quality, the MKV is kept)?')) return; api('/api/recordings/mp4-all', 'POST').then(tick); };
+  $('#rcAuto').onclick = () => api('/api/recordings', 'PUT', { auto: !$('#rcAuto').classList.contains('on') }).then(tick);
+  $('#rcPriv').onchange = () => api('/api/recordings', 'PUT', { privacy: $('#rcPriv').value }).then(tick);
   XPAGES.rec = { title: 'Recordings', el: 'recView', open() { if (!t) { tick(); t = setInterval(tick, 2000); } }, close() { clearInterval(t); t = null; } };
 })();
 // Stream health: how the stream is doing right now, updated every 2 seconds while the page is open
@@ -2081,7 +2094,7 @@ function showPage(p) {
   }
   page = XPAGES[p] || p === 'cr' ? p : 'dash';
   document.documentElement.classList.toggle('on-studio', page === 'studio');
-  $('#glActs').hidden = page !== 'dash';
+  $('#glActs').hidden = page !== 'dash'; $('#rcActs').hidden = page !== 'rec'; $('#scActs').hidden = page !== 'coll';
   $('#pageTitle').textContent = page === 'cr' ? 'Multiview' : XPAGES[page] ? XPAGES[page].title : 'Go Live';
   $('.app').hidden = page !== 'dash';
   $('#crView').hidden = page !== 'cr';

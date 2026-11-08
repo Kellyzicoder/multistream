@@ -609,7 +609,7 @@ app.post('/api/recording/open', (req, res) => {
 
 // ---- Recordings page: every recording, make MP4, play, show, and upload to YouTube ----
 const UP_FILE = path.join(DATA_DIR, 'uploads.json');
-let upCfg = { auto: false, privacy: 'unlisted', done: {} }; // done: file name -> { id, privacy, at }
+let upCfg = { auto: false, privacy: 'unlisted', done: {}, titles: {} }; // done: file name -> { id, privacy, at }; titles: file name -> the stream title when it was recorded
 try { upCfg = { ...upCfg, ...JSON.parse(fs.readFileSync(UP_FILE, 'utf8')) }; } catch {}
 const saveUp = () => { try { fs.writeFileSync(UP_FILE, JSON.stringify(upCfg, null, 2)); } catch {} };
 const recJobs = new Map(); // file name -> { kind: 'mp4' | 'upload', pct, error }
@@ -628,7 +628,8 @@ function recList() {
   let names = []; try { names = fs.readdirSync(REC_DIR).filter((n) => /\.(mkv|mp4)$/i.test(n)); } catch {}
   return names.map((n) => { const f = path.join(REC_DIR, n); let st; try { st = fs.statSync(f); } catch { return null; }
     const base = n.replace(/\.[^.]+$/, ''), hasMp4 = /\.mkv$/i.test(n) && names.some((x) => x.toLowerCase() === (base + '.mp4').toLowerCase());
-    return { name: n, size: st.size, at: st.mtimeMs, secs: recDuration(f, st.size), hasMp4, job: recJobs.get(n) || null, youtube: upCfg.done[n] || null, queued: upQueue.includes(n) };
+    const base2 = n.replace(/\.[^.]+$/, ''), title = (upCfg.titles || {})[n] || (upCfg.titles || {})[base2 + '.mkv'] || '';
+    return { name: n, title, size: st.size, at: st.mtimeMs, secs: recDuration(f, st.size), hasMp4, job: recJobs.get(n) || null, youtube: upCfg.done[n] || null, queued: upQueue.includes(n) };
   }).filter(Boolean).sort((a, b) => b.at - a.at);
 }
 function freeSpace() { try { const s = fs.statfsSync(REC_DIR); return s.bavail * s.bsize; } catch { return null; } }
@@ -698,24 +699,26 @@ app.put('/api/recordings', (req, res) => {
   if (['public', 'private', 'unlisted'].includes(b.privacy)) upCfg.privacy = b.privacy;
   saveUp(); res.json({ ok: true, auto: upCfg.auto, privacy: upCfg.privacy });
 });
+// copy a recording to MP4 without encoding again (same quality, fast), with progress
+function remux(name) {
+  const f = recPath(name); if (!f || !/\.mkv$/i.test(name) || recJobs.get(name)) return;
+  const out = f.replace(/\.mkv$/i, '.mp4'), job = { kind: 'mp4', pct: 0, error: '' }; recJobs.set(name, job);
+  const secs = durCache.get(f + '|' + fs.statSync(f).size) || 0;
+  const p = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', f, '-map', '0', '-c', 'copy', '-movflags', '+faststart', '-progress', 'pipe:1', out], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
+  p.stdout.on('data', makeProgressParser((b) => { const us = Number(b.out_time_us || b.out_time_ms); if (secs && us) job.pct = Math.min(99, Math.floor(us / 1e6 / secs * 100)); }));
+  p.on('error', (e) => { job.error = e.message; });
+  p.on('close', (code) => { if (code === 0) recJobs.delete(name); else { job.error = 'Could not make the MP4'; try { fs.unlinkSync(out); } catch {} } });
+}
 app.post('/api/recordings/:act', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
-  const act = req.params.act, f = recPath((req.body || {}).name), name = path.basename(f || '');
+  const act = req.params.act;
+  if (act === 'mp4-all') { recList().filter((x) => /\.mkv$/i.test(x.name) && !x.hasMp4).forEach((x) => remux(x.name)); return res.json({ ok: true }); }
+  const f = recPath((req.body || {}).name), name = path.basename(f || '');
   if (!f) return res.status(404).json({ error: 'That recording was not found' });
   if (act === 'play') { if (!openFolderHook) return res.json({ error: 'Open it yourself: ' + f }); openFolderHook(f); return res.json({ ok: true }); }
   if (act === 'show') { if (showFileHook) showFileHook(f); else if (openFolderHook) openFolderHook(REC_DIR); return res.json({ ok: true }); }
   if (act === 'upload') { if (!yt.refreshToken) return res.status(400).json({ error: 'Connect YouTube first (Go Live page)' }); queueUpload(name); return res.json({ ok: true }); }
-  if (act === 'mp4') {
-    if (!/\.mkv$/i.test(name)) return res.status(400).json({ error: 'It is already an MP4' });
-    if (recJobs.get(name)) return res.json({ ok: true });
-    const out = f.replace(/\.mkv$/i, '.mp4'), job = { kind: 'mp4', pct: 0, error: '' }; recJobs.set(name, job);
-    const secs = durCache.get(f + '|' + fs.statSync(f).size) || 0;
-    const p = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', f, '-map', '0', '-c', 'copy', '-movflags', '+faststart', '-progress', 'pipe:1', out], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
-    p.stdout.on('data', makeProgressParser((b) => { const us = Number(b.out_time_us || b.out_time_ms); if (secs && us) job.pct = Math.min(99, Math.floor(us / 1e6 / secs * 100)); }));
-    p.on('error', (e) => { job.error = e.message; });
-    p.on('close', (code) => { if (code === 0) recJobs.delete(name); else { job.error = 'Could not make the MP4'; try { fs.unlinkSync(out); } catch {} } });
-    return res.json({ ok: true });
-  }
+  if (act === 'mp4') { if (!/\.mkv$/i.test(name)) return res.status(400).json({ error: 'It is already an MP4' }); remux(name); return res.json({ ok: true }); }
   res.status(404).json({ error: 'Unknown' });
 });
 
@@ -1423,6 +1426,7 @@ studioRecWss.on('connection', (w, req) => {
   try { fs.mkdirSync(REC_DIR, { recursive: true }); } catch (e) { w.send(JSON.stringify({ error: 'Cannot make the folder: ' + e.message })); return w.close(); }
   const d = new Date(), two = (n) => String(n).padStart(2, '0');
   const name = `Studio ${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}.mkv`;
+  if (gl.title) { upCfg.titles = upCfg.titles || {}; upCfg.titles[name] = gl.title; saveUp(); } // the recording is named after the stream title on the Recordings page
   const copy = q.get('copy') === '1'; // the browser already made H.264 at the right size (encode once)
   const args = outargs.recordArgs(studioEncoder.key, { h: q.get('h'), mbit: q.get('mbit'), fps: q.get('fps'), shape: q.get('shape') }, path.join(REC_DIR, name), copy);
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
