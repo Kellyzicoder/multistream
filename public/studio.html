@@ -206,6 +206,11 @@
   .aum { display:flex; gap:4px; height:100%; min-height:110px; }
   .scale { position:relative; width:22px; font-size:9px; color:var(--muted); } .scale span { position:absolute; right:0; transform:translateY(50%); line-height:1; }
   #audio .mts { display:flex; gap:2px; height:100%; }
+  .aap { width:100%; border-collapse:collapse; font-size:12px; }
+  .aap th { text-align:left; color:var(--muted); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .aap td { padding:6px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .aap td.act { color:var(--red); } .aap td.idle { color:var(--muted); }
+  .aap input[type=number] { width:76px; } .aap select { width:auto; } .aap .bal { display:inline-flex; gap:6px; align-items:center; } .aap .bal input { width:130px; }
   #audio .mt { position:relative; width:9px; height:100%; margin:0; border-radius:2px; overflow:hidden; background:linear-gradient(0deg,#22c55e 0 66.7%,#f5c400 66.7% 85%,#ef2b2b 85% 100%); background-size:100% 100%; }
   #audio .mt i { position:absolute; left:0; right:0; top:0; width:auto; height:100%; background:var(--mcov); } /* width:auto: the general .mt i rule sets width 0, which hid this cover, so the meter always looked full */
   #audio .mt b { position:absolute; left:0; right:0; bottom:0; height:2px; background:#fff; opacity:0; }
@@ -301,7 +306,7 @@
     </section>
     <section class="dock wide"><h2>Audio Mixer</h2>
       <div class="list" id="audio"></div>
-      <div class="tb"><div class="menu"><button id="addAudio" title="Add sound input">Add</button><div class="pop pop-up" id="audPop" hidden><button class="mi" data-addaudio="mic">Sound input<small>A microphone, mixer or the ATEM</small></button><button class="mi" data-addaudio="desktop" id="desktopAudioItem" hidden>Computer sound<small>What this PC plays (Windows)</small></button></div></div><span class="note" id="audNote"></span></div>
+      <div class="tb"><div class="menu"><button id="addAudio" title="Add sound input">Add</button><div class="pop pop-up" id="audPop" hidden><button class="mi" data-addaudio="mic">Sound input<small>A microphone, mixer or the ATEM</small></button><button class="mi" data-addaudio="desktop" id="desktopAudioItem" hidden>Computer sound<small>What this PC plays (Windows)</small></button></div></div><button id="advAudio" type="button" title="Volume, mono, balance, sync offset and monitoring for every sound input">Advanced</button><span class="note" id="audNote"></span></div>
     </section>
     <section class="dock narrow"><h2>Scene Transitions</h2>
       <div class="pad">
@@ -873,7 +878,10 @@ async function syncAudio() {
       // the chain: input -> delay -> (gate listens here) -> low cut -> bass/mid/treble -> compressor -> noise gate -> limiter -> fader -> scene gate -> master
       // and after the fader a copy goes to the monitor (your headphones)
       n.delay.connect(n.det); n.delay.connect(n.hp); n.hp.connect(n.eqL); n.eqL.connect(n.eqM); n.eqM.connect(n.eqH); n.eqH.connect(n.comp);
-      n.comp.connect(n.nz); n.nz.connect(n.lim); n.lim.connect(n.gain);
+      n.comp.connect(n.nz); n.nz.connect(n.lim);
+      // Mono (both sides the same) and Balance (left/right), like OBS Advanced Audio Properties
+      n.mono = actx.createGain(); n.mono.channelCountMode = 'explicit'; n.mono.channelInterpretation = 'speakers'; n.mono.channelCount = 2;
+      n.bal = actx.createStereoPanner(); n.lim.connect(n.mono); n.mono.connect(n.bal); n.bal.connect(n.gain);
       n.gain.connect(n.an); n.gain.connect(n.gate);
       // left and right meters: the level after the fader, split in two (a one-channel input is copied to both sides)
       n.st = actx.createGain(); n.st.channelCount = 2; n.st.channelCountMode = 'explicit'; n.st.channelInterpretation = 'speakers';
@@ -885,6 +893,7 @@ async function syncAudio() {
       try { const st = a.kind === 'desktop' ? await openDesktopAudio() : await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = ''; } catch (e) { n.err = e.message; }
     }
     n.gain.gain.setTargetAtTime(a.muted ? 0 : (a.vol == null ? 1 : a.vol), actx.currentTime, 0.02);
+    if (n.mono) { n.mono.channelCount = a.mono ? 1 : 2; n.bal.pan.setTargetAtTime(Math.max(-1, Math.min(1, a.bal || 0)), actx.currentTime, 0.02); }
     n.mon.gain.setTargetAtTime(a.monitor === 'only' || a.monitor === 'both' ? 1 : 0, actx.currentTime, 0.02);
     applyFx(a, n);
   }
@@ -965,6 +974,49 @@ function openTools(a, fx) {
   dlg.querySelector('button').onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
   document.body.appendChild(m);
 }
+// Advanced Audio Properties (like OBS): every sound input in one table
+function openAdvancedAudio() {
+  const m = document.createElement('div'); m.className = 'modal';
+  const dlg = document.createElement('div'); dlg.className = 'dlg big'; dlg.style.height = 'auto'; // only as tall as the list
+  dlg.innerHTML = '<div class="dlg-h"><b>Advanced Audio Properties</b><button type="button" aria-label="Close">×</button></div>';
+  const body = document.createElement('div'); body.className = 'dlg-b';
+  const t = document.createElement('table'); t.className = 'aap';
+  t.innerHTML = '<thead><tr><th>Name</th><th>Status</th><th>Volume %</th><th>Mono</th><th>Balance</th><th>Sync offset (ms)</th><th>Audio monitoring</th></tr></thead>';
+  const tb = document.createElement('tbody'); t.appendChild(tb);
+  const cur = byName(studio.current), live = new Set((cur && cur.audio) || []);
+  studio.audio.forEach((a) => {
+    const tr = document.createElement('tr'), F = fxOf(a);
+    const td = (el) => { const c = document.createElement('td'); if (typeof el === 'string') c.textContent = el; else c.appendChild(el); tr.appendChild(c); return c; };
+    td(a.name);
+    const on = live.has(a.id) && !a.muted;
+    td(on ? 'Active' : a.muted ? 'Muted' : 'Not on air').className = on ? 'act' : 'idle';
+    const vol = document.createElement('input'); vol.type = 'number'; vol.min = '0'; vol.max = '400'; vol.step = '1'; vol.value = String(Math.round((a.vol == null ? 1 : a.vol) * 100));
+    vol.onchange = () => { const v = Math.max(0, Math.min(400, Number(vol.value) || 0)); vol.value = String(v); a.vol = v / 100; save(); syncAudio(); renderAudio(); };
+    td(vol);
+    const mono = document.createElement('input'); mono.type = 'checkbox'; mono.checked = Boolean(a.mono); mono.title = 'Both sides play the same sound';
+    mono.onchange = () => { a.mono = mono.checked; save(); syncAudio(); };
+    td(mono);
+    const bw = document.createElement('span'); bw.className = 'bal';
+    const bal = document.createElement('input'); bal.type = 'range'; bal.min = '-100'; bal.max = '100'; bal.step = '1'; bal.value = String(Math.round((a.bal || 0) * 100)); bal.title = 'Double-click for the middle';
+    bal.oninput = () => { let v = Number(bal.value); if (Math.abs(v) < 4) v = 0; a.bal = v / 100; syncAudio(); };
+    bal.onchange = () => save();
+    bal.ondblclick = () => { bal.value = '0'; a.bal = 0; save(); syncAudio(); };
+    bw.append('L', bal, 'R'); td(bw);
+    const off = document.createElement('input'); off.type = 'number'; off.min = '0'; off.max = '1000'; off.step = '10'; off.value = String(F.delay || 0); off.title = 'Raise it if the sound arrives before the picture';
+    off.onchange = () => { const v = Math.max(0, Math.min(1000, Number(off.value) || 0)); off.value = String(v); F.delay = v; save(); syncAudio(); };
+    td(off);
+    const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only'], ['both', 'Monitor and output']].forEach(([v, x]) => mon.add(new Option(x, v)));
+    mon.value = a.monitor || 'off'; mon.onchange = () => { a.monitor = mon.value; save(); syncAudio(); gateAudio(); };
+    td(mon);
+    tb.appendChild(tr);
+  });
+  if (!studio.audio.length) { const p = document.createElement('p'); p.className = 'note'; p.textContent = 'No sound inputs yet.'; body.appendChild(p); } else body.appendChild(t);
+  const f = document.createElement('div'); f.className = 'dlg-f'; const ok = document.createElement('button'); ok.type = 'button'; ok.textContent = 'Close'; f.appendChild(ok);
+  dlg.append(body, f); m.appendChild(dlg);
+  const close = () => { m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
+  dlg.querySelector('.dlg-h button').onclick = close; ok.onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
+  document.body.appendChild(m);
+}
 function renderAudio() {
   const box = $('#audio'); box.textContent = '';
   const s = byName(editing), on = new Set((s && s.audio) || []);
@@ -1024,6 +1076,7 @@ function addAudioInput(kind) {
   studio.audio.push(a); const s = byName(editing); if (s) (s.audio = s.audio || []).push(a.id);
   save(); renderAudio(); syncAudio();
 }
+$('#advAudio').onclick = () => openAdvancedAudio();
 document.querySelectorAll('[data-addaudio]').forEach((b) => { b.onclick = () => addAudioInput(b.dataset.addaudio); });
 if (window.msNative && window.msNative.platform === 'win32') $('#desktopAudioItem').hidden = false;
 // level meters, like OBS: drawn every screen refresh, the bar falls back smoothly (about 26 dB a second),
@@ -1108,6 +1161,7 @@ function showAudioMenu(ev, a, nameEl, fx, inScene) {
   });
   sep();
   item('Properties and filters...', () => openTools(a, fx));
+  item('Advanced Audio Properties...', () => openAdvancedAudio());
   document.body.appendChild(m); ctxMenu = m;
   const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
   const first = m.querySelector('.ctxi'); if (first) first.focus();
