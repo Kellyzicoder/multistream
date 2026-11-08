@@ -21,6 +21,7 @@ const isAppUrl = (u) => typeof u === 'string' && (u === HOME || u.startsWith(HOM
 function fromApp(e) { try { return isAppUrl(e.senderFrame && e.senderFrame.url); } catch { return false; } }
 const handleIpc = (name, fn) => ipcMain.handle(name, (e, ...a) => (fromApp(e) ? fn(e, ...a) : undefined));
 const onIpc = (name, fn) => ipcMain.on(name, (e, ...a) => { if (fromApp(e)) fn(e, ...a); });
+handleIpc('ms-version', () => app.getVersion());
 // Web pages used as Studio sources (like a lyrics site) run in their own separate space: no camera,
 // microphone or screen, no pop-ups, and they cannot reach the app's pages or settings.
 const WEB_SOURCES = 'persist:web-sources';
@@ -97,12 +98,27 @@ function createWindow() {
     title: 'Multistream',
     autoHideMenuBar: false,
     backgroundColor: '#eaf1fb',
-    // the Go Live page may slow down while minimised or hidden (it only shows things); the Studio makes the video,
-    // so it never slows down (see ms-open-studio)
-    webPreferences: { contextIsolation: true, nodeIntegration: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
+    // the Studio runs inside this window (in the background while you look at other pages) and makes the video,
+    // so the window never slows down. The app's own pages inside it (the Studio) get the app's helpers too.
+    webPreferences: { contextIsolation: true, nodeIntegration: false, nodeIntegrationInSubFrames: true, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
   win.webContents.on('did-fail-load', (e, code, desc, url) => console.error('Page failed to load:', code, desc, url));
   win.loadURL(HOME + '/').catch((e) => console.error('Dashboard did not load:', e && e.message));
+  // the Analytics page shows your own live dashboard website inside it: some sites say "do not show me inside
+  // another page", so that rule is removed for pages shown inside the app's own pages (not for whole windows)
+  if (!win.webContents.session.__msFrames) {
+    win.webContents.session.__msFrames = true;
+    win.webContents.session.webRequest.onHeadersReceived({ urls: ['https://*/*'] }, (d, cb) => {
+      const top = d.webContents && !d.webContents.isDestroyed() ? d.webContents.getURL() : '';
+      if (d.resourceType !== 'subFrame' || !isAppUrl(top)) return cb({});
+      const h = { ...d.responseHeaders };
+      for (const k of Object.keys(h)) {
+        if (k.toLowerCase() === 'x-frame-options') delete h[k];
+        else if (k.toLowerCase() === 'content-security-policy') h[k] = h[k].map((v) => v.replace(/frame-ancestors[^;]*;?/gi, ''));
+      }
+      cb({ responseHeaders: h });
+    });
+  }
   // links that leave the dashboard open in the normal browser
   win.webContents.setWindowOpenHandler(({ url }) => {
     const p = projectorOptions(url); if (p) return p;
@@ -170,12 +186,13 @@ function openMultiview(displayId) {
 const browsers = new Map();
 handleIpc('ms-browser-open', (e, id, url, w, h) => {
   if (browsers.has(id)) return;
+  const to = e.senderFrame;
   if (!/^https?:\/\//i.test(String(url))) return;
   const b = new BrowserWindow({ show: false, width: w || 1920, height: h || 1080, transparent: true, frame: false, webPreferences: { offscreen: true, backgroundThrottling: false, session: webSourcesSession(), sandbox: true, contextIsolation: true, nodeIntegration: false } });
   b.webContents.setFrameRate(15);
   b.webContents.on('paint', (ev, dirty, image) => {
     const size = image.getSize();
-    if (!e.sender.isDestroyed()) e.sender.send('ms-frame', id, size.width, size.height, image.toBitmap());
+    if (!e.sender.isDestroyed()) { try { to.send('ms-frame', id, size.width, size.height, image.toBitmap()); } catch {} }
   });
   b.webContents.setAudioMuted(false);
   b.loadURL(String(url)).catch(() => {});
@@ -191,9 +208,11 @@ const pipeWatch = new Set();
 function closePipesOf(senderId) {
   for (const [key, w] of pipes) if (key.startsWith(senderId + ':')) { pipes.delete(key); w.windowClosed(); }
 }
+// a page inside the window (the Studio) has its own pipes, so the key names the frame too
+const frameKey = (e) => e.sender.id + ':' + (e.senderFrame ? e.senderFrame.processId + '.' + e.senderFrame.routingId : '0');
 onIpc('ms-pipe-open', (e, id, p) => {
-  const key = e.sender.id + ':' + id, sid = e.sender.id;
-  const toWindow = (type, data) => { if (!e.sender.isDestroyed()) e.sender.send('ms-pipe-ev', id, type, data); if (type === 'close') pipes.delete(key); };
+  const key = frameKey(e) + ':' + id, sid = e.sender.id, frame = e.senderFrame;
+  const toWindow = (type, data) => { if (!e.sender.isDestroyed()) { try { frame.send('ms-pipe-ev', id, type, data); } catch {} } if (type === 'close') pipes.delete(key); };
   const w = relay && relay.openPipe(String(p), toWindow);
   if (!w) { toWindow('close'); return; }
   pipes.set(key, w);
@@ -207,8 +226,8 @@ onIpc('ms-pipe-open', (e, id, p) => {
     wc.once('destroyed', () => { pipeWatch.delete(sid); closePipesOf(sid); });
   }
 });
-ipcMain.on('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(e.sender.id + ':' + id); if (w) w.fromWindow(data, isText); });
-ipcMain.on('ms-pipe-close', (e, id) => { const key = e.sender.id + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });
+ipcMain.on('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(frameKey(e) + ':' + id); if (w) w.fromWindow(data, isText); });
+ipcMain.on('ms-pipe-close', (e, id) => { const key = frameKey(e) + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });
 
 // choosing which screen to capture (for the screen with the lyrics)
 let picked = { id: '', name: '', kind: 'screen' };
@@ -381,6 +400,7 @@ async function start() {
     process.env.MULTISTREAM_RECORDINGS = process.env.MULTISTREAM_RECORDINGS || path.join(app.getPath('videos'), 'Multistream');
     relay = require('./server');
     relay.setOpenFolder((p) => shell.openPath(p));
+    if (relay.setShowFile) relay.setShowFile((p) => shell.showItemInFolder(p));
     if (relay.onCollections) relay.onCollections(() => setMenu()); // the menu shows the scene collections
   } catch (err) {
     dialog.showErrorBox('Multistream cannot start', String(err && err.message ? err.message : err));

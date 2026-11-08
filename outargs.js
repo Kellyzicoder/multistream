@@ -17,11 +17,17 @@ function parseOut(q) {
   const h = SIZES.includes(Number(q.get('h'))) ? Number(q.get('h')) : 720;
   const fps = Number(q.get('fps')) === 60 ? 60 : 30;
   const kbps = Math.min(60000, Math.max(1000, Math.round(Number(q.get('kbps'))) || defaultKbps(h, fps)));
+  // a tall (9:16) or square scene collection: "1080p" means 1080 wide
+  const shape = q.get('shape');
+  if (shape === 'portrait') return { h: widthFor(h), w: h, fps, kbps, res: h, shape };
+  if (shape === 'square') return { h, w: h, fps, kbps, res: h, shape };
   return { h, w: widthFor(h), fps, kbps };
 }
+const resOf = (out) => out.res || out.h;
 
 function label(out) {
-  return `${out.h === 2160 ? '4K' : out.h + 'p'} ${out.fps} fps, ${(out.kbps / 1000).toFixed(out.kbps % 1000 ? 1 : 0)} Mbit`;
+  const r = resOf(out);
+  return `${r === 2160 ? '4K' : r + 'p'}${out.shape === 'portrait' ? ' tall' : out.shape === 'square' ? ' square' : ''} ${out.fps} fps, ${(out.kbps / 1000).toFixed(out.kbps % 1000 ? 1 : 0)} Mbit`;
 }
 
 // the Studio's video (from the page) -> H.264 + AAC as FLV on pipe:1
@@ -37,13 +43,14 @@ function ingestArgs(encKey, out, copy = false) {
 
 // the Studio's video -> a file
 // copy = true: the recording canvas is already the right size and H.264, so the file is only wrapped (no second encode)
-function recordArgs(encKey, { h, mbit, fps }, file, copy = false) {
+function recordArgs(encKey, { h, mbit, fps, shape }, file, copy = false) {
   const hh = SIZES.includes(Number(h)) ? Number(h) : 720;
+  const size = shape === 'portrait' ? `${hh}:${widthFor(hh)}` : shape === 'square' ? `${hh}:${hh}` : `${widthFor(hh)}:${hh}`;
   const mb = Math.min(80, Math.max(2, Number(mbit) || 8));
   const f = Number(fps) === 60 ? 60 : 30;
   if (copy) return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-c:v', 'copy',
     '-c:a', 'aac', '-b:a', '160k', '-f', 'matroska', file];
-  return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-vf', `scale=${widthFor(hh)}:${hh}`,
+  return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-vf', `scale=${size}`,
     ...videoArgs(encKey, mb * 1000, f * 2), '-pix_fmt', 'yuv420p', '-r', String(f), '-c:a', 'aac', '-b:a', '160k', '-f', 'matroska', file];
 }
 
@@ -53,14 +60,14 @@ const LIMITED = /(facebook|fbcdn|instagram)\./i;
 const LIMIT = { h: 1080, kbps: 9000, send_kbps: 6000 };
 function needsCap(dest, out) {
   const limited = dest.cap1080 === true || (dest.cap1080 !== false && LIMITED.test(String(dest.url || '')));
-  return limited && (out.h > LIMIT.h || out.kbps > LIMIT.kbps);
+  return limited && (resOf(out) > LIMIT.h || out.kbps > LIMIT.kbps);
 }
 // the ffmpeg arguments for the video part of a channel: copy as is, or a smaller copy for a limited site
 function channelVideoArgs(dest, out, encKey) {
   if (!needsCap(dest, out)) return { args: ['-c', 'copy'], capped: false };
   return {
     capped: true,
-    args: ['-vf', `scale=-2:${Math.min(out.h, LIMIT.h)}`, ...videoArgs(encKey, Math.min(out.kbps, LIMIT.send_kbps), out.fps * 2), '-pix_fmt', 'yuv420p', '-r', String(out.fps), '-c:a', 'copy'],
+    args: ['-vf', out.shape ? `scale=${Math.min(resOf(out), LIMIT.h)}:-2` : `scale=-2:${Math.min(out.h, LIMIT.h)}`, ...videoArgs(encKey, Math.min(out.kbps, LIMIT.send_kbps), out.fps * 2), '-pix_fmt', 'yuv420p', '-r', String(out.fps), '-c:a', 'copy'],
   };
 }
 

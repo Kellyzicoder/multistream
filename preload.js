@@ -6,7 +6,8 @@ ipcRenderer.on('ms-frame', (e, id, w, h, buf) => frameCbs.forEach((cb) => cb(id,
 const pipeCbs = new Map();
 let pipeN = 0;
 ipcRenderer.on('ms-pipe-ev', (e, id, type, data) => { const cb = pipeCbs.get(id); if (cb) { if (type === 'close') pipeCbs.delete(id); cb(type, data); } });
-contextBridge.exposeInMainWorld('msNative', {
+// only the app's own pages get these helpers (not a website shown inside a page, like the live dashboard)
+if (location.protocol === 'app:') contextBridge.exposeInMainWorld('msNative', {
   pipe: (p, cb) => {
     const id = ++pipeN;
     pipeCbs.set(id, cb);
@@ -18,6 +19,7 @@ contextBridge.exposeInMainWorld('msNative', {
   },
   openControlRoom: (displayId) => ipcRenderer.invoke('ms-open-cr', displayId == null ? null : displayId),
   displays: () => ipcRenderer.invoke('ms-displays'),
+  appVersion: () => ipcRenderer.invoke('ms-version'),
   openStudio: (same) => ipcRenderer.invoke('ms-open-studio', Boolean(same)),
   openDashboard: () => ipcRenderer.invoke('ms-open-dashboard'),
   browserOpen: (id, url, w, h) => ipcRenderer.invoke('ms-browser-open', id, url, w, h),
