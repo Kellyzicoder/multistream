@@ -349,13 +349,16 @@
   .as-grid button svg { width:26px; height:26px; } .as-grid button span { font-size:12px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .as-vis { margin-right:auto; }
   /* ---------- Auto start bar (while the plan runs) ---------- */
-  .asbar { position:fixed; left:50%; top:12px; transform:translateX(-50%); z-index:60; display:flex; align-items:center; gap:10px; padding:8px 10px 8px 16px; border-radius:999px; background:rgba(20,26,54,.96); border:1px solid rgba(59,108,255,.5); box-shadow:0 10px 30px rgba(0,0,0,.45); font-size:13px; color:var(--text); animation:lspIn .2s ease-out; }
-  .asbar[hidden] { display:none; } .asbar .sp { width:6px; }
-  .as-dot { width:8px; height:8px; border-radius:50%; background:#3b6cff; box-shadow:0 0 0 4px rgba(59,108,255,.25); animation:asP 1.4s ease-in-out infinite; } @keyframes asP { 50% { box-shadow:0 0 0 8px rgba(59,108,255,0); } }
-  .as-lbl { font-weight:600; } .as-left { color:var(--muted); font-variant-numeric:tabular-nums; }
-  .asbar button { padding:5px 12px; font-size:12.5px; border-radius:999px; } #asNext { background:var(--sel); color:var(--onsel); border:0; }
-  .asq ol { margin:10px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px; } .asq li { display:flex; gap:10px; align-items:center; padding:8px 10px; border-radius:10px; background:var(--gl2); font-size:13px; }
-  .asq li i { font-style:normal; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; background:var(--sel); color:var(--onsel); font-size:11.5px; font-weight:700; flex:none; } .asq li small { color:var(--muted); margin-left:auto; }
+  .asbar { position:fixed; left:50%; top:12px; transform:translateX(-50%); z-index:60; width:min(860px, calc(100vw - 40px)); display:flex; flex-direction:column; gap:14px; padding:14px 18px; border-radius:18px; background:rgba(20,26,54,.97); border:1px solid rgba(59,108,255,.4); box-shadow:0 10px 30px rgba(0,0,0,.45); font-size:13px; color:var(--text); animation:lspIn .2s ease-out; }
+  .asbar[hidden] { display:none; } .as-r1 { display:flex; align-items:center; gap:12px; } .as-r1 .sp { flex:1; } .as-r1 b { font-size:15px; }
+  .as-dot { width:10px; height:10px; border-radius:50%; background:#ff4d5a; box-shadow:0 0 8px #ff4d5a; flex:none; }
+  .as-left { color:var(--muted); font-variant-numeric:tabular-nums; }
+  .asbar button { padding:9px 18px; border-radius:999px; border:0; font-size:13px; font-weight:600; background:rgba(255,255,255,.08); color:var(--text); box-shadow:none; } #asNext { background:var(--sel); color:var(--onsel); }
+  .as-seg { display:flex; gap:10px; } .as-seg > div { flex:1; display:flex; flex-direction:column; gap:8px; min-width:0; } .as-seg i { display:block; height:5px; border-radius:3px; background:rgba(255,255,255,.18); }
+  .as-seg i.done { background:#4ade80; } .as-seg span { font-size:12px; color:#8a93ad; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .as-seg .cur span { color:var(--text); font-weight:600; }
+  .asq .dlg-b { display:flex; flex-direction:column; gap:12px; } .asq .note { margin:0; color:var(--muted); font-size:13px; }
+  .asq ol { margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:6px; } .asq li { display:flex; gap:12px; align-items:center; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.04); font-size:13px; } .asq li span { font-weight:600; } .asq li small { margin-left:0 !important; }
+  .asq li i { font-style:normal; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; background:rgba(59,108,255,.18); color:#9db6ff; font-size:11px; font-weight:700; flex:none; } .asq li small { color:#8a93ad; font-size:12.5px; }
   /* tall (9:16) collections: the Preview and Program are tall and centred */
   html.tall .stage canvas.v { width:auto; height:100%; max-width:100%; margin:0 auto; }
   .pcoll { display:inline-flex; align-items:center; gap:8px; margin-left:14px; font-size:13px; color:var(--muted); } .pcoll b { color:var(--text); font-weight:600; }
@@ -406,7 +409,7 @@
 </head>
 <body>
 <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
-<div class="asbar" id="asBar" hidden><span class="as-dot"></span><b>Auto start</b><span id="asStep"></span><span class="as-lbl" id="asLbl"></span><span class="as-left" id="asLeft"></span><span class="sp"></span><button type="button" id="asNext">Next step now</button><button type="button" id="asStop">Stop plan</button></div>
+<div class="asbar" id="asBar" hidden><div class="as-r1"><span class="as-dot"></span><b id="asStep">Auto start</b><span class="as-left" id="asLeft"></span><span class="sp"></span><button type="button" id="asNext">Next step now</button><button type="button" id="asStop">Stop plan</button></div><div class="as-seg" id="asSeg"></div></div>
 <div class="alertbar" id="alertBar" role="alert"><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 <aside class="snv" aria-label="Menu">
   <span class="snv-logo"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="var(--red)"/></svg></span>
@@ -640,7 +643,7 @@ function save() {
     try { const r = await fetch('/api/studio', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); if (r.rev) lastRev = r.rev; } catch {}
   }, 300);
 }
-function setCurrent(name, byPlan) { if (!byPlan && auto) autoStop('You changed the scene, so the plan stopped.'); studio.current = name; dirtyCurrent = true; save(); renderAll(); }
+function setCurrent(name, byPlan) { if (!byPlan && auto && auto.plan.takeover !== false) autoStop('You changed the scene, so the plan stopped.'); studio.current = name; dirtyCurrent = true; save(); renderAll(); }
 
 // ---------------- media ----------------
 const devices = { video: [], audio: [] };
@@ -2295,14 +2298,16 @@ $('#sendBtn').onclick = async () => { if (wantSend) { if (askStop && !confirm('S
 
 // ---------------- Auto start: runs the plan's steps when you press Start Streaming ----------------
 let auto = null, autoVid = null, autoRanPlan = null;
-const stepText = (x) => x.type === 'video' ? ['Play a video', (x.name || (x.file || x.url || '').split(/[\\/]/).pop() || 'no video chosen') + (x.loop ? ' · on a loop' : ' · plays once')] : ['Show scene', x.scene + ' · ' + (x.how === 'for' ? 'for ' + (x.secs >= 60 ? Math.round(x.secs / 60) + ' minute' + (x.secs >= 120 ? 's' : '') : x.secs + ' seconds') : x.how === 'until' ? 'until ' + x.at : x.how === 'next' ? 'until Next' : 'straight away') + (x.optional ? ' · optional' : '')];
+const vidLen = (x) => (x.secs ? ' · ' + Math.floor(x.secs / 60) + ':' + String(Math.round(x.secs % 60)).padStart(2, '0') : '');
+const stepText = (x) => x.type === 'video' ? ['Play a video', (x.name || (x.file || x.url || '').split(/[\\/]/).pop() || 'no video chosen') + vidLen(x)] : ['Show scene', x.scene + ' · ' + (x.how === 'for' ? 'for ' + (x.secs >= 60 ? Math.round(x.secs / 60) + ' minute' + (x.secs >= 120 ? 's' : '') : x.secs + ' seconds') : x.how === 'until' ? 'until ' + x.at : x.how === 'next' ? 'until Next' : 'straight away') + (x.optional ? ' · optional' : '')];
+const stepShort = (x) => x.type === 'video' ? 'Play a video · ' + (x.name || 'video') : 'Show scene · ' + x.scene;
 function askUsePlan(plan) {
   return new Promise((ok) => {
     const m = document.createElement('div'); m.className = 'modal';
     const d = document.createElement('div'); d.className = 'dlg asq'; d.style.height = 'auto'; d.style.width = 'min(480px, 94vw)';
     d.innerHTML = '<div class="dlg-h"><b>Use the Auto start plan?</b><button type="button" aria-label="Close">×</button></div><div class="dlg-b"><p class="note"></p><ol></ol></div><div class="dlg-f"><button type="button" class="a1">Go live straight</button><button type="button" class="on a2">Use the plan</button></div>';
-    d.querySelector('.note').textContent = 'Plan: ' + plan.name + '. Check the steps, so an old video does not play by mistake.';
-    plan.steps.forEach((x, i) => { const li = document.createElement('li'); const [a, b] = stepText(x); li.innerHTML = '<i></i><span></span><small></small>'; li.firstChild.textContent = i + 1; li.children[1].textContent = a; li.children[2].textContent = b; d.querySelector('ol').appendChild(li); });
+    d.querySelector('.note').textContent = 'Plan: ' + plan.name;
+    plan.steps.filter((x) => x.on !== false).forEach((x, i) => { const li = document.createElement('li'); const [a, b] = stepText(x); li.innerHTML = '<i></i><span></span><small></small>'; li.firstChild.textContent = i + 1; li.children[1].textContent = a; li.children[2].textContent = b; d.querySelector('ol').appendChild(li); });
     const end = (v) => { m.remove(); ok(v); };
     d.querySelector('.dlg-h button').onclick = () => end(null); d.querySelector('.a1').onclick = () => end(false); d.querySelector('.a2').onclick = () => end(true);
     m.appendChild(d); document.body.appendChild(m); d.querySelector('.a2').focus();
@@ -2339,9 +2344,10 @@ function autoNext() {
   if (!auto) return;
   endAutoVid();
   const steps = auto.plan.steps;
-  auto.i++; auto.until = 0; auto.wait = false; auto.waitVideo = false;
+  auto.i++; auto.until = 0; auto.wait = false; auto.waitVideo = false; auto.t0 = Date.now(); $('#asSeg').textContent = '';
   if (auto.i >= steps.length) { autoStop('Auto start finished.'); return; }
   const x = steps[auto.i];
+  if (x.on === false) { setTimeout(autoNext, 0); return; }
   const missing = (what) => { if (auto.plan.onMissing === 'stop') { autoStop('Auto start stopped: ' + what + ' was not found.'); return true; } flash('Skipped a step: ' + what + ' was not found.', false); setTimeout(autoNext, 0); return true; };
   if (x.type === 'video') {
     if (!x.file && !x.url) { missing('the video'); return; }
@@ -2368,21 +2374,27 @@ function autoNext() {
   }
   drawAutoBar();
 }
+function autoLeft() {
+  const x = auto && auto.plan.steps[auto.i]; if (!x) return { left: null, frac: 0 };
+  if (auto.until) { const tot = auto.until - (auto.t0 || Date.now()), l = Math.max(0, auto.until - Date.now()); return { left: Math.ceil(l / 1000), frac: tot > 0 ? 1 - l / tot : 0 }; }
+  if (autoVid && autoVid.el.duration && !x.loop) { const l = Math.max(0, autoVid.el.duration - autoVid.el.currentTime); return { left: Math.ceil(l), frac: autoVid.el.currentTime / autoVid.el.duration }; }
+  return { left: null, frac: auto.wait ? 0.5 : 0 };
+}
 function drawAutoBar() {
   if (!auto || auto.i < 0) return;
-  const x = auto.plan.steps[auto.i]; if (!x) return;
+  const steps = auto.plan.steps.filter((x) => x.on !== false), x = auto.plan.steps[auto.i]; if (!x) return;
+  const pos = steps.indexOf(x);
   $('#asBar').hidden = false;
-  $('#asStep').textContent = '· step ' + (auto.i + 1) + ' of ' + auto.plan.steps.length;
-  $('#asLbl').textContent = x.type === 'video' ? (x.name || 'Video') : x.scene;
-  let left = '';
-  if (auto.until) { const s = Math.max(0, Math.ceil((auto.until - Date.now()) / 1000)); left = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + ' left'; }
-  else if (autoVid && autoVid.el.duration && !x.loop) { const s = Math.max(0, Math.ceil(autoVid.el.duration - autoVid.el.currentTime)); left = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + ' left'; }
-  else if (auto.wait) left = 'waiting for Next';
-  $('#asLeft').textContent = left;
+  $('#asStep').textContent = 'Auto start · step ' + (pos + 1) + ' of ' + steps.length;
+  const { left, frac } = autoLeft();
+  $('#asLeft').textContent = (x.type === 'video' ? (x.name || 'Video') : x.scene) + (left != null ? ' · ' + Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0') + ' left' : auto.wait ? ' · waiting for Next' : '');
+  const sg = $('#asSeg'); if (sg.children.length !== steps.length) { sg.textContent = ''; steps.forEach(() => { const d = document.createElement('div'); d.innerHTML = '<i></i><span></span>'; sg.appendChild(d); }); }
+  steps.forEach((y, k) => { const d = sg.children[k], b = d.firstChild; d.className = k === pos ? 'cur' : ''; d.lastChild.textContent = stepShort(y); b.className = k < pos ? 'done' : ''; b.style.background = k === pos ? 'linear-gradient(90deg,var(--sel) ' + Math.round(frac * 100) + '%,rgba(59,108,255,.25) ' + Math.round(frac * 100) + '%)' : ''; });
 }
 async function pushAuto() {
   const x = auto && auto.plan.steps[auto.i];
-  const body = auto ? { running: true, step: auto.i + 1, total: auto.plan.steps.length, label: x ? (x.type === 'video' ? 'Play a video · ' + (x.name || 'Video') : 'Show scene · ' + x.scene) : '', left: auto.until ? Math.max(0, Math.ceil((auto.until - Date.now()) / 1000)) : null, waiting: auto.wait } : { running: false };
+  let body = { running: false };
+  if (auto) { const steps = auto.plan.steps.filter((y) => y.on !== false), al = autoLeft(); body = { running: true, step: steps.indexOf(x) + 1, total: steps.length, label: x ? (x.type === 'video' ? (x.name || 'Video') : x.scene) : '', left: al.left, frac: al.frac, waiting: auto.wait, labels: steps.map(stepShort) }; }
   try { const r = await fetch('/api/autostart/run', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((y) => y.json()); if (r.cmd === 'next') autoNext(); else if (r.cmd === 'stop') autoStop('Auto start stopped.'); } catch {}
 }
 setInterval(() => {

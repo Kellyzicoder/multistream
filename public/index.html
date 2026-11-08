@@ -153,21 +153,48 @@
   /* ---------- layout ---------- */
   .app { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:18px; padding:18px 22px 22px; height:calc(100% - 60px); min-height:560px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; }
-  /* ---------- Auto start ---------- */
-  .as-tg { margin-right:10px; } .as-tg.on { border-color:var(--blue); color:var(--text); background:rgba(59,108,255,.15); }
-  .asrun { margin:0 18px 10px; display:flex; align-items:center; gap:10px; padding:8px 10px 8px 16px; border-radius:999px; background:rgba(59,108,255,.12); border:1px solid rgba(59,108,255,.45); font-size:13px; }
-  .asrun[hidden] { display:none; } .asrun .sp { flex:1; } .asrun button { padding:6px 14px; font-size:12.5px; } .asrun #asRunT { color:var(--muted); }
-  .as-dot { width:8px; height:8px; border-radius:50%; background:var(--blue); box-shadow:0 0 0 4px rgba(59,108,255,.25); }
-  .asd > div { width:min(640px, 94vw) !important; max-height:90vh; overflow:auto; }
-  .as-steps { display:flex; flex-direction:column; gap:8px; }
-  .as-s { display:grid; grid-template-columns:28px minmax(0,1fr) auto; gap:12px; align-items:start; padding:12px; border-radius:14px; background:var(--card2); border:1px solid var(--line); }
-  .as-s.drag { opacity:.5; } .as-s.over { border-color:var(--blue); }
-  .as-n { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; background:var(--blue); color:#fff; font-size:12px; font-weight:700; cursor:grab; }
-  .as-b { display:flex; flex-direction:column; gap:8px; min-width:0; } .as-b > b { font-size:13.5px; }
-  .as-r { display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12.5px; color:var(--muted); }
-  .as-r select, .as-r input[type=time], .as-r input[type=number] { padding:5px 8px; border-radius:8px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:12.5px; }
-  .as-x { display:flex; flex-direction:column; gap:4px; } .as-x button { width:28px; height:26px; padding:0; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--muted); }
-  .as-add { display:flex; gap:8px; } .asd .rc-sw { flex-direction:row; align-items:center; text-align:left; } .as-opt { display:flex; flex-direction:column; gap:8px; font-size:13px; } .as-opt label { display:flex; align-items:center; gap:8px; color:var(--text); flex-direction:row; }
+  /* ---------- Auto start (as in the design) ---------- */
+  .asrun { margin:14px 28px 0; display:flex; flex-direction:column; gap:14px; padding:16px 20px; border-radius:18px; background:color-mix(in srgb, var(--blue) 10%, transparent); border:1px solid color-mix(in srgb, var(--blue) 40%, transparent); font-size:13px; }
+  .asrun[hidden] { display:none; } .asrun .as-r1 { display:flex; align-items:center; gap:12px; } .asrun .sp { flex:1; } .asrun b { font-size:15px; } #asRunT { color:var(--muted); }
+  .as-dot { width:10px; height:10px; border-radius:50%; background:#ff4d5a; box-shadow:0 0 8px #ff4d5a; flex:none; }
+  .as-seg { display:flex; gap:10px; } .as-seg > div { flex:1; display:flex; flex-direction:column; gap:8px; min-width:0; } .as-seg i { display:block; height:5px; border-radius:3px; background:rgba(255,255,255,.18); } .as-seg i.done { background:#4ade80; }
+  .as-seg span { font-size:12px; color:#8a93ad; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .as-seg .cur span { color:var(--text); font-weight:600; }
+  .pop2 { position:fixed; inset:0; z-index:80; background:rgba(5,7,16,.72); display:grid; place-items:center; padding-left:var(--navw); box-sizing:border-box; animation:xpIn .2s ease-out; }
+  .pop2 > [role=dialog] { width:min(980px, calc(100vw - var(--navw) - 40px)); height:min(640px, calc(100vh - 40px)); display:flex; border-radius:26px; overflow:hidden; background:rgba(20,26,54,.97); border:1px solid rgba(255,255,255,.14); box-shadow:0 30px 80px rgba(0,0,0,.5); color:var(--text); }
+  html.t-light .pop2 > [role=dialog] { background:var(--card); border-color:var(--line); }
+  .pop2 .pane, .pop2 .pane.on { flex:1; display:flex; flex-direction:column; padding:22px 26px 20px; gap:18px; min-width:0; overflow:auto; }
+  .pop2 .hd { display:flex; align-items:center; gap:12px; } .pop2 .hd .ic2 { width:38px; height:38px; border-radius:11px; background:color-mix(in srgb, var(--blue) 16%, transparent); display:grid; place-items:center; color:#5b86ff; flex:none; } .pop2 .hd .ic2 svg { width:19px; height:19px; }
+  .pop2 .hd h2 { margin:0; font-size:18px; font-weight:700; flex:1; } .pop2 .hd .pn { font-size:12.5px; color:var(--muted); margin-right:8px; border:0; background:transparent; cursor:text; }
+  .pop2 .x { width:30px; height:30px; border-radius:9px; border:0; background:rgba(255,255,255,.07); color:var(--muted); display:grid; place-items:center; padding:0; flex:none; } .pop2 .x svg { width:15px; height:15px; }
+  .pop2 .bd2 { display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:24px; flex:1; min-height:0; align-items:start; }
+  .pop2 .col { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .pop2 .cap { font-size:12px; color:#8a93ad; font-weight:600; letter-spacing:.3px; margin:0 2px -6px; }
+  .pop2 .card2 { border-radius:14px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.07); padding:2px 16px; }
+  .pop2 .r { display:flex; align-items:center; gap:14px; min-height:50px; border-top:1px solid rgba(255,255,255,.06); } .pop2 .r:first-child { border-top:0; } .pop2 .r > .l { flex:1; font-size:13px; color:#c3c9db; white-space:nowrap; min-width:0; }
+  .pop2 .rf { display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:12px 0; border-top:1px solid rgba(255,255,255,.06); } .pop2 .rf:first-child { border-top:0; } .pop2 .rf > .l { font-size:13px; color:#c3c9db; }
+  .pop2 .i2 { height:34px; padding:0 12px; border-radius:9px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.1); color:var(--text); font-size:13px; font-weight:500; width:190px; box-sizing:border-box; flex:0 1 190px; min-width:0; }
+  .pop2 .sg { display:inline-flex; padding:2px; border-radius:9px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.1); } .pop2 .rf .sg { display:flex; } .pop2 .rf .sg button { flex:1; }
+  .pop2 .sg button { padding:6px 11px; border-radius:7px; border:0; background:transparent; color:var(--muted); font-size:12px; font-weight:600; white-space:nowrap; } .pop2 .sg button.on { background:var(--blue); color:#fff; }
+  .pop2 .tg { width:34px; height:20px; border-radius:10px; background:#2a3150; position:relative; border:0; padding:0; flex:none; } .pop2 .tg::after { content:""; position:absolute; left:3px; top:3px; width:14px; height:14px; border-radius:50%; background:#8a93ad; transition:left .2s; } .pop2 .tg.on { background:var(--blue); } .pop2 .tg.on::after { left:17px; background:#fff; }
+  .pop2 .ft { display:flex; align-items:center; gap:10px; justify-content:flex-end; margin-top:auto; }
+  .pop2 .b2 { padding:9px 18px; border-radius:999px; border:0; font-size:13px; font-weight:600; color:var(--text); background:rgba(255,255,255,.08); } .pop2 .b2.p { background:var(--blue); color:#fff; }
+  .pop2 .st { display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); } .pop2 .st.drag { opacity:.5; } .pop2 .st.over { border-color:var(--blue); } .pop2 .st.off { opacity:.55; }
+  .pop2 .st .gr { color:#5f6886; cursor:grab; display:grid; place-items:center; margin-right:-4px; } .pop2 .st .gr svg { width:14px; height:14px; }
+  .pop2 .st .n { width:26px; height:26px; border-radius:50%; background:rgba(59,108,255,.18); color:#9db6ff; display:grid; place-items:center; font-size:12px; font-weight:700; flex:none; }
+  .pop2 .st .ic3 { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; flex:none; } .pop2 .st .ic3 svg { width:17px; height:17px; }
+  .pop2 .st .tx { flex:1; min-width:0; line-height:1.35; } .pop2 .st .tx b { font-size:13.5px; font-weight:600; display:block; } .pop2 .st .tx span { font-size:12px; color:#8a93ad; }
+  .pop2 .st .op { padding:3px 9px; border-radius:999px; background:rgba(255,255,255,.08); color:var(--muted); font-size:11px; font-weight:600; }
+  .pop2 .then { margin:-4px 0 -4px 26px; height:14px; border-left:2px dashed rgba(255,255,255,.15); }
+  .pop2 .addm { position:relative; align-self:flex-start; } .pop2 .addm .menu2 { position:absolute; left:0; top:calc(100% + 6px); z-index:3; min-width:200px; padding:6px; border-radius:14px; background:#1a2148; border:1px solid rgba(255,255,255,.14); box-shadow:0 14px 34px rgba(0,0,0,.45); display:flex; flex-direction:column; }
+  .pop2 .addm .menu2 button { text-align:left; padding:9px 12px; border:0; border-radius:9px; background:transparent; color:var(--text); font-size:13px; } .pop2 .addm .menu2 button:hover { background:var(--blue); }
+  .pop2 .pv { position:relative; aspect-ratio:16/9; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.1); background:#05070f; display:grid; place-items:center; } .pop2 .pv video, .pop2 .pv canvas { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+  .pop2 .pvtag { position:absolute; left:14px; top:14px; padding:4px 9px; border-radius:999px; background:rgba(10,14,31,.6); font-size:10.5px; font-weight:700; letter-spacing:.4px; z-index:2; text-transform:uppercase; }
+  .pop2 .pvbar { position:absolute; left:12px; right:12px; bottom:10px; z-index:2; display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:10px; background:rgba(10,14,31,.7); } .pop2 .pvbar button { width:20px; height:20px; padding:0; border:0; background:transparent; color:#fff; } .pop2 .pvbar .pb2 { flex:1; height:4px; border-radius:2px; background:rgba(255,255,255,.15); } .pop2 .pvbar .pb2 i { display:block; height:100%; width:0; background:var(--blue); } .pop2 .pvbar small { font-size:11px; color:#cdd3e4; font-variant-numeric:tabular-nums; }
+  .pop2 .rng { display:flex; align-items:center; gap:10px; } .pop2 .rng input { flex:1; accent-color:var(--blue); } .pop2 .rng b { width:40px; text-align:right; font-size:12.5px; }
+  .pop2.ask > [role=dialog] { width:560px; height:auto; flex-direction:column; gap:14px; padding:22px 24px; border-radius:20px; background:#121833; }
+  .pop2.ask .ttl { font-size:18px; font-weight:700; } .pop2.ask .sub { font-size:13px; color:var(--muted); }
+  .pop2.ask .rows { display:flex; flex-direction:column; gap:6px; } .pop2.ask .rows > div { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.04); }
+  .pop2.ask .rows i { width:22px; height:22px; border-radius:50%; background:rgba(59,108,255,.18); color:#9db6ff; display:grid; place-items:center; font-size:11px; font-weight:700; font-style:normal; flex:none; } .pop2.ask .rows b { font-size:13px; font-weight:600; } .pop2.ask .rows span { font-size:12.5px; color:#8a93ad; }
   /* ---------- Go Live while live: health in the side, and the tall (9:16) view ---------- */
   .glh { padding:16px 18px; } .glh .sec-h { gap:10px; } .glh .lnk { font-size:12px; white-space:nowrap; } .glh .sec-t { white-space:nowrap; } .glh .hl-badge { white-space:nowrap; padding:3px 10px; font-size:11.5px; }
   .gh-g { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-top:10px; }
@@ -830,7 +857,7 @@
   </span>
   <span class="chip" id="chip" hidden>OFFLINE</span>
 </header>
-<div class="asrun" id="asRun" hidden><span class="as-dot"></span><b>Auto start</b><span id="asRunT"></span><span class="sp"></span><button type="button" class="go" id="asRunNext">Next step now</button><button type="button" class="ghost" id="asRunStop">Stop plan</button></div>
+<div class="asrun" id="asRun" hidden><div class="as-r1"><span class="as-dot"></span><b id="asRunS">Auto start</b><span id="asRunT"></span><span class="sp"></span><button type="button" class="gb pri sm" id="asRunNext">Next step now</button><button type="button" class="gb sm" id="asRunStop">Stop plan</button></div><div class="as-seg" id="asRunSeg"></div></div>
 <div class="alertbar" id="alertBar" role="alert" hidden><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 
 <div class="app">
@@ -1453,78 +1480,148 @@ let crPrev = '';
 const pageTabs = document.querySelectorAll('#sideNav [data-page]');
 // ---------------- pages in the side menu (other than Go Live and Multiview) ----------------
 const XPAGES = {};
-// Auto start: the plan the Studio runs when you press Start streaming (edited here), and its progress while it runs
+// Auto start: the plan the Studio runs when you press Start streaming (edited here, as in the design), and its progress while it runs
 (() => {
   let plan = null;
+  const I = {
+    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    grip: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
+    more: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="none" stroke="#ff8a3d" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+    scene: '<svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg>',
+    timer: '<svg viewBox="0 0 24 24" fill="none" stroke="#facc15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>',
+    cam: '<svg viewBox="0 0 24 24" fill="none" stroke="#5b86ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  };
+  const kindOf = (x) => x.type === 'video' ? ['play', 'rgba(255,138,61,.15)'] : x.how === 'until' ? ['timer', 'rgba(250,204,21,.13)'] : /camera|cam\b/i.test(x.scene || '') ? ['cam', 'rgba(59,108,255,.16)'] : ['scene', 'rgba(74,222,128,.13)'];
+  const len = (x) => (x.secs ? ' · ' + Math.floor(x.secs / 60) + ':' + String(Math.round(x.secs % 60)).padStart(2, '0') : '');
+  const fmtFor = (s2) => (s2 >= 60 ? Math.round(s2 / 60) + (s2 >= 120 ? ' minutes' : ' minute') : s2 + ' seconds');
+  const at12 = (t) => { const [h, m] = String(t || '10:00').split(':').map(Number); return (h % 12 || 12) + ':' + String(m).padStart(2, '0') + (h >= 12 ? ' PM' : ' AM'); };
+  const sub = (x) => x.type === 'video' ? (x.name || 'No video chosen') + len(x) + (x.loop ? ' · on a loop' : ' · plays once') : (x.scene || 'Pick a scene') + ' · ' + (x.how === 'for' ? 'for ' + fmtFor(x.secs || 10) : x.how === 'until' ? 'until ' + at12(x.at) : x.how === 'next' ? 'until Next' : 'straight away, stays on');
+  const short = (x) => x.type === 'video' ? 'Play a video · ' + (x.name || 'video') : 'Show scene · ' + x.scene;
   const paintBtn = () => { const b = $('#asBtn'); (b.querySelector('span') || b).textContent = 'Auto start: ' + (plan && plan.on ? 'On' : 'Off'); b.classList.toggle('on', Boolean(plan && plan.on)); };
-  async function load() { try { plan = await api('/api/autostart'); } catch { return; } paintBtn(); const r = plan.run || {}; $('#asRun').hidden = !r.running; if (r.running) $('#asRunT').textContent = '· step ' + r.step + ' of ' + r.total + ' · ' + r.label + (r.left != null ? ' · ' + Math.floor(r.left / 60) + ':' + String(r.left % 60).padStart(2, '0') + ' left' : r.waiting ? ' · waiting for Next' : ''); }
-  load(); setInterval(load, 1500);
+  async function load() {
+    try { plan = await api('/api/autostart'); } catch { return; }
+    paintBtn();
+    const r = plan.run || {}; $('#asRun').hidden = !r.running || page === 'studio';
+    if (!r.running) return;
+    $('#asRunS').textContent = 'Auto start · step ' + r.step + ' of ' + r.total;
+    $('#asRunT').textContent = r.label + (r.left != null ? ' · ' + Math.floor(r.left / 60) + ':' + String(r.left % 60).padStart(2, '0') + ' left' : r.waiting ? ' · waiting for Next' : '');
+    const sg = $('#asRunSeg'), labels = r.labels || []; sg.textContent = '';
+    labels.forEach((l, k) => { const d = document.createElement('div'); d.className = k === r.step - 1 ? 'cur' : ''; d.innerHTML = '<i></i><span></span>'; d.lastChild.textContent = l; const b = d.firstChild; if (k < r.step - 1) b.className = 'done'; else if (k === r.step - 1) b.style.background = 'linear-gradient(90deg,var(--blue) ' + Math.round((r.frac || 0) * 100) + '%,rgba(59,108,255,.25) ' + Math.round((r.frac || 0) * 100) + '%)'; sg.appendChild(d); });
+  }
+  load(); setInterval(load, 1000);
   $('#asRunNext').onclick = () => api('/api/autostart/cmd', 'POST', { cmd: 'next' });
   $('#asRunStop').onclick = () => api('/api/autostart/cmd', 'POST', { cmd: 'stop' });
+  // the "Use the Auto start plan?" question (Go Live asks it when you press Start streaming)
+  window.msAskPlan = (pl) => new Promise((ok) => {
+    const w = document.createElement('div'); w.className = 'pop2 ask';
+    w.innerHTML = '<div role="dialog" aria-label="Use the Auto start plan?"><div class="ttl">Use the Auto start plan?</div><div class="sub"></div><div class="rows"></div><div class="ft"><button type="button" class="b2 a1">Go live straight</button><button type="button" class="b2 p a2">Use the plan</button></div></div>';
+    w.querySelector('.sub').textContent = 'Plan: ' + pl.name;
+    pl.steps.filter((x) => x.on !== false).forEach((x, k) => { const d = document.createElement('div'); d.innerHTML = '<i></i><b></b><span></span>'; d.children[0].textContent = k + 1; d.children[1].textContent = x.type === 'video' ? 'Play a video' : 'Show scene'; d.children[2].textContent = x.type === 'video' ? (x.name || 'video') + len(x) : sub(x).replace(', stays on', '') + (x.optional ? ' · optional' : ''); w.querySelector('.rows').appendChild(d); });
+    const end = (v) => { w.remove(); ok(v); };
+    w.onclick = (e) => { if (e.target === w) end(null); };
+    w.querySelector('.a1').onclick = () => end(false); w.querySelector('.a2').onclick = () => end(true);
+    document.body.appendChild(w); w.querySelector('.a2').focus();
+  });
+  // a scene's picture, from the Studio running inside this window
+  const studioWin = () => { try { const f = document.querySelector('#studioView iframe'); return f && f.contentWindow && f.contentWindow.byName ? f.contentWindow : null; } catch { return null; } };
+  function scenePic(canvas, name) { const w = studioWin(); const c = canvas.getContext('2d'); c.fillStyle = '#0d1430'; c.fillRect(0, 0, canvas.width, canvas.height); if (w && w.drawFit) { try { w.drawFit(c, canvas.width, canvas.height, w.byName(name), false); } catch {} } }
+  // one step, in detail (the ⋯ button): a preview on the left, its settings on the right
+  function stepDetails(x, scenes, done) {
+    const w = document.createElement('div'); w.className = 'pop2'; const vid = x.type === 'video';
+    w.innerHTML = '<div role="dialog" aria-label="Step"><div class="pane"><div class="hd"><span class="ic2"></span><h2></h2><button type="button" class="x" aria-label="Close">' + I.x + '</button></div><div class="bd2"><div class="col"><div class="pv"><span class="pvtag"></span></div></div><div class="col"><div class="card2"></div></div></div><div class="ft"><button type="button" class="b2 c">Cancel</button><button type="button" class="b2 p o">Done</button></div></div></div>';
+    const y = JSON.parse(JSON.stringify(x));
+    const [ic, bg] = kindOf(y); w.querySelector('.ic2').innerHTML = I[ic]; w.querySelector('.ic2').style.background = bg;
+    w.querySelector('h2').textContent = vid ? 'Play a video' : 'Show scene';
+    const pv = w.querySelector('.pv'), card = w.querySelector('.card2');
+    const close = () => { const v = pv.querySelector('video'); if (v) v.pause(); w.remove(); };
+    w.querySelector('.x').onclick = close; w.querySelector('.c').onclick = close; w.onclick = (e) => { if (e.target === w) close(); };
+    w.querySelector('.o').onclick = () => { close(); done(y); };
+    const row = (label, el, full) => { const r = document.createElement('div'); r.className = full ? 'rf' : 'r'; const l = document.createElement('span'); l.className = 'l'; l.textContent = label; r.append(l, el); card.appendChild(r); return r; };
+    const sel = (opts, val, set) => { const s2 = document.createElement('select'); s2.className = 'i2'; opts.forEach(([v, t]) => s2.add(new Option(t, v))); s2.value = val; s2.onchange = () => set(s2.value); return s2; };
+    const seg = (opts, val, set) => { const g = document.createElement('div'); g.className = 'sg'; const paint = (v) => g.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === v)); opts.forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.v = v; b.textContent = t; b.onclick = () => { set(v); paint(v); }; g.appendChild(b); }); paint(val); return g; };
+    function draw() {
+      card.textContent = ''; pv.querySelectorAll('video,canvas,.pvbar').forEach((n) => n.remove());
+      if (vid) {
+        w.querySelector('.pvtag').textContent = (y.name || 'Video').replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+        if (y.url || y.file) {
+          const v = document.createElement('video'); v.src = y.url || '/api/studio/file?p=' + encodeURIComponent(y.file); v.preload = 'metadata'; v.volume = (y.vol == null ? 70 : y.vol) / 100; pv.appendChild(v);
+          const bar = document.createElement('div'); bar.className = 'pvbar'; bar.innerHTML = '<button type="button" aria-label="Play">▶</button><div class="pb2"><i></i></div><small>0:00</small>'; pv.appendChild(bar);
+          const t = (s2) => Math.floor(s2 / 60) + ':' + String(Math.floor(s2 % 60)).padStart(2, '0');
+          v.onloadedmetadata = () => { y.secs = Math.round(v.duration); bar.querySelector('small').textContent = '0:00 / ' + t(v.duration); };
+          v.ontimeupdate = () => { bar.querySelector('i').style.width = (v.currentTime / (v.duration || 1) * 100) + '%'; bar.querySelector('small').textContent = t(v.currentTime) + ' / ' + t(v.duration || 0); };
+          bar.querySelector('button').onclick = () => { if (v.paused) { v.play(); bar.querySelector('button').textContent = '❚❚'; } else { v.pause(); bar.querySelector('button').textContent = '▶'; } };
+        }
+        const vf = document.createElement('div'); vf.style.cssText = 'display:flex;gap:6px;flex:0 1 230px;min-width:0';
+        const nm = document.createElement('input'); nm.className = 'i2'; nm.style.cssText = 'flex:1;width:auto'; nm.readOnly = true; nm.value = y.name || 'None'; const ch = document.createElement('button'); ch.type = 'button'; ch.className = 'b2'; ch.style.cssText = 'padding:7px 12px;font-size:12.5px'; ch.textContent = 'Choose';
+        ch.onclick = () => { const f = document.createElement('input'); f.type = 'file'; f.accept = 'video/*'; f.onchange = async () => { const file = f.files[0]; if (!file) return; ch.textContent = 'Adding...'; try { const u = await fetch('/api/studio/asset/' + encodeURIComponent(Date.now().toString(36) + '-' + file.name), { method: 'PUT', body: file }).then((r) => r.json()); if (u.url) { y.url = u.url; y.file = ''; y.name = file.name; } else alert(u.error || 'Could not add the video'); } catch { alert('Could not add the video'); } draw(); }; f.click(); };
+        vf.append(nm, ch); row('Video', vf);
+        row('Play it', seg([['once', 'Once'], ['loop', 'On a loop']], y.loop ? 'loop' : 'once', (v) => { y.loop = v === 'loop'; draw(); }));
+        const rg = document.createElement('div'); rg.className = 'rng'; const ri = document.createElement('input'); ri.type = 'range'; ri.min = 0; ri.max = 100; ri.value = y.vol == null ? 70 : y.vol; const rb = document.createElement('b'); rb.textContent = ri.value + '%'; ri.oninput = () => { y.vol = Number(ri.value); rb.textContent = ri.value + '%'; const v = pv.querySelector('video'); if (v) v.volume = y.vol / 100; }; rg.append(ri, rb); row('Volume', rg, true);
+        if (!y.loop) row('When it ends', sel([['next', 'Go to the next step'], ['wait', 'Wait for me']], y.end || 'next', (v) => { y.end = v; }));
+      } else {
+        w.querySelector('.pvtag').textContent = y.scene || 'Scene';
+        const cv = document.createElement('canvas'); cv.width = 640; cv.height = 360; pv.appendChild(cv); scenePic(cv, y.scene);
+        row('Scene', sel(scenes.map((n2) => [n2, n2]).concat(y.scene && !scenes.includes(y.scene) ? [[y.scene, y.scene + ' (not found)']] : []), y.scene || scenes[0] || '', (v) => { y.scene = v; draw(); }));
+        row('How long', seg([['now', 'Straight away'], ['for', 'For a time'], ['until', 'Until a time'], ['next', 'Until Next']], y.how || 'now', (v) => { y.how = v; draw(); }), true);
+        if (y.how === 'for') row('For', sel([['10', '10 seconds'], ['20', '20 seconds'], ['30', '30 seconds'], ['60', '1 minute'], ['120', '2 minutes'], ['300', '5 minutes']], String(y.secs || 10), (v) => { y.secs = Number(v); }));
+        if (y.how === 'until') { const t = document.createElement('input'); t.type = 'time'; t.className = 'i2'; t.value = y.at || '10:00'; t.oninput = () => { y.at = t.value; }; row('Until', t); }
+        row('Change with', sel([['fade', 'Fade · 0.5 s'], ['cut', 'Cut'], ['slide', 'Slide'], ['dip', 'Dip to black']], y.tr || 'fade', (v) => { y.tr = v; }));
+        const op = document.createElement('button'); op.type = 'button'; op.className = 'tg' + (y.optional ? ' on' : ''); op.onclick = () => { y.optional = !y.optional; op.classList.toggle('on', y.optional); }; row('Optional (can be turned off for one stream)', op);
+      }
+    }
+    draw(); document.body.appendChild(w);
+  }
   $('#asBtn').onclick = async () => {
     await load(); if (!plan) return;
     let scenes = []; try { scenes = ((await api('/api/studio')).scenes || []).map((x) => x.name); } catch {}
-    const P = JSON.parse(JSON.stringify(plan)); delete P.run;
-    const w = document.createElement('div'); w.className = 'scd asd'; const d = document.createElement('div'); w.appendChild(d);
+    const P = JSON.parse(JSON.stringify(plan)); delete P.run; if (P.takeover == null) P.takeover = true;
+    const w = document.createElement('div'); w.className = 'pop2';
+    w.innerHTML = '<div role="dialog" aria-label="Auto start"><div class="pane"><div class="hd"><span class="ic2">' + I.clock + '</span><h2>Auto start</h2><button type="button" class="pn" title="Click to rename the plan"></button><button type="button" class="x" aria-label="Close">' + I.x + '</button></div><div class="bd2"><div class="col"><div class="cap">What happens, in order · drag to change the order</div><div class="stl" style="display:flex;flex-direction:column;gap:8px"></div></div><div class="col"><div class="cap">When to start</div><div class="card2 w1"></div><div class="cap">If something goes wrong</div><div class="card2 w2"></div></div></div><div class="ft"><button type="button" class="b2 c">Cancel</button><button type="button" class="b2 p o">Save plan</button></div></div></div>';
     const close = () => w.remove();
-    w.onclick = (e) => { if (e.target === w) close(); };
-    const sel = (opts, val, set) => { const x = document.createElement('select'); opts.forEach(([v, t]) => x.add(new Option(t, v))); x.value = val; x.onchange = () => set(x.value); return x; };
-    function draw() {
-      d.textContent = '';
-      const h = document.createElement('h3'); h.textContent = 'Auto start'; d.appendChild(h);
-      const on = document.createElement('label'); on.className = 'rc-sw'; on.innerHTML = '<input type="checkbox"><span class="rc-tg" aria-hidden="true"></span><span><b>Use this plan when I press Start streaming</b><small>In the Studio. You can stop it any time.</small></span>'; on.querySelector('input').checked = P.on; on.querySelector('input').onchange = (e) => { P.on = e.target.checked; }; d.appendChild(on);
-      const nl = document.createElement('label'); nl.textContent = 'Plan name'; const ni = document.createElement('input'); ni.type = 'text'; ni.value = P.name || ''; ni.oninput = () => { P.name = ni.value; }; nl.appendChild(ni); d.appendChild(nl);
-      const st = document.createElement('label'); st.textContent = 'What happens, in order · drag to change the order'; d.appendChild(st);
-      const list = document.createElement('div'); list.className = 'as-steps'; d.appendChild(list);
-      let dragFrom = -1;
+    w.onclick = (e) => { if (e.target === w) close(); }; w.querySelector('.x').onclick = close; w.querySelector('.c').onclick = close;
+    const pn = w.querySelector('.pn'); const paintName = () => { pn.textContent = 'Plan: ' + (P.name || 'My plan'); }; paintName();
+    pn.onclick = () => { const v = prompt('Name of the plan', P.name || ''); if (v != null && v.trim()) { P.name = v.trim(); paintName(); } };
+    const tog = (on, set) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'tg' + (on ? ' on' : ''); b.onclick = () => { const v = !b.classList.contains('on'); b.classList.toggle('on', v); set(v); }; return b; };
+    const r = (box, label, el) => { const d = document.createElement('div'); d.className = 'r'; const l = document.createElement('span'); l.className = 'l'; l.textContent = label; d.append(l, el); box.appendChild(d); };
+    const w1 = w.querySelector('.w1'), w2 = w.querySelector('.w2');
+    r(w1, 'Start it when I press Start streaming', tog(P.on, (v) => { P.on = v; }));
+    r(w1, 'Ask me first each time', tog(P.ask, (v) => { P.ask = v; }));
+    r(w1, 'Turn the plan off after this stream', tog(P.offAfter, (v) => { P.offAfter = v; }));
+    const ms = document.createElement('select'); ms.className = 'i2'; [['skip', 'Skip that step'], ['stop', 'Stop the plan']].forEach(([v, t]) => ms.add(new Option(t, v))); ms.value = P.onMissing || 'skip'; ms.onchange = () => { P.onMissing = ms.value; };
+    r(w2, 'Video file missing', ms);
+    r(w2, 'Let me take over any time', tog(P.takeover !== false, (v) => { P.takeover = v; }));
+    const list = w.querySelector('.stl');
+    function drawSteps() {
+      list.textContent = ''; let dragFrom = -1;
       P.steps.forEach((x, i) => {
-        const r = document.createElement('div'); r.className = 'as-s'; r.draggable = true;
-        r.ondragstart = () => { dragFrom = i; r.classList.add('drag'); }; r.ondragend = () => r.classList.remove('drag');
-        r.ondragover = (e) => { e.preventDefault(); r.classList.add('over'); }; r.ondragleave = () => r.classList.remove('over');
-        r.ondrop = (e) => { e.preventDefault(); if (dragFrom < 0 || dragFrom === i) return; const [m] = P.steps.splice(dragFrom, 1); P.steps.splice(i, 0, m); draw(); };
-        const n = document.createElement('span'); n.className = 'as-n'; n.textContent = i + 1;
-        const b = document.createElement('div'); b.className = 'as-b';
-        const t = document.createElement('b'); t.textContent = x.type === 'video' ? 'Play a video' : 'Show scene'; b.appendChild(t);
-        const row = () => { const q = document.createElement('div'); q.className = 'as-r'; b.appendChild(q); return q; };
-        if (x.type === 'video') {
-          const r1 = row(); const nm = document.createElement('span'); nm.textContent = x.name || (x.file || x.url || 'No video chosen').split(/[\\/]/).pop(); nm.style.color = 'var(--text)';
-          const ch = document.createElement('button'); ch.type = 'button'; ch.className = 'ghost'; ch.textContent = 'Choose...';
-          ch.onclick = () => { const f = document.createElement('input'); f.type = 'file'; f.accept = 'video/*'; f.onchange = async () => { const file = f.files[0]; if (!file) return; ch.textContent = 'Uploading...'; try { const u = await fetch('/api/studio/asset/' + encodeURIComponent(Date.now().toString(36) + '-' + file.name), { method: 'PUT', body: file }).then((y) => y.json()); if (u.url) { x.url = u.url; x.file = ''; x.name = file.name; } else alert(u.error || 'Could not add the video'); } catch { alert('Could not add the video'); } draw(); }; f.click(); };
-          r1.append(nm, ch);
-          const r2 = row(); r2.append('Play it', sel([['once', 'Once'], ['loop', 'On a loop']], x.loop ? 'loop' : 'once', (v) => { x.loop = v === 'loop'; draw(); }), 'Volume');
-          const vol = document.createElement('input'); vol.type = 'range'; vol.min = 0; vol.max = 100; vol.value = x.vol == null ? 70 : x.vol; const vb = document.createElement('b'); vb.textContent = vol.value + '%'; vol.oninput = () => { x.vol = Number(vol.value); vb.textContent = vol.value + '%'; }; r2.append(vol, vb);
-          if (!x.loop) { const r3 = row(); r3.append('When it ends', sel([['next', 'Go to the next step'], ['wait', 'Wait for me']], x.end || 'next', (v) => { x.end = v; })); }
-        } else {
-          const r1 = row(); const sc = sel([['', 'Pick a scene']].concat(scenes.map((n2) => [n2, n2])), x.scene || '', (v) => { x.scene = v; });
-          if (x.scene && !scenes.includes(x.scene)) sc.add(new Option(x.scene + ' (not found)', x.scene)), sc.value = x.scene;
-          r1.append('Scene', sc, 'Change with', sel([['fade', 'Fade'], ['cut', 'Cut'], ['slide', 'Slide'], ['dip', 'Dip to black']], x.tr || 'fade', (v) => { x.tr = v; }));
-          const r2 = row(); r2.append('How long', sel([['now', 'Straight away'], ['for', 'For a time'], ['until', 'Until a time'], ['next', 'Until Next']], x.how || 'now', (v) => { x.how = v; draw(); }));
-          if (x.how === 'for') r2.append(sel([['10', '10 seconds'], ['20', '20 seconds'], ['30', '30 seconds'], ['60', '1 minute'], ['120', '2 minutes'], ['300', '5 minutes'], ['600', '10 minutes']], String(x.secs || 10), (v) => { x.secs = Number(v); }));
-          if (x.how === 'until') { const at = document.createElement('input'); at.type = 'time'; at.value = x.at || '10:00'; at.oninput = () => { x.at = at.value; }; r2.append(at); const op = document.createElement('label'); const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(x.optional); c.onchange = () => { x.optional = c.checked; }; op.append(c, ' Skip it if the time has passed'); op.style.cssText = 'display:flex;flex-direction:row;align-items:center;gap:6px;color:var(--text)'; r2.append(op); }
-        }
-        const xs = document.createElement('div'); xs.className = 'as-x';
-        const mv = (t2, k) => { const z = document.createElement('button'); z.type = 'button'; z.textContent = t2; z.title = k === -1 ? 'Move up' : k === 1 ? 'Move down' : 'Remove'; z.onclick = () => { if (!k) P.steps.splice(i, 1); else { const j = i + k; if (j < 0 || j >= P.steps.length) return; [P.steps[i], P.steps[j]] = [P.steps[j], P.steps[i]]; } draw(); }; xs.appendChild(z); };
-        mv('↑', -1); mv('↓', 1); mv('×', 0);
-        r.append(n, b, xs); list.appendChild(r);
+        if (i) { const t = document.createElement('div'); t.className = 'then'; list.appendChild(t); }
+        const d = document.createElement('div'); d.className = 'st' + (x.on === false ? ' off' : ''); d.draggable = true;
+        const [ic, bg] = kindOf(x);
+        d.innerHTML = '<span class="gr" title="Drag to move">' + I.grip + '</span><span class="n"></span><span class="ic3"></span><div class="tx"><b></b><span></span></div>';
+        d.querySelector('.n').textContent = i + 1; d.querySelector('.ic3').innerHTML = I[ic]; d.querySelector('.ic3').style.background = bg;
+        d.querySelector('b').textContent = x.type === 'video' ? 'Play a video' : 'Show scene'; d.querySelector('.tx span').textContent = sub(x);
+        if (x.optional) { const o = document.createElement('span'); o.className = 'op'; o.textContent = 'Optional'; d.appendChild(o); d.appendChild(tog(x.on !== false, (v) => { x.on = v; d.classList.toggle('off', !v); })); }
+        const mo = document.createElement('button'); mo.type = 'button'; mo.className = 'x'; mo.title = 'Change, or remove'; mo.innerHTML = I.more;
+        mo.onclick = (e) => { e.stopPropagation(); const m = document.createElement('div'); m.className = 'menu2'; m.style.cssText = 'position:absolute;right:0;top:calc(100% + 6px);left:auto;z-index:5'; [['Change it...', () => stepDetails(x, scenes, (y) => { P.steps[i] = y; drawSteps(); })], ['Move up', () => { if (i) { [P.steps[i - 1], P.steps[i]] = [P.steps[i], P.steps[i - 1]]; drawSteps(); } }], ['Move down', () => { if (i < P.steps.length - 1) { [P.steps[i + 1], P.steps[i]] = [P.steps[i], P.steps[i + 1]]; drawSteps(); } }], ['Remove', () => { P.steps.splice(i, 1); drawSteps(); }]].forEach(([t, fn]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.onclick = () => { m.remove(); fn(); }; m.appendChild(b); }); const wrap = document.createElement('span'); wrap.className = 'addm'; wrap.style.position = 'relative'; mo.replaceWith(wrap); wrap.append(mo, m); setTimeout(() => document.addEventListener('click', function f() { m.remove(); document.removeEventListener('click', f); }), 0); };
+        d.appendChild(mo);
+        d.ondblclick = () => stepDetails(x, scenes, (y) => { P.steps[i] = y; drawSteps(); });
+        d.ondragstart = () => { dragFrom = i; d.classList.add('drag'); }; d.ondragend = () => d.classList.remove('drag');
+        d.ondragover = (e) => { e.preventDefault(); d.classList.add('over'); }; d.ondragleave = () => d.classList.remove('over');
+        d.ondrop = (e) => { e.preventDefault(); if (dragFrom < 0 || dragFrom === i) return; const [m] = P.steps.splice(dragFrom, 1); P.steps.splice(i, 0, m); drawSteps(); };
+        list.appendChild(d);
       });
-      if (!P.steps.length) { const e = document.createElement('p'); e.style.cssText = 'margin:0;font-size:13px;color:var(--muted)'; e.textContent = 'No steps yet. For example: play an intro video, show Welcome for 10 seconds, a countdown until the start time, then the camera.'; list.appendChild(e); }
-      const ad = document.createElement('div'); ad.className = 'as-add';
-      const a1 = document.createElement('button'); a1.type = 'button'; a1.className = 'ghost'; a1.textContent = '+ Play a video'; a1.onclick = () => { P.steps.push({ type: 'video', file: '', url: '', name: '', loop: false, vol: 70, end: 'next' }); draw(); };
-      const a2 = document.createElement('button'); a2.type = 'button'; a2.className = 'ghost'; a2.textContent = '+ Show scene'; a2.onclick = () => { P.steps.push({ type: 'scene', scene: scenes[0] || '', how: 'for', secs: 10, at: '10:00', tr: 'fade' }); draw(); };
-      ad.append(a1, a2); d.appendChild(ad);
-      const op = document.createElement('div'); op.className = 'as-opt';
-      const ck = (label, key) => { const l = document.createElement('label'); const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(P[key]); c.onchange = () => { P[key] = c.checked; }; l.append(c, label); op.appendChild(l); };
-      ck('Ask me first each time (so an old video never plays by mistake)', 'ask');
-      ck('Turn the plan off after this stream', 'offAfter');
-      const mr = document.createElement('label'); mr.append('If a video or scene is missing:', sel([['skip', 'Skip that step'], ['stop', 'Stop the plan']], P.onMissing || 'skip', (v) => { P.onMissing = v; })); op.appendChild(mr);
-      const nt = document.createElement('small'); nt.style.cssText = 'color:var(--muted);font-size:12px'; nt.textContent = 'Clicking any scene yourself stops the plan, so you are always in control.'; op.appendChild(nt);
-      d.appendChild(op);
-      const ft = document.createElement('div'); ft.className = 'ft'; const cb = document.createElement('button'); cb.type = 'button'; cb.className = 'ghost'; cb.textContent = 'Cancel'; cb.onclick = close;
-      const ob = document.createElement('button'); ob.type = 'button'; ob.className = 'go'; ob.textContent = 'Save plan';
-      ob.onclick = async () => { if (P.steps.some((x) => x.type === 'scene' && !x.scene)) { alert('Pick a scene for each Show scene step.'); return; } const r = await api('/api/autostart', 'PUT', P); if (r && r.error) { alert(r.error); return; } close(); load(); };
-      ft.append(cb, ob); d.appendChild(ft);
+      const am = document.createElement('div'); am.className = 'addm'; am.style.marginTop = '4px';
+      const ab = document.createElement('button'); ab.type = 'button'; ab.className = 'b2'; ab.textContent = '+ Add a step'; am.appendChild(ab);
+      ab.onclick = (e) => { e.stopPropagation(); if (am.querySelector('.menu2')) { am.querySelector('.menu2').remove(); return; } const m = document.createElement('div'); m.className = 'menu2';
+        [['Play a video', () => { const y = { type: 'video', file: '', url: '', name: '', loop: false, vol: 70, end: 'next', on: true }; stepDetails(y, scenes, (z) => { P.steps.push(z); drawSteps(); }); }], ['Show scene', () => { const y = { type: 'scene', scene: scenes[0] || '', how: 'for', secs: 10, at: '10:00', tr: 'fade', on: true }; stepDetails(y, scenes, (z) => { P.steps.push(z); drawSteps(); }); }]].forEach(([t, fn]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.onclick = () => { m.remove(); fn(); }; m.appendChild(b); });
+        am.appendChild(m); };
+      list.appendChild(am);
     }
-    draw(); document.body.appendChild(w);
+    drawSteps();
+    w.querySelector('.o').onclick = async () => { if (P.steps.some((x) => x.type === 'scene' && !x.scene)) { alert('Pick a scene for each Show scene step.'); return; } const r2 = await api('/api/autostart', 'PUT', P); if (r2 && r2.error) { alert(r2.error); return; } close(); load(); };
+    document.body.appendChild(w);
   };
 })();
 // ======================= Go Live (as in the design) =======================
@@ -1745,18 +1842,7 @@ const XPAGES = {};
     else if (!(s2 && s2.obsLive)) alert('The Studio started, but no picture arrived yet. Check the Studio page.');
     starting = false; refresh();
   };
-  function askPlan(plan) {
-    return new Promise((ok) => {
-      const w = document.createElement('div'); w.className = 'mdl'; const d = document.createElement('div'); d.style.width = 'min(480px, 94vw)'; w.appendChild(d);
-      d.innerHTML = '<h3>Use the Auto start plan?</h3><p class="note"></p><ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:13.5px"></ol><div class="row"><span class="grow"></span><button type="button" class="btn a1">Go live straight</button><button type="button" class="btn pri a2">Use the plan</button></div>';
-      d.querySelector('.note').textContent = 'Plan: ' + plan.name + '. Check the steps, so an old video does not play by mistake.';
-      plan.steps.forEach((x) => { const li = document.createElement('li'); li.textContent = x.type === 'video' ? 'Play a video · ' + (x.name || 'video') : 'Show scene · ' + x.scene; d.querySelector('ol').appendChild(li); });
-      const end = (v) => { w.remove(); ok(v); };
-      w.onclick = (e) => { if (e.target === w) end(null); };
-      d.querySelector('.a1').onclick = () => end(false); d.querySelector('.a2').onclick = () => end(true);
-      document.body.appendChild(w);
-    });
-  }
+  const askPlan = (pl) => window.msAskPlan(pl);
   // Update title for all channels (while live)
   $('#glUpd').onclick = () => {
     const w = document.createElement('div'); w.className = 'mdl'; const d = document.createElement('div'); d.style.width = 'min(560px, 94vw)'; w.appendChild(d);

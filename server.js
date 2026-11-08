@@ -724,13 +724,13 @@ app.post('/api/recordings/:act', (req, res) => {
 
 // ---- Auto start: a plan of steps (play a video, show scenes) that the Studio runs when you press Start streaming ----
 const AS_FILE = path.join(DATA_DIR, 'autostart.json');
-let asPlan = { on: false, name: 'My plan', ask: true, offAfter: false, onMissing: 'skip', steps: [] };
+let asPlan = { on: false, name: 'My plan', ask: true, offAfter: false, onMissing: 'skip', takeover: true, steps: [] };
 try { asPlan = { ...asPlan, ...JSON.parse(fs.readFileSync(AS_FILE, 'utf8')) }; } catch {}
 let asRun = { running: false }, asRunAt = 0, asCmd = '';
 const cleanStep = (x) => {
   if (!x || typeof x !== 'object') return null;
-  if (x.type === 'video') return { type: 'video', file: String(x.file || '').slice(0, 500), url: String(x.url || '').slice(0, 500), name: String(x.name || '').slice(0, 120), loop: Boolean(x.loop), vol: Math.max(0, Math.min(100, Number(x.vol) || 0)), end: x.end === 'wait' ? 'wait' : 'next' };
-  if (x.type === 'scene') return { type: 'scene', scene: String(x.scene || '').slice(0, 80), how: ['now', 'for', 'until', 'next'].includes(x.how) ? x.how : 'now', secs: Math.max(1, Math.min(3600, Number(x.secs) || 10)), at: /^\d{1,2}:\d{2}$/.test(String(x.at)) ? String(x.at) : '10:00', tr: ['fade', 'cut', 'slide', 'dip'].includes(x.tr) ? x.tr : 'fade', optional: Boolean(x.optional) };
+  if (x.type === 'video') return { type: 'video', file: String(x.file || '').slice(0, 500), url: String(x.url || '').slice(0, 500), name: String(x.name || '').slice(0, 120), loop: Boolean(x.loop), vol: Math.max(0, Math.min(100, Number(x.vol) || 0)), end: x.end === 'wait' ? 'wait' : 'next', secs: Math.max(0, Number(x.secs) || 0), optional: Boolean(x.optional), on: x.on !== false };
+  if (x.type === 'scene') return { type: 'scene', scene: String(x.scene || '').slice(0, 80), how: ['now', 'for', 'until', 'next'].includes(x.how) ? x.how : 'now', secs: Math.max(1, Math.min(3600, Number(x.secs) || 10)), at: /^\d{1,2}:\d{2}$/.test(String(x.at)) ? String(x.at) : '10:00', tr: ['fade', 'cut', 'slide', 'dip'].includes(x.tr) ? x.tr : 'fade', optional: Boolean(x.optional), on: x.on !== false };
   return null;
 };
 app.get('/api/autostart', (req, res) => res.json({ ...asPlan, run: Date.now() - asRunAt < 3000 ? asRun : { running: false } }));
@@ -742,6 +742,7 @@ app.put('/api/autostart', (req, res) => {
   if (typeof b.ask === 'boolean') asPlan.ask = b.ask;
   if (typeof b.offAfter === 'boolean') asPlan.offAfter = b.offAfter;
   if (b.onMissing === 'skip' || b.onMissing === 'stop') asPlan.onMissing = b.onMissing;
+  if (typeof b.takeover === 'boolean') asPlan.takeover = b.takeover;
   if (Array.isArray(b.steps)) asPlan.steps = b.steps.map(cleanStep).filter(Boolean).slice(0, 20);
   try { fs.writeFileSync(AS_FILE, JSON.stringify(asPlan, null, 2)); } catch {}
   res.json(asPlan);
@@ -749,7 +750,7 @@ app.put('/api/autostart', (req, res) => {
 // the Studio says where the plan is (about twice a second) and picks up Next step / Stop from the Go Live page
 app.put('/api/autostart/run', (req, res) => {
   const b = req.body || {};
-  asRun = { running: Boolean(b.running), step: Number(b.step) || 0, total: Number(b.total) || 0, label: String(b.label || '').slice(0, 120), left: b.left == null ? null : Number(b.left), waiting: Boolean(b.waiting) };
+  asRun = { running: Boolean(b.running), step: Number(b.step) || 0, total: Number(b.total) || 0, label: String(b.label || '').slice(0, 120), left: b.left == null ? null : Number(b.left), waiting: Boolean(b.waiting), frac: Math.max(0, Math.min(1, Number(b.frac) || 0)), labels: Array.isArray(b.labels) ? b.labels.map(String).slice(0, 20) : [] };
   asRunAt = Date.now();
   const cmd = asCmd; asCmd = '';
   res.json({ cmd });
