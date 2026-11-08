@@ -568,6 +568,11 @@
   /* drop-downs as in the design: one small arrow, not the computer's own up and down arrows */
   select:not([multiple]) { -webkit-appearance:none; appearance:none; padding-right:36px !important; background-image:linear-gradient(45deg,transparent 50%,#a3abc4 50%),linear-gradient(135deg,#a3abc4 50%,transparent 50%) !important; background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50% !important; background-size:5px 5px,5px 5px !important; background-repeat:no-repeat !important; }
   html.t-light select:not([multiple]) { background-image:linear-gradient(45deg,transparent 50%,#5b6377 50%),linear-gradient(135deg,#5b6377 50%,transparent 50%) !important; }
+  /* Auto start while it runs: a small card at the bottom right */
+  .asbar { left:auto !important; right:20px !important; top:auto !important; bottom:20px !important; transform:none !important; width:330px !important; padding:14px 16px !important; gap:10px !important; font-size:12.5px !important; }
+  .asbar .as-r1 { flex-wrap:wrap; gap:8px !important; } .asbar .as-r1 b { font-size:13.5px !important; } .asbar .as-r1 .sp { flex:1 0 100% !important; order:3; height:0; }
+  .asbar .as-left { order:2; flex:1 0 100%; margin-left:18px; font-size:12px; } .asbar .as-r1 button { order:4; flex:1; padding:7px 10px !important; font-size:12.5px !important; }
+  .asbar .as-seg { gap:4px !important; } .asbar .as-seg > div { gap:0 !important; } .asbar .as-seg span { display:none; } .asbar .as-seg i { height:4px !important; }
 </style>
 </head>
 <body>

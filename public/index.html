@@ -910,6 +910,20 @@
   html.t-light select:not([multiple]) { background-image:linear-gradient(45deg,transparent 50%,#5b6377 50%),linear-gradient(135deg,#5b6377 50%,transparent 50%) !important; }
   /* drop-downs in windows look like the text boxes next to them (as in the design) */
   .mdl select { padding:11px 36px 11px 14px !important; border-radius:12px !important; font-size:14px !important; font-weight:500; background-color:rgba(5,8,20,.55) !important; border:1px solid var(--gl-line) !important; color:var(--text) !important; opacity:1 !important; width:100%; box-sizing:border-box; height:auto !important; }
+  /* Auto start while it runs: a small card at the bottom right of the window */
+  .asrun { position:fixed; right:20px; bottom:20px; left:auto; top:auto; margin:0 !important; z-index:45; width:330px; padding:14px 16px !important; gap:10px !important; border-radius:18px !important; background:rgba(20,26,54,.97) !important; border:1px solid color-mix(in srgb, var(--blue) 45%, transparent) !important; box-shadow:0 14px 40px rgba(0,0,0,.5); font-size:12.5px !important; }
+  html.t-light .asrun { background:var(--card) !important; }
+  .asrun .as-r1 { flex-wrap:wrap; row-gap:8px; gap:8px !important; } .asrun b { font-size:13.5px !important; } .asrun .sp { flex:1 0 100% !important; order:3; height:0; }
+  .asrun #asRunT { order:2; flex:1 0 100%; margin-left:18px; font-size:12px; }
+  .asrun .as-r1 button { order:4; flex:1; padding:7px 10px !important; font-size:12.5px !important; }
+  .asrun .as-seg { gap:4px !important; } .asrun .as-seg > div { gap:0 !important; } .asrun .as-seg span { display:none; } .asrun .as-seg i { height:4px !important; }
+  /* windows (Add a channel, Edit a channel): text boxes and drop-downs as in the design */
+  .mdl input[type=text], .mdl input[type=password], .mdl select { padding:9px 12px !important; font-size:13px !important; border-radius:10px !important; }
+  .mdl select { padding-right:34px !important; }
+  /* Get started cards: the width in the design is the inside, the padding is added round it */
+  .gs-card { box-sizing:content-box !important; max-width:calc(100vw - var(--navw, 0px) - 120px); }
+  #gsGrid .pk b { font-size:15px; } #gsGrid .pk small { font-size:12.5px; }
+  .pf-two > div.on { display:block !important; } .pf-two > div.on .si { width:auto; display:inline-flex; } .pf-two > div > b, .pf-two > div.on > b { font-size:15px; }
 </style>
 </head>
 <body>
@@ -1970,7 +1984,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       const keyForm = (withServer) => {
         const f = document.createElement('div'); f.style.cssText = 'display:flex;flex-direction:column;gap:12px';
         f.innerHTML = '<label>Name shown in Multistream<input type="text" class="k0"></label>' + (withServer ? '<label>Server<input type="text" class="k1" placeholder="rtmp:// or rtmps://"></label>' : '') + '<label>Stream key<input type="password" class="k2" placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off"></label><div class="row"><span class="grow"></span><button type="button" class="btn pri ok">Add channel</button></div>';
-        f.querySelector('.k0').value = PLAT[pick] === 'Custom RTMP' ? '' : PLAT[pick];
+        f.querySelector('.k0').value = PLAT[pick] === 'Custom RTMP' ? '' : PLAT[pick]; if (pick !== 'other') f.querySelector('.k0').parentElement.hidden = true;
         if (withServer) f.querySelector('.k1').value = KEYSRV[pick] || '';
         f.querySelector('.ok').onclick = async () => {
           const name = f.querySelector('.k0').value.trim() || PLAT[pick], url = withServer ? f.querySelector('.k1').value.trim() : KEYSRV[pick], key = f.querySelector('.k2').value.trim();
@@ -1982,9 +1996,8 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       };
       if (pick === 'yt' || pick === 'fb') {
         const two = document.createElement('div'); two.className = 'pf-two';
-        const a = document.createElement('div'); a.className = 'on'; a.innerHTML = '<b>Easy way: sign in</b><p class="note"></p><div class="row"><button type="button" class="btn pri si"></button></div>';
+        const a = document.createElement('div'); a.className = 'on'; a.innerHTML = '<b>Easy way: sign in</b> <button type="button" class="btn pri si" style="margin-left:6px"></button>';
         a.querySelector('.si').textContent = 'Sign in with ' + PLAT[pick];
-        a.querySelector('.note').textContent = pick === 'yt' ? 'Multistream makes the live on your channel each time, with your title and thumbnail, and reads the chat.' : 'Pick the Page. Multistream makes the live on it each time, with your title, and reads the comments.';
         a.querySelector('.si').onclick = () => { close(); openSettings(pick === 'yt' ? 'youtube' : 'facebook'); };
         const b = document.createElement('div'); const hb = document.createElement('b'); hb.textContent = 'Or paste a stream key'; b.appendChild(hb); b.appendChild(keyForm(pick === 'fb'));
         two.append(a, b); box.appendChild(two);
@@ -2766,6 +2779,7 @@ function showPane(name) {
   $('#hkReset').hidden = name !== 'hotkeys';
 }
 function openSettings(name) {
+  name = { youtube: 'stream', facebook: 'stream', access: 'general' }[name] || name;
   dirty = {}; loaded = {}; mirrorPend.clear(); hkWait = '';
   $('#setApply').disabled = true;
   draft = { ...acc }; syncAcc();
