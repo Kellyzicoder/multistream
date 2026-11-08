@@ -220,8 +220,8 @@
   .sdock:not(:empty) { width:clamp(210px, 17vw, 300px); }
   .sdock .dock { flex:1 1 0; min-width:0; min-height:130px; }
   .sdock .dock.wide, .sdock .dock.narrow { flex:1 1 0; min-width:0; }
-  .dz { position:fixed; top:8px; width:110px; display:none; z-index:45; pointer-events:none; border:2px dashed var(--sel); border-radius:22px; background:color-mix(in srgb, var(--sel) 10%, transparent); }
-  .dz.show { display:block; } .dz.hot { background:color-mix(in srgb, var(--sel) 30%, transparent); }
+  .dz { position:fixed; top:8px; width:110px; display:none; z-index:45; pointer-events:none; border:1px solid var(--gl-line); border-radius:var(--r); background:var(--gl); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
+  .dz.show { display:block; } .dz.hot { border-color:var(--sel); background:color-mix(in srgb, var(--sel) 30%, transparent); }
   .dz::after { content:attr(data-t); position:absolute; left:0; right:0; top:50%; text-align:center; font-size:12px; font-weight:600; color:var(--text); }
   @media (max-width:1000px) { .upper { flex-direction:column; } .sdock:not(:empty) { width:auto; } }
   /* ---------- adjusting sizes, with limits ---------- */
