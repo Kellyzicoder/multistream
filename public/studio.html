@@ -1973,7 +1973,14 @@ function renderProps(target, draft) {
     box.append(dt);
   }
   // the address is used once you finish typing (Enter, or click away), not on every letter
-  if (l.type === 'browser' || l.type === 'ipcam') { const u = inp('url'); u.placeholder = 'http://...'; u.oninput = null; u.onchange = () => { l.url = u.value.trim(); save(); }; box.append(field('Address', u)); }
+  if (l.type === 'browser') { const u = inp('url'); u.placeholder = 'http://...'; u.oninput = null; u.onchange = () => { l.url = u.value.trim(); save(); }; box.append(field('Address', u)); }
+  if (l.type === 'ipcam') {
+    const u = inp('url'); u.placeholder = 'http://192.168.1.20:4747/video'; u.oninput = null; u.onchange = () => { l.url = u.value.trim(); save(); }; box.append(field('Phone address', u));
+    const st = document.createElement('p'); st.className = 'note'; const i = ipcams.get(l.url); st.textContent = i && i.complete && i.naturalWidth ? '● Connected: ' + i.naturalWidth + ' x ' + i.naturalHeight : 'Waiting for the phone...'; box.append(st);
+    const h = document.createElement('ol'); h.className = 'note'; h.style.paddingLeft = '18px';
+    ['Put the phone on the same Wi-Fi as this computer.', 'Install a phone camera app, like DroidCam or IP Webcam (Android), or EpocCam (iPhone).', 'Open it. It shows an address like http://192.168.1.20:4747.', 'Type that address above and add /video at the end.', 'Plug the phone in to charge: streaming uses a lot of battery.'].forEach((t) => { const li = document.createElement('li'); li.textContent = t; h.appendChild(li); });
+    box.append(h);
+  }
   if (l.type === 'screen' || l.type === 'window') {
     const win = l.type === 'window';
     const sl = document.createElement('select'), im = document.createElement('img');

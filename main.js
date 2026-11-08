@@ -21,6 +21,7 @@ const isAppUrl = (u) => typeof u === 'string' && (u === HOME || u.startsWith(HOM
 function fromApp(e) { try { return isAppUrl(e.senderFrame && e.senderFrame.url); } catch { return false; } }
 const handleIpc = (name, fn) => ipcMain.handle(name, (e, ...a) => (fromApp(e) ? fn(e, ...a) : undefined));
 const onIpc = (name, fn) => ipcMain.on(name, (e, ...a) => { if (fromApp(e)) fn(e, ...a); });
+handleIpc('ms-version', () => app.getVersion());
 // Web pages used as Studio sources (like a lyrics site) run in their own separate space: no camera,
 // microphone or screen, no pop-ups, and they cannot reach the app's pages or settings.
 const WEB_SOURCES = 'persist:web-sources';

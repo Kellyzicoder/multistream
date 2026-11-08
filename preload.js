@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('msNative', {
   },
   openControlRoom: (displayId) => ipcRenderer.invoke('ms-open-cr', displayId == null ? null : displayId),
   displays: () => ipcRenderer.invoke('ms-displays'),
+  appVersion: () => ipcRenderer.invoke('ms-version'),
   openStudio: (same) => ipcRenderer.invoke('ms-open-studio', Boolean(same)),
   openDashboard: () => ipcRenderer.invoke('ms-open-dashboard'),
   browserOpen: (id, url, w, h) => ipcRenderer.invoke('ms-browser-open', id, url, w, h),

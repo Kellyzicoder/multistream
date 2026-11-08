@@ -168,6 +168,16 @@
   .as-r select, .as-r input[type=time], .as-r input[type=number] { padding:5px 8px; border-radius:8px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:12.5px; }
   .as-x { display:flex; flex-direction:column; gap:4px; } .as-x button { width:28px; height:26px; padding:0; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--muted); }
   .as-add { display:flex; gap:8px; } .asd .rc-sw { flex-direction:row; align-items:center; text-align:left; } .as-opt { display:flex; flex-direction:column; gap:8px; font-size:13px; } .as-opt label { display:flex; align-items:center; gap:8px; color:var(--text); flex-direction:row; }
+  /* ---------- Help ---------- */
+  .hp-q { padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:14px; max-width:520px; }
+  .hp-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(380px, 1fr)); gap:12px; align-items:start; }
+  .hp-c { padding:18px 20px; font-size:13.5px; line-height:1.55; } .hp-c h3 { margin:0 0 10px; font-size:15px; }
+  .hp-c ol, .hp-c ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:8px; }
+  .hp-c dl { margin:0; } .hp-c dt { font-weight:600; margin-top:10px; } .hp-c dt:first-child { margin-top:0; } .hp-c dd { margin:2px 0 0; color:var(--muted); }
+  .hp-k { width:100%; border-collapse:collapse; } .hp-k td { padding:6px 0; border-bottom:1px solid var(--line); } .hp-k td:first-child { white-space:nowrap; padding-right:14px; }
+  .hp-c kbd { font-family:inherit; font-size:11.5px; font-weight:600; line-height:1; padding:3px 6px; border-radius:6px; border:1px solid var(--line); background:var(--card2); }
+  .hp-n { margin:10px 0 0; color:var(--muted); font-size:12.5px; } .hp-b { display:flex; align-items:center; gap:10px; margin-top:14px; } .hp-v { color:var(--muted); font-size:12px; }
+  .hp-hide { display:none; } mark.hp-m { background:rgba(250,204,21,.3); color:inherit; border-radius:3px; }
   /* ---------- Scene collections ---------- */
   .sc-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; }
   .sc-c { padding:16px; display:flex; flex-direction:column; gap:12px; } .sc-c.cur { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue); }
@@ -644,6 +654,7 @@
     <button type="button" data-page="health" title="Stream health"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>Stream health</span></button>
     <button type="button" data-page="rec" title="Recordings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg><span>Recordings</span></button>
     <button type="button" data-page="coll" title="Scene collections"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="14" height="12" rx="2"/><path d="M7 4h12a2 2 0 0 1 2 2v10"/></svg><span>Scene collections</span></button>
+    <button type="button" data-page="help" title="Help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.2v.1"/></svg><span>Help</span></button>
   </nav>
   <span class="snv-sp"></span>
   <button type="button" class="snv-b" id="setBtn" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
@@ -808,6 +819,43 @@
   <div class="rc-top"><span class="rc-where">Each collection is a set of scenes. A tall (9:16) one is for Instagram or TikTok.</span><span class="sp"></span><button type="button" class="ghost" id="scObs">Import from OBS</button><button type="button" class="ghost" id="scImp">Import file</button><button type="button" class="go" id="scNew">+ New collection</button></div>
   <div class="sc-grid" id="scGrid"></div>
   <input type="file" id="scFile" accept=".json,application/json" hidden>
+</section>
+<section class="xpage hp" id="helpView" hidden aria-label="Help">
+  <input type="search" class="hp-q" id="hpQ" placeholder="Search help (for example: echo, camera, Facebook)" aria-label="Search help">
+  <div class="hp-grid" id="hpGrid">
+    <div class="card hp-c"><h3>Start here</h3><ol>
+      <li><b>Add your channels.</b> On Go Live, press Set up for YouTube or Facebook, or + Add for any other site (you need its server address and stream key).</li>
+      <li><b>Make your scenes.</b> Open the Studio. A scene is one screen, like Welcome or Camera. Press + under Sources to add a camera, screen, picture, name bar and more.</li>
+      <li><b>Add sound.</b> In the Studio's Audio Mixer, press Add and pick your microphone or sound desk. Watch the meter move when you talk.</li>
+      <li><b>Press Start Streaming</b> in the Studio. The app now has your video, but nobody sees it yet.</li>
+      <li><b>Go live.</b> On Go Live, type a title and press Go live on each channel (or let the channels with a stream key start by themselves).</li>
+    </ol></div>
+    <div class="card hp-c"><h3>Fix a problem</h3><dl>
+      <dt>The meters move but nobody hears me</dt><dd>Check the input is heard in the scene (the eye next to its name in the mixer) and not muted. Check the channel is live on Go Live.</dd>
+      <dt>Echo or feedback</dt><dd>Turn off Listen in headphones, or use headphones. If two inputs pick up the same sound, mute one.</dd>
+      <dt>Camera not found</dt><dd>Close other apps that use the camera (Zoom, Teams, the Camera app), unplug it and plug it in again, then pick it again in its settings.</dd>
+      <dt>A channel keeps dropping</dt><dd>Open Stream health. If Sending goes up and down, lower the quality in Studio Settings, Output, or use a cable instead of Wi-Fi.</dd>
+      <dt>Screen or window is black on a Mac</dt><dd>System Settings, Privacy and Security, Screen Recording: turn on Multistream, then open the app again.</dd>
+      <dt>Facebook says the stream is too big</dt><dd>Facebook takes 1080p at most. The app sends Facebook a smaller copy by itself; keep the cap on in the channel's settings.</dd>
+      <dt>Wrong video played at the start</dt><dd>Open Auto start on Go Live and check the steps, or keep Ask me first each time turned on.</dd>
+    </dl></div>
+    <div class="card hp-c"><h3>Studio keys</h3><table class="hp-k">
+      <tr><td><kbd>1</kbd>–<kbd>9</kbd></td><td>Put that scene on air</td></tr>
+      <tr><td><kbd>Alt</kbd> + <kbd>1</kbd>–<kbd>9</kbd></td><td>Mute or unmute a sound input</td></tr>
+      <tr><td><kbd>R</kbd></td><td>Start or stop recording</td></tr>
+      <tr><td><kbd>Shift</kbd> + <kbd>G</kbd></td><td>Start or stop streaming</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>F</kbd> / <kbd>S</kbd></td><td>Fit / stretch the selected item to the screen</td></tr>
+      <tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td>Undo</td></tr>
+      <tr><td><kbd>F11</kbd></td><td>Full screen Studio</td></tr>
+    </table><p class="hp-n">All keys: Studio, Settings, Hotkeys.</p></div>
+    <div class="card hp-c"><h3>Good to know</h3><ul>
+      <li><b>Private test:</b> turn it on before a real service to check everything without anyone seeing it.</li>
+      <li><b>Recordings</b> are saved on this computer. Find them on the Recordings page.</li>
+      <li><b>Tall video (9:16)</b> for Instagram or TikTok: make a Portrait collection on the Scene collections page.</li>
+      <li><b>Zoom:</b> in the Studio, start the virtual camera, then pick Multistream Camera in Zoom.</li>
+      <li><b>Updates</b> come by themselves. Do not restart while you are live.</li>
+    </ul><div class="hp-b"><button type="button" class="ghost" id="hpRel">Download page</button><span class="hp-v" id="hpVer"></span></div></div>
+  </div>
 </section>
 <div class="cr" id="crView" hidden>
   <div class="cr-bar">
@@ -1379,6 +1427,21 @@ const XPAGES = {};
     }
     draw(); document.body.appendChild(w);
   };
+})();
+// Help: start here, fixing problems, keys; the search box hides what does not match
+(() => {
+  const items = () => [...document.querySelectorAll('#hpGrid li, #hpGrid dt, #hpGrid tr')];
+  $('#hpQ').oninput = () => {
+    const q = $('#hpQ').value.trim().toLowerCase();
+    items().forEach((el) => {
+      const dd = el.tagName === 'DT' ? el.nextElementSibling : null;
+      const text = (el.textContent + ' ' + (dd ? dd.textContent : '')).toLowerCase();
+      const hide = q && !text.includes(q); el.classList.toggle('hp-hide', hide); if (dd) dd.classList.toggle('hp-hide', hide);
+    });
+    document.querySelectorAll('#hpGrid .hp-c').forEach((c) => { c.classList.toggle('hp-hide', Boolean(q) && !c.querySelector('li:not(.hp-hide), dt:not(.hp-hide), tr:not(.hp-hide)')); });
+  };
+  $('#hpRel').onclick = () => window.open('https://github.com/Kellyzicoder/multistream/releases/tag/v3-latest', '_blank');
+  XPAGES.help = { title: 'Help', el: 'helpView', open() { try { if (window.msNative && window.msNative.appVersion) window.msNative.appVersion().then((v) => { if (v) $('#hpVer').textContent = 'You have version ' + v; }); } catch {} }, close() {} };
 })();
 // Scene collections: sets of scenes; wide (16:9), tall (9:16) or square; switch, rename, copy, export, remove
 (() => {
