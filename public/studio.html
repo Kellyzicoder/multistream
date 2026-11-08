@@ -2019,7 +2019,8 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   const row = document.querySelector('.docks'); if (!row) return;
   const names = ['scenes', 'sources', 'mixer', 'transitions', 'controls'];
   const docks = [...row.querySelectorAll('.dock')]; docks.forEach((d, i) => { d.dataset.id = names[i]; });
-  const fresh = () => ({ order: names.slice(), float: {}, pos: {}, fx: {}, h: 0, wl: 0, wr: 0 });
+  // the starting layout is like OBS: Scenes and Sources on the left, Controls and Transitions on the right, Audio Mixer along the bottom
+  const fresh = () => ({ order: names.slice(), float: {}, pos: { scenes: 'left', sources: 'left', controls: 'right', transitions: 'right' }, fx: {}, h: 0, wl: 0, wr: 0 });
   const side = { left: document.getElementById('dockL'), right: document.getElementById('dockR') };
   let L = fresh();
   try { const j = JSON.parse(localStorage.getItem('ms_layout') || 'null'); if (j && Array.isArray(j.order)) { L.order = j.order.filter((x) => names.includes(x)); names.forEach((n) => { if (!L.order.includes(n)) L.order.push(n); }); if (j.float && typeof j.float === 'object') L.float = j.float; if (j.pos && typeof j.pos === 'object') L.pos = j.pos; if (j.fx && typeof j.fx === 'object') L.fx = j.fx; ['h', 'wl', 'wr'].forEach((k) => { if (Number.isFinite(j[k])) L[k] = j[k]; }); } } catch {}
