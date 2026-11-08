@@ -972,7 +972,7 @@ function openTools(a, fx) {
 // Advanced Audio Properties (like OBS): every sound input in one table
 function openAdvancedAudio() {
   const m = document.createElement('div'); m.className = 'modal';
-  const dlg = document.createElement('div'); dlg.className = 'dlg big';
+  const dlg = document.createElement('div'); dlg.className = 'dlg big'; dlg.style.height = 'auto'; // only as tall as the list
   dlg.innerHTML = '<div class="dlg-h"><b>Advanced Audio Properties</b><button type="button" aria-label="Close">×</button></div>';
   const body = document.createElement('div'); body.className = 'dlg-b';
   const t = document.createElement('table'); t.className = 'aap';
