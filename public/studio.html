@@ -382,7 +382,7 @@
         </section>
         <section class="sp" data-sp="output">
           <h3>Recording</h3>
-          <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></div>
+          <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal (about 3.6 GB an hour)</option><option value="1080-4">1080p small file (about 1.8 GB an hour)</option><option value="720-6">720p normal (about 2.7 GB an hour)</option><option value="720-3">720p small file (about 1.4 GB an hour)</option></select></div>
           <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Also save the stream as soon as it starts</label></div>
           <div class="f"><label>Saved in</label><span><code id="recDir2"></code></span></div>
           <div class="row"><button id="recOpen2">Open folder</button><span class="note" id="recMsg2"></span></div>
@@ -1572,7 +1572,8 @@ async function startRec() {
   const ws = recWs = openPipe(`/studio-record?h=${rcv.height}&mbit=${mb}&fps=${rfps}${fast ? '&copy=1' : ''}`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
-    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.min(80, Math.max(mb, 6)) * 1000000, audioBitsPerSecond: 160000 });
+    // fast (encode once): the file is exactly what the browser makes, so use the chosen size. Normal way: give ffmpeg a bit more to work from.
+    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: (fast ? mb : Math.min(80, Math.max(mb, 6))) * 1000000, audioBitsPerSecond: 160000 });
     recMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     recMr.start(500);
     recT0 = Date.now(); $('#recBtn').textContent = 'Stop Recording'; $('#recBtn').className = 'stop';
