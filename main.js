@@ -319,8 +319,16 @@ async function remuxRecordings() {
     detail: [done.length ? 'Made: ' + done.map((x) => path.basename(x)).join(', ') : '', bad.length ? 'Not done: ' + bad.join(', ') : ''].filter(Boolean).join('\n') });
   if (done.length) shell.showItemInFolder(done[0]);
 }
+// Scene Collection menu: the Studio page does the work (it asks for names and shows the result)
+async function collDo(act, name) {
+  const w = studioWin && !studioWin.isDestroyed() ? studioWin : win; if (!w || w.isDestroyed()) return;
+  const ok = await w.webContents.executeJavaScript('typeof window.msColl === "function"').catch(() => false);
+  if (!ok) { dialog.showMessageBox(w, { type: 'info', message: 'Open the Studio first', detail: 'Scene collections are changed in the Studio.' }); return; }
+  w.focus(); w.webContents.executeJavaScript(`window.msColl(${JSON.stringify(act)}, ${JSON.stringify(name || '')})`).catch(() => {});
+}
 function buildMenu() {
   let ds = []; try { ds = displayList(); } catch {}
+  let cl = { current: '', names: [] }; try { if (relay && relay.collections) cl = relay.collections(); } catch {}
   const template = [
     ...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : []),
     { label: 'File', submenu: [
@@ -333,6 +341,17 @@ function buildMenu() {
       { label: 'Exit', role: 'quit' },
     ] },
     { role: 'editMenu' },
+    { label: 'Scene Collection', submenu: [
+      { label: 'New...', click: () => collDo('new') },
+      { label: 'Duplicate...', click: () => collDo('duplicate') },
+      { label: 'Rename...', click: () => collDo('rename') },
+      { label: 'Remove', click: () => collDo('remove'), enabled: cl.names.length > 1 },
+      { type: 'separator' },
+      { label: 'Import...', click: () => collDo('import') },
+      { label: 'Export...', click: () => collDo('export') },
+      { type: 'separator' },
+      ...cl.names.map((n) => ({ label: n, type: 'radio', checked: n === cl.current, click: () => collDo('switch', n) })),
+    ] },
     { label: 'View', submenu: [
       { label: 'Fullscreen Interface', accelerator: 'F11', click: () => { const w = focusedWin(); if (w) w.setFullScreen(!w.isFullScreen()); } },
       { label: 'Reset Panels', click: () => clickIn(studioWin || win, '#resetLayout') },
@@ -359,6 +378,7 @@ async function start() {
     process.env.MULTISTREAM_RECORDINGS = process.env.MULTISTREAM_RECORDINGS || path.join(app.getPath('videos'), 'Multistream');
     relay = require('./server');
     relay.setOpenFolder((p) => shell.openPath(p));
+    if (relay.onCollections) relay.onCollections(() => setMenu()); // the menu shows the scene collections
   } catch (err) {
     dialog.showErrorBox('Multistream cannot start', String(err && err.message ? err.message : err));
     app.quit();
