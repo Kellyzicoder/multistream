@@ -900,6 +900,8 @@
   html.ps-blur { --gl:rgba(40,30,60,.55); --gl2:rgba(40,30,60,.45); --gl-blur:blur(30px); }
   html.ps-solid { --gl:#121833; --gl2:#1a2148; --gl-hi:transparent; --gl-blur:none; }
   html.t-light.ps-solid { --gl:#ffffff; --gl2:#f3f5fa; }
+  .glp-ic { display:none; width:64px; height:64px; border-radius:20px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); place-items:center; color:#cdd3e4; } .glp-ic svg { width:28px; height:28px; }
+  .glp-off.empty .ring { display:none; } .glp-off.empty .glp-ic { display:grid; }
 </style>
 </head>
 <body>
@@ -947,7 +949,7 @@
       <canvas id="pvStudio" width="960" height="540" aria-hidden="true"></canvas>
       <video id="pv" muted autoplay playsinline hidden></video>
       <div id="offlineView" class="glp-off">
-        <div class="ring" aria-hidden="true"><i></i></div>
+        <div class="ring" aria-hidden="true"><i></i></div><span class="glp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
         <h1 id="h1">Waiting for the Studio</h1>
         <p class="lead" id="lead">The Studio makes the picture. It starts by itself when the app opens.</p>
         <p style="text-align:center;margin:0"><button type="button" class="b2 pri" id="openStudioBtn">Open Studio</button></p>
@@ -1852,8 +1854,14 @@ const XPAGES = {};
   function offlinePreview() {
     const live = st && st.obsLive, w = sw();
     let cv = null; try { cv = w && w.document && w.document.getElementById('cv'); } catch {}
-    const show = !live && Boolean(cv) && page === 'dash';
-    $('#pvStudio').hidden = !show; $('#offlineView').hidden = live || Boolean(cv);
+    // nothing connected yet (no camera, screen or picture coming through): a placeholder instead of a black picture
+    let has = true; try { has = !w || !w.msHasPicture || w.msHasPicture(); } catch {}
+    const empty = !live && Boolean(cv) && !has;
+    const show = !live && Boolean(cv) && has && page === 'dash';
+    $('#pvStudio').hidden = !show; $('#offlineView').hidden = live || (Boolean(cv) && has);
+    $('#h1').textContent = empty ? 'Nothing in the picture yet' : 'Waiting for the Studio';
+    $('#lead').textContent = empty ? 'Add a camera, a screen or a picture to this scene in the Studio.' : 'The Studio makes the picture. It starts by itself when the app opens.';
+    $('#offlineView').classList.toggle('empty', empty);
     $('#pv').hidden = !live;
   }
   setInterval(() => {
