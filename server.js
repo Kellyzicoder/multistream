@@ -77,6 +77,7 @@ let recCfg = { auto: false };
 try { recCfg = { auto: Boolean(JSON.parse(fs.readFileSync(REC_FILE, 'utf8')).auto) }; } catch {}
 const recorder = createRecorder({ ffmpeg: FFMPEG, input: HUB_IN, dir: REC_DIR, feed: (stdin) => hub.subscribe(stdin) });
 let openFolderHook = null;
+let showFileHook = null; // shows one file in the folder (Explorer or Finder)
 const recView = () => ({ ...recorder.state(), auto: recCfg.auto });
 
 // ---- chat (read only) ----
@@ -568,6 +569,118 @@ app.post('/api/recording/open', (req, res) => {
   if (!openFolderHook) return res.json({ error: 'Open this folder yourself: ' + REC_DIR });
   openFolderHook(REC_DIR);
   res.json({ ok: true });
+});
+
+// ---- Recordings page: every recording, make MP4, play, show, and upload to YouTube ----
+const UP_FILE = path.join(DATA_DIR, 'uploads.json');
+let upCfg = { auto: false, privacy: 'unlisted', done: {} }; // done: file name -> { id, privacy, at }
+try { upCfg = { ...upCfg, ...JSON.parse(fs.readFileSync(UP_FILE, 'utf8')) }; } catch {}
+const saveUp = () => { try { fs.writeFileSync(UP_FILE, JSON.stringify(upCfg, null, 2)); } catch {} };
+const recJobs = new Map(); // file name -> { kind: 'mp4' | 'upload', pct, error }
+const upQueue = [];
+const durCache = new Map(); // name|size -> seconds
+const recPath = (name) => { const n = path.basename(String(name || '')); if (!/\.(mkv|mp4)$/i.test(n)) return ''; const f = path.join(REC_DIR, n); return fs.existsSync(f) ? f : ''; };
+function recDuration(f, size) {
+  const k = f + '|' + size; if (durCache.has(k)) return durCache.get(k);
+  durCache.set(k, null);
+  const p = spawn(FFMPEG, ['-hide_banner', '-i', f], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
+  let err = ''; p.stderr.on('data', (c) => { err += c; }); p.on('error', () => {});
+  p.on('close', () => { const m = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(err); durCache.set(k, m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Math.round(Number(m[3])) : null); });
+  return null;
+}
+function recList() {
+  let names = []; try { names = fs.readdirSync(REC_DIR).filter((n) => /\.(mkv|mp4)$/i.test(n)); } catch {}
+  return names.map((n) => { const f = path.join(REC_DIR, n); let st; try { st = fs.statSync(f); } catch { return null; }
+    const base = n.replace(/\.[^.]+$/, ''), hasMp4 = /\.mkv$/i.test(n) && names.some((x) => x.toLowerCase() === (base + '.mp4').toLowerCase());
+    return { name: n, size: st.size, at: st.mtimeMs, secs: recDuration(f, st.size), hasMp4, job: recJobs.get(n) || null, youtube: upCfg.done[n] || null, queued: upQueue.includes(n) };
+  }).filter(Boolean).sort((a, b) => b.at - a.at);
+}
+function freeSpace() { try { const s = fs.statfsSync(REC_DIR); return s.bavail * s.bsize; } catch { return null; } }
+function recordingSaved(name) {
+  if (upCfg.auto && yt.refreshToken) queueUpload(name);
+}
+function queueUpload(name) {
+  if (upQueue.includes(name) || (recJobs.get(name) || {}).kind === 'upload') return;
+  upQueue.push(name); logHealth('Recording ' + name + ' will be uploaded to YouTube.'); runUploads();
+}
+let uploading = false;
+async function runUploads() {
+  if (uploading) return; uploading = true;
+  try {
+    while (upQueue.length) {
+      const name = upQueue.shift(), f = recPath(name); if (!f) continue;
+      const job = { kind: 'upload', pct: 0, error: '' }; recJobs.set(name, job);
+      try {
+        const id = await ytUpload(f, name, upCfg.privacy || 'unlisted', (pct) => { job.pct = pct; });
+        upCfg.done[name] = { id, privacy: upCfg.privacy || 'unlisted', at: Date.now() }; saveUp(); recJobs.delete(name);
+        logHealth('Recording ' + name + ' is on YouTube (' + (upCfg.privacy || 'unlisted') + ').');
+      } catch (e) { job.error = e.message; job.pct = 0; sendAlert('stream', 'YouTube upload', 'could not upload ' + name + ': ' + e.message); }
+    }
+  } finally { uploading = false; }
+}
+// YouTube "resumable upload": the file goes up in parts, so a slow or broken connection can carry on
+async function ytUpload(file, name, privacy, onPct) {
+  const size = fs.statSync(file).size;
+  const d = new Date(fs.statSync(file).mtimeMs);
+  const title = (gl.title ? gl.title + ' - ' : 'Recording - ') + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const start = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await ytAccessToken()}`, 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Length': String(size), 'X-Upload-Content-Type': /\.mp4$/i.test(file) ? 'video/mp4' : 'video/x-matroska' },
+    body: JSON.stringify({ snippet: { title: title.slice(0, 100), description: gl.description || '' }, status: { privacyStatus: ['public', 'private', 'unlisted'].includes(privacy) ? privacy : 'unlisted', selfDeclaredMadeForKids: false } }),
+  });
+  if (!start.ok) { const j = await start.json().catch(() => ({})); throw new Error((j.error && j.error.message) || 'YouTube did not accept the upload (' + start.status + ')'); }
+  const where = start.headers.get('location'); if (!where) throw new Error('YouTube did not give an upload address');
+  const CHUNK = 16 * 1024 * 1024, fd = fs.openSync(file, 'r');
+  try {
+    let pos = 0, tries = 0;
+    while (pos < size) {
+      const len = Math.min(CHUNK, size - pos), buf = Buffer.alloc(len); fs.readSync(fd, buf, 0, len, pos);
+      let r;
+      try {
+        r = await fetch(where, { method: 'PUT', headers: { Authorization: `Bearer ${await ytAccessToken()}`, 'Content-Length': String(len), 'Content-Range': `bytes ${pos}-${pos + len - 1}/${size}` }, body: buf });
+      } catch (e) {
+        if (++tries > 8) throw new Error('the internet connection kept dropping');
+        await new Promise((ok) => setTimeout(ok, Math.min(60000, 2000 * tries)));
+        // ask YouTube how much it already has, then carry on from there
+        const q = await fetch(where, { method: 'PUT', headers: { Authorization: `Bearer ${await ytAccessToken()}`, 'Content-Range': `bytes */${size}` } }).catch(() => null);
+        const rg = q && q.headers.get('range'); if (rg) pos = Number(rg.split('-')[1]) + 1;
+        continue;
+      }
+      if (r.status === 308) { const rg = r.headers.get('range'); pos = rg ? Number(rg.split('-')[1]) + 1 : pos + len; tries = 0; onPct(Math.floor((pos / size) * 100)); continue; }
+      if (r.ok) { const j = await r.json().catch(() => ({})); onPct(100); return j.id || ''; }
+      if (r.status >= 500 && ++tries <= 8) { await new Promise((ok) => setTimeout(ok, 2000 * tries)); continue; }
+      const j = await r.json().catch(() => ({})); throw new Error((j.error && j.error.message) || 'YouTube stopped the upload (' + r.status + ')');
+    }
+    throw new Error('The upload did not finish');
+  } finally { try { fs.closeSync(fd); } catch {} }
+}
+app.get('/api/recordings', (req, res) => res.json({ folder: REC_DIR, free: freeSpace(), auto: upCfg.auto, privacy: upCfg.privacy, youtube: Boolean(yt.refreshToken), files: recList() }));
+app.put('/api/recordings', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
+  const b = req.body || {};
+  if (typeof b.auto === 'boolean') upCfg.auto = b.auto;
+  if (['public', 'private', 'unlisted'].includes(b.privacy)) upCfg.privacy = b.privacy;
+  saveUp(); res.json({ ok: true, auto: upCfg.auto, privacy: upCfg.privacy });
+});
+app.post('/api/recordings/:act', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
+  const act = req.params.act, f = recPath((req.body || {}).name), name = path.basename(f || '');
+  if (!f) return res.status(404).json({ error: 'That recording was not found' });
+  if (act === 'play') { if (!openFolderHook) return res.json({ error: 'Open it yourself: ' + f }); openFolderHook(f); return res.json({ ok: true }); }
+  if (act === 'show') { if (showFileHook) showFileHook(f); else if (openFolderHook) openFolderHook(REC_DIR); return res.json({ ok: true }); }
+  if (act === 'upload') { if (!yt.refreshToken) return res.status(400).json({ error: 'Connect YouTube first (Go Live page)' }); queueUpload(name); return res.json({ ok: true }); }
+  if (act === 'mp4') {
+    if (!/\.mkv$/i.test(name)) return res.status(400).json({ error: 'It is already an MP4' });
+    if (recJobs.get(name)) return res.json({ ok: true });
+    const out = f.replace(/\.mkv$/i, '.mp4'), job = { kind: 'mp4', pct: 0, error: '' }; recJobs.set(name, job);
+    const secs = durCache.get(f + '|' + fs.statSync(f).size) || 0;
+    const p = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', f, '-map', '0', '-c', 'copy', '-movflags', '+faststart', '-progress', 'pipe:1', out], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
+    p.stdout.on('data', makeProgressParser((b) => { const us = Number(b.out_time_us || b.out_time_ms); if (secs && us) job.pct = Math.min(99, Math.floor(us / 1e6 / secs * 100)); }));
+    p.on('error', (e) => { job.error = e.message; });
+    p.on('close', (code) => { if (code === 0) recJobs.delete(name); else { job.error = 'Could not make the MP4'; try { fs.unlinkSync(out); } catch {} } });
+    return res.json({ ok: true });
+  }
+  res.status(404).json({ error: 'Unknown' });
 });
 
 // ---- Title and thumbnail for Go live ----
@@ -1169,6 +1282,7 @@ studioRecWss.on('connection', (w, req) => {
     // the fast way failed on this computer: tell the Studio, so the next recording uses the normal way
     const fallback = copy && code ? { fallback: true } : {};
     try { w.send(JSON.stringify(code ? { ...fallback, error: last || 'Recording stopped (code ' + code + ')' } : { saved: name })); } catch {}
+    if (!code) recordingSaved(name);
     try { w.close(); } catch {}
   });
   w.on('message', (m, isBin) => {
@@ -1251,6 +1365,6 @@ if (STANDALONE) {
 }
 
 // used by the desktop app (main.js)
-module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => { openFolderHook = fn; },
+module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => { openFolderHook = fn; }, setShowFile: (fn) => { showFileHook = fn; },
   // scene collections for the menu bar
   collections: () => ({ current: coll.current, names: collNames() }), onCollections: (fn) => { collHook = fn; } };

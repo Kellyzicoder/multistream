@@ -381,6 +381,7 @@ async function start() {
     process.env.MULTISTREAM_RECORDINGS = process.env.MULTISTREAM_RECORDINGS || path.join(app.getPath('videos'), 'Multistream');
     relay = require('./server');
     relay.setOpenFolder((p) => shell.openPath(p));
+    if (relay.setShowFile) relay.setShowFile((p) => shell.showItemInFolder(p));
     if (relay.onCollections) relay.onCollections(() => setMenu()); // the menu shows the scene collections
   } catch (err) {
     dialog.showErrorBox('Multistream cannot start', String(err && err.message ? err.message : err));

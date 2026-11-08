@@ -34,6 +34,11 @@ window.demoApi = function (url, method) {
   else if (p === '/api/health') out = { live: true, startedAt: t0, kbps: 6000, ok: true, history: hist.map((k) => k + 1500), fps: 30, size: '1920x1080', keyframe: 2, frames: 45000, drops: 0, cpu: 18, memory: 41,
     channels: [{ id: 'd1', name: 'YouTube', enabled: true, state: 'live', message: '', kbps: 6000, frames: 45000, drops: 0, reconnects: 0, liveSince: t0 }, { id: 'd2', name: 'Facebook', enabled: true, state: 'live', message: '', kbps: 6000, frames: 44900, drops: 0, reconnects: 1, liveSince: t0 + 2000 }, { id: 'd3', name: 'Instagram', enabled: false, state: 'off', message: '', kbps: 0, frames: 0, drops: 0, reconnects: 0, liveSince: 0 }],
     log: [{ t: t0 + 40 * 60000 / 3, text: 'Facebook dropped: connection reset' }, { t: t0 + 40 * 60000 / 3 + 3000, text: 'Facebook reconnected by itself.' }, { t: t0, text: 'Started sending: YouTube, Facebook.' }] };
+  else if (p === '/api/recordings') out = { folder: 'D:\\Recordings', free: 412e9, auto: true, privacy: 'unlisted', youtube: true, files: [
+    { name: 'Studio 2026-11-09 09-58-02.mkv', size: 6.8e9, at: Date.now() - 3600e3, secs: 6130, hasMp4: false, job: { kind: 'upload', pct: 43, error: '' }, youtube: null, queued: false },
+    { name: 'Studio 2026-11-05 19-00-10.mkv', size: 4.3e9, at: Date.now() - 3 * 86400e3, secs: 3933, hasMp4: false, job: null, youtube: { id: 'demo', privacy: 'unlisted' }, queued: false },
+    { name: 'Studio 2026-11-02 10-00-00.mkv', size: 7.1e9, at: Date.now() - 8 * 86400e3, secs: 6662, hasMp4: false, job: null, youtube: null, queued: false },
+    { name: 'Prayer night 2026-10-31.mp4', size: 3.0e9, at: Date.now() - 9 * 86400e3, secs: 2900, hasMp4: false, job: null, youtube: null, queued: false }] };
   else if (p === '/api/remote') out = { enabled: false, hasPassword: false, urls: [] };
   else out = {};
   return Promise.resolve(out);

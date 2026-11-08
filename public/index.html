@@ -153,6 +153,26 @@
   /* ---------- layout ---------- */
   .app { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:18px; padding:18px 22px 22px; height:calc(100% - 60px); min-height:560px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; }
+  /* ---------- Recordings ---------- */
+  .rc-top { display:flex; align-items:center; gap:10px; } .rc-where { font-size:13px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .rc-top .sp { flex:1; }
+  .rc-list { display:flex; flex-direction:column; gap:8px; }
+  .rc-row { display:grid; grid-template-columns:96px minmax(0,1fr) auto; gap:16px; align-items:center; padding:12px 14px; }
+  .rc-th { height:54px; border-radius:10px; background:linear-gradient(135deg,#1c2550,#0d1230); display:grid; place-items:end start; padding:6px; font-size:11.5px; font-weight:700; font-variant-numeric:tabular-nums; color:#fff; }
+  .rc-th span { background:rgba(0,0,0,.55); padding:2px 6px; border-radius:6px; }
+  .rc-t { min-width:0; } .rc-t b { display:block; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .rc-t small { display:block; font-size:12px; color:var(--muted); margin-top:2px; }
+  .rc-s { font-size:12px; margin-top:6px; display:flex; align-items:center; gap:8px; } .rc-s.ok { color:#4ade80; } .rc-s.err { color:#f87171; } .rc-s.up { color:var(--link); }
+  .rc-s a { color:var(--link); } .rc-bar { flex:0 0 160px; height:5px; border-radius:3px; background:var(--card2); overflow:hidden; } .rc-bar i { display:block; height:100%; background:var(--blue); }
+  .rc-b { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; } .rc-b button { padding:6px 12px; font-size:12.5px; color:var(--text); } .rc-b button:hover, #rcOpen:hover { border-color:var(--blue); }
+  .rc-empty { padding:28px; text-align:center; color:var(--muted); font-size:13px; }
+  .rc-auto { padding:14px 16px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; justify-content:space-between; }
+  .rc-sw { display:flex; align-items:center; gap:12px; cursor:pointer; } .rc-sw input { position:absolute; opacity:0; pointer-events:none; }
+  .rc-tg { width:40px; height:22px; border-radius:999px; background:var(--card2); position:relative; flex:none; transition:background .15s; } .rc-tg::after { content:""; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .15s; }
+  .rc-sw input:checked + .rc-tg { background:var(--blue); } .rc-sw input:checked + .rc-tg::after { left:21px; } .rc-sw input:focus-visible + .rc-tg { outline:2px solid var(--blue); outline-offset:2px; }
+  .rc-sw b { display:block; font-size:13.5px; } .rc-sw small { display:block; font-size:12px; color:var(--muted); margin-top:2px; }
+  .rc-pv { display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--muted); }
+  .segc { display:inline-flex; gap:2px; padding:2px; border-radius:9px; background:rgba(0,0,0,.25); border:1px solid var(--line); }
+  .segc button { padding:5px 12px; font-size:12.5px; border:0; border-radius:7px; background:transparent; color:var(--muted); box-shadow:none; }
+  .segc button.on { background:var(--blue); color:var(--onblue); }
   /* ---------- Stream health ---------- */
   .xpage { padding:4px 18px 24px; display:flex; flex-direction:column; gap:14px; animation:xpIn .2s ease-out; }
   @keyframes xpIn { from { opacity:0; transform:translateY(6px); } }
@@ -588,6 +608,7 @@
     <button type="button" data-page="studio" title="Studio: scenes, cameras, sound, recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg><span>Studio</span></button>
     <button type="button" data-page="cr" title="Multiview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><span>Multiview</span></button>
     <button type="button" data-page="health" title="Stream health"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>Stream health</span></button>
+    <button type="button" data-page="rec" title="Recordings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg><span>Recordings</span></button>
   </nav>
   <span class="snv-sp"></span>
   <button type="button" class="snv-b" id="setBtn" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
@@ -736,6 +757,14 @@
   <div class="hl-row">
     <div class="card hl-tb"><div class="hl-h">Each channel</div><table><thead><tr><th>Channel</th><th>Status</th><th>Speed</th><th>Reconnects</th><th>Live for</th></tr></thead><tbody id="hlChans"></tbody></table></div>
     <div class="card hl-log"><div class="hl-h">What happened</div><ul id="hlLog"></ul></div>
+  </div>
+</section>
+<section class="xpage rc" id="recView" hidden aria-label="Recordings">
+  <div class="rc-top"><span class="rc-where" id="rcWhere"></span><span class="sp"></span><button type="button" class="ghost" id="rcOpen">Open folder</button></div>
+  <div class="rc-list" id="rcList"></div>
+  <div class="card rc-auto">
+    <label class="rc-sw"><input type="checkbox" id="rcAuto"><span class="rc-tg" aria-hidden="true"></span><span><b>Upload to YouTube when a recording ends</b><small id="rcAutoN">The recording goes to your YouTube channel by itself.</small></span></label>
+    <div class="rc-pv"><span>Who can watch</span><div class="segc" id="rcPriv"><button type="button" data-v="unlisted">Unlisted</button><button type="button" data-v="private">Private</button><button type="button" data-v="public">Public</button></div></div>
   </div>
 </section>
 <div class="cr" id="crView" hidden>
@@ -1235,6 +1264,50 @@ let crPrev = '';
 const pageTabs = document.querySelectorAll('#pageTabs button');
 // ---------------- pages in the side menu (other than Go Live and Multiview) ----------------
 const XPAGES = {};
+// Recordings: every recording on this computer; play, show, make an MP4, upload to YouTube
+(() => {
+  let t = null;
+  const gb = (b) => b >= 1e9 ? (b / 1e9).toFixed(1) + ' GB' : Math.max(1, Math.round(b / 1e6)) + ' MB';
+  const dur = (s) => { if (s == null) return ''; const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+  const when = (ts) => { const d = new Date(ts), days = Math.floor((Date.now() - ts) / 86400000); return days < 1 && d.getDate() === new Date().getDate() ? 'Today' : days < 7 ? d.toLocaleDateString([], { weekday: 'short' }) : days < 14 ? 'Last week' : Math.floor(days / 7) + ' weeks ago'; };
+  const title = (f) => { const m = /(\d{4})-(\d{2})-(\d{2})/.exec(f.name); const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(f.at); return (/^Studio/.test(f.name) ? 'Recording' : f.name.replace(/\.[^.]+$/, '')) + ' – ' + d.toLocaleDateString([], { day: 'numeric', month: 'short' }); };
+  const PRIV = { unlisted: 'Unlisted', private: 'Private', public: 'Public' };
+  const act = (a, name) => api('/api/recordings/' + a, 'POST', { name }).then((r) => { if (r && r.error) alert(r.error); tick(); });
+  async function tick() {
+    let r; try { r = await api('/api/recordings'); } catch { return; }
+    $('#rcWhere').textContent = 'Saved to ' + (r.folder || '') + (r.free != null ? ' · ' + gb(r.free) + ' free' : '');
+    const box = $('#rcList'); box.textContent = '';
+    (r.files || []).forEach((f) => {
+      const row = document.createElement('div'); row.className = 'card rc-row';
+      const th = document.createElement('div'); th.className = 'rc-th'; if (f.secs != null) { const sp = document.createElement('span'); sp.textContent = dur(f.secs); th.appendChild(sp); }
+      const tx = document.createElement('div'); tx.className = 'rc-t';
+      const b = document.createElement('b'); b.textContent = title(f); b.title = f.name;
+      const sm = document.createElement('small'); sm.textContent = when(f.at) + ' · ' + f.name.split('.').pop().toUpperCase() + ' · ' + gb(f.size);
+      tx.append(b, sm);
+      const st = document.createElement('div'); st.className = 'rc-s';
+      if (f.job && f.job.error) { st.classList.add('err'); st.textContent = f.job.error; }
+      else if (f.job && f.job.kind === 'upload') { st.classList.add('up'); st.innerHTML = '<span></span><span class="rc-bar"><i></i></span><span></span>'; st.children[0].textContent = 'Uploading to YouTube · ' + (PRIV[r.privacy] || ''); st.querySelector('i').style.width = f.job.pct + '%'; st.children[2].textContent = f.job.pct + '%'; }
+      else if (f.job && f.job.kind === 'mp4') { st.classList.add('up'); st.innerHTML = '<span>Making the MP4</span><span class="rc-bar"><i></i></span><span></span>'; st.querySelector('i').style.width = f.job.pct + '%'; st.children[2].textContent = f.job.pct + '%'; }
+      else if (f.queued) { st.classList.add('up'); st.textContent = 'Waiting to upload to YouTube'; }
+      else if (f.youtube) { st.classList.add('ok'); st.textContent = '✓ On YouTube · ' + (PRIV[f.youtube.privacy] || '') + ' '; if (f.youtube.id) { const a = document.createElement('a'); a.href = 'https://youtu.be/' + f.youtube.id; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open'; st.appendChild(a); } }
+      if (st.textContent || st.children.length) tx.appendChild(st);
+      const bt = document.createElement('div'); bt.className = 'rc-b';
+      const btn = (label, fn) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'ghost'; x.textContent = label; x.onclick = fn; bt.appendChild(x); };
+      btn('Play', () => act('play', f.name)); btn('Show file', () => act('show', f.name));
+      if (/\.mkv$/i.test(f.name) && !f.hasMp4 && !(f.job && f.job.kind === 'mp4' && !f.job.error)) btn('Make MP4', () => act('mp4', f.name));
+      if (r.youtube && !f.youtube && !f.queued && !(f.job && f.job.kind === 'upload' && !f.job.error)) btn('Upload to YouTube', () => act('upload', f.name));
+      row.append(th, tx, bt); box.appendChild(row);
+    });
+    if (!(r.files || []).length) box.innerHTML = '<div class="card rc-empty">No recordings yet. Press Start Recording in the Studio.</div>';
+    $('#rcAuto').checked = Boolean(r.auto);
+    $('#rcAutoN').textContent = r.youtube ? 'The recording goes to your YouTube channel by itself.' : 'Connect YouTube on the Go Live page first.';
+    document.querySelectorAll('#rcPriv button').forEach((x) => x.classList.toggle('on', x.dataset.v === r.privacy));
+  }
+  $('#rcOpen').onclick = () => api('/api/recording/open', 'POST').then((r) => { if (r && r.error) alert(r.error); });
+  $('#rcAuto').onchange = () => api('/api/recordings', 'PUT', { auto: $('#rcAuto').checked }).then(tick);
+  document.querySelectorAll('#rcPriv button').forEach((x) => { x.onclick = () => api('/api/recordings', 'PUT', { privacy: x.dataset.v }).then(tick); });
+  XPAGES.rec = { title: 'Recordings', el: 'recView', open() { if (!t) { tick(); t = setInterval(tick, 2000); } }, close() { clearInterval(t); t = null; } };
+})();
 // Stream health: how the stream is doing right now, updated every 2 seconds while the page is open
 (() => {
   let t = null;
