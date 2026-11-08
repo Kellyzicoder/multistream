@@ -986,10 +986,10 @@ function renderAudio() {
     const slider = (min, max, step, val, fmt, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { o.textContent = fmt(i.value); set(Number(i.value)); save(); syncAudio(); }; w.append(i, o); return w; };
     const sw = (on, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(on); c.onchange = () => { set(c.checked); save(); syncAudio(); }; return c; };
     const F = fxOf(a);
-    const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only (not in the stream)'], ['both', 'Monitor and stream']].forEach(([v, t]) => mon.add(new Option(t, v)));
+    const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only'], ['both', 'Monitor and output']].forEach(([v, t]) => mon.add(new Option(t, v)));
     mon.value = a.monitor || 'off'; mon.onchange = () => { a.monitor = mon.value; save(); syncAudio(); gateAudio(); };
     if (!sl.disabled) row('Input', sl);
-    row('Listen with headphones', mon);
+    row('Audio monitoring', mon);
     row('Delay', slider(0, 1000, 10, F.delay || 0, (v) => v + ' ms', (v) => { F.delay = v; }));
     row('Low cut (rumble)', sw(F.lowcut && F.lowcut.on, (v) => { F.lowcut = { ...(F.lowcut || {}), on: v }; }));
     row('  cuts below', slider(40, 300, 5, F.lowcut && F.lowcut.hz || 80, (v) => v + ' Hz', (v) => { F.lowcut = { ...(F.lowcut || {}), hz: v }; }));
@@ -1004,7 +1004,6 @@ function renderAudio() {
     row('  strength', slider(1, 20, 0.5, F.comp && F.comp.ratio || 4, (v) => v + ':1', (v) => { F.comp = { ...(F.comp || {}), ratio: v }; }));
     row('Limiter (stops peaks)', sw(F.lim && F.lim.on, (v) => { F.lim = { ...(F.lim || {}), on: v }; }));
     row('  ceiling', slider(-20, 0, 1, F.lim && F.lim.thr != null ? F.lim.thr : -3, (v) => v + ' dB', (v) => { F.lim = { ...(F.lim || {}), thr: v }; }));
-    const hint = document.createElement('p'); hint.className = 'note'; hint.textContent = 'Headphones: hear this input yourself (use headphones). Delay: raise it if the sound arrives before the picture. Low cut: removes rumble. Gate: cuts hiss when nobody speaks. Compressor: keeps the level even. Limiter: stops sudden loud peaks.'; fx.appendChild(hint);
     const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'sm'; tb.textContent = 'Tools'; tb.title = 'Input, headphones, delay, low cut, bass/treble, gate, compressor, limiter'; tb.onclick = () => openTools(a, fx);
     const body = document.createElement('div'); body.className = 'aub'; const wrap = document.createElement('div'); wrap.className = 'aum'; wrap.append(sc, mt, fd.el); body.appendChild(wrap);
     const bt = document.createElement('div'); bt.className = 'aut'; bt.append(m, tb);
@@ -1012,7 +1011,7 @@ function renderAudio() {
     // right-click a sound input (like OBS): rename, mute, hear it in this scene, properties and filters
     d.addEventListener('contextmenu', (e) => showAudioMenu(e, a, n, fx, on.has(a.id)));
   });
-  $('#audNote').textContent = studio.audio.length ? 'Click the eye to hear that input in the scene you are editing.' : 'No sound inputs yet.';
+  $('#audNote').textContent = studio.audio.length ? '' : 'No sound inputs yet.';
 }
 function addAudioInput(kind) {
   const a = { id: uid(), name: kind === 'desktop' ? 'Computer sound' : 'Sound ' + (studio.audio.length + 1), device: '', label: '', vol: 1, muted: false };
