@@ -289,6 +289,26 @@
   .lookcols .sw { width:24px; height:24px; min-width:0; padding:0; border-radius:50%; border:1px solid rgba(128,128,128,.5); box-shadow:none; }
   .lookcols .sw[aria-pressed="true"] { box-shadow:0 0 0 2px var(--card), 0 0 0 4px var(--text); }
   .lookcols .hexin { width:90px; }
+  /* sources: type icon, padlock; Add Source window */
+  .lyr .tico { display:inline-flex; flex:none; opacity:.75; } .lyr .tico svg { width:15px; height:15px; }
+  button.lock.off { opacity:.35; }
+  .ctxi:disabled { opacity:.4; cursor:default; } .ctxi:disabled:hover { background:transparent; color:inherit; }
+  .addsrc { width:min(880px, 94vw) !important; }
+  .as-b { display:flex; gap:16px; min-height:360px; }
+  .as-list { width:230px; flex:none; display:flex; flex-direction:column; gap:2px; overflow:auto; max-height:62vh; padding-right:6px; border-right:1px solid var(--gl-line); }
+  .as-list button { display:flex; align-items:center; gap:10px; text-align:left; padding:8px 10px; border-radius:10px; background:transparent; border:0; box-shadow:none; font-size:13px; }
+  .as-list button svg { width:18px; height:18px; flex:none; }
+  .as-list button:hover { background:var(--gl2); }
+  .as-list button[aria-selected="true"] { background:var(--sel); color:var(--onsel); }
+  .as-r { flex:1; display:flex; flex-direction:column; gap:12px; min-width:0; }
+  .as-head { display:flex; gap:14px; align-items:center; } .as-head .as-ic svg { width:36px; height:36px; color:var(--sel); }
+  .as-head b { font-size:16px; } .as-head small { display:block; color:var(--muted); margin-top:2px; }
+  .as-name { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); } .as-name input { font-size:14px; }
+  .as-sub { margin:4px 0 0; font-size:12px; color:var(--muted); }
+  .as-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(128px, 1fr)); gap:8px; max-height:34vh; overflow:auto; }
+  .as-grid button { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 8px; border-radius:12px; }
+  .as-grid button svg { width:26px; height:26px; } .as-grid button span { font-size:12px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .as-vis { margin-right:auto; }
 </style>
 </head>
 <body>
@@ -1133,7 +1153,8 @@ function renderScenes() {
     // a red dot marks the scene that is on air (Program)
     if (s.name === studio.current) { const a = document.createElement('span'); a.className = 'dot'; a.title = 'On air'; d.appendChild(a); }
     d.onclick = () => { editing = s.name; sel = ''; if (!studioMode && s.name !== studio.current) setCurrent(s.name); else renderAll(); };
-    d.ondblclick = () => { const v = prompt('Scene name', s.name); if (v && !studio.scenes.some((x) => x.name === v)) { if (studio.current === s.name) { studio.current = v; dirtyCurrent = true; } s.name = v; editing = v; save(); renderAll(); } };
+    // the click before the double-click draws the list again, so find the name again
+    d.ondblclick = () => renameInPlace([...document.querySelectorAll('#scenes .scn .n')].find((x) => x.textContent === s.name) || n, s.name, (v) => { if (v && v !== s.name && !studio.scenes.some((x) => x.name === v)) { if (studio.current === s.name) { studio.current = v; dirtyCurrent = true; } s.name = v; editing = v; save(); } renderAll(); });
     box.appendChild(d);
   });
 }
@@ -1226,6 +1247,119 @@ $('#delScene').onclick = () => {
   editing = studio.current; save(); renderAll();
 };
 const MEDIA = new Set(['image', 'video', 'camera', 'screen', 'window', 'browser', 'ipcam']); // sources that show a picture from somewhere
+// ---------------- sources: icons, lock, right-click menu, Add Source window (like OBS) ----------------
+const SVG = (p) => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
+const SRC_ICON = {
+  camera: SVG('<path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
+  image: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="9" r="1.8"/><path d="M21 16l-5-5-9 9"/>'),
+  video: SVG('<path d="M7 5l12 7-12 7z"/>'),
+  text: SVG('<path d="M5 6V4h14v2M12 4v16M9 20h6"/>'),
+  lower: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M5 15h10M5 18h6"/>'),
+  timer: SVG('<circle cx="12" cy="13" r="7"/><path d="M12 13V9M10 2h4M19 6l1.5-1.5"/>'),
+  clock: SVG('<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>'),
+  screen: SVG('<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>'),
+  window: SVG('<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 8h18M6 6h.01M8.5 6h.01"/>'),
+  browser: SVG('<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 2.5 14.5 0 17M12 3.5c-2.5 2.5-2.5 14.5 0 17"/>'),
+  ipcam: SVG('<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/>'),
+  color: SVG('<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>'),
+};
+const LOCK_ON = SVG('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>');
+const LOCK_OFF = SVG('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/>');
+// a padlock button: closed = the item cannot be moved by accident, open = it can
+function lockBtn(l) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'eye lock';
+  const paint = () => { const on = Boolean(l.locked); b.innerHTML = on ? LOCK_ON : LOCK_OFF; b.classList.toggle('off', !on); b.setAttribute('aria-pressed', String(on)); b.title = on ? 'Locked: click to unlock' : 'Click to lock in place'; b.setAttribute('aria-label', b.title); };
+  b.onclick = (e) => { e.stopPropagation(); l.locked = !l.locked; save(); paint(); if (l.id === sel) renderLayers(); };
+  paint(); return b;
+}
+// type a new name in place (pop-up text boxes do not work in the app)
+function renameInPlace(el, cur, done) {
+  const i = document.createElement('input'); i.type = 'text'; i.value = cur; i.className = el.className; i.style.width = '100%'; i.style.minWidth = '0';
+  el.replaceWith(i); i.focus(); i.select();
+  let fin = false; const end = (keep) => { if (fin) return; fin = true; const v = i.value.trim(); done(keep && v ? v : null); };
+  i.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') end(true); if (e.key === 'Escape') end(false); };
+  i.onblur = () => end(true); i.onclick = (e) => e.stopPropagation(); i.ondblclick = (e) => e.stopPropagation();
+}
+// the right-click menu on a source (like OBS): properties, filters, rename, copy, order, transform, show, lock, remove
+function showSourceMenu(ev, l, nameEl) {
+  ev.preventDefault(); ev.stopPropagation(); closeCtx();
+  const s = byName(editing); if (!s) return;
+  sel = l.id;
+  const m = document.createElement('div'); m.className = 'ctxm'; m.setAttribute('role', 'menu');
+  const head = document.createElement('div'); head.className = 'ctxh'; head.textContent = l.name || ICON[l.type] || l.type; m.appendChild(head);
+  const item = (t, run, off) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ctxi'; b.setAttribute('role', 'menuitem'); b.textContent = t; if (off) b.disabled = true; b.onclick = () => { closeCtx(); run(); }; m.appendChild(b); };
+  const sep = () => { const d = document.createElement('div'); d.className = 'ctxs'; m.appendChild(d); };
+  const at = () => s.layers.indexOf(l);
+  const move = (to) => { const i = at(); if (i < 0) return; s.layers.splice(i, 1); s.layers.splice(Math.max(0, Math.min(s.layers.length, to)), 0, l); save(); renderLayers(); };
+  item('Properties', () => { sel = l.id; propsOpen = true; renderLayers(); });
+  item('Filters (colour, crop, green screen)', () => { sel = l.id; propsOpen = true; pfxOpen = true; renderLayers(); });
+  sep();
+  item('Rename...', () => { renderLayers(); const n = document.querySelector('#layers .lyr.on .n'); if (n) renameInPlace(n, l.name || ICON[l.type] || l.type, (v) => { if (v) { l.name = v; save(); } renderLayers(); }); });
+  item('Duplicate', () => { const c = JSON.parse(JSON.stringify(l)); c.id = uid(); c.name = (l.name || ICON[l.type] || l.type) + ' (copy)'; s.layers.splice(at() + 1, 0, c); sel = c.id; save(); renderLayers(); });
+  item('Copy', () => { clip = JSON.stringify(l); flash('Copied. Right-click or Ctrl+V to paste.', true); });
+  item('Paste', () => { const c = JSON.parse(clip); c.id = uid(); c.x = Math.round((c.x || 0) + 20); c.y = Math.round((c.y || 0) + 20); c.name = (c.name || ICON[c.type] || c.type) + ' (copy)'; s.layers.push(c); sel = c.id; save(); renderLayers(); }, !clip);
+  sep();
+  item(l.visible === false ? 'Show' : 'Hide', () => { l.visible = l.visible === false; save(); renderLayers(); });
+  item(l.locked ? 'Unlock' : 'Lock in place', () => { l.locked = !l.locked; save(); renderLayers(); });
+  sep();
+  item('Order: move to the front', () => move(s.layers.length - 1));
+  item('Order: move forward', () => move(at() + 1));
+  item('Order: move back', () => move(at() - 1));
+  item('Order: move to the back', () => move(0));
+  sep();
+  item('Transform: fit to screen', () => { Object.assign(l, { x: 0, y: 0, w: SW, h: SH, fit: 'fit' }); save(); renderLayers(); }, l.locked);
+  item('Transform: stretch to screen', () => { Object.assign(l, { x: 0, y: 0, w: SW, h: SH, fit: 'stretch' }); save(); renderLayers(); }, l.locked);
+  item('Transform: centre on screen', () => { l.x = Math.round((SW - (l.w || SW)) / 2); l.y = Math.round((SH - (l.h || SH)) / 2); save(); renderLayers(); }, l.locked);
+  sep();
+  item('Remove', () => { const i = at(); if (i >= 0) s.layers.splice(i, 1); sel = ''; save(); renderLayers(); });
+  document.body.appendChild(m); ctxMenu = m;
+  const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
+  const first = m.querySelector('.ctxi'); if (first) first.focus();
+}
+// Add Source window (like OBS): the kinds on the left with icons; on the right a name for the new one,
+// or a source that is already in another scene (a copy is added)
+function openAddSource() {
+  const s = byName(editing); if (!s) { flash('Add a scene first.', false); return; }
+  const kinds = [...document.querySelectorAll('#addPop [data-add]')].map((b) => ({ t: b.dataset.add, name: b.childNodes[0].textContent, sub: (b.querySelector('small') || {}).textContent || '' }));
+  let pick = kinds[0].t;
+  const m = document.createElement('div'); m.className = 'modal';
+  const dlg = document.createElement('div'); dlg.className = 'dlg big addsrc'; dlg.style.height = 'auto';
+  dlg.innerHTML = '<div class="dlg-h"><b>Add Source</b><button type="button" aria-label="Close">×</button></div>';
+  const body = document.createElement('div'); body.className = 'dlg-b as-b';
+  const list = document.createElement('div'); list.className = 'as-list'; list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', 'Kind of source');
+  const right = document.createElement('div'); right.className = 'as-r';
+  body.append(list, right); dlg.appendChild(body);
+  const foot = document.createElement('div'); foot.className = 'dlg-f';
+  const vis = document.createElement('label'); vis.className = 'chk as-vis'; vis.innerHTML = '<input type="checkbox" checked> Make source visible';
+  const addB = document.createElement('button'); addB.type = 'button'; addB.className = 'on'; addB.textContent = 'Add';
+  const closeB = document.createElement('button'); closeB.type = 'button'; closeB.textContent = 'Close';
+  foot.append(vis, addB, closeB); dlg.appendChild(foot); m.appendChild(dlg);
+  const close = () => { m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
+  dlg.querySelector('.dlg-h button').onclick = close; closeB.onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
+  let nameIn = null;
+  const visible = () => vis.querySelector('input').checked;
+  const addNew = () => { const l = newLayer(pick); const v = nameIn && nameIn.value.trim(); if (v) l.name = v; l.visible = visible(); close(); addLayer(l); };
+  addB.onclick = addNew;
+  function draw() {
+    list.textContent = '';
+    kinds.forEach((k) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(k.t === pick)); b.innerHTML = SRC_ICON[k.t] || ''; b.append(k.name); b.onclick = () => { pick = k.t; draw(); }; b.ondblclick = addNew; list.appendChild(b); });
+    const k = kinds.find((x) => x.t === pick);
+    right.textContent = '';
+    const h = document.createElement('div'); h.className = 'as-head'; h.innerHTML = '<span class="as-ic">' + (SRC_ICON[k.t] || '') + '</span>'; const tx = document.createElement('div'); const b = document.createElement('b'); b.textContent = k.name; const sm = document.createElement('small'); sm.textContent = k.sub; tx.append(b, sm); h.appendChild(tx); right.appendChild(h);
+    const f = document.createElement('label'); f.className = 'as-name'; f.textContent = 'Name'; nameIn = document.createElement('input'); nameIn.type = 'text'; nameIn.value = k.name; nameIn.onkeydown = (e) => { if (e.key === 'Enter') addNew(); }; f.appendChild(nameIn); right.appendChild(f);
+    // the same kind already in other scenes: add a copy of it
+    const seen = new Set(), have = [];
+    studio.scenes.forEach((sc) => (sc.layers || []).forEach((l) => { if (l.type !== pick || s.layers.some((x) => x.id === l.id)) return; const key = (l.name || '') + '|' + (l.url || l.src || l.device || l.text || ''); if (seen.has(key)) return; seen.add(key); have.push({ l, scene: sc.name }); }));
+    if (have.length) {
+      const t = document.createElement('p'); t.className = 'as-sub'; t.textContent = 'Or add one you already have (from another scene):'; right.appendChild(t);
+      const g = document.createElement('div'); g.className = 'as-grid';
+      have.forEach(({ l, scene }) => { const b2 = document.createElement('button'); b2.type = 'button'; b2.title = 'From the scene ' + scene; b2.innerHTML = SRC_ICON[l.type] || ''; const sp = document.createElement('span'); sp.textContent = l.name || ICON[l.type] || l.type; b2.appendChild(sp);
+        b2.onclick = () => { const c = JSON.parse(JSON.stringify(l)); c.id = uid(); c.visible = visible(); close(); addLayer(c); }; g.appendChild(b2); });
+      right.appendChild(g);
+    }
+  }
+  draw(); document.body.appendChild(m); nameIn.focus(); nameIn.select();
+}
 const ICON = { camera: 'Video capture', window: 'Window', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera', lower: 'Name bar', timer: 'Countdown', clock: 'Clock' };
 function renderLayers() {
   const s = byName(editing), box = $('#layers'); box.textContent = '';
@@ -1237,12 +1371,14 @@ function renderLayers() {
     const l = s.layers[i];
     const d = document.createElement('div'); d.className = 'lyr' + (l.id === sel ? ' on' : '');
     const eye = eyeBtn(l.visible !== false, 'Show or hide', (v) => { l.visible = v; save(); });
-    const n = document.createElement('span'); n.className = 'n'; n.textContent = (l.name || ICON[l.type] || l.type) + (l.locked ? ' (locked)' : ''); n.title = n.textContent;
+    const ti = document.createElement('span'); ti.className = 'tico'; ti.innerHTML = SRC_ICON[l.type] || ''; ti.title = ICON[l.type] || l.type;
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = l.name || ICON[l.type] || l.type; n.title = n.textContent;
     const up = document.createElement('button'); up.className = 'sm'; up.textContent = '\u2191'; up.title = 'Move in front'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
     const x = document.createElement('button'); x.className = 'sm'; x.textContent = '\u00d7'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
     const cog = document.createElement('button'); cog.className = 'cog'; cog.textContent = '\u2699'; cog.title = 'Settings for ' + (l.name || l.type); cog.setAttribute('aria-label', cog.title);
     cog.onclick = (e) => { e.stopPropagation(); sel = l.id; propsOpen = true; renderLayers(); };
-    d.append(eye, n, cog); d.onclick = () => { sel = l.id; renderLayers(); };
+    d.append(eye, ti, n, lockBtn(l), cog); d.onclick = () => { sel = l.id; renderLayers(); };
+    d.addEventListener('contextmenu', (e) => showSourceMenu(e, l, n));
     d.ondblclick = () => { sel = l.id; propsOpen = true; renderLayers(); };
     box.appendChild(d);
   }
@@ -1394,9 +1530,8 @@ function pickFile(l) {
     if (r.url) { l.url = r.url; l.file = ''; save(); renderLayers(); }
   }; f.click();
 }
-document.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
-  const s = byName(editing); if (!s) return;
-  const t = b.dataset.add, l = { id: uid(), type: t, x: 0, y: 0, w: SW, h: SH, fit: 'stretch', visible: true };
+function newLayer(t) {
+  const l = { id: uid(), type: t, x: 0, y: 0, w: SW, h: SH, fit: 'stretch', visible: true };
   if (t === 'text') Object.assign(l, { text: 'Welcome', size: 110, color: '#ffffff', x: 120, y: 800, w: 1600, h: 160 });
   if (t === 'color') l.color = '#0b3d1e';
   if (t === 'window') { l.display = ''; l.winName = ''; l.fit = 'fit'; }
@@ -1407,8 +1542,10 @@ document.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
   if (t === 'browser') { l.url = 'http://'; l.bw = SW; l.bh = SH; }
   if (t === 'ipcam') { l.url = 'http://192.168.0.0:4747/video'; l.fit = 'fit'; }
   if (t === 'video' || t === 'image') l.fit = 'fit';
-  s.layers.push(l); sel = l.id; propsOpen = true; save(); renderLayers();
-});
+  return l;
+}
+function addLayer(l) { const s = byName(editing); if (!s) return; s.layers.push(l); sel = l.id; propsOpen = true; save(); renderLayers(); }
+document.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => { if (byName(editing)) addLayer(newLayer(b.dataset.add)); });
 function renderAll() { renderScenes(); renderLayers(); renderAudio(); updateVideos(); gateAudio(); }
 
 // ---------------- import from OBS ----------------
@@ -1670,7 +1807,7 @@ function popMenu(btn, pop) {
   btn.addEventListener('click', (e) => { e.stopPropagation(); const show = pop.hidden; document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }); pop.hidden = !show; btn.setAttribute('aria-expanded', String(show)); });
   pop.addEventListener('click', (e) => { if (e.target.closest('button')) pop.hidden = true; e.stopPropagation(); });
 }
-popMenu($('#addBtn'), $('#addPop'));
+$('#addBtn').onclick = (e) => { e.stopPropagation(); openAddSource(); };
 popMenu($('#addAudio'), $('#audPop'));
 document.addEventListener('click', () => document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }); });
@@ -2008,7 +2145,7 @@ document.addEventListener('keydown', (e) => {
   if (ctrl && !e.altKey && e.key === ',') { e.preventDefault(); openSettings(); return; }
   if (!$('#setBox').hidden || document.querySelector('.modal:not([hidden]):not(#setBox)')) return;
   if (ctrl && !e.altKey && (k === 'z' || k === 'y')) { e.preventDefault(); histGo(k === 'y' || e.shiftKey ? 1 : -1); return; }
-  if (e.key === 'F2' && cl) { e.preventDefault(); const v = prompt('Source name', cl.name || ICON[cl.type] || cl.type); if (v != null && v.trim()) { cl.name = v.trim(); save(); renderLayers(); } return; }
+  if (e.key === 'F2' && cl) { e.preventDefault(); const n = document.querySelector('#layers .lyr.on .n'); if (n) renameInPlace(n, cl.name || ICON[cl.type] || cl.type, (v) => { if (v) { cl.name = v; save(); } renderLayers(); }); return; }
   if (e.key === 'Escape' && sel && $('#propsBox').hidden) { sel = ''; renderLayers(); return; }
   if (!ctrl || e.altKey) return;
   histLast = 0; // each shortcut is its own undo step
