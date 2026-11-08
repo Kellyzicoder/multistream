@@ -1595,6 +1595,59 @@ function importObs(j) {
   });
   return { scenes, audio, current: j.current_program_scene || (scenes[0] || {}).name || '' };
 }
+// ---------------- scene collections (the menu bar: Scene Collection) ----------------
+// a small window that asks for a name (a pop-up text box does not work in the app)
+function askName(title, value) {
+  return new Promise((done) => {
+    const m = document.createElement('div'); m.className = 'modal';
+    const d = document.createElement('div'); d.className = 'dlg'; d.style.height = 'auto'; d.style.width = 'min(420px, 92vw)';
+    d.innerHTML = '<div class="dlg-h"><b></b><button type="button" aria-label="Close">×</button></div><div class="dlg-b"><input type="text" maxlength="60" style="width:100%"></div><div class="dlg-f"><button type="button" class="on">OK</button><button type="button">Cancel</button></div>';
+    d.querySelector('b').textContent = title; const i = d.querySelector('input'); i.value = value || '';
+    const end = (v) => { m.remove(); done(v); };
+    const [ok, no] = d.querySelectorAll('.dlg-f button');
+    ok.onclick = () => end(i.value.trim() || null); no.onclick = () => end(null); d.querySelector('.dlg-h button').onclick = () => end(null);
+    i.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') ok.click(); if (e.key === 'Escape') end(null); };
+    m.appendChild(d); document.body.appendChild(m); i.focus(); i.select();
+  });
+}
+async function reloadStudio() {
+  const s = await fetch('/api/studio').then((r) => r.json());
+  studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '' }; lastRev = s.rev;
+  editing = studio.current; sel = ''; propsOpen = false;
+  asrc.forEach((n) => { try { n.node && n.node.disconnect(); n.gain.disconnect(); n.gate.disconnect(); } catch {} }); asrc.clear();
+  renderAll(); syncAudio();
+}
+window.msColl = async (act, name) => {
+  const list = await fetch('/api/collections').then((r) => r.json()).catch(() => ({ current: '', names: [] }));
+  const cur = list.current;
+  let body = null;
+  if (act === 'new') { const n = await askName('New scene collection', 'Untitled'); if (!n) return; body = { do: 'new', name: n }; }
+  else if (act === 'duplicate') { const n = await askName('Duplicate scene collection', cur + ' copy'); if (!n) return; body = { do: 'duplicate', name: n }; }
+  else if (act === 'rename') { const n = await askName('Rename scene collection', cur); if (!n || n === cur) return; body = { do: 'rename', name: n }; }
+  else if (act === 'remove') { if (!confirm('Remove the scene collection "' + cur + '"? Its scenes are deleted.')) return; body = { do: 'remove' }; }
+  else if (act === 'switch') { if (name === cur) return; body = { do: 'switch', name }; }
+  else if (act === 'export') {
+    const s = await fetch('/api/studio').then((r) => r.json());
+    const blob = new Blob([JSON.stringify({ multistream: 'scene collection', name: cur, scenes: s.scenes, audio: s.audio, current: s.current }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = cur.replace(/[\\/:*?"<>|]/g, '_') + '.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    flash('Exported "' + cur + '".', true); return;
+  } else if (act === 'import') {
+    // our own exported file, or a scene collection exported from OBS (Scene Collection, Export)
+    const f = $('#file'); f.value = ''; f.accept = '.json,application/json';
+    const file = await new Promise((ok) => { f.onchange = () => ok(f.files[0] || null); f.click(); }); if (!file) return;
+    let j; try { j = JSON.parse(await file.text()); } catch { alert('That file could not be read.'); return; }
+    let data = j; if (Array.isArray(j.sources)) { try { data = importObs(j); } catch { alert('That file could not be read as an OBS scene file.'); return; } }
+    if (!data || !Array.isArray(data.scenes) || !data.scenes.length) { alert('No scenes found in that file.'); return; }
+    const n = await askName('Name for the imported scene collection', j.name || file.name.replace(/\.json$/i, '')); if (!n) return;
+    body = { do: 'import', name: n, data: { scenes: data.scenes, audio: data.audio || [], current: data.current || '' } };
+  } else return;
+  if (wantSend && ['new', 'switch', 'remove', 'import'].includes(act) && !confirm('You are streaming. The scenes on air change to the other scene collection. Continue?')) return;
+  // send any change still waiting first, so it is not lost or saved into the other collection
+  if (saveT) { clearTimeout(saveT); saveT = 0; try { await fetch('/api/studio', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scenes: studio.scenes, audio: studio.audio, ...(dirtyCurrent ? { current: studio.current } : {}) }) }); dirtyCurrent = false; } catch {} }
+  const r = await fetch('/api/collections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()).catch(() => ({ error: 'The app did not answer' }));
+  if (r.error) { flash(r.error, false); return; }
+  await reloadStudio(); flash('Scene collection: ' + r.current, true);
+};
 $('#impBtn').onclick = () => {
   const f = $('#file'); f.value = ''; f.accept = '.json,application/json';
   f.onchange = async () => {

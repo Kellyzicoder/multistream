@@ -321,6 +321,20 @@ async function until(fn, ms, what) {
   assert.strictEqual(badUrl, 400, 'a tcp:// channel address is refused');
   ok('phone control is gone (port 3000 stays closed) and channel addresses must be rtmp(s)');
 
+  // 12. scene collections: a new one starts with one empty scene, switching back brings the scenes back, removing leaves one
+  const col = (b) => dash.evaluate((x) => fetch('/api/collections', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(x) }).then((r) => r.json()), b);
+  const sceneNames = () => dash.evaluate(() => fetch('/api/studio').then((r) => r.json()).then((s) => s.scenes.map((x) => x.name)));
+  const before = await sceneNames(), first = (await dash.evaluate(() => fetch('/api/collections').then((r) => r.json()))).current;
+  let c = await col({ do: 'new', name: 'Test collection' });
+  assert.ok(c.ok && c.current === 'Test collection' && c.names.includes(first), 'new collection: ' + JSON.stringify(c));
+  assert.deepStrictEqual(await sceneNames(), ['Scene'], 'a new collection starts with one empty scene');
+  c = await col({ do: 'switch', name: first }); assert.ok(c.ok, 'switch back: ' + JSON.stringify(c));
+  assert.deepStrictEqual(await sceneNames(), before, 'switching back brings the scenes back');
+  await col({ do: 'switch', name: 'Test collection' }); c = await col({ do: 'remove' });
+  assert.ok(c.ok && c.current === first && c.names.length === 1, 'remove: ' + JSON.stringify(c));
+  assert.deepStrictEqual(await sceneNames(), before, 'after removing, the first collection is in use again');
+  ok('scene collections: new, switch, remove');
+
   await dash.screenshot({ path: path.join(OUT, '4-dashboard-after.png') });
   await app.close();
   // one 400 is expected: the tcp:// channel address that step 11 sends on purpose
