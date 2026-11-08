@@ -683,53 +683,6 @@ app.post('/api/recordings/:act', (req, res) => {
   res.status(404).json({ error: 'Unknown' });
 });
 
-// ---- Analytics: while live on YouTube or Facebook, how many people watch (every minute), likes, views and comments ----
-const AN_FILE = path.join(DATA_DIR, 'analytics.json');
-let anList = []; try { anList = JSON.parse(fs.readFileSync(AN_FILE, 'utf8')); if (!Array.isArray(anList)) anList = []; } catch {}
-let anCur = null;
-const saveAn = () => { try { fs.writeFileSync(AN_FILE, JSON.stringify(anList.slice(0, 40))); } catch {} };
-async function ytStats(r) {
-  if (!r.yt || !r.yt.id || !yt.refreshToken) return null;
-  const v = ((await ytApi('GET', 'videos', { part: 'liveStreamingDetails,statistics', id: r.yt.id })).items || [])[0];
-  if (!v) return null;
-  const st = v.statistics || {};
-  r.yt.views = Number(st.viewCount) || r.yt.views || 0; r.yt.likes = Number(st.likeCount) || 0; r.yt.comments = Number(st.commentCount) || r.yt.comments || 0;
-  return Number((v.liveStreamingDetails || {}).concurrentViewers) || 0;
-}
-async function fbStats(r) {
-  if (!r.fb || !r.fb.id || !fb.token) return null;
-  const j = await fetch(`${GRAPH}/${r.fb.id}?${new URLSearchParams({ fields: 'live_views,video', access_token: fb.token })}`).then((x) => x.json());
-  if (j.video && j.video.id) r.fb.videoId = j.video.id;
-  if (r.fb.videoId) {
-    try { const k = await fetch(`${GRAPH}/${r.fb.videoId}/video_insights?${new URLSearchParams({ metric: 'total_video_views', access_token: fb.token })}`).then((x) => x.json()); const v = (((k.data || [])[0] || {}).values || [])[0]; if (v && Number(v.value)) r.fb.views = Number(v.value); } catch {}
-  }
-  return j.live_views == null ? null : Number(j.live_views) || 0;
-}
-async function anTick() {
-  if (!session.youtube && !session.facebook) { if (anCur) { const r = anCur; anCur = null; r.end = Date.now(); try { await ytStats(r); } catch {} try { await fbStats(r); } catch {} saveAn(); } return; }
-  if (!anCur) { const d = new Date(); anCur = { id: Date.now().toString(36), title: gl.title || 'Live ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), start: Date.now(), end: 0, samples: [], yt: null, fb: null }; anList.unshift(anCur); }
-  const r = anCur, smp = { t: Date.now(), yt: null, fb: null };
-  if (session.youtube) { r.yt = r.yt && r.yt.id === session.youtube ? r.yt : { id: session.youtube, views: 0, likes: 0, comments: 0, peak: 0, peakAt: 0, chat: 0 }; try { smp.yt = await ytStats(r); } catch {} }
-  if (session.facebook) { r.fb = r.fb && r.fb.id === session.facebook ? r.fb : { id: session.facebook, views: 0, peak: 0, peakAt: 0, chat: 0 }; try { smp.fb = await fbStats(r); } catch {} }
-  const items = chat.view(0).items;
-  if (r.yt) r.yt.chat = Math.max(r.yt.chat || 0, items.filter((m) => m.source === 'youtube').length);
-  if (r.fb) r.fb.chat = Math.max(r.fb.chat || 0, items.filter((m) => m.source === 'facebook').length);
-  if (r.yt && smp.yt != null && smp.yt >= r.yt.peak) { r.yt.peak = smp.yt; r.yt.peakAt = smp.t; }
-  if (r.fb && smp.fb != null && smp.fb >= r.fb.peak) { r.fb.peak = smp.fb; r.fb.peakAt = smp.t; }
-  r.samples.push(smp); if (r.samples.length > 480) r.samples.shift();
-  r.title = gl.title || r.title;
-  saveAn();
-}
-setInterval(() => { anTick().catch(() => {}); }, 60000);
-app.get('/api/analytics', (req, res) => res.json({ live: Boolean(anCur), list: anList.slice(0, 40) }));
-app.post('/api/analytics/refresh', async (req, res) => {
-  const r = anList.find((x) => x.id === String((req.body || {}).id || ''));
-  if (!r) return res.status(404).json({ error: 'Not found' });
-  try { await ytStats(r); } catch (e) { return res.json({ error: 'YouTube: ' + e.message }); }
-  try { await fbStats(r); } catch {}
-  saveAn(); res.json({ ok: true });
-});
-
 // ---- Auto start: a plan of steps (play a video, show scenes) that the Studio runs when you press Start streaming ----
 const AS_FILE = path.join(DATA_DIR, 'autostart.json');
 let asPlan = { on: false, name: 'My plan', ask: true, offAfter: false, onMissing: 'skip', steps: [] };
@@ -941,7 +894,6 @@ app.post('/api/facebook/live', async (req, res) => {
     startDestination(d);
     session.facebook = j.id || '';
     chat.startFacebook(j.id);
-    setTimeout(() => anTick().catch(() => {}), 20000);
     res.json({ ok: true, liveVideoId: j.id || '' });
   } catch {
     res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' });
@@ -1114,7 +1066,6 @@ app.post('/api/youtube/live', async (req, res) => {
     }
     session.youtube = b.id;
     chat.startYoutube(liveChatId);
-    setTimeout(() => anTick().catch(() => {}), 20000);
     res.json({ ok: true, broadcastId: b.id, thumbnailError });
   } catch (e) {
     res.status(502).json({ error: e.message });
