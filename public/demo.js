@@ -24,8 +24,8 @@ window.demoApi = function (url, method) {
   else if (p === '/api/obs') out = base.obs;
   else if (p === '/api/obs/thumbs' || p === '/api/obs/shots') out = {};
   else if (p === '/api/obs/levels') out = { levels: {}, muted: {} };
-  else if (p === '/api/studio/shots') out = { alive: false };
-  else if (p === '/api/studio') out = { scenes: [], current: '' };
+  else if (p === '/api/studio/shots') out = { alive: true, rev: 1, prog: demoPic(3), thumbs: Object.fromEntries(DEMO_SC.map((n, i) => [n, demoPic(i)])) };
+  else if (p === '/api/studio') out = { scenes: DEMO_SC.map((name) => ({ name, layers: [] })), current: 'Camera', rev: 1 };
   else if (p === '/api/facebook') out = base.facebook;
   else if (p === '/api/youtube') out = base.youtube;
   else if (p === '/api/preflight') out = { at: Date.now(), results: [{ id: 'yt', label: 'YouTube', state: 'ok', detail: 'Connected: Favourite Child Church - HQ.' }, { id: 'fb', label: 'Facebook', state: 'bad', detail: 'Facebook said: (#190) Error validating access token. You may need a new token (Settings, then Facebook).' }, { id: 'sig', label: 'OBS signal', state: 'ok', detail: 'Video is arriving at 4.5 Mbps.' }, { id: 'key', label: 'Keyframe', state: 'warn', detail: 'Every 3.5 seconds. 2 is best. In OBS: Settings, Output, Keyframe Interval, 2.' }, { id: 'disk', label: 'Space for recording', state: 'ok', detail: '46.6 GB free. An hour of recording is about 2 GB.' }] };
@@ -46,3 +46,14 @@ window.demoApi = function (url, method) {
   else out = {};
   return Promise.resolve(out);
 };
+
+// pictures for the demo Multiview: soft colours, like the design
+const DEMO_SC = ['Countdown', 'Welcome', 'Camera', 'Scripture Lowerthird', 'Offering', 'Backup Screen', 'Worship Lyrics', 'Announcements'];
+const DEMO_PICS = {};
+function demoPic(i) {
+  if (DEMO_PICS[i]) return DEMO_PICS[i];
+  const c = document.createElement('canvas'); c.width = 320; c.height = 180; const x = c.getContext('2d');
+  const cols = [['#1d2a5e', '#0e1430'], ['#14363a', '#1d2a5e'], ['#262a63', '#3a1f5e'], ['#3a2a14', '#1c1430'], ['#123a33', '#0e1a30'], ['#2a2a35', '#14141c'], ['#1f3a5e', '#2a1440'], ['#3a1430', '#14203a']][i % 8];
+  const g = x.createLinearGradient(0, 0, 320, 180); g.addColorStop(0, cols[0]); g.addColorStop(1, cols[1]); x.fillStyle = g; x.fillRect(0, 0, 320, 180);
+  return (DEMO_PICS[i] = c.toDataURL('image/png'));
+}
