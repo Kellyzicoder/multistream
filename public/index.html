@@ -545,6 +545,11 @@
   .chs .gl { padding:0; }
   .chs .gl .gr:first-child { border-top:0; }
   @media (max-width:1000px) { .mainc { display:contents; } .sd { order:2; grid-template-columns:1fr; } .sd-f { grid-template-columns:1fr; } }
+
+  /* channel logo tiles */
+  .tile { width:38px; height:38px; flex:none; border-radius:11px; display:grid; place-items:center; box-shadow:inset 0 0 0 1px rgba(255,255,255,.12), 0 4px 12px rgba(0,0,0,.25); }
+  .tile svg { width:24px; height:24px; }
+  .ch { align-items:center; }
 </style>
 </head>
 <body>
@@ -654,11 +659,13 @@
       </div>
       <div class="gl">
       <div class="gr">
+        <span class="tile-yt"></span>
         <div class="who"><b>YouTube</b><span id="ytSub">Not connected</span></div>
         <button class="ghost" id="ytBtn" type="button" title="Connect the YouTube account">Set up</button>
         <button class="go" id="ytLive" type="button" disabled title="Start Streaming in the Studio first, and connect YouTube">Go live</button>
       </div>
       <div class="gr">
+        <span class="tile-fb"></span>
         <div class="who"><b>Facebook</b><span id="fbSub">No Page added</span></div>
         <button class="ghost" id="fbBtn" type="button" title="Add the Facebook Page ID and token">Set up</button>
         <button class="go" id="fbLive" type="button" disabled title="Start Streaming in the Studio first, and add the Facebook Page">Go live</button>
@@ -893,6 +900,7 @@ const CHECK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const WARN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5M12 16.5v.1"/></svg>';
 
 document.querySelectorAll('[data-copy]').forEach((b) => (b.innerHTML = COPY_ICON));
+setTimeout(() => { const y = $('.tile-yt'), f = $('.tile-fb'); if (y) y.outerHTML = tileHTML('yt'); if (f) f.outerHTML = tileHTML('fb'); }, 0);
 
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 
@@ -900,12 +908,24 @@ function initials(name) {
   const w = String(name).trim().split(/\s+/).filter(Boolean);
   return (w.length > 1 ? w[0][0] + w[1][0] : (w[0] || '?')[0]).toUpperCase();
 }
+// a modern, rounded logo tile for each kind of channel (simple shapes, not the companies' own logos)
+const TILE = {
+  yt: ['#ff2d2d', '<path d="M8.5 6.8c0-.9 1-1.5 1.8-1l7.6 4.7c.7.5.7 1.5 0 2l-7.6 4.7c-.8.5-1.8-.1-1.8-1z" fill="#fff"/>'],
+  fb: ['#1f6feb', '<path d="M13.4 20v-6.6h2.3l.4-2.7h-2.7V9c0-.8.3-1.4 1.4-1.4h1.4V5.2c-.3 0-1.1-.1-2-.1-2 0-3.4 1.2-3.4 3.5v2.1H8.5v2.7h2.3V20z" fill="#fff"/>'],
+  ig: ['linear-gradient(45deg,#f9a03f,#e1306c 45%,#833ab4)', '<rect x="4.5" y="4.5" width="15" height="15" rx="4.5" fill="none" stroke="#fff" stroke-width="1.9"/><circle cx="12" cy="12" r="3.4" fill="none" stroke="#fff" stroke-width="1.9"/><circle cx="16.4" cy="7.6" r="1.1" fill="#fff"/>'],
+  tt: ['#0b0b0f', '<path d="M14 4.5v9.6a3.4 3.4 0 1 1-3.4-3.4M14 4.5c.5 2.4 2.3 3.9 4.7 4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>'],
+  x: ['#0b0b0f', '<path d="M6 5.5l12 13M18 5.5l-12 13" stroke="#fff" stroke-width="2" stroke-linecap="round"/>'],
+  tw: ['#9146ff', '<path d="M6 4.5h13v8.3l-3.6 3.6h-3l-2.6 2.6v-2.6H6z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M11 8.3v3.6M15 8.3v3.6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>'],
+  other: ['#2b3354', '<path d="M12 15V5.5M8 9.3l4-3.8 4 3.8M6 18.5h12" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>'],
+};
+function tileHTML(c) { const t = TILE[c] || TILE.other; return '<span class="tile" style="background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%),' + t[0] + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + t[1] + '</svg></span>'; }
 function platform(name) {
   const n = String(name).toLowerCase();
   if (/facebook|^fb\b|\bfb\b/.test(n)) return { c: 'fb', t: 'f' };
   if (/youtube|\byt\b/.test(n)) return { c: 'yt', t: '▶' };
   if (/instagram|\big\b|\binsta/.test(n)) return { c: 'ig', t: 'IG' };
   if (/tiktok/.test(n)) return { c: 'tt', t: '♪' };
+  if (/twitch/.test(n)) return { c: 'tw', t: '' };
   if (/^x$|\bx\b|twitter/.test(n)) return { c: 'x', t: 'X' };
   return { c: 'other', t: '' };
 }
@@ -932,7 +952,7 @@ function rowHTML(d) {
       · ${needsKey ? '<a data-act="edit">Add now</a>' : '<a data-act="restart">Restart</a>'}</div></div>` : '';
   return `
     <div class="ch" data-id="${d.id}">
-      <div class="av">${esc(initials(d.name))}<span class="bd ${p.c}">${p.t}</span></div>
+      ${tileHTML(p.c)}
       <div class="cmain">
         <div class="l1">
           <span class="nm">${esc(d.name)}</span>
