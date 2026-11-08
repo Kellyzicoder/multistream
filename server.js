@@ -102,7 +102,7 @@ const status = new Map(); // id -> { state, message }
 const destStats = new Map(); // id -> { kbps, speed }  (what we are really sending to each platform)
 
 // ---- alerts: pushed to the open pages as they happen (no polling) ----
-// Each page joins one group: 'stream' (Stream and Control Room) or 'studio' (the Studio window).
+// Each page joins one group: 'stream' (Stream and Multiview) or 'studio' (the Studio window).
 // A channel problem goes to 'stream'; a problem with the video from the Studio goes to 'studio'.
 // The app keeps one alert per source (for example "YouTube"), so retries update it instead of piling up,
 // and a page that opens later (or reloads) still gets the alerts that are not dismissed yet.
@@ -960,8 +960,8 @@ app.get('/api/studio/ipcam', (req, res) => {
   r.on('error', () => { try { res.status(502).end(); } catch {} });
   req.on('close', () => r.destroy());
 });
-// pictures of the scenes, drawn by the studio page and shown in the Control Room
-// The Studio only draws these while a Control Room is looking (it asks `watching` in the answer), so a Studio that is
+// pictures of the scenes, drawn by the studio page and shown in the Multiview
+// The Studio only draws these while a Multiview is looking (it asks `watching` in the answer), so a Studio that is
 // sending, recording and running the virtual camera does not also draw pictures nobody sees.
 let studioShots = { at: 0, prog: '', pv: '', thumbs: {}, tv: 0, watched: 0 };
 app.put('/api/studio/shots', (req, res) => {
@@ -974,7 +974,7 @@ app.put('/api/studio/shots', (req, res) => {
   }
   res.json({ ok: true, watching: Date.now() - studioShots.watched < 3000, wantThumbs: studioShots.tv === 0 });
 });
-// ?tv=N: the Control Room already has the small scene pictures number N, so they are not sent again
+// ?tv=N: the Multiview already has the small scene pictures number N, so they are not sent again
 app.get('/api/studio/shots', (req, res) => {
   studioShots.watched = Date.now();
   const tv = Number((req.query || {}).tv);

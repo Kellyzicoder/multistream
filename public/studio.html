@@ -267,7 +267,7 @@
 <body>
 <div class="alertbar" id="alertBar" role="alert"><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 <div class="obs">
-  <nav class="pagetabs" aria-label="Pages"><button type="button" id="tabStream" title="Go to the Stream page">Stream</button><button type="button" aria-pressed="true" title="You are here">Studio</button><button type="button" id="tabCr" title="Open the Control Room">Control Room</button></nav>
+  <nav class="pagetabs" aria-label="Pages"><button type="button" id="tabStream" title="Go to the Stream page">Stream</button><button type="button" aria-pressed="true" title="You are here">Studio</button><button type="button" id="tabCr" title="Open the Multiview">Multiview</button></nav>
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
   <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside><div class="split v" id="splitL" title="Drag to make the left panels wider or narrower" hidden></div>
   <div class="stage">
@@ -342,7 +342,6 @@
       <div class="spanes">
         <section class="sp" data-sp="general">
           <h3>Studio</h3>
-          <div class="f"><label>Open the Studio in</label><select id="studioOpen"><option value="same">The same window as the Stream page</option><option value="window">A new window</option></select></div>
           <p class="note">This is also on the Stream page under Settings, Appearance. It applies the next time you open the Studio.</p>
           <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
           <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
@@ -1837,7 +1836,6 @@ function showPane(n) {
 document.querySelectorAll('#setNav button').forEach((b) => { b.onclick = () => showPane(b.dataset.sp); });
 function openSettings(pane) {
   fillMon(); lockOut();
-  try { $('#studioOpen').value = localStorage.getItem('ms_studio_open') || 'same'; } catch {}
   $('#optSnap').checked = snapOn; $('#optConfirm').checked = askStop;
   $('#setBox').hidden = false; showPane(typeof pane === 'string' ? pane : spane);
 }
@@ -1850,13 +1848,12 @@ let snapOn = true, askStop = false;
 try { snapOn = localStorage.getItem('ms_snap') !== '0'; askStop = localStorage.getItem('ms_askstop') === '1'; } catch {}
 $('#optSnap').onchange = () => { snapOn = $('#optSnap').checked; try { localStorage.setItem('ms_snap', snapOn ? '1' : '0'); } catch {} };
 $('#optConfirm').onchange = () => { askStop = $('#optConfirm').checked; try { localStorage.setItem('ms_askstop', askStop ? '1' : '0'); } catch {} };
-$('#studioOpen').onchange = () => { try { localStorage.setItem('ms_studio_open', $('#studioOpen').value); } catch {} };
 // Encode once: the browser's H.264 is passed on as it is. fastOff becomes true for this session if that fails here.
 let fastOff = false;
 const useFast = (mt) => !fastOff && /h264/.test(mt || '');
 $('#resetStudio').onclick = () => {
   if (!confirm('Put the video size, recording quality, transition, monitoring output and options back to how they started?')) return;
-  ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_studio_open', 'ms_layout'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_layout'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
   flash('Studio settings were reset. Close and open the Studio to see them.', true); closeSettings();
 };
 // ----- Video pane: which encoder is used -----
@@ -2026,7 +2023,7 @@ $('#projBtn').onclick = () => {
   projWin.document.body.appendChild(v); v.play().catch(() => {});
 };
 
-// ---------------- follow the phone / Control Room, and give it pictures ----------------
+// ---------------- follow the phone / Multiview, and give it pictures ----------------
 async function poll() {
   try {
     // ?rev: the app answers with the scenes only when they changed since the last look
@@ -2054,7 +2051,7 @@ let thumbs = {}, thumbAt = 0, shotBusy = false, watching = true, pingAt = 0;
 async function shots() {
   if (shotBusy) return; shotBusy = true;
   try {
-    // nobody is looking at the Control Room: skip the drawing, only say "still here" now and then
+    // nobody is looking at the Multiview: skip the drawing, only say "still here" now and then
     if (!watching) {
       if (Date.now() - pingAt < 1500) { shotBusy = false; return; }
       pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;

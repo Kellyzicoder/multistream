@@ -99,8 +99,8 @@ async function until(fn, ms, what) {
       ] }] }) });
   });
 
-  // 4b. "Open the Studio in: the same window" replaces the dashboard, and a button comes back
-  await dash.evaluate(() => localStorage.setItem('ms_studio_open', 'same'));
+  // 4b. the Studio opens in the same window (it replaces the dashboard), and a button comes back
+  await dash.evaluate(() => localStorage.removeItem('ms_studio_window'));
   await dash.click('#pageTabs [data-page=studio]');
   await until(() => dash.url().includes('studio.html?same=1'), 20000, 'the Studio in the same window');
   await dash.waitForLoadState('domcontentloaded'); await sleep(1500);
@@ -110,7 +110,7 @@ async function until(fn, ms, what) {
   await until(() => dash.url() === 'app://multistream/', 20000, 'back to the dashboard');
   await dash.waitForLoadState('domcontentloaded'); await sleep(2000);
   ok('Studio can open in the same window (one window only) and the Dashboard button comes back');
-  await dash.evaluate(() => localStorage.setItem('ms_studio_open', 'window'));
+  await dash.evaluate(() => localStorage.setItem('ms_studio_window', '1')); // test only: the rest of the test needs the Stream page and the Studio side by side
 
   // 5. open the Studio from the dashboard
   const [studio] = await Promise.all([app.waitForEvent('window', { timeout: 30000 }), dash.click('#pageTabs [data-page=studio]')]);
