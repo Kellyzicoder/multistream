@@ -2063,9 +2063,10 @@ async function poll() {
     }
   } catch {}
 }
-const small = document.createElement('canvas'); small.width = 480; small.height = 270;
+// Multiview pictures: Preview and Program at 960x540 (sharp on a big screen), scene pictures at 480x270
+const small = document.createElement('canvas'); small.width = 960; small.height = 540;
 const sctx = small.getContext('2d');
-const tiny = document.createElement('canvas'); tiny.width = 320; tiny.height = 180; const tctx = tiny.getContext('2d');
+const tiny = document.createElement('canvas'); tiny.width = 480; tiny.height = 270; const tctx = tiny.getContext('2d');
 let thumbs = {}, thumbAt = 0, shotBusy = false, watching = true, pingAt = 0;
 async function shots() {
   if (shotBusy) return; shotBusy = true;
@@ -2076,14 +2077,14 @@ async function shots() {
       pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;
     }
     // the Program picture is a small copy of what is on air (one quick copy, not drawing the scene again)
-    if (cv.width >= 480) sctx.drawImage(cv, 0, 0, 480, 270); else drawScene(sctx, byName(studio.current), 480 / SW, true);
-    const prog = small.toDataURL('image/jpeg', 0.5);
-    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 480 / SW, false); pv = small.toDataURL('image/jpeg', 0.5); }
+    if (cv.width >= 960) sctx.drawImage(cv, 0, 0, 960, 540); else drawScene(sctx, byName(studio.current), 960 / SW, true);
+    const prog = small.toDataURL('image/jpeg', 0.8);
+    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 960 / SW, false); pv = small.toDataURL('image/jpeg', 0.8); }
     const body = { prog, pv };
     // the small scene pictures are sent only when one of them changed (a scene with a camera changes each time)
-    if (Date.now() - thumbAt > 4000 || !Object.keys(thumbs).length) {
+    if (Date.now() - thumbAt > 1500 || !Object.keys(thumbs).length) {
       thumbAt = Date.now(); const next = {};
-      studio.scenes.forEach((s) => { drawScene(tctx, s, 320 / SW, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.5); });
+      studio.scenes.forEach((s) => { drawScene(tctx, s, 480 / SW, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.75); });
       const names = Object.keys(next), changed = names.length !== Object.keys(thumbs).length || names.some((n) => next[n] !== thumbs[n]);
       thumbs = next;
       if (changed) body.thumbs = thumbs;
@@ -2103,7 +2104,7 @@ async function shots() {
   if (!byName(studio.current)) { studio.current = studio.scenes[0].name; dirtyCurrent = true; }
   editing = studio.current;
   renderAll(); await loadDevices(); ensureAudio();
-  setInterval(poll, 700); setInterval(shots, 400);
+  setInterval(poll, 700); setInterval(shots, 200); // Multiview pictures 5 times a second (only while a Multiview is open)
 })();
 </script>
 <div id="keysBox" hidden style="position:fixed;right:12px;top:52px;z-index:50;background:var(--card,#101814);border:1px solid var(--line);border-radius:10px;padding:12px 14px;max-width:300px;font-size:13px;line-height:1.7;box-shadow:0 8px 30px #0008">
