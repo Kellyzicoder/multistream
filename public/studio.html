@@ -68,9 +68,14 @@
   html, body { height:100%; }
   body { display:flex; flex-direction:column; overflow:hidden; font-size:13px; }
   .obs { display:flex; flex-direction:column; height:100vh; }
-  .pagetabs { display:flex; gap:6px; padding:2px 0 0; flex:none; }
-  .pagetabs button { padding:4px 14px; border-radius:999px; background:var(--btn); font-size:12px; }
-  .pagetabs button[aria-pressed="true"] { background:var(--sel); color:var(--onsel); }
+  /* the top bar: the same as the Go Live page (logo, then Go Live / Studio / Multiview in one rounded group) */
+  .ptop { display:flex; align-items:center; gap:14px; height:48px; flex:none; padding:0 16px; border-radius:999px; border:1px solid var(--gl-line); background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
+  .ptop .brand { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; letter-spacing:.3px; }
+  .ptop .brand svg { width:22px; height:28px; color:var(--sel); }
+  .pagetabs { display:inline-flex; padding:3px; border:1px solid var(--gl-line); border-radius:999px; background:var(--gl2); box-shadow:inset 0 1px 0 var(--gl-hi); }
+  .pagetabs button { white-space:nowrap; border:0; background:transparent; color:var(--muted); padding:6px 16px; border-radius:999px; font-size:12px; font-weight:500; box-shadow:none; }
+  .pagetabs button:hover { color:var(--text); background:transparent; }
+  .pagetabs button[aria-pressed="true"] { background:var(--gl-hi); color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.18); }
   .stage { flex:1; min-height:0; display:flex; align-items:center; gap:10px; padding:10px; }
   .screen { flex:1; min-width:0; display:flex; flex-direction:column; height:100%; justify-content:center; }
   .screen .cap { text-align:center; font-size:12px; color:var(--muted); margin-bottom:4px; }
@@ -277,7 +282,8 @@
 <body>
 <div class="alertbar" id="alertBar" role="alert"><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 <div class="obs">
-  <nav class="pagetabs" aria-label="Pages"><button type="button" id="tabStream" title="Go to the Stream page">Stream</button><button type="button" aria-pressed="true" title="You are here">Studio</button><button type="button" id="tabCr" title="Open the Multiview">Multiview</button></nav>
+  <header class="ptop"><div class="brand"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="var(--red)"/></svg><span>Multistream</span></div>
+  <nav class="pagetabs" aria-label="Pages"><button type="button" id="tabStream" title="Go to the Go Live page">Go Live</button><button type="button" aria-pressed="true" title="You are here">Studio</button><button type="button" id="tabCr" title="Open the Multiview">Multiview</button></nav></header>
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
   <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside><div class="split v" id="splitL" title="Drag to make the left panels wider or narrower" hidden></div>
   <div class="stage">
@@ -326,7 +332,7 @@
   </div>
 
   <!-- status bar, like OBS -->
-  <footer class="status"><button id="backBtn" hidden title="Go back to the Stream page">&larr; Stream</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
+  <footer class="status"><button id="backBtn" hidden title="Go back to the Go Live page">&larr; Go Live</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
 </div>
 
 <!-- Properties window, like OBS -->
@@ -351,17 +357,17 @@
       <div class="spanes">
         <section class="sp" data-sp="general">
           <h3>Studio</h3>
-          <p class="note">This is also on the Stream page under Settings, Appearance. It applies the next time you open the Studio.</p>
+          <p class="note">This is also on the Go Live page under Settings, Appearance. It applies the next time you open the Studio.</p>
           <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
           <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
           <div class="f"><label>Panels</label><span><button id="resetLayout" type="button">Put the panels back</button> <span class="note">Drag a panel's title to move it. Drag it up to float it, or drop it on the bottom row to dock it again.</span></span></div>
           <h3>Scenes and windows</h3>
           <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes from OBS...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
-          <p class="note">The colours follow the Stream page (Settings, Appearance).</p>
+          <p class="note">The colours follow the Go Live page (Settings, Appearance).</p>
         </section>
         <section class="sp" data-sp="channels">
           <h3>Where your video goes</h3>
-          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the Stream page under Settings.</p>
+          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the Go Live page under Settings.</p>
           <div id="chanList"></div>
           <h3>Add a channel</h3>
           <div class="f"><label>Site</label><select id="chType"><option value="youtube">YouTube</option><option value="facebook">Facebook</option><option value="other">Instagram or another site</option></select></div>
@@ -1485,7 +1491,7 @@ function openPipe(p) {
 if (/[?&]same=1/.test(location.search) && window.msNative) {
   $('#backBtn').hidden = false;
   $('#backBtn').onclick = () => {
-    if ((wantSend || recWs) && !confirm('Going back to the Stream page stops streaming and recording. Go back?')) return;
+    if ((wantSend || recWs) && !confirm('Going back to the Go Live page stops streaming and recording. Go back?')) return;
     window.msNative.openDashboard();
   };
 }
@@ -2257,7 +2263,7 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   layout();
 })();
 // Studio alerts (no video arriving, video stopped) and Stream alerts (a channel stopped) both show here,
-// because the Stream is the most important. Dismiss here clears both; Dismiss on the Stream page clears its own.
+// because the Stream is the most important. Dismiss here clears both; Dismiss on the Go Live page clears its own.
 (function () {
   // Alerts are pushed by the app as they happen (no polling). In the app they come through a pipe;
   // in a browser on the church Wi-Fi they come through an event stream. If the link drops it comes back.
