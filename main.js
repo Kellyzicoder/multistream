@@ -4,6 +4,9 @@
 const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet, screen, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
+// The app was called "Multistream 3". Its saved settings (keys, scenes, sign-ins) are in a folder with that name:
+// keep using it, so nothing has to be typed in again after the name changed to "Multistream".
+try { const old = path.join(app.getPath('appData'), 'Multistream 3'); if (fs.existsSync(old)) app.setPath('userData', old); } catch {}
 const { spawn } = require('child_process');
 const { Readable } = require('stream');
 

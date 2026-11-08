@@ -25,7 +25,7 @@
   },
   "build": {
     "appId": "com.multistream.app.v3",
-    "productName": "Multistream 3",
+    "productName": "Multistream",
     "files": [
       "main.js",
       "preload.js",
@@ -69,14 +69,14 @@
       ]
     },
     "nsis": {
-      "artifactName": "Multistream3-Setup.exe"
+      "artifactName": "Multistream-Setup.exe"
     },
     "dmg": {
-      "artifactName": "Multistream3-Mac-${arch}.dmg"
+      "artifactName": "Multistream-Mac-${arch}.dmg"
     },
     "linux": {
       "target": "AppImage",
-      "artifactName": "Multistream3-Linux.AppImage",
+      "artifactName": "Multistream-Linux.AppImage",
       "category": "AudioVideo"
     },
     "mac": {
