@@ -98,9 +98,9 @@ function createWindow() {
     title: 'Multistream',
     autoHideMenuBar: false,
     backgroundColor: '#eaf1fb',
-    // the Go Live page may slow down while minimised or hidden (it only shows things); the Studio makes the video,
-    // so it never slows down (see ms-open-studio)
-    webPreferences: { contextIsolation: true, nodeIntegration: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
+    // the Studio runs inside this window (in the background while you look at other pages) and makes the video,
+    // so the window never slows down. The app's own pages inside it (the Studio) get the app's helpers too.
+    webPreferences: { contextIsolation: true, nodeIntegration: false, nodeIntegrationInSubFrames: true, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
   win.webContents.on('did-fail-load', (e, code, desc, url) => console.error('Page failed to load:', code, desc, url));
   win.loadURL(HOME + '/').catch((e) => console.error('Dashboard did not load:', e && e.message));
@@ -186,12 +186,13 @@ function openMultiview(displayId) {
 const browsers = new Map();
 handleIpc('ms-browser-open', (e, id, url, w, h) => {
   if (browsers.has(id)) return;
+  const to = e.senderFrame;
   if (!/^https?:\/\//i.test(String(url))) return;
   const b = new BrowserWindow({ show: false, width: w || 1920, height: h || 1080, transparent: true, frame: false, webPreferences: { offscreen: true, backgroundThrottling: false, session: webSourcesSession(), sandbox: true, contextIsolation: true, nodeIntegration: false } });
   b.webContents.setFrameRate(15);
   b.webContents.on('paint', (ev, dirty, image) => {
     const size = image.getSize();
-    if (!e.sender.isDestroyed()) e.sender.send('ms-frame', id, size.width, size.height, image.toBitmap());
+    if (!e.sender.isDestroyed()) { try { to.send('ms-frame', id, size.width, size.height, image.toBitmap()); } catch {} }
   });
   b.webContents.setAudioMuted(false);
   b.loadURL(String(url)).catch(() => {});
@@ -207,9 +208,11 @@ const pipeWatch = new Set();
 function closePipesOf(senderId) {
   for (const [key, w] of pipes) if (key.startsWith(senderId + ':')) { pipes.delete(key); w.windowClosed(); }
 }
+// a page inside the window (the Studio) has its own pipes, so the key names the frame too
+const frameKey = (e) => e.sender.id + ':' + (e.senderFrame ? e.senderFrame.processId + '.' + e.senderFrame.routingId : '0');
 onIpc('ms-pipe-open', (e, id, p) => {
-  const key = e.sender.id + ':' + id, sid = e.sender.id;
-  const toWindow = (type, data) => { if (!e.sender.isDestroyed()) e.sender.send('ms-pipe-ev', id, type, data); if (type === 'close') pipes.delete(key); };
+  const key = frameKey(e) + ':' + id, sid = e.sender.id, frame = e.senderFrame;
+  const toWindow = (type, data) => { if (!e.sender.isDestroyed()) { try { frame.send('ms-pipe-ev', id, type, data); } catch {} } if (type === 'close') pipes.delete(key); };
   const w = relay && relay.openPipe(String(p), toWindow);
   if (!w) { toWindow('close'); return; }
   pipes.set(key, w);
@@ -223,8 +226,8 @@ onIpc('ms-pipe-open', (e, id, p) => {
     wc.once('destroyed', () => { pipeWatch.delete(sid); closePipesOf(sid); });
   }
 });
-ipcMain.on('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(e.sender.id + ':' + id); if (w) w.fromWindow(data, isText); });
-ipcMain.on('ms-pipe-close', (e, id) => { const key = e.sender.id + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });
+ipcMain.on('ms-pipe-data', (e, id, data, isText) => { const w = pipes.get(frameKey(e) + ':' + id); if (w) w.fromWindow(data, isText); });
+ipcMain.on('ms-pipe-close', (e, id) => { const key = frameKey(e) + ':' + id; const w = pipes.get(key); if (w) { pipes.delete(key); w.windowClosed(); } });
 
 // choosing which screen to capture (for the screen with the lyrics)
 let picked = { id: '', name: '', kind: 'screen' };

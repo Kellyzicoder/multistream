@@ -144,15 +144,15 @@ function hideKey(text, key) {
 
 // ---- Stream health: what happened while live, reconnects and how long each channel has been live ----
 const healthLog = []; // { t, text } newest last
-function logHealth(text) { healthLog.push({ t: Date.now(), text }); if (healthLog.length > 60) healthLog.shift(); }
+function logHealth(text, kind) { healthLog.push({ t: Date.now(), text, kind: kind || '' }); if (healthLog.length > 60) healthLog.shift(); }
 const reconnects = new Map(); // id -> times a channel dropped and was started again
 const liveSince = new Map(); // id -> when it went live
 function setStatus(id, state, message = '') {
   const before = (status.get(id) || {}).state;
   status.set(id, { state, message });
   const d = destinations.find((x) => x.id === id), name = d ? d.name : 'A channel';
-  if (state === 'live' && before !== 'live') { if (!liveSince.has(id)) liveSince.set(id, Date.now()); logHealth(before === 'error' ? `${name} reconnected by itself.` : `${name} is live.`); }
-  if (state === 'error' && before !== 'error') { if (obsLive) reconnects.set(id, (reconnects.get(id) || 0) + 1); logHealth(`${name} dropped: ${message || 'no reason given'}`); }
+  if (state === 'live' && before !== 'live') { if (!liveSince.has(id)) liveSince.set(id, Date.now()); logHealth(before === 'error' ? `${name} dropped and reconnected by itself.` : `${name} is live.`, before === 'error' ? 'warn' : ''); }
+  if (state === 'error' && before !== 'error') { if (obsLive) reconnects.set(id, (reconnects.get(id) || 0) + 1); logHealth(`${name} dropped: ${message || 'no reason given'}`, 'warn'); }
   if (state === 'off' && before && before !== 'off') liveSince.delete(id);
   if (state === 'error' && (before !== 'error' || message)) sendAlert('stream', name, `stopped receiving: ${message || 'no reason given'}`);
   else if (state === 'live' && before !== 'live') resolveAlert('stream', name, 'back on air');
@@ -161,8 +161,9 @@ function setStatus(id, state, message = '') {
 // ---- signal numbers for the stream coming in from the Studio ----
 // A second ffmpeg reads the incoming stream, copies it to nowhere, and we count the bytes.
 // It does not decode video, so it costs very little.
-const signal = { startedAt: 0, video: null, audio: null, kbps: 0, lastDataAt: 0, history: [], keyframe: null };
+const signal = { startedAt: 0, video: null, audio: null, kbps: 0, lastDataAt: 0, history: [], drops: [], keyframe: null };
 let monitor = null;
+let lastDropTotal = 0; // dropped frames so far, so each second's new drops can be drawn
 let noSignalSent = false; // so the "no video" alert is sent once, not every second
 
 function resetSignal() {
@@ -172,6 +173,7 @@ function resetSignal() {
   signal.kbps = 0;
   signal.lastDataAt = 0;
   signal.history = [];
+  signal.drops = []; lastDropTotal = 0;
   signal.keyframe = null;
 }
 
@@ -208,6 +210,9 @@ function startMonitor() {
     if (bytes > 0) signal.lastDataAt = Date.now();
     signal.history.push(signal.kbps);
     if (signal.history.length > 90) signal.history.shift();
+    let dt = 0; destStats.forEach((x) => { dt += x.drops || 0; });
+    signal.drops.push(Math.max(0, dt - lastDropTotal)); lastDropTotal = dt;
+    if (signal.drops.length > 90) signal.drops.shift();
   }, 1000);
   m.stop = () => { clearInterval(timer); off(); sink.destroy(); };
   const off = hub.subscribe(sink, () => {
@@ -330,7 +335,7 @@ hub.on('start', () => {
   console.log('Video is coming in. Starting destinations...');
   obsLive = true;
   reconnects.clear(); liveSince.clear();
-  logHealth('Started sending: ' + (destinations.filter((d) => d.enabled).map((d) => d.name).join(', ') || 'no channels are on') + '.');
+  { const on = destinations.filter((d) => d.enabled).map((d) => d.name); logHealth('Started streaming to ' + (on.length ? on.join(' and ').replace(/ and (?=.* and )/g, ', ') : 'no channels') + '.'); }
   chat.clear();
   // small delay so the first keyframe is in the hub before the channels join
   setTimeout(() => {
@@ -470,7 +475,35 @@ function cpuPercent() {
   cpuPrev = now;
   return total > 0 ? Math.round((1 - idle / total) * 100) : 0;
 }
+// graphics card load (NVIDIA cards: nvidia-smi comes with the driver). Other cards: not shown.
+let gpu = { pct: null, at: 0, none: false };
+function readGpu() {
+  if (gpu.none || Date.now() - gpu.at < 4000) return; gpu.at = Date.now();
+  try {
+    const p = spawn('nvidia-smi', ['--query-gpu=utilization.gpu', '--format=csv,noheader,nounits'], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
+    let out = ''; p.stdout.on('data', (c) => { out += c; }); p.on('error', () => { gpu.none = true; });
+    p.on('close', (code) => { const v = parseInt(out, 10); if (code === 0 && Number.isFinite(v)) gpu.pct = v; else gpu.none = true; });
+  } catch { gpu.none = true; }
+}
+// internet upload test: sends 15 MB to Cloudflare's speed test and times it (about 2 to 10 seconds)
+let netTest = { mbps: null, at: 0, running: false, error: '' };
+app.post('/api/health/speedtest', async (req, res) => {
+  if (netTest.running) return res.json(netTest);
+  if (obsLive) return res.status(400).json({ error: 'Test the internet before going live, so the test does not slow the stream' });
+  netTest.running = true; netTest.error = '';
+  try {
+    const size = 15 * 1024 * 1024, body = Buffer.alloc(size, 7), t0 = Date.now();
+    const r = await fetch('https://speed.cloudflare.com/__up', { method: 'POST', body, headers: { 'Content-Type': 'application/octet-stream' } });
+    await r.arrayBuffer().catch(() => {});
+    if (!r.ok) throw new Error('the test site answered ' + r.status);
+    const secs = Math.max(0.05, (Date.now() - t0) / 1000);
+    netTest = { mbps: Math.round((size * 8) / secs / 1e6), at: Date.now(), running: false, error: '' };
+    logHealth('Internet test: ' + netTest.mbps + ' Mbit/s upload.');
+  } catch (e) { netTest = { ...netTest, running: false, error: 'Could not test the internet: ' + e.message }; }
+  res.json(netTest);
+});
 app.get('/api/health', (req, res) => {
+  readGpu();
   const chans = destinations.map((d) => {
     const st = status.get(d.id) || { state: 'off', message: '' }, ds = destStats.get(d.id) || null;
     return { id: d.id, name: d.name, enabled: d.enabled, state: st.state, message: st.message, kbps: ds ? ds.kbps : 0, speed: ds ? ds.speed : null, frames: ds ? ds.frames : 0, drops: ds ? ds.drops : 0, reconnects: reconnects.get(d.id) || 0, liveSince: liveSince.get(d.id) || 0 };
@@ -481,6 +514,9 @@ app.get('/api/health', (req, res) => {
     kbps: signal.kbps,
     ok: Date.now() - signal.lastDataAt < 4000,
     history: signal.history.slice(-90),
+    drops90: signal.drops.slice(-90),
+    gpu: gpu.pct,
+    net: netTest,
     fps: signal.video && signal.video.fps ? signal.video.fps : null,
     size: signal.video && signal.video.width ? signal.video.width + 'x' + signal.video.height : '',
     keyframe: signal.keyframe,
@@ -573,7 +609,7 @@ app.post('/api/recording/open', (req, res) => {
 
 // ---- Recordings page: every recording, make MP4, play, show, and upload to YouTube ----
 const UP_FILE = path.join(DATA_DIR, 'uploads.json');
-let upCfg = { auto: false, privacy: 'unlisted', done: {} }; // done: file name -> { id, privacy, at }
+let upCfg = { auto: false, privacy: 'unlisted', done: {}, titles: {} }; // done: file name -> { id, privacy, at }; titles: file name -> the stream title when it was recorded
 try { upCfg = { ...upCfg, ...JSON.parse(fs.readFileSync(UP_FILE, 'utf8')) }; } catch {}
 const saveUp = () => { try { fs.writeFileSync(UP_FILE, JSON.stringify(upCfg, null, 2)); } catch {} };
 const recJobs = new Map(); // file name -> { kind: 'mp4' | 'upload', pct, error }
@@ -592,7 +628,8 @@ function recList() {
   let names = []; try { names = fs.readdirSync(REC_DIR).filter((n) => /\.(mkv|mp4)$/i.test(n)); } catch {}
   return names.map((n) => { const f = path.join(REC_DIR, n); let st; try { st = fs.statSync(f); } catch { return null; }
     const base = n.replace(/\.[^.]+$/, ''), hasMp4 = /\.mkv$/i.test(n) && names.some((x) => x.toLowerCase() === (base + '.mp4').toLowerCase());
-    return { name: n, size: st.size, at: st.mtimeMs, secs: recDuration(f, st.size), hasMp4, job: recJobs.get(n) || null, youtube: upCfg.done[n] || null, queued: upQueue.includes(n) };
+    const base2 = n.replace(/\.[^.]+$/, ''), title = (upCfg.titles || {})[n] || (upCfg.titles || {})[base2 + '.mkv'] || '';
+    return { name: n, title, size: st.size, at: st.mtimeMs, secs: recDuration(f, st.size), hasMp4, job: recJobs.get(n) || null, youtube: upCfg.done[n] || null, queued: upQueue.includes(n) };
   }).filter(Boolean).sort((a, b) => b.at - a.at);
 }
 function freeSpace() { try { const s = fs.statfsSync(REC_DIR); return s.bavail * s.bsize; } catch { return null; } }
@@ -662,36 +699,38 @@ app.put('/api/recordings', (req, res) => {
   if (['public', 'private', 'unlisted'].includes(b.privacy)) upCfg.privacy = b.privacy;
   saveUp(); res.json({ ok: true, auto: upCfg.auto, privacy: upCfg.privacy });
 });
+// copy a recording to MP4 without encoding again (same quality, fast), with progress
+function remux(name) {
+  const f = recPath(name); if (!f || !/\.mkv$/i.test(name) || recJobs.get(name)) return;
+  const out = f.replace(/\.mkv$/i, '.mp4'), job = { kind: 'mp4', pct: 0, error: '' }; recJobs.set(name, job);
+  const secs = durCache.get(f + '|' + fs.statSync(f).size) || 0;
+  const p = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', f, '-map', '0', '-c', 'copy', '-movflags', '+faststart', '-progress', 'pipe:1', out], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
+  p.stdout.on('data', makeProgressParser((b) => { const us = Number(b.out_time_us || b.out_time_ms); if (secs && us) job.pct = Math.min(99, Math.floor(us / 1e6 / secs * 100)); }));
+  p.on('error', (e) => { job.error = e.message; });
+  p.on('close', (code) => { if (code === 0) recJobs.delete(name); else { job.error = 'Could not make the MP4'; try { fs.unlinkSync(out); } catch {} } });
+}
 app.post('/api/recordings/:act', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
-  const act = req.params.act, f = recPath((req.body || {}).name), name = path.basename(f || '');
+  const act = req.params.act;
+  if (act === 'mp4-all') { recList().filter((x) => /\.mkv$/i.test(x.name) && !x.hasMp4).forEach((x) => remux(x.name)); return res.json({ ok: true }); }
+  const f = recPath((req.body || {}).name), name = path.basename(f || '');
   if (!f) return res.status(404).json({ error: 'That recording was not found' });
   if (act === 'play') { if (!openFolderHook) return res.json({ error: 'Open it yourself: ' + f }); openFolderHook(f); return res.json({ ok: true }); }
   if (act === 'show') { if (showFileHook) showFileHook(f); else if (openFolderHook) openFolderHook(REC_DIR); return res.json({ ok: true }); }
   if (act === 'upload') { if (!yt.refreshToken) return res.status(400).json({ error: 'Connect YouTube first (Go Live page)' }); queueUpload(name); return res.json({ ok: true }); }
-  if (act === 'mp4') {
-    if (!/\.mkv$/i.test(name)) return res.status(400).json({ error: 'It is already an MP4' });
-    if (recJobs.get(name)) return res.json({ ok: true });
-    const out = f.replace(/\.mkv$/i, '.mp4'), job = { kind: 'mp4', pct: 0, error: '' }; recJobs.set(name, job);
-    const secs = durCache.get(f + '|' + fs.statSync(f).size) || 0;
-    const p = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', f, '-map', '0', '-c', 'copy', '-movflags', '+faststart', '-progress', 'pipe:1', out], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
-    p.stdout.on('data', makeProgressParser((b) => { const us = Number(b.out_time_us || b.out_time_ms); if (secs && us) job.pct = Math.min(99, Math.floor(us / 1e6 / secs * 100)); }));
-    p.on('error', (e) => { job.error = e.message; });
-    p.on('close', (code) => { if (code === 0) recJobs.delete(name); else { job.error = 'Could not make the MP4'; try { fs.unlinkSync(out); } catch {} } });
-    return res.json({ ok: true });
-  }
+  if (act === 'mp4') { if (!/\.mkv$/i.test(name)) return res.status(400).json({ error: 'It is already an MP4' }); remux(name); return res.json({ ok: true }); }
   res.status(404).json({ error: 'Unknown' });
 });
 
 // ---- Auto start: a plan of steps (play a video, show scenes) that the Studio runs when you press Start streaming ----
 const AS_FILE = path.join(DATA_DIR, 'autostart.json');
-let asPlan = { on: false, name: 'My plan', ask: true, offAfter: false, onMissing: 'skip', steps: [] };
+let asPlan = { on: false, name: 'My plan', ask: true, offAfter: false, onMissing: 'skip', takeover: true, steps: [] };
 try { asPlan = { ...asPlan, ...JSON.parse(fs.readFileSync(AS_FILE, 'utf8')) }; } catch {}
 let asRun = { running: false }, asRunAt = 0, asCmd = '';
 const cleanStep = (x) => {
   if (!x || typeof x !== 'object') return null;
-  if (x.type === 'video') return { type: 'video', file: String(x.file || '').slice(0, 500), url: String(x.url || '').slice(0, 500), name: String(x.name || '').slice(0, 120), loop: Boolean(x.loop), vol: Math.max(0, Math.min(100, Number(x.vol) || 0)), end: x.end === 'wait' ? 'wait' : 'next' };
-  if (x.type === 'scene') return { type: 'scene', scene: String(x.scene || '').slice(0, 80), how: ['now', 'for', 'until', 'next'].includes(x.how) ? x.how : 'now', secs: Math.max(1, Math.min(3600, Number(x.secs) || 10)), at: /^\d{1,2}:\d{2}$/.test(String(x.at)) ? String(x.at) : '10:00', tr: ['fade', 'cut', 'slide', 'dip'].includes(x.tr) ? x.tr : 'fade', optional: Boolean(x.optional) };
+  if (x.type === 'video') return { type: 'video', file: String(x.file || '').slice(0, 500), url: String(x.url || '').slice(0, 500), name: String(x.name || '').slice(0, 120), loop: Boolean(x.loop), vol: Math.max(0, Math.min(100, Number(x.vol) || 0)), end: x.end === 'wait' ? 'wait' : 'next', secs: Math.max(0, Number(x.secs) || 0), optional: Boolean(x.optional), on: x.on !== false };
+  if (x.type === 'scene') return { type: 'scene', scene: String(x.scene || '').slice(0, 80), how: ['now', 'for', 'until', 'next'].includes(x.how) ? x.how : 'now', secs: Math.max(1, Math.min(3600, Number(x.secs) || 10)), at: /^\d{1,2}:\d{2}$/.test(String(x.at)) ? String(x.at) : '10:00', tr: ['fade', 'cut', 'slide', 'dip'].includes(x.tr) ? x.tr : 'fade', optional: Boolean(x.optional), on: x.on !== false };
   return null;
 };
 app.get('/api/autostart', (req, res) => res.json({ ...asPlan, run: Date.now() - asRunAt < 3000 ? asRun : { running: false } }));
@@ -703,6 +742,7 @@ app.put('/api/autostart', (req, res) => {
   if (typeof b.ask === 'boolean') asPlan.ask = b.ask;
   if (typeof b.offAfter === 'boolean') asPlan.offAfter = b.offAfter;
   if (b.onMissing === 'skip' || b.onMissing === 'stop') asPlan.onMissing = b.onMissing;
+  if (typeof b.takeover === 'boolean') asPlan.takeover = b.takeover;
   if (Array.isArray(b.steps)) asPlan.steps = b.steps.map(cleanStep).filter(Boolean).slice(0, 20);
   try { fs.writeFileSync(AS_FILE, JSON.stringify(asPlan, null, 2)); } catch {}
   res.json(asPlan);
@@ -710,7 +750,7 @@ app.put('/api/autostart', (req, res) => {
 // the Studio says where the plan is (about twice a second) and picks up Next step / Stop from the Go Live page
 app.put('/api/autostart/run', (req, res) => {
   const b = req.body || {};
-  asRun = { running: Boolean(b.running), step: Number(b.step) || 0, total: Number(b.total) || 0, label: String(b.label || '').slice(0, 120), left: b.left == null ? null : Number(b.left), waiting: Boolean(b.waiting) };
+  asRun = { running: Boolean(b.running), step: Number(b.step) || 0, total: Number(b.total) || 0, label: String(b.label || '').slice(0, 120), left: b.left == null ? null : Number(b.left), waiting: Boolean(b.waiting), frac: Math.max(0, Math.min(1, Number(b.frac) || 0)), labels: Array.isArray(b.labels) ? b.labels.map(String).slice(0, 20) : [] };
   asRunAt = Date.now();
   const cmd = asCmd; asCmd = '';
   res.json({ cmd });
@@ -744,6 +784,47 @@ function goLiveDescription(req) {
   if (d !== gl.description) { gl.description = d; try { fs.writeFileSync(GL_FILE, JSON.stringify(gl, null, 2)); } catch {} }
   return d;
 }
+// While live: how many are watching, likes (YouTube and Facebook say this about every 30 seconds)
+let liveStats = { at: 0, youtube: null, facebook: null };
+app.get('/api/live/stats', async (req, res) => {
+  if (Date.now() - liveStats.at > 25000) {
+    liveStats.at = Date.now();
+    const out = { youtube: null, facebook: null };
+    if (session.youtube && yt.refreshToken) {
+      try { const v = ((await ytApi('GET', 'videos', { part: 'liveStreamingDetails,statistics', id: session.youtube })).items || [])[0];
+        if (v) out.youtube = { viewers: Number((v.liveStreamingDetails || {}).concurrentViewers) || 0, likes: Number((v.statistics || {}).likeCount) || 0, views: Number((v.statistics || {}).viewCount) || 0 }; } catch {}
+    }
+    if (session.facebook && fb.token) {
+      try { const j = await fetch(`${GRAPH}/${session.facebook}?${new URLSearchParams({ fields: 'live_views,video{reactions.summary(total_count)}', access_token: fb.token })}`).then((x) => x.json());
+        if (!j.error) out.facebook = { viewers: Number(j.live_views) || 0, likes: Number((((j.video || {}).reactions || {}).summary || {}).total_count) || 0 }; } catch {}
+    }
+    liveStats = { ...out, at: liveStats.at };
+  }
+  res.json(liveStats);
+});
+// "Update title for all channels" while live: the YouTube broadcast and the Facebook live video get the new title
+app.post('/api/golive/title', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
+  const b = req.body || {}, title = String(b.title || '').trim().slice(0, 100), description = String(b.description || '').trim().slice(0, 5000);
+  if (!title) return res.status(400).json({ error: 'Type a title' });
+  gl.title = title; gl.description = description; try { fs.writeFileSync(GL_FILE, JSON.stringify(gl, null, 2)); } catch {}
+  const errs = [];
+  if (session.youtube) {
+    try {
+      const cur = ((await ytApi('GET', 'liveBroadcasts', { part: 'snippet', id: session.youtube })).items || [])[0];
+      const sn = (cur && cur.snippet) || {};
+      await ytApi('PUT', 'liveBroadcasts', { part: 'snippet' }, { id: session.youtube, snippet: { title, description, scheduledStartTime: sn.scheduledStartTime || new Date().toISOString() } });
+    } catch (e) { errs.push('YouTube: ' + e.message); }
+  }
+  if (session.facebook) {
+    try {
+      const r = await fetch(`${GRAPH}/${session.facebook}`, { method: 'POST', body: new URLSearchParams({ access_token: fb.token, title, description }) });
+      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error((j.error && j.error.message) || 'Facebook did not change it');
+    } catch (e) { errs.push('Facebook: ' + e.message); }
+  }
+  if (errs.length) return res.json({ error: errs.join(' · ') });
+  res.json({ ok: true });
+});
 app.get('/api/golive', (req, res) => res.json({ title: gl.title, description: gl.description || '', hasThumbnail: Boolean(thumbFile()) }));
 app.put('/api/golive/thumbnail', express.raw({ type: '*/*', limit: '10mb' }), (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
@@ -878,7 +959,7 @@ app.post('/api/facebook/live', async (req, res) => {
     const r = await fetch(`${GRAPH}/${fb.pageId}/live_videos`, {
       method: 'POST',
       // Test mode: Facebook takes the stream but the video is not published on the Page.
-      body: new URLSearchParams({ access_token: fb.token, status: (req.body || {}).test ? 'UNPUBLISHED' : 'LIVE_NOW', title, ...(description ? { description } : {}) }),
+      body: new URLSearchParams({ access_token: fb.token, status: (req.body || {}).test || (req.body || {}).privacy === 'self' ? 'UNPUBLISHED' : 'LIVE_NOW', title, ...(description ? { description } : {}) }),
     });
     const j = await r.json();
     const streamUrl = j.secure_stream_url || j.stream_url;
@@ -1043,7 +1124,7 @@ app.post('/api/youtube/live', async (req, res) => {
     // 2. the broadcast (test mode makes it private). Auto start/stop: it goes live when video arrives and ends when it stops.
     const b = await ytApi('POST', 'liveBroadcasts', { part: 'snippet,status,contentDetails' }, {
       snippet: { title, description, scheduledStartTime: new Date().toISOString() },
-      status: { privacyStatus: test ? 'private' : 'public', selfDeclaredMadeForKids: false },
+      status: { privacyStatus: test ? 'private' : ['public', 'unlisted', 'private'].includes((req.body || {}).privacy) ? req.body.privacy : 'public', selfDeclaredMadeForKids: false },
       contentDetails: { enableAutoStart: true, enableAutoStop: true },
     });
     // 3. join the broadcast to the stream
@@ -1346,6 +1427,7 @@ studioRecWss.on('connection', (w, req) => {
   try { fs.mkdirSync(REC_DIR, { recursive: true }); } catch (e) { w.send(JSON.stringify({ error: 'Cannot make the folder: ' + e.message })); return w.close(); }
   const d = new Date(), two = (n) => String(n).padStart(2, '0');
   const name = `Studio ${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}.mkv`;
+  if (gl.title) { upCfg.titles = upCfg.titles || {}; upCfg.titles[name] = gl.title; saveUp(); } // the recording is named after the stream title on the Recordings page
   const copy = q.get('copy') === '1'; // the browser already made H.264 at the right size (encode once)
   const args = outargs.recordArgs(studioEncoder.key, { h: q.get('h'), mbit: q.get('mbit'), fps: q.get('fps'), shape: q.get('shape') }, path.join(REC_DIR, name), copy);
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
