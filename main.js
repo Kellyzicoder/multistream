@@ -1,8 +1,10 @@
 // Desktop app (Windows + Mac). Version 3: the windows talk to the app directly, with no localhost.
 // Pages load from app://multistream/... and every request is answered inside the app (server.js handle()).
 
-const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet, screen } = require('electron');
+const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet, screen, Menu } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const { spawn } = require('child_process');
 const { Readable } = require('stream');
 
 const HOME = 'app://multistream';
@@ -90,7 +92,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 640,
     title: 'Multistream',
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     backgroundColor: '#eaf1fb',
     // the Stream page may slow down while minimised or hidden (it only shows things); the Studio makes the video,
     // so it never slows down (see ms-open-studio)
@@ -115,7 +117,7 @@ handleIpc('ms-open-studio', (e, same) => {
   if (studioWin) { studioWin.focus(); return; }
   if (same && win && !win.isDestroyed()) { win.webContents.setBackgroundThrottling(false); win.loadURL(HOME + '/studio.html?same=1'); return; }
   studioWin = new BrowserWindow({
-    width: 1400, height: 860, title: 'Multistream Studio', autoHideMenuBar: true, backgroundColor: '#0f1512',
+    width: 1400, height: 860, title: 'Multistream Studio', autoHideMenuBar: false, backgroundColor: '#0f1512',
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
   studioWin.loadURL(HOME + '/studio.html');
@@ -145,7 +147,8 @@ function projectorOptions(url) {
   return { action: 'allow', overrideBrowserWindowOptions: o };
 }
 let crWin = null;
-handleIpc('ms-open-cr', (e, displayId) => {
+handleIpc('ms-open-cr', (e, displayId) => openMultiview(displayId));
+function openMultiview(displayId) {
   const d = displayById(displayId);
   if (crWin && !crWin.isDestroyed()) crWin.close();
   const o = { width: 1280, height: 800, title: 'Multistream Multiview', autoHideMenuBar: true, backgroundColor: '#07090b', show: !d,
@@ -159,7 +162,7 @@ handleIpc('ms-open-cr', (e, displayId) => {
   }
   w.loadURL(HOME + '/#control-room');
   w.on('closed', () => { if (crWin === w) crWin = null; });
-});
+}
 // A web page (like the lyrics page) is drawn off-screen. We pass each new picture of it to the studio page.
 const browsers = new Map();
 handleIpc('ms-browser-open', (e, id, url, w, h) => {
@@ -292,6 +295,62 @@ function startUpdates() {
   setInterval(checkDownloadMessage, 6 * 60 * 60 * 1000);
 }
 
+// ---------- the menu bar (like OBS: File, Edit, View, Help) ----------
+const focusedWin = () => BrowserWindow.getFocusedWindow() || win;
+const clickIn = (w, sel) => { if (w && !w.isDestroyed()) w.webContents.executeJavaScript(`(function(){const b=document.querySelector(${JSON.stringify(sel)});if(b)b.click();})()`).catch(() => {}); };
+const openFolder = (dir) => { try { fs.mkdirSync(dir, { recursive: true }); } catch {} shell.openPath(dir); };
+// Remux: copy recordings into MP4 files without encoding again (fast, same quality), like OBS
+async function remuxRecordings() {
+  const rec = process.env.MULTISTREAM_RECORDINGS; try { fs.mkdirSync(rec, { recursive: true }); } catch {}
+  const parent = focusedWin();
+  const r = await dialog.showOpenDialog(parent, { title: 'Remux recordings to MP4', defaultPath: rec, properties: ['openFile', 'multiSelections'], filters: [{ name: 'Recordings', extensions: ['mkv', 'webm', 'flv', 'mov'] }] });
+  if (r.canceled || !r.filePaths.length) return;
+  const done = [], bad = [];
+  for (const f of r.filePaths) {
+    const base = f.replace(/\.[^.\\/]+$/, '');
+    const out = fs.existsSync(base + '.mp4') ? base + ' (remux).mp4' : base + '.mp4';
+    const code = await new Promise((ok) => {
+      const p = spawn(process.env.FFMPEG_PATH || 'ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-i', f, '-map', '0', '-c', 'copy', '-movflags', '+faststart', out], { windowsHide: true, stdio: 'ignore' });
+      p.on('error', () => ok(1)); p.on('exit', (c) => ok(c));
+    });
+    if (code === 0) done.push(out); else { bad.push(path.basename(f)); try { fs.unlinkSync(out); } catch {} }
+  }
+  await dialog.showMessageBox(parent, { type: bad.length ? 'warning' : 'info', message: bad.length ? 'Some recordings could not be remuxed' : 'Remux finished',
+    detail: [done.length ? 'Made: ' + done.map((x) => path.basename(x)).join(', ') : '', bad.length ? 'Not done: ' + bad.join(', ') : ''].filter(Boolean).join('\n') });
+  if (done.length) shell.showItemInFolder(done[0]);
+}
+function buildMenu() {
+  let ds = []; try { ds = displayList(); } catch {}
+  const template = [
+    ...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : []),
+    { label: 'File', submenu: [
+      { label: 'Show Recordings', click: () => openFolder(process.env.MULTISTREAM_RECORDINGS) },
+      { label: 'Remux Recordings', click: () => remuxRecordings() },
+      { type: 'separator' },
+      { label: 'Settings', click: () => clickIn(focusedWin(), '#setBtn') },
+      { label: 'Show Settings Folder', click: () => openFolder(process.env.MULTISTREAM_DATA) },
+      { type: 'separator' },
+      { label: 'Exit', role: 'quit' },
+    ] },
+    { role: 'editMenu' },
+    { label: 'View', submenu: [
+      { label: 'Fullscreen Interface', accelerator: 'F11', click: () => { const w = focusedWin(); if (w) w.setFullScreen(!w.isFullScreen()); } },
+      { label: 'Reset Panels', click: () => clickIn(studioWin || win, '#resetLayout') },
+      { type: 'separator' },
+      { label: 'Open Multiview', submenu: [
+        ...ds.map((d) => ({ label: `Display ${d.n}${d.main ? ' (main)' : ''}: ${d.w}x${d.h}`, click: () => openMultiview(d.id) })),
+        { label: 'New window', click: () => openMultiview(null) },
+      ] },
+    ] },
+    { label: 'Help', submenu: [
+      { label: 'Download page (latest version)', click: () => shell.openExternal(RELEASE_PAGE) },
+      { label: 'Developer tools (for problems)', accelerator: 'F12', click: () => { const w = focusedWin(); if (w) w.webContents.toggleDevTools(); } },
+    ] },
+  ];
+  return Menu.buildFromTemplate(template);
+}
+const setMenu = () => { try { Menu.setApplicationMenu(buildMenu()); } catch (e) { console.error('Menu:', e && e.message); } };
+
 async function start() {
   try {
     // where saved destinations and keys live: the user's own app-data folder
@@ -308,6 +367,7 @@ async function start() {
   serveApp(session.defaultSession);
   setupAppSession(session.defaultSession);
   setupScreenCapture(session.defaultSession);
+  setMenu(); screen.on('display-added', setMenu); screen.on('display-removed', setMenu); // the Multiview list follows the screens
   createWindow();
   startUpdates();
 }
