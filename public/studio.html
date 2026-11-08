@@ -573,6 +573,24 @@
   .asbar .as-r1 { flex-wrap:wrap; gap:8px !important; } .asbar .as-r1 b { font-size:13.5px !important; } .asbar .as-r1 .sp { flex:1 0 100% !important; order:3; height:0; }
   .asbar .as-left { order:2; flex:1 0 100%; margin-left:18px; font-size:12px; } .asbar .as-r1 button { order:4; flex:1; padding:7px 10px !important; font-size:12.5px !important; }
   .asbar .as-seg { gap:4px !important; } .asbar .as-seg > div { gap:0 !important; } .asbar .as-seg span { display:none; } .asbar .as-seg i { height:4px !important; }
+  /* source settings, as in the design */
+  .as-cl .lx { display:flex; flex-direction:column; gap:10px; } .as-cl .lx .as-card.lc { padding:4px 14px; } .as-cl .lct { font-size:12px; color:#a3abc4; font-weight:600; margin:4px 2px -4px; }
+  .as-cl .lx .note { margin:0; font-size:12px; color:#8a93ad; line-height:1.5; } .as-cl .lx > .sm { align-self:flex-start; }
+  .frow { display:flex; gap:8px; align-items:center; } .frow input { flex:1; min-width:0; height:32px; padding:0 10px; border-radius:8px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.1); color:var(--text); font-size:12.5px; }
+  .frow .sm, .as-card .f .sm, .as-cl .lx > .sm { padding:7px 14px; border-radius:999px; border:0; background:rgba(255,255,255,.1); color:var(--text); font-size:12.5px; font-weight:600; box-shadow:none; height:auto; min-width:0; }
+  .as-card .f .frow { flex:0 1 230px; }
+  .lwords { display:flex; flex-direction:column; gap:6px; font-size:12px; color:#a3abc4; } .lwords textarea { min-height:60px; padding:9px 12px; border-radius:10px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.1); color:var(--text); font:500 13px Inter,system-ui,sans-serif; resize:vertical; }
+  .swr { display:flex; gap:8px; align-items:center; } .swr button { width:20px; height:20px; min-width:0; border-radius:50%; border:1px solid rgba(255,255,255,.25); padding:0; box-shadow:none; } .swr button.on { box-shadow:0 0 0 2px #0f1430, 0 0 0 4px #fff; }
+  .addsrc2 .as-card .swr .swp, .swr .swp { min-width:0 !important; width:20px !important; height:20px !important; flex:none !important; padding:0 !important; border-radius:50% !important; border:1px dashed rgba(255,255,255,.4) !important; background:transparent !important; cursor:pointer; } .swr .swp::-webkit-color-swatch-wrapper { padding:0; } .swr .swp::-webkit-color-swatch { border:0; border-radius:50%; opacity:.0; }
+  .szr { display:flex; align-items:center; gap:10px; flex:0 1 230px; } .szr input[type=range] { flex:1; accent-color:var(--sel); }
+  .as-card input.nmb { width:64px !important; flex:none !important; text-align:right; }
+  .as-card .sl { display:flex; align-items:center; gap:10px; flex:1; } .as-card .sl input { flex:1; accent-color:var(--sel); } .as-card .sl b { width:40px; text-align:right; font-size:12px; }
+  .as-card .segc { display:inline-flex; padding:2px; border-radius:8px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.1); gap:0; } .as-card .segc button { padding:5px 10px; border-radius:6px; border:0; background:transparent; color:#cdd3e4; font-size:11.5px; font-weight:600; box-shadow:none; min-width:0; height:auto; } .as-card .segc button.on { background:var(--sel); color:var(--onsel); }
+  .as-card .f.col .segc { display:flex; } .as-card .f.col .segc button { flex:1; }
+  .as-card .keyb { min-width:64px; padding:6px 10px; border-radius:8px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.1); color:var(--text); font-size:12.5px; font-weight:600; box-shadow:none; height:auto; }
+  .as-card .subc { display:contents; }
+  details.pos summary { cursor:pointer; font-size:12.5px; color:#cdd3e4; padding:4px 2px; } details.pos .as-card { margin-top:8px; }
+  .as-cl .duo-ly { margin-top:2px; }
 </style>
 </head>
 <body>
@@ -1191,8 +1209,8 @@ function drawLayer(c, l, live) {
     } else if (l.type === 'video') {
       const v = getVid(l);
       if (v.bad) note(c, l, 'Video not found: ' + (l.file || l.url || l.name));
-      else if (v.el.ended && l.loop === false && l.endDo !== 'keep') { /* finished: hidden */ }
-      else if (v.el.readyState >= 2 && v.el.videoWidth) { pic(c, l, v.el, v.el.videoWidth, v.el.videoHeight); }
+      else if (v.el.ended && l.loop === false && l.endDo !== 'keep') { if (live && l.endDo === 'scene' && l.endScene && !v.sw && byName(l.endScene)) { v.sw = true; setTimeout(() => setCurrent(l.endScene), 0); } }
+      else if (v.el.readyState >= 2 && v.el.videoWidth) { v.sw = false; pic(c, l, v.el, v.el.videoWidth, v.el.videoHeight); }
     } else if (l.type === 'camera') {
       const cm = getCam(l);
       if (cm.ready && cm.v.videoWidth) { pic(c, l, cm.v, cm.v.videoWidth, cm.v.videoHeight); }
@@ -1903,7 +1921,7 @@ function showSourceMenu(ev, l, nameEl) {
   const T = (fn) => () => { if (l.locked) { flash('Unlock it first (the padlock).', false); return; } fn(); save(); renderLayers(); };
   const order = [['Move to the front', () => move(s.layers.length - 1)], ['Move forward', () => move(at() + 1)], ['Move back', () => move(at() - 1)], ['Move to the back', () => move(0)]];
   const transform = [
-    ['Edit position and size...', () => { propsOpen = true; renderLayers(); }, 'Ctrl+E'],
+    ['Edit position and size...', () => { posOpen = true; propsOpen = true; renderLayers(); }, 'Ctrl+E'],
     ['Reset', T(() => { if (MEDIA.has(l.type)) { l.fit = 'natural'; l.sx = l.sy = 1; const F = (l.pfx = l.pfx || {}); delete F.crop; F.flip = false; } delete l.rot; delete l.flipH; delete l.flipV; }), 'Ctrl+R'], null,
     ['Fit to screen', T(() => Object.assign(l, { x: 0, y: 0, w: SW, h: SH, fit: MEDIA.has(l.type) ? 'fit' : l.fit })), 'Ctrl+F'],
     ['Stretch to screen', T(() => Object.assign(l, { x: 0, y: 0, w: SW, h: SH, fit: MEDIA.has(l.type) ? 'stretch' : l.fit })), 'Ctrl+S'],
@@ -2065,9 +2083,8 @@ function openAddSource() {
       const st = document.createElement('p'); st.className = 'as-st'; st.hidden = true; colL.appendChild(st);
     }
     if (pick === 'pptx') { const p = document.createElement('p'); p.className = 'note'; p.textContent = 'Start the slideshow in PowerPoint first, then pick its window. On a second screen, Whole screen also works.'; colL.appendChild(p); }
-    const set = document.createElement('div'); set.className = 'as-set'; renderProps(set, draft); card.appendChild(set);
+    const set = document.createElement('div'); set.className = 'as-set'; card.appendChild(set); renderProps(set, draft);
     // long notes and the picture tools go under the preview, so the settings stay short
-    set.querySelectorAll(':scope > p.note, :scope > .note, :scope > details').forEach((n) => colL.appendChild(n));
     if (pick === 'duo') { const lr = [...card.querySelectorAll('.f')].find((r) => /^Layout/.test(r.textContent)); if (lr) { const bs = [...lr.querySelectorAll('button')]; const cap = document.createElement('div'); cap.className = 'as-capl'; cap.textContent = 'Layout'; const g = document.createElement('div'); g.className = 'duo-ly'; bs.forEach((b) => { const c = document.createElement('button'); c.type = 'button'; c.className = 'dl' + (b.classList.contains('on') || b.getAttribute('aria-pressed') === 'true' ? ' on' : ''); c.innerHTML = '<span class="dlp ' + (/big/i.test(b.textContent) ? 'big' : 'side') + '"><i></i><i></i></span><b></b>'; c.querySelector('b').textContent = b.textContent; c.onclick = () => { b.click(); draw(); }; g.appendChild(c); }); lr.hidden = true; colL.append(cap, g); } }
     if (pick === 'ipcam') set.querySelectorAll(':scope > ol, :scope > .note, :scope > p').forEach((n) => n.remove()), colL.querySelectorAll(':scope > .note, :scope > ol, :scope > details').forEach((n) => n.remove());
   }
@@ -2143,55 +2160,65 @@ function renderProps(target, draft) {
   const s = byName(editing), l = draft || (s && s.layers.find((x) => x.id === sel));
   if (!draft) { $('#propsBox').hidden = !l || !propsOpen; if (!l) { propsOpen = false; return; } }
   if (!draft) ssFrame(l);
+  // the left column (under the preview) of the Add a source and Source settings windows
+  const left = (() => { const cols = box.closest('.as-cols'); const cl = cols && cols.querySelector('.as-cl'); if (!cl) return box; let d = cl.querySelector(':scope > .lx'); if (!d) { d = document.createElement('div'); d.className = 'lx'; cl.appendChild(d); } d.textContent = ''; return d; })();
   const inp = (k, type) => { const i = document.createElement('input'); i.type = type || 'text'; i.value = l[k] == null ? '' : l[k]; i.oninput = () => { l[k] = type === 'number' ? Number(i.value) : i.value; save(); }; return i; };
-  // small building blocks for the source settings
+  // small building blocks for the source settings (as in the design)
   const seg = (opts, val, set) => { const g = document.createElement('div'); g.className = 'segc'; opts.forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.classList.toggle('on', v === val); b.onclick = () => { set(v); save(); rerender(); }; g.appendChild(b); }); return g; };
   const rng = (min, max, step, val, fmt, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { o.textContent = fmt(Number(i.value)); set(Number(i.value)); save(); }; w.append(i, o); return w; };
-  const tick = (val, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(val); c.onchange = () => { set(c.checked); save(); rerender(); }; return c; };
-  const colour = (val, set) => { const c = document.createElement('input'); c.type = 'color'; c.value = val; c.oninput = () => { set(c.value); save(); }; return c; };
-  const fontPick = () => { const f = document.createElement('select'); [['inter', 'Inter'], ['montserrat', 'Montserrat'], ['poppins', 'Poppins'], ['playfair', 'Playfair'], ['', 'This computer\'s font']].forEach(([v, t]) => f.add(new Option(t, v))); f.value = l.font || ''; f.onchange = () => { l.font = f.value; save(); }; return field('Font', f); };
-  const bgPick = (kinds) => {
+  const tick = (val, set, keep) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(val); c.onchange = () => { set(c.checked); save(); if (!keep) rerender(); }; return c; };
+  const num = (val, min, max, set) => { const i = document.createElement('input'); i.type = 'number'; i.className = 'nmb'; i.min = min; i.max = max; i.value = val; i.oninput = () => { const v = Number(i.value); if (v >= min && v <= max) { set(v); save(); } }; return i; };
+  const swatches = (list, val, set) => { const g = document.createElement('div'); g.className = 'swr'; const all = list.slice(); if (val && !all.includes(val.toLowerCase())) all.push(val.toLowerCase()); all.forEach((c) => { const b = document.createElement('button'); b.type = 'button'; b.style.background = c; b.title = c; b.setAttribute('aria-label', 'Colour ' + c); b.classList.toggle('on', (val || '').toLowerCase() === c); b.onclick = () => { set(c); save(); rerender(); }; g.appendChild(b); }); const pk = document.createElement('input'); pk.type = 'color'; pk.className = 'swp'; pk.title = 'Another colour'; pk.value = /^#[0-9a-f]{6}$/i.test(val || '') ? val : '#ffffff'; pk.onchange = () => { set(pk.value); save(); rerender(); }; g.appendChild(pk); return g; };
+  const fontPick = () => { const f = document.createElement('select'); [['inter', 'Inter Bold'], ['montserrat', 'Montserrat'], ['poppins', 'Poppins'], ['playfair', 'Playfair'], ['', 'This computer\'s font']].forEach(([v, t]) => f.add(new Option(t, v))); f.value = l.font || ''; f.onchange = () => { l.font = f.value; save(); }; return field('Font', f); };
+  const baseName = (x) => String(x || '').split(/[\\/]/).pop().replace(/^[a-z0-9]{6,}-/i, '');
+  // a file box with Choose (under the preview)
+  const fileRow = (o, accept, done) => { const r = document.createElement('div'); r.className = 'frow'; const i = document.createElement('input'); i.type = 'text'; i.placeholder = 'Nothing chosen yet'; i.value = baseName(o.file || o.url); i.title = 'Type a file path on this computer, or press Choose'; i.onchange = () => { const v = i.value.trim(); if (v && v !== baseName(o.url)) { o.file = v; o.url = ''; save(); if (done) done(); } }; const b = document.createElement('button'); b.type = 'button'; b.className = 'sm'; b.textContent = 'Choose'; b.onclick = () => pickFile(o, accept, () => { save(); if (done) done(); else { renderLayers(); rerender(); } }); r.append(i, b); return r; };
+  const card = (title) => { const c = document.createElement('div'); c.className = 'as-card lc'; if (title) { const h = document.createElement('div'); h.className = 'lct'; h.textContent = title; left.appendChild(h); } left.appendChild(c); return c; };
+  const bgPick = (kinds, into) => {
     const b = (l.bg = l.bg || { kind: 'none' });
-    box.append(field('Background', seg(kinds, b.kind || 'none', (v) => { b.kind = v; })));
-    if (b.kind === 'colour') box.append(field('Colour', colour(b.color || '#0a0e1f', (v) => { b.color = v; })));
+    into.append(field(kinds[0][0] === 'none' ? 'Show behind the timer' : 'Background', seg(kinds, b.kind || 'none', (v) => { b.kind = v; })));
+    if (into.lastChild && kinds[0][0] === 'none') into.lastChild.classList.add('col');
+    if (b.kind === 'colour') into.append(field('Colour', swatches(['#0a0e1f', '#3b6cff', '#000000', '#ffffff', '#22c55e', '#a855f7'], b.color || '#0a0e1f', (v) => { b.color = v; })));
     if (b.kind === 'picture' || b.kind === 'video') {
-      const nm = document.createElement('span'); nm.className = 'note'; nm.textContent = (b.file || b.url || 'Nothing chosen yet').split(/[\\/]/).pop();
-      const ch = document.createElement('button'); ch.type = 'button'; ch.className = 'sm'; ch.textContent = 'Choose...'; ch.onclick = () => pickFile(b, b.kind === 'video' ? 'video/*' : 'image/*', () => { save(); rerender(); });
-      const r = document.createElement('div'); r.className = 'row'; r.append(ch, nm); box.append(field(b.kind === 'video' ? 'Video' : 'Picture', r));
-      box.append(field(b.kind === 'video' ? 'Video opacity' : 'Picture opacity', rng(0, 100, 1, b.op == null ? 100 : b.op, (v) => v + '%', (v) => { b.op = v; })));
-      if (b.kind === 'video') box.append(field('Play on a loop', tick(b.loop !== false, (v) => { b.loop = v; const vv = vids.get(bgKey(l)); if (vv) vv.el.loop = v; })));
+      into.append(field(b.kind === 'video' ? 'Video' : 'Picture', fileRow(b, b.kind === 'video' ? 'video/*' : 'image/*', () => { save(); rerender(); })));
+      if (kinds[0][0] === 'none') into.append(field(b.kind === 'video' ? 'Video opacity' : 'Picture opacity', rng(0, 100, 1, b.op == null ? 100 : b.op, (v) => v + '%', (v) => { b.op = v; })));
+      if (b.kind === 'video') into.append(field('Play on a loop', tick(b.loop !== false, (v) => { b.loop = v; const vv = vids.get(bgKey(l)); if (vv) vv.el.loop = v; })));
     }
   };
   if (!draft) box.append(field('Name', inp('name')));
+  // where it sits (also by dragging in the Preview, or right-click, Transform): folded away under the preview
   if (!draft) {
-  const lk = document.createElement('input'); lk.type = 'checkbox'; lk.checked = Boolean(l.locked); lk.onchange = () => { l.locked = lk.checked; save(); renderLayers(); };
-  lk.title = 'A locked item cannot be moved by accident in the Preview'; box.append(field('Lock in place', lk));
-  box.append(field('Left', inp('x', 'number')), field('Top', inp('y', 'number')));
-  const fit = document.createElement('select'); [['stretch', 'Fill the box'], ['fit', 'Fit in the box'], ['natural', 'Own size']].concat(MEDIA.has(l.type) ? [['cover', 'Fill and cut off the edges'], ['blur', 'Fit with blurred background']] : []).forEach(([v, t]) => fit.add(new Option(t, v)));
-  fit.value = l.fit || 'stretch'; fit.onchange = () => { l.fit = fit.value; save(); rerender(); }; box.append(field('Size', fit));
-  if ((l.fit || 'stretch') === 'natural') { const sc = inp('sx', 'number'); sc.step = 0.05; sc.value = l.sx || 1; sc.oninput = () => { l.sx = l.sy = Number(sc.value); save(); }; box.append(field('Scale', sc)); }
-  else box.append(field('Width', inp('w', 'number')), field('Height', inp('h', 'number')));
+    const dt = document.createElement('details'); dt.className = 'pos'; dt.open = posOpen; dt.ontoggle = () => { posOpen = dt.open; }; dt.innerHTML = '<summary>Position and size</summary>'; const pc = document.createElement('div'); pc.className = 'as-card'; dt.appendChild(pc);
+    pc.append(field('Lock in place', tick(l.locked, (v) => { l.locked = v; renderLayers(); }, true)));
+    pc.append(field('Left', inp('x', 'number')), field('Top', inp('y', 'number')));
+    const fit = document.createElement('select'); [['stretch', 'Fill the box'], ['fit', 'Fit in the box'], ['natural', 'Own size']].concat(MEDIA.has(l.type) ? [['cover', 'Fill and cut off the edges'], ['blur', 'Fit with blurred background']] : []).forEach(([v, t]) => fit.add(new Option(t, v)));
+    fit.value = l.fit || 'stretch'; fit.onchange = () => { l.fit = fit.value; save(); rerender(); }; pc.append(field('Size', fit));
+    if ((l.fit || 'stretch') === 'natural') { const sc = inp('sx', 'number'); sc.step = 0.05; sc.value = l.sx || 1; sc.oninput = () => { l.sx = l.sy = Number(sc.value); save(); }; pc.append(field('Scale', sc)); }
+    else pc.append(field('Width', inp('w', 'number')), field('Height', inp('h', 'number')));
+    setTimeout(() => left.appendChild(dt), 0);
   }
-  if (MEDIA.has(l.type) && !draft) {
-    const r = document.createElement('div'); r.className = 'row';
-    const full = (fit) => () => { l.fit = fit; l.x = 0; l.y = 0; l.w = SW; l.h = SH; delete l.sx; delete l.sy; save(); rerender(); };
-    const b1 = document.createElement('button'); b1.textContent = 'Fit to screen'; b1.title = 'Show all of it, keeping its shape'; b1.onclick = full('fit');
-    const b2 = document.createElement('button'); b2.textContent = 'Fill the screen'; b2.title = 'Stretch it over the whole picture'; b2.onclick = full('stretch');
-    r.append(b1, b2); box.append(r);
+  if (l.type === 'color') {
+    box.append(field('Colour', swatches(['#3b6cff', '#000000', '#ffffff', '#ef4444', '#22c55e', '#a855f7'], l.color || '#3b6cff', (v) => { l.color = v; })));
+    const cc = document.createElement('input'); cc.type = 'text'; cc.value = (l.color || '').toUpperCase(); cc.onchange = () => { const v = cc.value.trim(); if (/^#?[0-9a-f]{6}$/i.test(v)) { l.color = (v[0] === '#' ? v : '#' + v).toLowerCase(); save(); rerender(); } }; box.append(field('Colour code', cc));
+    const sz = document.createElement('select'); [['full', 'Fill the screen'], ['custom', 'Custom size']].forEach(([v, t]) => sz.add(new Option(t, v)));
+    sz.value = !l.x && !l.y && (l.w || SW) === SW && (l.h || SH) === SH ? 'full' : 'custom'; sz.onchange = () => { if (sz.value === 'full') Object.assign(l, { x: 0, y: 0, w: SW, h: SH }); else { Object.assign(l, { x: Math.round(SW / 4), y: Math.round(SH / 4), w: Math.round(SW / 2), h: Math.round(SH / 2) }); posOpen = true; } save(); rerender(); }; box.append(field('Size', sz));
   }
-  if (l.type === 'color') { const c = document.createElement('input'); c.type = 'color'; c.value = l.color || '#ffffff'; c.oninput = () => { l.color = c.value; save(); }; box.append(field('Colour', c)); }
   if (l.type === 'text') {
     const t = document.createElement('textarea'); t.rows = 3; t.value = l.text || ''; t.oninput = () => { l.text = t.value; save(); };
-    box.append(field('Words', t), fontPick());
-    box.append(field('Size', rng(20, 400, 2, l.size || 60, (v) => v + ' px', (v) => { l.size = v; })));
-    box.append(field('Colour', colour(l.color || '#ffffff', (v) => { l.color = v; })));
+    const w = document.createElement('label'); w.className = 'lwords'; w.textContent = 'Words'; w.appendChild(t); left.appendChild(w);
+    box.append(fontPick());
+    const sw = document.createElement('div'); sw.className = 'szr'; const n = num(l.size || 60, 10, 400, (v) => { l.size = v; r.value = v; }); const r = document.createElement('input'); r.type = 'range'; r.min = 10; r.max = 400; r.value = l.size || 60; r.oninput = () => { l.size = Number(r.value); n.value = r.value; save(); }; sw.append(r, n); box.append(field('Size', sw));
+    box.append(field('Colour', swatches(['#ffffff', '#3b6cff', '#facc15', '#ef4444', '#22c55e', '#0a0a0a'], l.color || '#ffffff', (v) => { l.color = v; })));
     box.append(field('Line up', seg([['left', 'Left'], ['centre', 'Centre'], ['right', 'Right']], l.align || 'left', (v) => { l.align = v; })));
     box.append(field('Outline', tick(l.outline, (v) => { l.outline = v; })));
-    if (l.outline) box.append(field('Outline colour', colour(l.outlineColor || '#000000', (v) => { l.outlineColor = v; })));
+    if (l.outline) box.append(field('Outline colour', swatches(['#000000', '#ffffff', '#3b6cff'], l.outlineColor || '#000000', (v) => { l.outlineColor = v; })));
     box.append(field('Shadow', tick(l.shadow, (v) => { l.shadow = v; })));
   }
   if (l.type === 'duo') {
-    box.append(field('Layout', seg([['side', 'Side by side'], ['big', 'Screen big']], l.layout || 'big', (v) => { l.layout = v; })));
+    // the layout as two pictures under the preview
+    { const cap = document.createElement('div'); cap.className = 'lct'; cap.textContent = 'Layout'; const g = document.createElement('div'); g.className = 'duo-ly';
+      [['side', 'Side by side'], ['big', 'Screen big']].forEach(([v, t]) => { const c = document.createElement('button'); c.type = 'button'; c.className = 'dl' + ((l.layout || 'big') === v ? ' on' : ''); c.innerHTML = '<span class="dlp ' + v + '"><i></i><i></i></span><b></b>'; c.querySelector('b').textContent = t; c.onclick = () => { l.layout = v; save(); rerender(); }; g.appendChild(c); });
+      left.append(cap, g); }
     const cs = document.createElement('select'); cs.add(new Option('Default camera', ''));
     devices.video.forEach((x) => cs.add(new Option(x.label || 'Camera', x.deviceId)));
     cs.value = pickDevice('video', l.camLabel, l.camDevice); cs.onchange = () => { l.camDevice = cs.value; l.camLabel = cs.value ? cs.options[cs.selectedIndex].text : ''; save(); }; box.append(field('Camera', cs));
@@ -2212,44 +2239,47 @@ function renderProps(target, draft) {
       l.scrType = k; l.display = id; l.winName = k === 'window' ? ss.options[ss.selectedIndex].text.replace(/^Window: /, '') : ''; save();
     };
     fill(); box.append(field('Screen', ss));
-    box.append(field('Camera on the left', tick(l.camLeft, (v) => { l.camLeft = v; })));
-    bgPick([['colour', 'Colour'], ['picture', 'Picture'], ['video', 'Video'], ['blur', 'Blur']]);
+    const bb = document.createElement('div'); bb.className = 'subc'; box.append(bb);
+    bgPick([['picture', 'Picture'], ['video', 'Video'], ['colour', 'Colour'], ['blur', 'Blur']], bb); if (bb.firstChild) bb.firstChild.classList.add('col');
     box.append(field('Corners', seg([['round', 'Rounded'], ['square', 'Square']], l.corners || 'round', (v) => { l.corners = v; })));
-    const h = document.createElement('p'); h.className = 'note'; h.textContent = 'The screen can be slides, notes or anything else on a screen. The screen and the camera are the same height; Screen big makes the screen wider.'; box.append(h);
   }
   if (l.type === 'camera') {
     const sl = document.createElement('select'); sl.add(new Option('Default camera', ''));
     devices.video.forEach((x) => sl.add(new Option(x.label || 'Camera', x.deviceId)));
+    sl.title = 'ATEM Mini or a capture box: plug its USB cable into this computer, then choose it here. It appears by itself within a few seconds.';
     sl.value = pickDevice('video', l.label, l.device); sl.onchange = () => { l.device = sl.value; l.label = ''; save(); }; box.append(field('Device', sl));
-    const rs = document.createElement('select'); [['auto', 'Automatic (up to 1080p)'], ['720', '720p'], ['1080', '1080p'], ['1440', '1440p'], ['2160', '4K']].forEach(([v, t]) => rs.add(new Option(t, v)));
-    rs.value = l.res || 'auto'; rs.onchange = () => { l.res = rs.value; save(); }; box.append(field('Resolution', rs));
-    const fp = document.createElement('select'); [['auto', 'Automatic'], ['24', '24'], ['25', '25'], ['30', '30'], ['50', '50'], ['60', '60']].forEach(([v, t]) => fp.add(new Option(t, v)));
+    const rs = document.createElement('select'); [['auto', 'Automatic (best)'], ['2160', '3840 × 2160 (4K)'], ['1440', '2560 × 1440'], ['1080', '1920 × 1080'], ['720', '1280 × 720']].forEach(([v, t]) => rs.add(new Option(t, v)));
+    rs.value = l.res || 'auto'; rs.onchange = () => { l.res = rs.value; save(); }; box.append(field('Size', rs));
+    const fp = document.createElement('select'); [['auto', 'Automatic'], ['30', '30'], ['60', '60'], ['25', '25'], ['24', '24'], ['50', '50']].forEach(([v, t]) => fp.add(new Option(t, v)));
     fp.value = l.fps || 'auto'; fp.onchange = () => { l.fps = fp.value; save(); }; box.append(field('Frame rate', fp));
-    const ci = document.createElement('p'); ci.className = 'note'; ci.id = 'camInfo'; box.append(ci);
-    const help = document.createElement('p'); help.className = 'note'; help.textContent = 'ATEM Mini or a capture box: plug its USB cable into this computer, then choose it in Device. It appears by itself within a few seconds. If a size or frame rate is not offered by the device, the device picks the closest one, and the line above says what you really get.'; box.append(help);
+    box.append(field("Use the camera's sound", tick(l.camSound, (v) => { l.camSound = v; if (!draft) camSound(l); }, true)));
+    const ci = document.createElement('p'); ci.className = 'note'; ci.id = 'camInfo'; left.append(ci);
   }
-  if (l.type === 'image' || l.type === 'video') {
-    const p = inp('file'); p.placeholder = 'C:/path/to/file'; p.title = 'The file path on this computer'; box.append(field('File', p));
-    const b = document.createElement('button'); b.textContent = 'Upload a file instead...'; b.onclick = () => pickFile(l, null, () => { save(); renderLayers(); rerender(); }); box.append(b);
+  if (l.type === 'image') {
+    left.append(fileRow(l, 'image/*'));
+    const F = (l.pfx = l.pfx || {});
+    box.append(field('See-through', rng(0, 100, 1, F.op == null ? 100 : F.op, (v) => v + '%', (v) => { F.op = v; })));
+    box.lastChild.classList.add('col');
+    box.append(field('Fit', seg([['fit', 'Fit'], ['cover', 'Fill'], ['stretch', 'Stretch']], l.fit === 'cover' || l.fit === 'stretch' ? l.fit : 'fit', (v) => { l.fit = v; })));
   }
   if (l.type === 'video') {
+    left.append(fileRow(l, 'video/*'));
     box.append(field('Loop video', tick(l.loop !== false, (v) => { l.loop = v; const vv = vids.get(l.id); if (vv) vv.el.loop = v; })));
     box.append(field('Start from the beginning when shown', tick(l.restart !== false, (v) => { l.restart = v; })));
-    if (l.loop === false) box.append(field('When it ends', seg([['hide', 'Hide it'], ['keep', 'Keep the last picture']], l.endDo === 'keep' ? 'keep' : 'hide', (v) => { l.endDo = v; })));
+    const ed = document.createElement('select'); ed.add(new Option('Hide it', 'hide')); ed.add(new Option('Keep the last picture', 'keep'));
+    studio.scenes.forEach((x) => ed.add(new Option('Switch to scene: ' + x.name, 'scene:' + x.name)));
+    ed.value = l.endDo === 'scene' ? 'scene:' + l.endScene : (l.endDo === 'keep' ? 'keep' : 'hide'); ed.disabled = l.loop !== false; ed.title = ed.disabled ? 'Turn Loop video off to use this' : '';
+    ed.onchange = () => { const v = ed.value; if (v.startsWith('scene:')) { l.endDo = 'scene'; l.endScene = v.slice(6); } else { l.endDo = v; delete l.endScene; } save(); };
+    box.append(field('When it ends', ed));
     box.append(field('Play its sound', tick(!l.muted, (v) => { l.muted = !v; })));
-    if (!l.muted) box.append(field('Volume', rng(0, 100, 1, Math.round((l.vol == null ? 1 : l.vol) * 100), (v) => v + '%', (v) => { l.vol = v / 100; })));
+    if (!l.muted) { const r = rng(0, 100, 1, Math.round((l.vol == null ? 1 : l.vol) * 100), (v) => v + '%', (v) => { l.vol = v / 100; }); r.classList.add('vol'); box.append(field('Volume', r)); box.lastChild.classList.add('col'); }
   }
   if (l.type === 'lower') {
-    box.append(field('Tag', seg([['person', 'Person'], ['ministry', 'Group']], l.tag || 'person', (v) => { l.tag = v; })));
-    const nm = inp('title'); nm.oninput = () => { l.title = nm.value; save(); }; box.append(field(l.tag === 'ministry' ? 'Group name' : "Person's name", nm));
+    box.append(field('Tag', seg([['person', 'Person'], ['ministry', 'Ministry']], l.tag || 'person', (v) => { l.tag = v; })));
+    const nm = inp('title'); nm.oninput = () => { l.title = nm.value; save(); }; box.append(field(l.tag === 'ministry' ? 'Ministry name' : 'Name', nm));
     box.append(field('Show role', tick(l.showSub !== false, (v) => { l.showSub = v; })));
     if (l.showSub !== false) box.append(field('Role', inp('sub')));
-    { const pn = document.createElement('span'); pn.className = 'note'; pn.textContent = (l.pic || l.picUrl || 'None').split(/[\\/]/).pop();
-      const ch = document.createElement('button'); ch.type = 'button'; ch.className = 'sm'; ch.textContent = 'Choose...';
-      ch.onclick = () => { const o = {}; pickFile(o, 'image/png,image/*', () => { l.pic = o.file || ''; l.picUrl = o.url || ''; save(); rerender(); }); };
-      const r = document.createElement('div'); r.className = 'row'; r.append(ch, pn);
-      if (l.pic || l.picUrl) { const rm = document.createElement('button'); rm.type = 'button'; rm.className = 'sm'; rm.textContent = 'Remove'; rm.onclick = () => { l.pic = ''; l.picUrl = ''; save(); rerender(); }; r.append(rm); }
-      box.append(field('Picture (PNG)', r)); }
+    { const o = { file: l.pic, url: l.picUrl }; box.append(field('Picture (PNG)', fileRow(o, 'image/png,image/*', () => { l.pic = o.file || ''; l.picUrl = o.url || ''; save(); rerender(); }))); }
     // the style as three small pictures, and how it comes in as twelve buttons (as in the design); a click plays it in the preview
     const replay = () => lowerState.set(l.id, { p: 0, t: performance.now(), shownAt: Date.now(), want: 1 });
     { const g = document.createElement('div'); g.className = 'nb-sty'; [['clean', 'Clean'], ['bold', 'Bold'], ['minimal', 'Minimal']].forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'nb-s' + ((l.style || 'clean') === v ? ' on' : ''); b.setAttribute('aria-pressed', String((l.style || 'clean') === v)); b.innerHTML = '<span class="nb-p nb-' + v + '"><i></i><i></i></span><b></b>'; b.querySelector('b').textContent = t; b.onclick = () => { l.style = v; save(); replay(); rerender(); }; g.appendChild(b); });
@@ -2259,101 +2289,94 @@ function renderProps(target, draft) {
     box.append(fontPick());
     const sz = { small: 100, medium: 130, large: 170 }, cur = l.h <= 110 ? 'small' : l.h >= 160 ? 'large' : 'medium';
     box.append(field('Text size', seg([['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']], cur, (v) => { const k = sz[v] / (l.h || 130); l.h = sz[v]; l.w = Math.round((l.w || 820) * k); })));
-    box.append(field('Bar colour', colour(l.color || '#3b6cff', (v) => { l.color = v; })));
-    box.append(field('Text colour', colour(l.textColor || '#ffffff', (v) => { l.textColor = v; })));
-    const ha = document.createElement('select'); [['5', '5 seconds'], ['8', '8 seconds'], ['15', '15 seconds'], ['0', 'Stay until I hide it']].forEach(([v, t]) => ha.add(new Option(t, v)));
+    box.append(field('Colour', swatches(['#3b6cff', '#ffffff', '#facc15', '#ef4444', '#22c55e', '#a855f7'], l.color || '#3b6cff', (v) => { l.color = v; })));
+    const ha = document.createElement('select'); [['8', '8 seconds'], ['5', '5 seconds'], ['15', '15 seconds'], ['0', 'Stay until I hide it']].forEach(([v, t]) => ha.add(new Option(t, v)));
     ha.value = String(l.hideAfter || 0); ha.onchange = () => { l.hideAfter = Number(ha.value); save(); }; box.append(field('Hide after', ha));
-    const sh = document.createElement('button'); sh.textContent = l.visible === false ? 'Show it (slides in)' : 'Hide it (slides out)'; sh.onclick = () => { l.visible = l.visible === false; save(); renderLayers(); }; box.append(sh);
+    // a key that shows or hides this name bar (also in Settings, Hotkeys)
+    const kb = document.createElement('button'); kb.type = 'button'; kb.className = 'keyb'; const hid = 'nb:' + l.id;
+    const curKey = () => { try { return (JSON.parse(localStorage.getItem('ms_hotkeys') || '{}') || {})[hid] || ''; } catch { return ''; } };
+    kb.textContent = curKey() || 'Not set'; kb.title = 'Click, then press a key';
+    kb.onclick = () => { kb.textContent = 'Press a key…'; document.documentElement.classList.add('hk-off'); const on = (e) => { if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return; e.preventDefault(); e.stopImmediatePropagation(); document.removeEventListener('keydown', on, true); document.documentElement.classList.remove('hk-off'); let all = {}; try { all = JSON.parse(localStorage.getItem('ms_hotkeys') || '{}') || {}; } catch {} if (e.key === 'Escape' || e.key === 'Backspace' || e.key === 'Delete') delete all[hid]; else { const c = window.msHotkeyCombo(e); if (c) all[hid] = c; } try { localStorage.setItem('ms_hotkeys', JSON.stringify(all)); } catch {} kb.textContent = curKey() || 'Not set'; }; document.addEventListener('keydown', on, true); };
+    box.append(field('Show / hide key', kb));
+    if (!draft) { const sh = document.createElement('button'); sh.type = 'button'; sh.className = 'sm'; sh.textContent = l.visible === false ? 'Show it now' : 'Hide it now'; sh.onclick = () => { l.visible = l.visible === false; save(); renderLayers(); }; left.append(sh); }
   }
   if (l.type === 'timer') {
-    const md = document.createElement('select'); [['duration', 'Count down from a time I set'], ['until', 'Count down to a time of day']].forEach(([v, t]) => md.add(new Option(t, v))); md.value = l.mode || 'duration'; md.onchange = () => { l.mode = md.value; save(); rerender(); }; box.append(field('Type', md));
-    if ((l.mode || 'duration') === 'until') { const at = document.createElement('input'); at.type = 'time'; at.value = l.at || '10:00'; at.oninput = () => { l.at = at.value; save(); }; box.append(field('Until', at)); }
+    box.append(field('Count down to', seg([['until', 'A time'], ['duration', 'A length']], l.mode || 'duration', (v) => { l.mode = v; delete l.left; delete l.endAt; })));
+    if ((l.mode || 'duration') === 'until') { const at = document.createElement('input'); at.type = 'time'; at.value = l.at || '10:00'; at.oninput = () => { l.at = at.value; save(); }; box.append(field('Time', at)); }
     else {
-      const mi = document.createElement('input'); mi.type = 'number'; mi.min = 0; mi.step = 0.5; mi.value = l.minutes == null ? 10 : l.minutes; mi.oninput = () => { l.minutes = Number(mi.value) || 0; delete l.left; delete l.endAt; save(); }; box.append(field('Minutes', mi));
-      const row = document.createElement('div'); row.className = 'row';
-      const go = document.createElement('button'); go.className = 'sm'; go.textContent = 'Start'; go.onclick = () => { l.endAt = Date.now() + timerLeft(l); delete l.left; save(); };
-      const pa = document.createElement('button'); pa.className = 'sm'; pa.textContent = 'Pause'; pa.onclick = () => { if (l.endAt) { l.left = timerLeft(l); delete l.endAt; save(); } };
-      const re = document.createElement('button'); re.className = 'sm'; re.textContent = 'Reset'; re.onclick = () => { delete l.endAt; delete l.left; save(); };
-      row.append(go, pa, re); box.append(row);
+      const mi = num(l.minutes == null ? 10 : l.minutes, 0, 600, (v) => { l.minutes = v; delete l.left; delete l.endAt; }); mi.step = 0.5; box.append(field('Minutes', mi));
+      const row = document.createElement('div'); row.className = 'segc tmr';
+      const go = document.createElement('button'); go.type = 'button'; go.textContent = 'Start'; go.onclick = () => { l.endAt = Date.now() + timerLeft(l); delete l.left; save(); };
+      const pa = document.createElement('button'); pa.type = 'button'; pa.textContent = 'Pause'; pa.onclick = () => { if (l.endAt) { l.left = timerLeft(l); delete l.endAt; save(); } };
+      const re = document.createElement('button'); re.type = 'button'; re.textContent = 'Reset'; re.onclick = () => { delete l.endAt; delete l.left; save(); };
+      row.append(go, pa, re); box.append(field('Timer', row));
     }
     box.append(field('Words above', inp('label')));
-    const ed = document.createElement('select'); ed.add(new Option('Show these words', 'words')); ed.add(new Option('Show 00:00', 'zero')); ed.add(new Option('Hide it', 'hide'));
+    const ed = document.createElement('select');
     studio.scenes.forEach((x) => ed.add(new Option('Switch to scene: ' + x.name, 'scene:' + x.name)));
+    ed.add(new Option('Show 00:00', 'zero')); ed.add(new Option('Hide it', 'hide')); if ((l.endDo || 'words') === 'words') ed.add(new Option('Show words: ' + (l.doneText || 'Starting now'), 'words'));
     ed.value = l.endDo === 'scene' ? 'scene:' + l.endScene : (l.endDo || 'words'); ed.onchange = () => { const v = ed.value; if (v.startsWith('scene:')) { l.endDo = 'scene'; l.endScene = v.slice(6); } else { l.endDo = v; delete l.endScene; } save(); rerender(); };
     box.append(field('When it ends', ed));
-    if ((l.endDo || 'words') === 'words') box.append(field('Words at the end', inp('doneText')));
-    box.append(fontPick(), field('Size', rng(40, 400, 2, l.size || 220, (v) => v + ' px', (v) => { l.size = v; })));
-    box.append(field('Colour', colour(l.color || '#ffffff', (v) => { l.color = v; })));
-    bgPick([['none', 'None'], ['picture', 'Picture'], ['video', 'Video'], ['colour', 'Colour']]);
-    if (l.bg && l.bg.kind && l.bg.kind !== 'none') { const h = document.createElement('p'); h.className = 'note'; h.textContent = 'The background fills the whole picture, behind the countdown.'; box.append(h); }
+    box.append(fontPick(), field('Size', num(l.size || 220, 40, 400, (v) => { l.size = v; })));
+    const bc = card('Background'); bgPick([['none', 'None'], ['picture', 'Picture'], ['video', 'Video'], ['colour', 'Colour']], bc);
   }
   if (l.type === 'clock') {
-    const k = (key, label) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(l[key]); c.onchange = () => { l[key] = c.checked; save(); }; box.append(field(label, c)); };
-    k('h24', '24 hour clock'); k('secs', 'Show seconds'); k('date', 'Show the date');
-    box.append(fontPick(), field('Size', rng(30, 400, 2, l.size || 120, (v) => v + ' px', (v) => { l.size = v; })));
-    const c = document.createElement('input'); c.type = 'color'; c.value = l.color || '#ffffff'; c.oninput = () => { l.color = c.value; save(); }; box.append(field('Colour', c));
-}
-  if (['image', 'video', 'camera', 'screen', 'browser', 'ipcam'].includes(l.type)) {
-    const F = (l.pfx = l.pfx || {});
-    const dt = document.createElement('details'); dt.className = 'fx'; dt.open = pfxOpen; dt.ontoggle = () => { pfxOpen = dt.open; };
-    dt.innerHTML = '<summary>Picture tools</summary>';
-    const row = (label, el) => { const w = document.createElement('div'); w.className = 'fxr'; const sp = document.createElement('span'); sp.textContent = label; w.append(sp, el); dt.appendChild(w); };
-    const num = (get, set) => { const i = document.createElement('input'); i.type = 'number'; i.min = 0; i.max = 90; i.style.width = '56px'; i.value = get() || 0; i.oninput = () => { set(Number(i.value) || 0); save(); }; return i; };
-    const sl = (min, max, val, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.value = val; const o = document.createElement('b'); o.textContent = val; i.oninput = () => { o.textContent = i.value; set(Number(i.value)); save(); }; w.append(i, o); return w; };
-    const ck = (val, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(val); c.onchange = () => { set(c.checked); save(); }; return c; };
-    F.crop = F.crop || {};
-    row('Crop left %', num(() => F.crop.l, (v) => { F.crop.l = v; })); row('Crop top %', num(() => F.crop.t, (v) => { F.crop.t = v; }));
-    row('Crop right %', num(() => F.crop.r, (v) => { F.crop.r = v; })); row('Crop bottom %', num(() => F.crop.b, (v) => { F.crop.b = v; }));
-    row('Brightness', sl(0, 200, F.bri == null ? 100 : F.bri, (v) => { F.bri = v; }));
-    row('Contrast', sl(0, 200, F.con == null ? 100 : F.con, (v) => { F.con = v; }));
-    row('Colour strength', sl(0, 200, F.sat == null ? 100 : F.sat, (v) => { F.sat = v; }));
-    row('See-through', sl(0, 100, F.op == null ? 100 : F.op, (v) => { F.op = v; }));
-    row('Flip left-right', ck(F.flip, (v) => { F.flip = v; }));
-    const sh = document.createElement('select'); [['', 'Normal'], ['round', 'Rounded corners'], ['circle', 'Circle']].forEach(([v, t]) => sh.add(new Option(t, v))); sh.value = F.shape || ''; sh.onchange = () => { F.shape = sh.value; save(); }; row('Shape', sh);
-    row('Corner size', sl(0, 50, F.round == null ? 12 : F.round, (v) => { F.round = v; }));
-    F.key = F.key || {};
-    row('Green screen', ck(F.key.on, (v) => { F.key.on = v; }));
-    const kc = document.createElement('input'); kc.type = 'color'; kc.value = F.key.color || '#00ff00'; kc.oninput = () => { F.key.color = kc.value; save(); }; row('  colour to remove', kc);
-    row('  how much', sl(1, 100, F.key.sim == null ? 40 : F.key.sim, (v) => { F.key.sim = v; }));
-    row('  soft edge', sl(1, 50, F.key.smooth == null ? 8 : F.key.smooth, (v) => { F.key.smooth = v; }));
-    const rs = document.createElement('button'); rs.className = 'sm'; rs.textContent = 'Reset picture tools'; rs.onclick = () => { delete l.pfx; save(); rerender(); }; dt.appendChild(rs);
-    box.append(dt);
+    box.append(field('Show as', seg([['12', '12-hour'], ['24', '24-hour']], l.h24 ? '24' : '12', (v) => { l.h24 = v === '24'; })));
+    box.append(field('Show seconds', tick(l.secs, (v) => { l.secs = v; })), field('Show the date', tick(l.date, (v) => { l.date = v; })));
+    box.append(fontPick(), field('Size', num(l.size || 120, 30, 400, (v) => { l.size = v; })));
+    box.append(field('Colour', swatches(['#ffffff', '#3b6cff', '#facc15', '#ef4444', '#22c55e', '#0a0a0a'], l.color || '#ffffff', (v) => { l.color = v; })));
   }
   // the address is used once you finish typing (Enter, or click away), not on every letter
-  if (l.type === 'browser') { const u = inp('url'); u.placeholder = 'http://...'; u.oninput = null; u.onchange = () => { l.url = u.value.trim(); save(); }; box.append(field('Address', u)); }
+  if (l.type === 'browser') {
+    const u = inp('url'); u.placeholder = 'https://...'; u.oninput = null; u.onchange = () => { l.url = u.value.trim(); save(); }; box.append(field('Address', u));
+    box.append(field('Width', num(l.bw || SW, 200, 3840, (v) => { l.bw = v; })), field('Height', num(l.bh || SH, 200, 2160, (v) => { l.bh = v; })));
+    const rl = document.createElement('button'); rl.type = 'button'; rl.className = 'sm'; rl.textContent = 'Reload'; rl.onclick = () => { const k = boardKey(l); if (window.msNative) window.msNative.browserClose(k); boards.delete(k); }; box.append(field('Reload page', rl));
+  }
   if (l.type === 'ipcam') {
     const u = inp('url'); u.placeholder = 'http://192.168.1.20:4747/video'; u.oninput = null; u.onchange = () => { l.url = u.value.trim(); save(); }; box.append(field('Phone address', u));
-    const st = document.createElement('p'); st.className = 'note'; const i = ipcams.get(l.url); st.textContent = i && i.complete && i.naturalWidth ? '● Connected: ' + i.naturalWidth + ' x ' + i.naturalHeight : 'Waiting for the phone...'; box.append(st);
-    const h = document.createElement('ol'); h.className = 'note'; h.style.paddingLeft = '18px';
-    ['Put the phone on the same Wi-Fi as this computer.', 'Install a phone camera app, like DroidCam or IP Webcam (Android), or EpocCam (iPhone).', 'Open it. It shows an address like http://192.168.1.20:4747.', 'Type that address above and add /video at the end.', 'Plug the phone in to charge: streaming uses a lot of battery.'].forEach((t) => { const li = document.createElement('li'); li.textContent = t; h.appendChild(li); });
-    box.append(h);
+    const i = ipcams.get(l.url); const st = document.createElement('p'); st.className = 'as-st ' + (i && i.complete && i.naturalWidth ? 'ok' : 'wait'); st.textContent = i && i.complete && i.naturalWidth ? 'Picture is coming through' : 'Waiting for a phone... (same Wi-Fi as this computer)'; if (!draft) left.append(st);
   }
   if (l.type === 'screen' || l.type === 'window') {
     const win = l.type === 'window';
-    const sl = document.createElement('select'), im = document.createElement('img');
-    im.style.cssText = 'width:192px;height:108px;object-fit:contain;background:#000;border-radius:4px;display:block;margin:4px 0';
+    const sl = document.createElement('select');
     let list = [];
     const fill = async () => {
       if (!window.msNative) return;
       list = await window.msNative.sources(win ? 'window' : 'screen').catch(() => []);
-      sl.textContent = ''; sl.add(new Option(win ? 'Pick a window...' : 'First screen', ''));
+      const keep = sl.value; sl.textContent = ''; sl.add(new Option(win ? 'Pick a window...' : 'First screen', ''));
       if (win && l.winName && !list.some((x) => x.id === l.display)) sl.add(new Option('Saved: ' + l.winName, '__saved'));
       list.forEach((x) => sl.add(new Option(x.name, x.id)));
-      sl.value = list.some((x) => x.id === l.display) ? l.display : (win && l.winName ? '__saved' : '');
-      const cur = list.find((x) => x.id === sl.value); im.src = cur && cur.thumb ? cur.thumb : ''; im.hidden = !(cur && cur.thumb);
+      sl.value = list.some((x) => x.id === l.display) ? l.display : (win && l.winName ? '__saved' : keep || '');
     };
     sl.onchange = () => {
       if (sl.value === '__saved') return;
       const old = caps.get(capKey(l)); if (old) { try { old.st && old.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(capKey(l)); }
       l.display = sl.value; l.winName = win && sl.value ? sl.options[sl.selectedIndex].text : '';
-      const cur = list.find((x) => x.id === sl.value); im.src = cur && cur.thumb ? cur.thumb : ''; im.hidden = !(cur && cur.thumb);
       save();
     };
-    fill(); box.append(field(win ? 'Window' : 'Screen', sl), im);
-    const rf = document.createElement('button'); rf.className = 'sm'; rf.textContent = 'Refresh the list'; rf.onclick = fill; box.append(rf);
-    if (win) { const h = document.createElement('p'); h.className = 'note'; h.textContent = 'Open the program first (for example the lyrics or slides), then pick it here. If you close it and open it again, the Studio finds it again by its name. On a Mac, allow Screen Recording for Multistream when the Mac asks.'; box.append(h); }
+    sl.onfocus = fill; sl.onmousedown = () => { fill(); }; fill();
+    box.append(field(win ? 'Window' : 'Screen', sl));
+    // Whole screen or one app: switching changes the kind of source
+    box.append(field('What to capture', seg([['screen', 'Whole screen'], ['window', 'One app only']], l.type, (v) => { if (v === l.type) return; const old = caps.get(capKey(l)); if (old) { try { old.st && old.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(capKey(l)); } l.type = v; l.display = ''; l.winName = ''; if (draft && /^(Whole screen|One window|Screen|Window)$/.test(l.name || '')) l.name = v === 'window' ? 'One window' : 'Whole screen'; })));
+    if (win) { const h = document.createElement('p'); h.className = 'note'; h.textContent = 'Open the program first (for example the lyrics or slides), then pick it here. If you close it and open it again, the Studio finds it again by its name.'; left.append(h); }
   }
 }
+// "Use the camera's sound": the camera's own microphone (same device) is added to the Audio Mixer, or taken out again
+function camSound(l) {
+  if (!l.camSound) {
+    if (l.camSoundId) { studio.audio = studio.audio.filter((a) => a.id !== l.camSoundId); studio.scenes.forEach((sc) => { sc.audio = (sc.audio || []).filter((x) => x !== l.camSoundId); }); delete l.camSoundId; save(); renderAudio(); syncAudio(); }
+    return;
+  }
+  if (l.camSoundId && studio.audio.some((a) => a.id === l.camSoundId)) return;
+  const v = devices.video.find((d) => d.deviceId === l.device) || devices.video.find((d) => l.label && d.label === l.label) || devices.video[0];
+  const stem = (x) => String(x || '').replace(/\s*\([^)]*\)\s*$/, '').toLowerCase();
+  const a = v && (devices.audio.find((d) => d.groupId && d.groupId === v.groupId && d.deviceId !== 'default' && d.deviceId !== 'communications') || devices.audio.find((d) => stem(d.label) && stem(d.label) === stem(v.label)));
+  if (!a) { l.camSound = false; save(); flash('This camera has no sound of its own. Add a Microphone instead.', false); if (propsOpen) renderLayers(); return; }
+  const n = { id: uid(), name: (l.name || 'Camera') + ' sound', device: a.deviceId, label: a.label, vol: 1, muted: false };
+  studio.audio.push(n); const sc = byName(editing); if (sc) (sc.audio = sc.audio || []).push(n.id);
+  l.camSoundId = n.id; save(); renderAudio(); syncAudio(); flash(n.name + ' added to the Audio Mixer.', true);
+}
+let posOpen = false;
 function pickFile(l, accept, done) {
   const f = $('#file'); f.value = ''; f.accept = accept || (l.type === 'video' ? 'video/*' : 'image/*');
   f.onchange = async () => {
@@ -2365,7 +2388,7 @@ function pickFile(l, accept, done) {
 function newLayer(t) {
   const l = { id: uid(), type: t, x: 0, y: 0, w: SW, h: SH, fit: 'stretch', visible: true };
   if (t === 'text') Object.assign(l, { text: 'Welcome', size: 110, color: '#ffffff', x: 120, y: 800, w: 1600, h: 160 });
-  if (t === 'color') l.color = '#0b3d1e';
+  if (t === 'color') l.color = '#3b6cff';
   if (t === 'window') { l.display = ''; l.winName = ''; l.fit = 'fit'; }
   if (t === 'screen' || t === 'camera') l.fit = 'fit';
   if (t === 'lower') Object.assign(l, { title: 'Name here', sub: 'Role', tag: 'person', style: 'clean', anim: 'wipe', font: 'inter', hideAfter: 8, color: '#3b6cff', textColor: '#ffffff', x: 80, y: 860, w: 820, h: 130, fit: 'stretch' });
@@ -2381,6 +2404,7 @@ function addLayer(l) {
   const s = byName(editing); if (!s) return;
   if (SH > SW && ['camera', 'screen', 'window', 'video', 'ipcam', 'browser'].includes(l.type) && !l.pfAsked) { askPortraitFit(l, () => addLayer(l)); return; }
   s.layers.push(l); sel = l.id; propsOpen = true; save(); renderLayers();
+  if (l.type === 'camera' && l.camSound) camSound(l);
 }
 // "How should Camera fit?": a wide (16:9) picture in a tall (9:16) collection
 // Filters: each one can be turned on or off and changed, with a live preview. Cancel puts them back as they were.
@@ -2422,7 +2446,7 @@ function openFilters(l) {
     if (cur === 'cc') { row('Brightness', sl(0, 200, F.bri == null ? 100 : F.bri, pct, (v) => { F.bri = v; })); row('Contrast', sl(0, 200, F.con == null ? 100 : F.con, pct, (v) => { F.con = v; })); row('Colour (saturation)', sl(0, 200, F.sat == null ? 100 : F.sat, pct, (v) => { F.sat = v; })); row('See-through', sl(0, 100, F.op == null ? 100 : F.op, pct, (v) => { F.op = v; })); }
     if (cur === 'crop') { const C = (F.crop = F.crop || {}); [['l', 'Left'], ['t', 'Top'], ['r', 'Right'], ['b', 'Bottom']].forEach(([k, t]) => row(t, sl(0, 90, C[k] || 0, pct, (v) => { C[k] = v; }))); }
     if (cur === 'key') { const K = (F.key = F.key || { on: true }); const kc = document.createElement('input'); kc.type = 'color'; kc.value = K.color || '#00ff00'; kc.oninput = () => { K.color = kc.value; save(); }; row('Colour to remove', kc); row('How much', sl(1, 100, K.sim == null ? 40 : K.sim, (v) => String(v), (v) => { K.sim = v; })); row('Soft edge', sl(1, 50, K.smooth == null ? 8 : K.smooth, (v) => String(v), (v) => { K.smooth = v; })); }
-    if (cur === 'shape') { const sh = document.createElement('select'); [['', 'Normal'], ['round', 'Rounded corners'], ['circle', 'Circle']].forEach(([v, t]) => sh.add(new Option(t, v))); sh.value = F.shape || ''; sh.onchange = () => { F.shape = sh.value; save(); }; row('Shape', sh); const fl = document.createElement('input'); fl.type = 'checkbox'; fl.checked = Boolean(F.flip); fl.onchange = () => { F.flip = fl.checked; save(); }; row('Flip left-right', fl); }
+    if (cur === 'shape') { const sh = document.createElement('select'); [['', 'Normal'], ['round', 'Rounded corners'], ['circle', 'Circle']].forEach(([v, t]) => sh.add(new Option(t, v))); sh.value = F.shape || ''; sh.onchange = () => { F.shape = sh.value; save(); draw(); }; row('Shape', sh); if (F.shape === 'round') row('Corner size', sl(0, 50, F.round == null ? 12 : F.round, (v) => v + '%', (v) => { F.round = v; })); const fl = document.createElement('input'); fl.type = 'checkbox'; fl.checked = Boolean(F.flip); fl.onchange = () => { F.flip = fl.checked; save(); }; row('Flip left-right', fl); }
   }
   d.querySelector('.fl-rm').onclick = () => setOn(cur, false);
   d.querySelector('.fl-add').onclick = (e) => { e.stopPropagation(); const am = d.querySelector('.addm'); const old = am.querySelector('.menu2'); if (old) { old.remove(); return; } const mm = document.createElement('div'); mm.className = 'menu2'; const h = document.createElement('div'); h.className = 'as-g'; h.textContent = 'Picture'; mm.appendChild(h); FLT.forEach(([k, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.disabled = fltOn(F, k); b.onclick = () => { mm.remove(); cur = k; setOn(k, true); }; mm.appendChild(b); }); am.appendChild(mm); };
@@ -3300,7 +3324,8 @@ function hkList() {
   let saved = {}; try { saved = JSON.parse(localStorage.getItem('ms_hotkeys') || '{}') || {}; } catch {}
   const out = [['stream', 'Start / stop streaming', 'STREAMING AND RECORDING'], ['record', 'Start / stop recording', 'STREAMING AND RECORDING'], ['vcam', 'Start / stop virtual camera', 'STREAMING AND RECORDING'], ['trans', 'Transition (send Preview live)', 'SCENES']]
     .concat(studio.scenes.map((x) => ['scene:' + x.name, 'Go to scene: ' + x.name, 'SCENES']))
-    .concat(studio.audio.map((a) => ['mute:' + a.id, 'Mute / unmute ' + (a.name || 'sound'), 'SOUND']));
+    .concat(studio.audio.map((a) => ['mute:' + a.id, 'Mute / unmute ' + (a.name || 'sound'), 'SOUND']))
+    .concat((() => { const seen = new Set(), out2 = []; studio.scenes.forEach((sc) => (sc.layers || []).forEach((x) => { if (x.type === 'lower' && !seen.has(x.id)) { seen.add(x.id); out2.push(['nb:' + x.id, 'Show / hide ' + (x.name || x.title || 'name bar'), 'NAME BARS']); } })); return out2; })());
   return out.map(([id, label, group]) => ({ id, label, group, def: hkDefault(id), key: saved[id] != null ? saved[id] : hkDefault(id) }));
 }
 window.msHotkeyList = hkList;
@@ -3322,6 +3347,7 @@ window.msHotkey = (e) => {
   else if (id === 'vcam') { if (!$('#vcBtn').hidden) $('#vcBtn').click(); }
   else if (id === 'trans') $('#transBtn').click();
   else if (id.startsWith('scene:')) { const n = id.slice(6); if (byName(n) && n !== studio.current) setCurrent(n); }
+  else if (id.startsWith('nb:')) { let hit = null; studio.scenes.forEach((sc) => (sc.layers || []).forEach((x) => { if (x.id === id.slice(3)) hit = x; })); if (hit) { hit.visible = hit.visible === false; save(); renderLayers(); } }
   else if (id.startsWith('mute:')) { const a = studio.audio.find((x) => x.id === id.slice(5)); if (a) { a.muted = !a.muted; save(); syncAudio(); renderAudio(); } }
   return true;
 };
