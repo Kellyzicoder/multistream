@@ -591,6 +591,12 @@
   .as-card .subc { display:contents; }
   details.pos summary { cursor:pointer; font-size:12.5px; color:#cdd3e4; padding:4px 2px; } details.pos .as-card { margin-top:8px; }
   .as-cl .duo-ly { margin-top:2px; }
+  /* an empty panel: a short line and a button, in the middle */
+  .dock .list:has(> .emp) { display:flex !important; align-items:center; justify-content:center; }
+  .emp { display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; padding:18px 16px; margin:auto; max-width:240px; }
+  .emp b { font-size:13.5px; font-weight:600; color:var(--text); } .emp span { font-size:12px; color:#8a93ad; line-height:1.45; }
+  .emp button { margin-top:6px; padding:7px 14px; border-radius:999px; border:1px dashed color-mix(in srgb, var(--sel) 60%, transparent); background:color-mix(in srgb, var(--sel) 12%, transparent); color:var(--text); font-size:12.5px; font-weight:600; box-shadow:none; height:auto; min-width:0; }
+  .emp button:hover { background:var(--sel); color:var(--onsel); border-style:solid; }
 </style>
 </head>
 <body>
@@ -1638,6 +1644,7 @@ function renderAudio() {
     d.addEventListener('contextmenu', (e) => showAudioMenu(e, a, n, fx, on.has(a.id)));
   });
   $('#audNote').textContent = studio.audio.length ? '' : 'No sound inputs yet.';
+  if (!studio.audio.length) { box.classList.remove('hz'); box.appendChild(emptyPanel('No sound yet', 'Add a microphone or a sound desk.', 'Add a microphone', () => { openAddSource(); setTimeout(() => { const b = [...document.querySelectorAll('.addsrc2 .as-list button')].find((x) => x.textContent === 'Microphone'); if (b) b.click(); }, 0); })); }
 }
 // Listen in headphones: only you hear it, the stream does not change
 let lspEl = null;
@@ -1725,8 +1732,16 @@ function drawMeters(now) {
 requestAnimationFrame(drawMeters);
 
 // ---------------- scenes UI ----------------
+// what a panel shows when it is empty: a short line and a button, in the middle
+function emptyPanel(title, sub, btn, fn) {
+  const d = document.createElement('div'); d.className = 'emp';
+  const b = document.createElement('b'); b.textContent = title; const p = document.createElement('span'); p.textContent = sub; d.append(b, p);
+  if (btn) { const k = document.createElement('button'); k.type = 'button'; k.textContent = '+ ' + btn; k.onclick = (e) => { e.stopPropagation(); fn(); }; d.appendChild(k); }
+  return d;
+}
 function renderScenes() {
   const box = $('#scenes'); box.textContent = '';
+  if (!studio.scenes.length) box.appendChild(emptyPanel('No scenes yet', 'A scene is one picture: a camera, slides or a welcome screen.', 'Add a scene', () => $('#addScene').click()));
   studio.scenes.forEach((s) => {
     const d = document.createElement('div'); d.className = 'scn' + (s.name === editing ? ' on' : '');
     const n = document.createElement('span'); n.className = 'n'; n.textContent = s.name; d.appendChild(n);
@@ -2096,7 +2111,8 @@ function renderLayers() {
   $('#editName').textContent = editing ? '(' + editing + ')' : ''; $('#airName').textContent = studio.current ? '(' + studio.current + ')' : '';
   $('#evT').textContent = studioMode ? 'Preview' : 'Live';
   $('#hint').textContent = sel ? 'Drag to move. Drag a corner or edge to resize. Hold Alt and drag an edge to crop.' : (studioMode ? 'Pick a scene, then press Transition to put it on air. Click an item in the Preview to move it.' : 'Click a scene to put it on air. Click an item in the picture to move it.');
-  if (!s) { box.textContent = 'Add a scene first.'; $('#propsBox').hidden = true; return; }
+  if (!s) { box.appendChild(emptyPanel('No scene yet', 'Add a scene first, then its sources show here.', 'Add a scene', () => $('#addScene').click())); $('#propsBox').hidden = true; return; }
+  if (!s.layers.length) box.appendChild(emptyPanel('Nothing in this scene', 'Add a camera, a screen, a picture or words.', 'Add a source', () => openAddSource()));
   for (let i = s.layers.length - 1; i >= 0; i--) {
     const l = s.layers[i];
     const d = document.createElement('div'); d.className = 'lyr' + (l.id === sel ? ' on' : '');
