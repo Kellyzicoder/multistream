@@ -199,14 +199,16 @@
   .dock h2 { white-space:nowrap; } .dock .ctl button, .dock .pad button { white-space:nowrap; }
   /* ---------- vertical audio mixer (like OBS) ---------- */
   #audio { display:flex; flex-direction:row; align-items:stretch; gap:8px; padding:8px; overflow-x:auto; overflow-y:hidden; }
-  #audio .au { flex:none; width:104px; display:flex; flex-direction:column; gap:6px; margin:0; padding:8px 6px; border:1px solid var(--gl-line); border-radius:16px; background:var(--gl2); }
+  #audio .au { flex:none; width:118px; display:flex; flex-direction:column; gap:6px; margin:0; padding:8px 6px; border:1px solid var(--gl-line); border-radius:16px; background:var(--gl2); }
   #audio .au.off { opacity:.5; }
   #audio .au .t { gap:2px; } #audio .au .t .n { font-size:11px; }
   .aub { flex:1; min-height:110px; display:flex; justify-content:center; }
   .aum { display:flex; gap:4px; height:100%; min-height:110px; }
   .scale { position:relative; width:22px; font-size:9px; color:var(--muted); } .scale span { position:absolute; right:0; transform:translateY(50%); line-height:1; }
-  #audio .mt { position:relative; width:10px; height:100%; margin:0; border-radius:999px; overflow:hidden; background:linear-gradient(0deg,#22c55e 0 52%,#f59e0b 52% 72%,#dc3545 72% 83%,#dc3545 100%); background-size:100% 100%; }
-  #audio .mt i { position:absolute; left:0; right:0; top:0; height:100%; background:var(--mcov); transition:height .06s linear; }
+  #audio .mts { display:flex; gap:2px; height:100%; }
+  #audio .mt { position:relative; width:9px; height:100%; margin:0; border-radius:2px; overflow:hidden; background:linear-gradient(0deg,#22c55e 0 66.7%,#f5c400 66.7% 85%,#ef2b2b 85% 100%); background-size:100% 100%; }
+  #audio .mt i { position:absolute; left:0; right:0; top:0; width:auto; height:100%; background:var(--mcov); } /* width:auto: the general .mt i rule sets width 0, which hid this cover, so the meter always looked full */
+  #audio .mt b { position:absolute; left:0; right:0; bottom:0; height:2px; background:#fff; opacity:0; }
   .fdr { position:relative; width:26px; height:100%; cursor:pointer; touch-action:none; outline:none; border-radius:8px; }
   .fdr:focus-visible { outline:2px solid var(--sel); }
   .fdr .trk { position:absolute; left:50%; top:6px; bottom:6px; width:4px; margin-left:-2px; border-radius:999px; background:var(--track, rgba(150,170,165,.4)); }
@@ -868,7 +870,11 @@ async function syncAudio() {
       // and after the fader a copy goes to the monitor (your headphones)
       n.delay.connect(n.det); n.delay.connect(n.hp); n.hp.connect(n.eqL); n.eqL.connect(n.eqM); n.eqM.connect(n.eqH); n.eqH.connect(n.comp);
       n.comp.connect(n.nz); n.nz.connect(n.lim); n.lim.connect(n.gain);
-      n.gain.connect(n.an); n.gain.connect(n.gate); n.gate.connect(master); n.gate.gain.value = 0;
+      n.gain.connect(n.an); n.gain.connect(n.gate);
+      // left and right meters: the level after the fader, split in two (a one-channel input is copied to both sides)
+      n.st = actx.createGain(); n.st.channelCount = 2; n.st.channelCountMode = 'explicit'; n.st.channelInterpretation = 'speakers';
+      n.spl = actx.createChannelSplitter(2); n.anL = actx.createAnalyser(); n.anR = actx.createAnalyser(); n.anL.fftSize = n.anR.fftSize = 2048;
+      n.gain.connect(n.st); n.st.connect(n.spl); n.spl.connect(n.anL, 0); n.spl.connect(n.anR, 1); n.gate.connect(master); n.gate.gain.value = 0;
       n.mon.gain.value = 0; n.gain.connect(n.mon); n.mon.connect(actx.destination);
       asrc.set(a.id, n);
       const id = pickDevice('audio', a.label, a.device);
@@ -967,8 +973,8 @@ function renderAudio() {
     m.onclick = () => { a.muted = !a.muted; save(); syncAudio(); renderAudio(); };
     t.append(inScene, n);
     const fd = makeFader(a);
-    const mt = document.createElement('div'); mt.className = 'mt'; mt.innerHTML = '<i></i>';
-    const sc = document.createElement('div'); sc.className = 'scale'; [0, -10, -20, -30, -40, -50, -60].forEach((v) => { const e = document.createElement('span'); e.textContent = String(v); e.style.bottom = ((v + 60) / 72 * 100) + '%'; sc.appendChild(e); });
+    const mt = document.createElement('div'); mt.className = 'mts'; mt.title = 'Left and right'; mt.innerHTML = '<div class="mt"><i></i><b></b></div><div class="mt"><i></i><b></b></div>';
+    const sc = document.createElement('div'); sc.className = 'scale'; [0, -6, -12, -18, -24, -30, -36, -42, -48, -54, -60].forEach((v) => { const e = document.createElement('span'); e.textContent = String(v); e.style.bottom = ((v + 60) / 60 * 100) + '%'; sc.appendChild(e); });
     const sl = document.createElement('select');
     if (a.kind === 'desktop') { sl.add(new Option('The sound this computer plays', '')); sl.disabled = true; }
     else {
@@ -1004,6 +1010,8 @@ function renderAudio() {
     const body = document.createElement('div'); body.className = 'aub'; const wrap = document.createElement('div'); wrap.className = 'aum'; wrap.append(sc, mt, fd.el); body.appendChild(wrap);
     const bt = document.createElement('div'); bt.className = 'aut'; bt.append(m, tb);
     d.append(t, body, fd.read, bt); box.appendChild(d);
+    // right-click a sound input (like OBS): rename, mute, hear it in this scene, properties and filters
+    d.addEventListener('contextmenu', (e) => showAudioMenu(e, a, n, fx, on.has(a.id)));
   });
   $('#audNote').textContent = studio.audio.length ? 'Click the eye to hear that input in the scene you are editing.' : 'No sound inputs yet.';
 }
@@ -1015,15 +1023,31 @@ function addAudioInput(kind) {
 }
 document.querySelectorAll('[data-addaudio]').forEach((b) => { b.onclick = () => addAudioInput(b.dataset.addaudio); });
 if (window.msNative && window.msNative.platform === 'win32') $('#desktopAudioItem').hidden = false;
-const buf = new Float32Array(512);
-setInterval(() => {
+// level meters, like OBS: drawn every screen refresh, the bar falls back smoothly (about 26 dB a second),
+// and a white line shows the highest level for 1.5 seconds
+const bufL = new Float32Array(2048), bufR = new Float32Array(2048), meterState = new Map();
+const peakOf = (an, b) => { an.getFloatTimeDomainData(b); let p = 0; for (let i = 0; i < b.length; i++) { const v = b[i] < 0 ? -b[i] : b[i]; if (v > p) p = v; } return Math.max(-60, dB(p)); };
+const meterPct = (v) => Math.max(0, Math.min(100, (v + 60) / 60 * 100));
+let meterT = performance.now();
+function drawMeters(now) {
+  requestAnimationFrame(drawMeters);
+  const dt = Math.min(0.2, (now - meterT) / 1000); meterT = now;
+  if (document.hidden) return;
   document.querySelectorAll('#audio .au').forEach((d) => {
-    const n = asrc.get(d.dataset.id); const bar = d.querySelector('.mt i'); if (!bar) return;
-    if (!n) { bar.style.height = '100%'; return; }
-    n.an.getFloatTimeDomainData(buf); let pk = 0; for (let i = 0; i < buf.length; i++) pk = Math.max(pk, Math.abs(buf[i]));
-    bar.style.height = (100 - Math.max(0, Math.min(100, (dB(pk) + 60) / 72 * 100))) + '%';
+    const bars = d.querySelectorAll('.mt'); if (!bars.length) return;
+    const n = asrc.get(d.dataset.id);
+    let st = meterState.get(d.dataset.id); if (!st) { st = [{ l: -60, p: -60, at: 0 }, { l: -60, p: -60, at: 0 }]; meterState.set(d.dataset.id, st); }
+    const cur = n && n.anL ? [peakOf(n.anL, bufL), peakOf(n.anR, bufR)] : [-60, -60];
+    bars.forEach((bar, k) => {
+      const m = st[k], c = cur[k];
+      m.l = Math.max(c, m.l - 26 * dt);
+      if (c >= m.p) { m.p = c; m.at = now; } else if (now - m.at > 1500) m.p = Math.max(c, m.p - 20 * dt);
+      bar.firstChild.style.height = (100 - meterPct(m.l)) + '%';
+      bar.lastChild.style.bottom = 'calc(' + meterPct(m.p) + '% - 1px)'; bar.lastChild.style.opacity = m.p > -59 ? '1' : '0';
+    });
   });
-}, 80);
+}
+requestAnimationFrame(drawMeters);
 
 // ---------------- scenes UI ----------------
 function renderScenes() {
@@ -1058,6 +1082,33 @@ function openProjector(src, displayId) {
   projWins[src] = window.open('/projector.html?src=' + src + (displayId != null ? '&d=' + encodeURIComponent(displayId) : ''), '_blank', 'popup,width=960,height=540');
 }
 function closeCtx() { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } }
+// the right-click menu on a sound input in the Audio Mixer
+function showAudioMenu(ev, a, nameEl, fx, inScene) {
+  ev.preventDefault(); closeCtx();
+  const m = document.createElement('div'); m.className = 'ctxm'; m.setAttribute('role', 'menu');
+  const head = document.createElement('div'); head.className = 'ctxh'; head.textContent = a.name; m.appendChild(head);
+  const item = (t, run) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ctxi'; b.setAttribute('role', 'menuitem'); b.textContent = t; b.onclick = () => { closeCtx(); run(); }; m.appendChild(b); };
+  const sep = () => { const d = document.createElement('div'); d.className = 'ctxs'; m.appendChild(d); };
+  item(a.muted ? 'Unmute' : 'Mute', () => { a.muted = !a.muted; save(); syncAudio(); renderAudio(); });
+  item(inScene ? 'Do not hear it in this scene' : 'Hear it in this scene', () => {
+    const sc = byName(editing); if (!sc) return; sc.audio = sc.audio || [];
+    if (inScene) sc.audio = sc.audio.filter((x) => x !== a.id); else if (!sc.audio.includes(a.id)) sc.audio.push(a.id);
+    save(); gateAudio(); renderAudio();
+  });
+  sep();
+  item('Rename...', () => {
+    // typed in place (a pop-up box does not work in the app)
+    const i = document.createElement('input'); i.type = 'text'; i.value = a.name; i.className = 'n'; i.style.width = '100%';
+    nameEl.replaceWith(i); i.focus(); i.select();
+    let done = false; const finish = (keep) => { if (done) return; done = true; const v = i.value.trim(); if (keep && v) { a.name = v; save(); } renderAudio(); };
+    i.onkeydown = (e) => { if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false); }; i.onblur = () => finish(true);
+  });
+  sep();
+  item('Properties and filters...', () => openTools(a, fx));
+  document.body.appendChild(m); ctxMenu = m;
+  const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
+  const first = m.querySelector('.ctxi'); if (first) first.focus();
+}
 async function showViewMenu(ev, src) {
   ev.preventDefault(); closeCtx();
   let ds = []; try { if (window.msNative && window.msNative.displays) ds = await window.msNative.displays(); } catch {}
