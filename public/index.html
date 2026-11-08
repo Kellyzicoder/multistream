@@ -902,6 +902,12 @@
   html.t-light.ps-solid { --gl:#ffffff; --gl2:#f3f5fa; }
   .glp-ic { display:none; width:64px; height:64px; border-radius:20px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); place-items:center; color:#cdd3e4; } .glp-ic svg { width:28px; height:28px; }
   .glp-off.empty .ring { display:none; } .glp-off.empty .glp-ic { display:grid; }
+  /* nothing to show: a dark shade of the main colour (like OBS), everywhere a picture is missing */
+  .glp-off { background:color-mix(in srgb, var(--blue) 16%, #05070f) !important; }
+  .mv2 .mvt { background:color-mix(in srgb, var(--blue) 16%, #05070f); } .mv2 .mvt.empty { background:color-mix(in srgb, var(--blue) 8%, rgba(5,7,15,.5)); }
+  /* drop-downs as in the design: one small arrow, not the computer's own up and down arrows */
+  select:not([multiple]) { -webkit-appearance:none; appearance:none; padding-right:36px !important; background-image:linear-gradient(45deg,transparent 50%,#a3abc4 50%),linear-gradient(135deg,#a3abc4 50%,transparent 50%) !important; background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50% !important; background-size:5px 5px,5px 5px !important; background-repeat:no-repeat !important; }
+  html.t-light select:not([multiple]) { background-image:linear-gradient(45deg,transparent 50%,#5b6377 50%),linear-gradient(135deg,#5b6377 50%,transparent 50%) !important; }
 </style>
 </head>
 <body>

@@ -556,6 +556,18 @@
   .duo-ly .dl { display:flex; flex-direction:column; align-items:center; gap:6px; padding:6px; border-radius:12px; border:2px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); color:var(--text); box-shadow:none; height:auto; } .duo-ly .dl.on { border-color:var(--sel); background:color-mix(in srgb, var(--sel) 12%, transparent); } .duo-ly .dl b { font-size:11.5px; font-weight:600; }
   .dlp { width:100%; aspect-ratio:16/9; border-radius:8px; background:linear-gradient(135deg,#1d2a5e,#3a1f5e); position:relative; overflow:hidden; } .dlp i { position:absolute; top:28%; height:44%; border-radius:4px; } .dlp i:first-child { left:7%; width:46%; background:#eef1f8; } .dlp i:last-child { right:7%; width:34%; background:linear-gradient(135deg,#6b4fbf,#3a1f5e); }
   .dlp.big i:first-child { top:12%; height:76%; width:62%; left:5%; } .dlp.big i:last-child { width:26%; top:30%; height:40%; right:4%; }
+  /* name bar: style pictures and the twelve ways it comes in */
+  .f.col { flex-direction:column !important; align-items:stretch !important; gap:8px; }
+  .nb-sty { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .nb-s { display:flex; flex-direction:column; align-items:center; gap:6px; padding:6px; border-radius:12px; border:2px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); color:var(--text); box-shadow:none; height:auto; min-width:0; } .nb-s.on { border-color:var(--sel); background:color-mix(in srgb, var(--sel) 14%, transparent); } .nb-s b { font-size:11.5px; font-weight:600; }
+  .nb-p { width:100%; height:44px; border-radius:8px; position:relative; overflow:hidden; background:linear-gradient(135deg, color-mix(in srgb, var(--sel) 30%, #0a0e1f), #2a1f55); }
+  .nb-p i { position:absolute; left:10%; border-radius:3px; } .nb-p i:first-child { bottom:12px; width:62%; height:13px; } .nb-p i:last-child { bottom:7px; width:40%; height:4px; background:rgba(255,255,255,.6); }
+  .nb-clean i:first-child { background:rgba(10,14,31,.85); border-left:3px solid var(--sel); } .nb-bold i:first-child { background:var(--sel); height:16px; bottom:10px; } .nb-minimal i:first-child { background:transparent; border-bottom:2px solid #fff; border-radius:0; height:10px; }
+  .nb-an { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  .nb-an button { padding:6px 4px; border-radius:8px; border:1px solid rgba(255,255,255,.1); background:rgba(10,14,31,.5); color:#cdd3e4; font-size:11.5px; font-weight:600; box-shadow:none; min-width:0; height:auto; } .nb-an button.on { background:var(--sel); border-color:var(--sel); color:var(--onsel); }
+  /* drop-downs as in the design: one small arrow, not the computer's own up and down arrows */
+  select:not([multiple]) { -webkit-appearance:none; appearance:none; padding-right:36px !important; background-image:linear-gradient(45deg,transparent 50%,#a3abc4 50%),linear-gradient(135deg,#a3abc4 50%,transparent 50%) !important; background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50% !important; background-size:5px 5px,5px 5px !important; background-repeat:no-repeat !important; }
+  html.t-light select:not([multiple]) { background-image:linear-gradient(45deg,transparent 50%,#5b6377 50%),linear-gradient(135deg,#5b6377 50%,transparent 50%) !important; }
 </style>
 </head>
 <body>
@@ -749,8 +761,8 @@
     if (hexOk(a.accent)) { const acc = light && lum(a.accent) > 0.8 ? '#1f2933' : a.accent; r.setProperty('--sel', acc); r.setProperty('--onsel', lum(acc) > 0.3 ? '#05130a' : '#ffffff'); }
     else { r.removeProperty('--sel'); r.removeProperty('--onsel'); }
   }
-  apply(); window.msApplyLook = apply;
-  window.addEventListener('storage', (e) => { if (e.key === 'ms_access') apply(); });
+  apply(); window.msApplyLook = () => { apply(); try { phColors(); } catch {} };
+  window.addEventListener('storage', (e) => { if (e.key === 'ms_access') { apply(); try { phColors(); } catch {} } });
   if (dark && dark.addEventListener) dark.addEventListener('change', apply);
 })();
 let SW = 1920, SH = 1080;             // the size scenes are drawn in (same as OBS); a tall (9:16) collection is 1080 x 1920
@@ -922,11 +934,33 @@ function place(l, sw, sh) {
   if (l.fit === 'fit') { const k = Math.min(w / sw, h / sh); const dw = sw * k, dh = sh * k; return [l.x + (w - dw) / 2, l.y + (h - dh) / 2, dw, dh]; }
   return [l.x, l.y, w, h];
 }
+// A source with no picture (a camera not connected, a file not found...): like OBS, a dark shade of the main colour with
+// what is missing, so it is easy to see on screen. While streaming, recording or on the virtual camera nothing is drawn,
+// so viewers never see it.
+let PH_BG = '#0d1430', PH_FG = 'rgba(205,211,228,.75)';
+function phColors() {
+  try {
+    const t = document.createElement('canvas').getContext('2d'); t.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--sel').trim() || '#3b6cff';
+    const h = t.fillStyle; if (!/^#[0-9a-f]{6}$/i.test(h)) return;
+    const n = parseInt(h.slice(1), 16), a = [(n >> 16) & 255, (n >> 8) & 255, n & 255], b = [5, 7, 15];
+    PH_BG = 'rgb(' + a.map((v, i) => Math.round(v * 0.16 + b[i] * 0.84)).join(',') + ')';
+    PH_FG = 'rgba(' + a.map((v) => Math.round(v * 0.35 + 205 * 0.65)).join(',') + ',.8)';
+  } catch {}
+}
+const phQuiet = () => Boolean(wantSend || recWs || vcOn);
+function phBox(c, x, y, w, h, msg) {
+  c.save(); c.fillStyle = PH_BG; c.fillRect(x, y, w, h);
+  const r = Math.max(14, Math.min(w, h) * 0.07), cx = x + w / 2, cy = y + h / 2 - (msg ? r * 0.6 : 0);
+  c.strokeStyle = PH_FG; c.lineWidth = Math.max(2, r * 0.13); c.lineJoin = 'round';
+  // a small camera
+  c.beginPath(); c.moveTo(cx - r * 1.3, cy - r * 0.55); c.lineTo(cx - r * 0.55, cy - r * 0.55); c.lineTo(cx - r * 0.3, cy - r * 0.9); c.lineTo(cx + r * 0.3, cy - r * 0.9); c.lineTo(cx + r * 0.55, cy - r * 0.55); c.lineTo(cx + r * 1.3, cy - r * 0.55); c.lineTo(cx + r * 1.3, cy + r * 0.9); c.lineTo(cx - r * 1.3, cy + r * 0.9); c.closePath(); c.stroke();
+  c.beginPath(); c.arc(cx, cy + r * 0.15, r * 0.45, 0, Math.PI * 2); c.stroke();
+  if (msg) { c.fillStyle = PH_FG; c.font = '600 ' + Math.round(Math.max(18, Math.min(42, h * 0.045))) + 'px Inter, system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'top'; c.fillText(msg, cx, cy + r * 1.5, w - 40); }
+  c.restore();
+}
 function note(c, l, msg) {
-  const w = l.w || SW, h = l.h || SH;
-  c.fillStyle = '#20272300'; c.fillStyle = '#1b231e'; c.fillRect(l.x, l.y, Math.min(w, 900), Math.min(h, 140));
-  c.fillStyle = '#9fb3a5'; c.font = '28px system-ui, sans-serif'; c.textBaseline = 'top';
-  c.fillText(msg, l.x + 16, l.y + 16, Math.min(w, 900) - 32);
+  if (phQuiet()) return;
+  phBox(c, l.x || 0, l.y || 0, l.w || SW, l.h || SH, msg);
 }
 // ---- lower thirds, countdown and clock ----
 const lowerState = new Map();
@@ -1184,6 +1218,8 @@ function drawLayer(c, l, live) {
 function drawScene(c, scene, k, live) {
   c.save(); const m = c.getTransform(); c.setTransform(k * m.a, 0, 0, k * m.d, m.e, m.f); // keeps any move set before (see drawFit)
   c.fillStyle = '#000'; c.fillRect(0, 0, SW, SH);
+  // a scene with nothing in it, or nothing that shows yet: the placeholder colour (not while sending)
+  if (!phQuiet() && (!scene || !scene.layers.some(layerShows))) { if (!scene || !scene.layers.some((l) => l.visible !== false || l.type === 'lower')) phBox(c, 0, 0, SW, SH, scene ? 'Nothing in this scene yet' : ''); else { c.fillStyle = PH_BG; c.fillRect(0, 0, SW, SH); } }
   if (scene) scene.layers.forEach((l) => drawLayer(c, l, live));
   c.restore();
 }
@@ -1952,7 +1988,7 @@ function openAddSource() {
   // live preview of the new source, on its own
   const pv = document.createElement('canvas'); pv.width = 640; pv.height = 360; pv.className = 'as-pv';
   const tickPv = () => { if (!alive) return; const c = pv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#05070f'; c.fillRect(0, 0, 640, 360);
-    if (draft && !draft.mic) { c.save(); const k = Math.min(640 / SW, 360 / SH); c.translate((640 - SW * k) / 2, (360 - SH * k) / 2); c.scale(k, k); const g = c.createLinearGradient(0, 0, SW, SH); g.addColorStop(0, '#262a63'); g.addColorStop(0.6, '#3a1f5e'); g.addColorStop(1, '#14363a'); c.fillStyle = g; c.fillRect(0, 0, SW, SH); try { if (draft.type === 'lower') { draft.visible = true; } drawLayer(c, draft, false); } catch {} c.restore(); }
+    if (draft && !draft.mic) { c.save(); const k = Math.min(640 / SW, 360 / SH); c.translate((640 - SW * k) / 2, (360 - SH * k) / 2); c.scale(k, k); c.fillStyle = PH_BG; c.fillRect(0, 0, SW, SH); try { if (draft.type === 'lower') { draft.visible = true; } drawLayer(c, draft, false); } catch {} c.restore(); }
     const st = main.querySelector('.as-st'); if (st && draft && !draft.mic) { const ok = pvOk(draft); st.className = 'as-st' + (ok === true ? ' ok' : ok === false ? ' wait' : ''); st.hidden = ok == null; st.textContent = ok ? 'Picture is coming through' : 'Waiting for the picture...'; }
     requestAnimationFrame(tickPv); };
   requestAnimationFrame(tickPv);
@@ -2081,7 +2117,7 @@ let ssLoop = false;
 function ssTick() {
   if ($('#propsBox').hidden) { ssLoop = false; return; }
   const l = curLayer(); const pv = $('#ssPv'), c = pv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#05070f'; c.fillRect(0, 0, 640, 360);
-  if (l) { c.save(); const k = Math.min(640 / SW, 360 / SH); c.translate((640 - SW * k) / 2, (360 - SH * k) / 2); c.scale(k, k); const gr = c.createLinearGradient(0, 0, SW, SH); gr.addColorStop(0, '#262a63'); gr.addColorStop(0.6, '#3a1f5e'); gr.addColorStop(1, '#14363a'); c.fillStyle = gr; c.fillRect(0, 0, SW, SH); const keep = l.visible; l.visible = true; try { drawLayer(c, l, false); } catch {} l.visible = keep; c.restore();
+  if (l) { c.save(); const k = Math.min(640 / SW, 360 / SH); c.translate((640 - SW * k) / 2, (360 - SH * k) / 2); c.scale(k, k); c.fillStyle = PH_BG; c.fillRect(0, 0, SW, SH); const keep = l.visible; l.visible = true; try { drawLayer(c, l, false); } catch {} l.visible = keep; c.restore();
     let ok = null; try { if (l.type === 'camera') ok = Boolean(getCam(l).ready); else if (l.type === 'screen' || l.type === 'window') ok = Boolean(getCapture(l).ready); } catch {}
     const st = $('#ssSt'); st.hidden = ok == null; st.className = 'as-st' + (ok ? ' ok' : ' wait'); st.textContent = ok ? 'Picture is coming through' : 'Waiting for the picture...'; }
   requestAnimationFrame(ssTick);
@@ -2209,9 +2245,12 @@ function renderProps(target, draft) {
       const r = document.createElement('div'); r.className = 'row'; r.append(ch, pn);
       if (l.pic || l.picUrl) { const rm = document.createElement('button'); rm.type = 'button'; rm.className = 'sm'; rm.textContent = 'Remove'; rm.onclick = () => { l.pic = ''; l.picUrl = ''; save(); rerender(); }; r.append(rm); }
       box.append(field('Picture (PNG)', r)); }
-    box.append(field('Style', seg([['clean', 'Clean'], ['bold', 'Bold'], ['minimal', 'Minimal']], l.style || 'clean', (v) => { l.style = v; })));
-    const an = document.createElement('select'); [['wipe', 'Wipe'], ['slide', 'Slide'], ['fade', 'Fade'], ['pop', 'Pop'], ['rise', 'Rise'], ['drop', 'Drop'], ['typewriter', 'Typewriter'], ['blur', 'Blur in'], ['zoom', 'Zoom'], ['bounce', 'Bounce'], ['flip', 'Flip'], ['glow', 'Glow']].forEach(([v, t]) => an.add(new Option(t, v)));
-    an.value = l.anim || 'slide'; an.onchange = () => { l.anim = an.value; save(); lowerState.set(l.id, { p: 0, t: performance.now(), shownAt: Date.now(), want: 1 }); }; box.append(field('How it comes in', an));
+    // the style as three small pictures, and how it comes in as twelve buttons (as in the design); a click plays it in the preview
+    const replay = () => lowerState.set(l.id, { p: 0, t: performance.now(), shownAt: Date.now(), want: 1 });
+    { const g = document.createElement('div'); g.className = 'nb-sty'; [['clean', 'Clean'], ['bold', 'Bold'], ['minimal', 'Minimal']].forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'nb-s' + ((l.style || 'clean') === v ? ' on' : ''); b.setAttribute('aria-pressed', String((l.style || 'clean') === v)); b.innerHTML = '<span class="nb-p nb-' + v + '"><i></i><i></i></span><b></b>'; b.querySelector('b').textContent = t; b.onclick = () => { l.style = v; save(); replay(); rerender(); }; g.appendChild(b); });
+      const f = field('Style', g); f.classList.add('col'); box.append(f); }
+    { const g = document.createElement('div'); g.className = 'nb-an'; [['wipe', 'Wipe'], ['slide', 'Slide'], ['fade', 'Fade'], ['pop', 'Pop'], ['rise', 'Rise'], ['drop', 'Drop'], ['typewriter', 'Typewriter'], ['blur', 'Blur in'], ['zoom', 'Zoom'], ['bounce', 'Bounce'], ['flip', 'Flip'], ['glow', 'Glow']].forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.className = (l.anim || 'slide') === v ? 'on' : ''; b.setAttribute('aria-pressed', String((l.anim || 'slide') === v)); b.title = 'Click to see it'; b.onclick = () => { l.anim = v; save(); replay(); g.querySelectorAll('button').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); }); }; g.appendChild(b); });
+      const f = field('How it comes in', g); f.classList.add('col'); box.append(f); }
     box.append(fontPick());
     const sz = { small: 100, medium: 130, large: 170 }, cur = l.h <= 110 ? 'small' : l.h >= 160 ? 'large' : 'medium';
     box.append(field('Text size', seg([['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']], cur, (v) => { const k = sz[v] / (l.h || 130); l.h = sz[v]; l.w = Math.round((l.w || 820) * k); })));
@@ -2682,6 +2721,7 @@ function layerShows(l) {
   } catch {}
   return false;
 }
+phColors();
 window.msHasPicture = () => { const s = byName(studio.current); return Boolean(s && s.layers.some(layerShows)); };
 window.msState = () => ({ sending: wantSend, recording: Boolean(recWs), scene: studio.current, collection: ($('#pColl b') || {}).textContent || '', shape: SHAPE_OF(), quality: OUT.h + 'p', fps: OUT.fps });
 async function maybeAutoStart() {
