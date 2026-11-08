@@ -786,6 +786,19 @@ function goLiveDescription(req) {
 }
 // While live: how many are watching, likes (YouTube and Facebook say this about every 30 seconds)
 let liveStats = { at: 0, youtube: null, facebook: null };
+// Analytics: the numbers from your own live dashboard website (its /api/stats), read by the app; the site is not shown
+app.get('/api/analytics', async (req, res) => {
+  let base = String(req.query.url || '').trim().replace(/\/+$/, '');
+  if (!/^https:\/\/[^\s/]+(\/[^\s]*)?$/i.test(base)) return res.status(400).json({ error: 'The address must start with https://' });
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 12000);
+    const r = await fetch(base + '/api/stats', { signal: ctl.signal, headers: { accept: 'application/json' } }); clearTimeout(t);
+    if (!r.ok) return res.status(502).json({ error: 'The dashboard answered ' + r.status });
+    const j = await r.json();
+    if (!j || typeof j !== 'object' || !j.platforms) return res.status(502).json({ error: 'That address did not give live numbers' });
+    res.json(j);
+  } catch (e) { res.status(502).json({ error: e && e.name === 'AbortError' ? 'The dashboard did not answer' : 'Could not reach the dashboard' }); }
+});
 app.get('/api/live/stats', async (req, res) => {
   if (Date.now() - liveStats.at > 25000) {
     liveStats.at = Date.now();
