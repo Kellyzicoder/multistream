@@ -7,11 +7,11 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
   :root {
-    --bg:#07090b; --card:#0c1013; --card2:#131a20; --field:#090c0f; --line:#1b242b;
-    --text:#e8eef1; --muted:#7a8890; --blue:#22c55e; --link:#5ee08f;
+    --bg:#0a0e1f; --card:#10152e; --card2:#161c3a; --field:#0b1026; --line:#222a4a;
+    --text:#eef1f8; --muted:#a3abc4; --blue:#3b6cff; --link:#9db6ff;
     --green:#34d27b; --red:#ff4d5a; --amber:#f5b942;
-    --onblue:#04130a; --glow:rgba(34,197,94,.10);
-    --btn:#141b21; --btn2:#1b252c; --btn3:#2a363f; --rule:#161e24; --rule2:#12191e; --chip:#18222a; --track:#2b3841; --soft:#c5d0d6;
+    --onblue:#ffffff; --glow:rgba(59,108,255,.14);
+    --btn:#161c38; --btn2:#1d2546; --btn3:#2c3560; --rule:#1a2142; --rule2:#151b36; --chip:#1a2142; --track:#2e3758; --soft:#cdd3e4;
     --errbg:#2f1a1d; --errline:#6b2a2f; --errsvg:#ffb3b6; --errlink:#fff; --kfline:#5c4814; --kfbg:#221d0e; --kffg:#f3d98a;
     --badtxt:#ff8a90; color-scheme:dark;
     --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
@@ -34,7 +34,7 @@
   html.t-light {
     color-scheme:light;
     --bg:#f2f5f4; --card:#fff; --card2:#eef2f0; --field:#f7f9f8; --line:#d9e0dc; --text:#13201a; --muted:#5b6b64; --green:#15803d; --red:#d6333b; --amber:#a86a00;
-    --glow:rgba(34,197,94,.07); --btn:#e8eeea; --btn2:#dce5df; --btn3:#c6d2cb; --rule:#e5ebe7; --rule2:#e9eeeb; --chip:#e4eae6; --track:#b9c6bf; --soft:#33433a;
+    --glow:rgba(59,108,255,.08); --btn:#e8eeea; --btn2:#dce5df; --btn3:#c6d2cb; --rule:#e5ebe7; --rule2:#e9eeeb; --chip:#e4eae6; --track:#b9c6bf; --soft:#33433a;
     --errbg:#fde8e9; --errline:#f0a3a7; --errsvg:#c0242c; --errlink:#7a1015; --kfline:#e5c76b; --kfbg:#fff6d6; --kffg:#6b5316; --badtxt:#c0242c;
   }
   html.a-large { zoom:1.15; } html.a-xlarge { zoom:1.3; }
@@ -396,12 +396,12 @@
   details.more > summary::before { content:'+ '; }
   details.more[open] > summary::before { content:'\2212  '; }
   /* ---------- Liquid Glass: rounded, frosted, translucent (off in High contrast) ---------- */
-  :root { --gl:rgba(16,24,29,.55); --gl2:rgba(30,42,50,.48); --gl-line:rgba(255,255,255,.13); --gl-hi:rgba(255,255,255,.20); --gl-sh:0 12px 40px rgba(0,0,0,.4); --gl-blur:blur(28px) saturate(180%); }
+  :root { --gl:rgba(18,24,52,.55); --gl2:rgba(32,40,78,.45); --gl-line:rgba(255,255,255,.13); --gl-hi:rgba(255,255,255,.20); --gl-sh:0 12px 40px rgba(0,0,0,.4); --gl-blur:blur(28px) saturate(180%); }
   html.t-light { --gl:rgba(255,255,255,.6); --gl2:rgba(255,255,255,.5); --gl-line:rgba(255,255,255,.8); --gl-hi:rgba(255,255,255,.95); --gl-sh:0 12px 34px rgba(40,70,60,.16); }
   body { background:
     radial-gradient(900px 520px at 88% -10%, color-mix(in srgb, var(--blue) 26%, transparent), transparent 62%),
     radial-gradient(760px 480px at -6% 108%, color-mix(in srgb, var(--blue) 18%, transparent), transparent 62%),
-    radial-gradient(520px 360px at 55% 45%, rgba(90,120,255,.09), transparent 70%), var(--bg); background-attachment:fixed; }
+    radial-gradient(520px 360px at 30% 85%, rgba(168,85,247,.14), transparent 70%), radial-gradient(420px 360px at 95% 90%, rgba(20,184,166,.12), transparent 70%), var(--bg); background-attachment:fixed; }
   .card, .swin, .modal, .bar, .spark, .viewbox, .top { background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border-color:var(--gl-line); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
   .card { border-radius:24px; } .swin { border-radius:30px; } .modal { border-radius:30px; } .bar, .spark { border-radius:20px; } .viewbox { border-radius:20px; background:var(--gl2); }
   .top { margin:10px 14px 0; height:56px; border-radius:999px; border:1px solid var(--gl-line); padding:0 18px; } .app { height:calc(100% - 66px); }
@@ -1169,7 +1169,7 @@ if (location.hash === '#control-room') setTimeout(() => showPage('cr'), 0);
 window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' ? 'cr' : 'dash'));
 
 // Appearance and accessibility: saved in this browser only
-const SWATCHES = ['#22c55e', '#14b8a6', '#3b9eff', '#6366f1', '#a78bfa', '#fb923c', '#eab308', '#ffffff'];
+const SWATCHES = ['#3b6cff', '#22c55e', '#14b8a6', '#6366f1', '#a78bfa', '#fb923c', '#eab308', '#ffffff'];
 const OLD_ACCENT = { blue: '#3b9eff', purple: '#a78bfa', orange: '#fb923c' };
 const root = document.documentElement;
 let acc = {};
@@ -1189,7 +1189,7 @@ const darkQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: 
 function applyAcc(a) {
   const cl = root.classList;
   [...cl].filter((c) => c.startsWith('a-') || c === 't-light').forEach((c) => cl.remove(c));
-  const theme = a.theme || 'system';
+  const theme = a.theme || 'dark';
   const light = theme === 'light' || (theme === 'system' && darkQuery && !darkQuery.matches);
   if (light) cl.add('t-light');
   if (a.size) cl.add('a-' + a.size);
@@ -1207,7 +1207,7 @@ function applyAcc(a) {
 }
 function syncAcc() {
   const d = draft;
-  document.querySelectorAll('#themes button').forEach((b) => b.setAttribute('aria-pressed', String((d.theme || 'system') === b.dataset.v)));
+  document.querySelectorAll('#themes button').forEach((b) => b.setAttribute('aria-pressed', String((d.theme || 'dark') === b.dataset.v)));
   document.querySelectorAll('#setOverlay .opt').forEach((g) => g.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((d[g.dataset.key] || '') === b.dataset.v))));
   document.querySelectorAll('#setOverlay input[type=checkbox][data-key]').forEach((i) => { i.checked = Boolean(d[i.dataset.key]); });
   const cur = (d.accent || '').toLowerCase();
