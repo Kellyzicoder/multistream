@@ -348,6 +348,12 @@
   .as-grid button { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 8px; border-radius:12px; }
   .as-grid button svg { width:26px; height:26px; } .as-grid button span { font-size:12px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .as-vis { margin-right:auto; }
+  .as-g { padding:12px 10px 4px; font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); } .as-g:first-child { padding-top:2px; }
+  .as-r { max-height:66vh; overflow:auto; padding-right:6px; }
+  .as-pvw { position:relative; } .as-pv { display:block; height:200px; width:auto; max-width:100%; aspect-ratio:16/9; margin:0 auto; border-radius:12px; border:1px solid var(--gl-line); background:#05070f; }
+  .as-pvl { position:absolute; left:10px; top:8px; font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:rgba(255,255,255,.7); }
+  .as-set .f { margin:0 0 8px; }
+  .addsrc .dlg-f { display:flex; gap:8px; align-items:center; }
 
   /* ---------- side menu (small, icons only), the same pages as on Go Live ---------- */
   body { padding-left:76px; }
@@ -605,6 +611,9 @@ function pickDevice(kind, label, id) {
   if (label) { const d = list.find((x) => x.label.toLowerCase().includes(String(label).toLowerCase())); if (d) return d.deviceId; }
   return '';
 }
+// every source in every scene, plus the one being set up in the Add a source window
+let addDraft = null;
+const allLayers = () => { const a = []; studio.scenes.forEach((sc) => a.push(...sc.layers)); if (addDraft) a.push(addDraft); return a; };
 const RES = { auto: [1920, 1080], '720': [1280, 720], '1080': [1920, 1080], '1440': [2560, 1440], '2160': [3840, 2160] };
 const camKey = (l) => [l.label || '', l.device || '', l.res || 'auto', l.fps || 'auto'].join('|');
 function getCam(l) {
@@ -630,7 +639,7 @@ function getCam(l) {
 // cameras nobody uses any more (removed, or changed to another setting) are released so the device is free again
 setInterval(() => {
   const used = new Set();
-  studio.scenes.forEach((s) => s.layers.forEach((l) => { if (l.type === 'camera') used.add(camKey(l)); if (l.type === 'duo') used.add(camKey(duoCam(l))); }));
+  allLayers().forEach((l) => { if (l.type === 'camera') used.add(camKey(l)); if (l.type === 'duo') used.add(camKey(duoCam(l))); });
   cams.forEach((c, k) => {
     if (used.has(k)) return;
     if (!c.unusedAt) c.unusedAt = Date.now();
@@ -640,7 +649,7 @@ setInterval(() => {
   cams.forEach((c, k) => { if (c.dead && used.has(k) && Date.now() - c.seen > 4000) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} cams.delete(k); } });
   // screens, windows, web pages and phone cameras that no scene uses any more are let go the same way
   const usedCap = new Set(), usedBoard = new Set(), usedIp = new Set();
-  studio.scenes.forEach((s) => s.layers.forEach((l) => { usedCap.add(capKey(l)); if (l.type === 'duo') usedCap.add(capKey(duoScr(l))); if (l.url) { usedBoard.add(boardKey(l)); usedIp.add(l.url); } }));
+  allLayers().forEach((l) => { usedCap.add(capKey(l)); if (l.type === 'duo') usedCap.add(capKey(duoScr(l))); if (l.url) { usedBoard.add(boardKey(l)); usedIp.add(l.url); } });
   const later = (o) => { if (!o.unusedAt) o.unusedAt = Date.now(); return Date.now() - o.unusedAt > 2500; };
   caps.forEach((c, k) => { if (usedCap.has(k)) { c.unusedAt = 0; return; } if (later(c)) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(k); } });
   boards.forEach((b, k) => { if (usedBoard.has(k)) { b.unusedAt = 0; return; } if (later(b)) { if (window.msNative) window.msNative.browserClose(k); boards.delete(k); } });
@@ -1537,6 +1546,8 @@ const MEDIA = new Set(['image', 'video', 'camera', 'screen', 'window', 'browser'
 // ---------------- sources: icons, lock, right-click menu, Add Source window (like OBS) ----------------
 const SVG = (p) => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
 const SRC_ICON = {
+  duo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="13" height="10" rx="1.5"/><rect x="17" y="8" width="5" height="6" rx="1"/><path d="M6 20h5M8.5 16v4"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
   camera: SVG('<path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
   image: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="9" r="1.8"/><path d="M21 16l-5-5-9 9"/>'),
   video: SVG('<path d="M7 5l12 7-12 7z"/>'),
@@ -1603,40 +1614,75 @@ function showSourceMenu(ev, l, nameEl) {
   const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
   const first = m.querySelector('.ctxi'); if (first) first.focus();
 }
-// Add Source window (like OBS): the kinds on the left with icons; on the right a name for the new one,
-// or a source that is already in another scene (a copy is added)
+// Add a source: the kinds in groups on the left; on the right a live preview and its settings,
+// then Reset, Cancel and Add source at the bottom. A source already in another scene can be added as a copy.
+const ADD_GROUPS = [
+  ['Cameras and screens', [['camera', 'Camera', 'A webcam, ATEM Mini or capture card'], ['ipcam', 'Phone camera', 'A phone camera app on the Wi-Fi'], ['screen', 'Whole screen', 'Show a display, like slides'], ['window', 'One window', 'Just one program, like ProPresenter'], ['duo', 'Speaker + screen', 'A camera and a screen side by side']]],
+  ['Pictures and video', [['image', 'Picture', 'A logo, poster or overlay'], ['pptx', 'PowerPoint slides', 'The slideshow window'], ['video', 'Video file', 'Announcements or an intro'], ['browser', 'Web page', 'Lyrics, slides or a website'], ['color', 'Colour', 'A plain background']]],
+  ['Text', [['text', 'Text', 'Any words on screen'], ['lower', 'Name bar', "A speaker's name and role"], ['timer', 'Countdown', 'Before you start'], ['clock', 'Clock', 'The time now']]],
+  ['Sound', [['mic', 'Microphone', 'A microphone or sound desk']]],
+];
 function openAddSource() {
   const s = byName(editing); if (!s) { flash('Add a scene first.', false); return; }
-  const kinds = [...document.querySelectorAll('#addPop [data-add]')].map((b) => ({ t: b.dataset.add, name: b.childNodes[0].textContent, sub: (b.querySelector('small') || {}).textContent || '' }));
-  let pick = kinds[0].t;
+  let pick = 'camera';
+  const kindInfo = (t) => { for (const [, ks] of ADD_GROUPS) { const k = ks.find((x) => x[0] === t); if (k) return k; } return [t, t, '']; };
+  const makeDraft = (t) => {
+    if (t === 'mic') return null;
+    if (t === 'pptx') { const l = newLayer('window'); l.name = 'PowerPoint slides'; return l; }
+    const l = newLayer(t); l.name = kindInfo(t)[1]; return l;
+  };
+  let draft = makeDraft(pick); addDraft = draft;
   const m = document.createElement('div'); m.className = 'modal';
   const dlg = document.createElement('div'); dlg.className = 'dlg big addsrc'; dlg.style.height = 'auto';
-  dlg.innerHTML = '<div class="dlg-h"><b>Add Source</b><button type="button" aria-label="Close">×</button></div>';
+  dlg.innerHTML = '<div class="dlg-h"><b>Add a source</b><button type="button" aria-label="Close">×</button></div>';
   const body = document.createElement('div'); body.className = 'dlg-b as-b';
   const list = document.createElement('div'); list.className = 'as-list'; list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', 'Kind of source');
   const right = document.createElement('div'); right.className = 'as-r';
   body.append(list, right); dlg.appendChild(body);
   const foot = document.createElement('div'); foot.className = 'dlg-f';
-  const vis = document.createElement('label'); vis.className = 'chk as-vis'; vis.innerHTML = '<input type="checkbox" checked> Make source visible';
-  const addB = document.createElement('button'); addB.type = 'button'; addB.className = 'on'; addB.textContent = 'Add';
-  const closeB = document.createElement('button'); closeB.type = 'button'; closeB.textContent = 'Close';
-  foot.append(vis, addB, closeB); dlg.appendChild(foot); m.appendChild(dlg);
-  const close = () => { m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
+  const vis = document.createElement('label'); vis.className = 'chk as-vis'; vis.innerHTML = '<input type="checkbox" checked> Show it straight away';
+  const resetB = document.createElement('button'); resetB.type = 'button'; resetB.textContent = 'Reset';
+  const closeB = document.createElement('button'); closeB.type = 'button'; closeB.textContent = 'Cancel';
+  const addB = document.createElement('button'); addB.type = 'button'; addB.className = 'on'; addB.textContent = 'Add source';
+  foot.append(vis, resetB, closeB, addB); dlg.appendChild(foot); m.appendChild(dlg);
+  let alive = true;
+  const close = () => { alive = false; addDraft = null; m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
   dlg.querySelector('.dlg-h button').onclick = close; closeB.onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
   let nameIn = null;
   const visible = () => vis.querySelector('input').checked;
-  const addNew = () => { const l = newLayer(pick); const v = nameIn && nameIn.value.trim(); if (v) l.name = v; l.visible = visible(); close(); addLayer(l); };
+  const addNew = () => {
+    if (pick === 'mic') { close(); addAudioInput('mic'); flash('Microphone added. Pick it in the Audio Mixer.', true); return; }
+    const l = draft; const v = nameIn && nameIn.value.trim(); if (v) l.name = v; l.visible = visible(); close(); addLayer(l);
+  };
   addB.onclick = addNew;
+  resetB.onclick = () => { draft = makeDraft(pick); addDraft = draft; draw(); };
+  // live preview of the new source, on its own
+  const pv = document.createElement('canvas'); pv.width = 640; pv.height = 360; pv.className = 'as-pv';
+  const tickPv = () => { if (!alive) return; const c = pv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#05070f'; c.fillRect(0, 0, 640, 360);
+    if (draft) { c.save(); c.scale(640 / SW, 360 / SH); try { if (draft.type === 'lower') { draft.visible = true; } drawLayer(c, draft, false); } catch {} c.restore(); }
+    requestAnimationFrame(tickPv); };
+  requestAnimationFrame(tickPv);
   function draw() {
     list.textContent = '';
-    kinds.forEach((k) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(k.t === pick)); b.innerHTML = SRC_ICON[k.t] || ''; b.append(k.name); b.onclick = () => { pick = k.t; draw(); }; b.ondblclick = addNew; list.appendChild(b); });
-    const k = kinds.find((x) => x.t === pick);
+    ADD_GROUPS.forEach(([g, ks]) => {
+      const h = document.createElement('div'); h.className = 'as-g'; h.textContent = g; list.appendChild(h);
+      ks.forEach(([t, name]) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(t === pick)); b.innerHTML = SRC_ICON[t === 'pptx' ? 'window' : t === 'mic' ? 'mic' : t] || SRC_ICON.mic || ''; b.append(name); b.onclick = () => { if (pick !== t) { pick = t; draft = makeDraft(t); addDraft = draft; } draw(); }; b.ondblclick = addNew; list.appendChild(b); });
+    });
+    const k = kindInfo(pick);
     right.textContent = '';
-    const h = document.createElement('div'); h.className = 'as-head'; h.innerHTML = '<span class="as-ic">' + (SRC_ICON[k.t] || '') + '</span>'; const tx = document.createElement('div'); const b = document.createElement('b'); b.textContent = k.name; const sm = document.createElement('small'); sm.textContent = k.sub; tx.append(b, sm); h.appendChild(tx); right.appendChild(h);
-    const f = document.createElement('label'); f.className = 'as-name'; f.textContent = 'Name'; nameIn = document.createElement('input'); nameIn.type = 'text'; nameIn.value = k.name; nameIn.onkeydown = (e) => { if (e.key === 'Enter') addNew(); }; f.appendChild(nameIn); right.appendChild(f);
+    const h = document.createElement('div'); h.className = 'as-head'; const tx = document.createElement('div'); const b = document.createElement('b'); b.textContent = k[1]; const sm = document.createElement('small'); sm.textContent = k[2]; tx.append(b, sm); h.appendChild(tx); right.appendChild(h);
+    if (pick === 'mic') {
+      const p = document.createElement('p'); p.className = 'note'; p.textContent = 'Adds a sound input to the Audio Mixer. Then choose which microphone or sound desk it uses, and set its volume there.'; right.appendChild(p);
+      return;
+    }
+    const pw = document.createElement('div'); pw.className = 'as-pvw'; const lb = document.createElement('span'); lb.className = 'as-pvl'; lb.textContent = 'Preview'; pw.append(lb, pv); right.appendChild(pw);
+    const f = document.createElement('label'); f.className = 'as-name'; f.textContent = 'Name'; nameIn = document.createElement('input'); nameIn.type = 'text'; nameIn.value = draft.name || k[1]; nameIn.onkeydown = (e) => { if (e.key === 'Enter') addNew(); }; f.appendChild(nameIn); right.appendChild(f);
+    if (pick === 'pptx') { const p = document.createElement('p'); p.className = 'note'; p.textContent = 'Start the slideshow in PowerPoint first, then pick its window below. On a second screen, Whole screen also works.'; right.appendChild(p); }
+    const set = document.createElement('div'); set.className = 'as-set'; renderProps(set, draft); right.appendChild(set);
     // the same kind already in other scenes: add a copy of it
+    const want = pick === 'pptx' ? 'window' : pick;
     const seen = new Set(), have = [];
-    studio.scenes.forEach((sc) => (sc.layers || []).forEach((l) => { if (l.type !== pick || s.layers.some((x) => x.id === l.id)) return; const key = (l.name || '') + '|' + (l.url || l.src || l.device || l.text || ''); if (seen.has(key)) return; seen.add(key); have.push({ l, scene: sc.name }); }));
+    studio.scenes.forEach((sc) => (sc.layers || []).forEach((l) => { if (l.type !== want || s.layers.some((x) => x.id === l.id)) return; const key = (l.name || '') + '|' + (l.url || l.src || l.device || l.text || ''); if (seen.has(key)) return; seen.add(key); have.push({ l, scene: sc.name }); }));
     if (have.length) {
       const t = document.createElement('p'); t.className = 'as-sub'; t.textContent = 'Or add one you already have (from another scene):'; right.appendChild(t);
       const g = document.createElement('div'); g.className = 'as-grid';
@@ -1645,7 +1691,7 @@ function openAddSource() {
       right.appendChild(g);
     }
   }
-  draw(); document.body.appendChild(m); nameIn.focus(); nameIn.select();
+  draw(); document.body.appendChild(m); if (nameIn) { nameIn.focus(); nameIn.select(); }
 }
 const ICON = { camera: 'Video capture', window: 'Window', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera', lower: 'Name bar', timer: 'Countdown', clock: 'Clock', duo: 'Speaker + screen' };
 function renderLayers() {
@@ -1683,16 +1729,17 @@ function selLayer() { const s = byName(editing); return s && s.layers.findIndex(
 $('#srcDel').onclick = () => { const s = byName(editing), i = selLayer(); if (i == null || i < 0) return; s.layers.splice(i, 1); sel = ''; closeProps(); save(); renderLayers(); };
 // the list shows the front item at the top (like OBS), so "up" moves an item to the front
 function moveLayer(dir) { const s = byName(editing), i = selLayer(); if (i == null || i < 0) return; const j = i + dir; if (j < 0 || j >= s.layers.length) return; [s.layers[i], s.layers[j]] = [s.layers[j], s.layers[i]]; save(); renderLayers(); }
-function renderProps() {
-  const box = $('#props'); box.textContent = '';
-  const s = byName(editing), l = s && s.layers.find((x) => x.id === sel);
-  $('#propsBox').hidden = !l || !propsOpen; if (!l) { propsOpen = false; return; }
-  $('#propsTitle').textContent = "Properties for '" + (l.name || ICON[l.type] || l.type) + "'";
+function renderProps(target, draft) {
+  const box = target || $('#props'); box.textContent = '';
+  const rerender = () => renderProps(target, draft);
+  const s = byName(editing), l = draft || (s && s.layers.find((x) => x.id === sel));
+  if (!draft) { $('#propsBox').hidden = !l || !propsOpen; if (!l) { propsOpen = false; return; } }
+  if (!draft) $('#propsTitle').textContent = "Properties for '" + (l.name || ICON[l.type] || l.type) + "'";
   const inp = (k, type) => { const i = document.createElement('input'); i.type = type || 'text'; i.value = l[k] == null ? '' : l[k]; i.oninput = () => { l[k] = type === 'number' ? Number(i.value) : i.value; save(); }; return i; };
   // small building blocks for the source settings
-  const seg = (opts, val, set) => { const g = document.createElement('div'); g.className = 'segc'; opts.forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.classList.toggle('on', v === val); b.onclick = () => { set(v); save(); renderProps(); }; g.appendChild(b); }); return g; };
+  const seg = (opts, val, set) => { const g = document.createElement('div'); g.className = 'segc'; opts.forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.classList.toggle('on', v === val); b.onclick = () => { set(v); save(); rerender(); }; g.appendChild(b); }); return g; };
   const rng = (min, max, step, val, fmt, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { o.textContent = fmt(Number(i.value)); set(Number(i.value)); save(); }; w.append(i, o); return w; };
-  const tick = (val, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(val); c.onchange = () => { set(c.checked); save(); renderProps(); }; return c; };
+  const tick = (val, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(val); c.onchange = () => { set(c.checked); save(); rerender(); }; return c; };
   const colour = (val, set) => { const c = document.createElement('input'); c.type = 'color'; c.value = val; c.oninput = () => { set(c.value); save(); }; return c; };
   const fontPick = () => { const f = document.createElement('select'); [['inter', 'Inter'], ['montserrat', 'Montserrat'], ['poppins', 'Poppins'], ['playfair', 'Playfair'], ['', 'This computer\'s font']].forEach(([v, t]) => f.add(new Option(t, v))); f.value = l.font || ''; f.onchange = () => { l.font = f.value; save(); }; return field('Font', f); };
   const bgPick = (kinds) => {
@@ -1701,23 +1748,25 @@ function renderProps() {
     if (b.kind === 'colour') box.append(field('Colour', colour(b.color || '#0a0e1f', (v) => { b.color = v; })));
     if (b.kind === 'picture' || b.kind === 'video') {
       const nm = document.createElement('span'); nm.className = 'note'; nm.textContent = (b.file || b.url || 'Nothing chosen yet').split(/[\\/]/).pop();
-      const ch = document.createElement('button'); ch.type = 'button'; ch.className = 'sm'; ch.textContent = 'Choose...'; ch.onclick = () => pickFile(b, b.kind === 'video' ? 'video/*' : 'image/*');
+      const ch = document.createElement('button'); ch.type = 'button'; ch.className = 'sm'; ch.textContent = 'Choose...'; ch.onclick = () => pickFile(b, b.kind === 'video' ? 'video/*' : 'image/*', () => { save(); rerender(); });
       const r = document.createElement('div'); r.className = 'row'; r.append(ch, nm); box.append(field(b.kind === 'video' ? 'Video' : 'Picture', r));
       box.append(field(b.kind === 'video' ? 'Video opacity' : 'Picture opacity', rng(0, 100, 1, b.op == null ? 100 : b.op, (v) => v + '%', (v) => { b.op = v; })));
       if (b.kind === 'video') box.append(field('Play on a loop', tick(b.loop !== false, (v) => { b.loop = v; const vv = vids.get(bgKey(l)); if (vv) vv.el.loop = v; })));
     }
   };
-  box.append(field('Name', inp('name')));
+  if (!draft) box.append(field('Name', inp('name')));
+  if (!draft) {
   const lk = document.createElement('input'); lk.type = 'checkbox'; lk.checked = Boolean(l.locked); lk.onchange = () => { l.locked = lk.checked; save(); renderLayers(); };
   lk.title = 'A locked item cannot be moved by accident in the Preview'; box.append(field('Lock in place', lk));
   box.append(field('Left', inp('x', 'number')), field('Top', inp('y', 'number')));
   const fit = document.createElement('select'); [['stretch', 'Fill the box'], ['fit', 'Fit in the box'], ['natural', 'Own size']].forEach(([v, t]) => fit.add(new Option(t, v)));
-  fit.value = l.fit || 'stretch'; fit.onchange = () => { l.fit = fit.value; save(); renderProps(); }; box.append(field('Size', fit));
+  fit.value = l.fit || 'stretch'; fit.onchange = () => { l.fit = fit.value; save(); rerender(); }; box.append(field('Size', fit));
   if ((l.fit || 'stretch') === 'natural') { const sc = inp('sx', 'number'); sc.step = 0.05; sc.value = l.sx || 1; sc.oninput = () => { l.sx = l.sy = Number(sc.value); save(); }; box.append(field('Scale', sc)); }
   else box.append(field('Width', inp('w', 'number')), field('Height', inp('h', 'number')));
-  if (MEDIA.has(l.type)) {
+  }
+  if (MEDIA.has(l.type) && !draft) {
     const r = document.createElement('div'); r.className = 'row';
-    const full = (fit) => () => { l.fit = fit; l.x = 0; l.y = 0; l.w = SW; l.h = SH; delete l.sx; delete l.sy; save(); renderProps(); };
+    const full = (fit) => () => { l.fit = fit; l.x = 0; l.y = 0; l.w = SW; l.h = SH; delete l.sx; delete l.sy; save(); rerender(); };
     const b1 = document.createElement('button'); b1.textContent = 'Fit to screen'; b1.title = 'Show all of it, keeping its shape'; b1.onclick = full('fit');
     const b2 = document.createElement('button'); b2.textContent = 'Fill the screen'; b2.title = 'Stretch it over the whole picture'; b2.onclick = full('stretch');
     r.append(b1, b2); box.append(r);
@@ -1773,7 +1822,7 @@ function renderProps() {
   }
   if (l.type === 'image' || l.type === 'video') {
     const p = inp('file'); p.placeholder = 'C:/path/to/file'; p.title = 'The file path on this computer'; box.append(field('File', p));
-    const b = document.createElement('button'); b.textContent = 'Upload a file instead...'; b.onclick = () => pickFile(l); box.append(b);
+    const b = document.createElement('button'); b.textContent = 'Upload a file instead...'; b.onclick = () => pickFile(l, null, () => { save(); renderLayers(); rerender(); }); box.append(b);
   }
   if (l.type === 'video') {
     box.append(field('Loop video', tick(l.loop !== false, (v) => { l.loop = v; const vv = vids.get(l.id); if (vv) vv.el.loop = v; })));
@@ -1789,9 +1838,9 @@ function renderProps() {
     if (l.showSub !== false) box.append(field('Role', inp('sub')));
     { const pn = document.createElement('span'); pn.className = 'note'; pn.textContent = (l.pic || l.picUrl || 'None').split(/[\\/]/).pop();
       const ch = document.createElement('button'); ch.type = 'button'; ch.className = 'sm'; ch.textContent = 'Choose...';
-      ch.onclick = () => { const o = {}; pickFile(o, 'image/png,image/*', () => { l.pic = o.file || ''; l.picUrl = o.url || ''; save(); renderProps(); }); };
+      ch.onclick = () => { const o = {}; pickFile(o, 'image/png,image/*', () => { l.pic = o.file || ''; l.picUrl = o.url || ''; save(); rerender(); }); };
       const r = document.createElement('div'); r.className = 'row'; r.append(ch, pn);
-      if (l.pic || l.picUrl) { const rm = document.createElement('button'); rm.type = 'button'; rm.className = 'sm'; rm.textContent = 'Remove'; rm.onclick = () => { l.pic = ''; l.picUrl = ''; save(); renderProps(); }; r.append(rm); }
+      if (l.pic || l.picUrl) { const rm = document.createElement('button'); rm.type = 'button'; rm.className = 'sm'; rm.textContent = 'Remove'; rm.onclick = () => { l.pic = ''; l.picUrl = ''; save(); rerender(); }; r.append(rm); }
       box.append(field('Picture (PNG)', r)); }
     box.append(field('Style', seg([['clean', 'Clean'], ['bold', 'Bold'], ['minimal', 'Minimal']], l.style || 'clean', (v) => { l.style = v; })));
     const an = document.createElement('select'); [['wipe', 'Wipe'], ['slide', 'Slide'], ['fade', 'Fade'], ['pop', 'Pop'], ['rise', 'Rise'], ['drop', 'Drop'], ['typewriter', 'Typewriter'], ['blur', 'Blur in'], ['zoom', 'Zoom'], ['bounce', 'Bounce'], ['flip', 'Flip'], ['glow', 'Glow']].forEach(([v, t]) => an.add(new Option(t, v)));
@@ -1806,7 +1855,7 @@ function renderProps() {
     const sh = document.createElement('button'); sh.textContent = l.visible === false ? 'Show it (slides in)' : 'Hide it (slides out)'; sh.onclick = () => { l.visible = l.visible === false; save(); renderLayers(); }; box.append(sh);
   }
   if (l.type === 'timer') {
-    const md = document.createElement('select'); [['duration', 'Count down from a time I set'], ['until', 'Count down to a time of day']].forEach(([v, t]) => md.add(new Option(t, v))); md.value = l.mode || 'duration'; md.onchange = () => { l.mode = md.value; save(); renderProps(); }; box.append(field('Type', md));
+    const md = document.createElement('select'); [['duration', 'Count down from a time I set'], ['until', 'Count down to a time of day']].forEach(([v, t]) => md.add(new Option(t, v))); md.value = l.mode || 'duration'; md.onchange = () => { l.mode = md.value; save(); rerender(); }; box.append(field('Type', md));
     if ((l.mode || 'duration') === 'until') { const at = document.createElement('input'); at.type = 'time'; at.value = l.at || '10:00'; at.oninput = () => { l.at = at.value; save(); }; box.append(field('Until', at)); }
     else {
       const mi = document.createElement('input'); mi.type = 'number'; mi.min = 0; mi.step = 0.5; mi.value = l.minutes == null ? 10 : l.minutes; mi.oninput = () => { l.minutes = Number(mi.value) || 0; delete l.left; delete l.endAt; save(); }; box.append(field('Minutes', mi));
@@ -1819,7 +1868,7 @@ function renderProps() {
     box.append(field('Words above', inp('label')));
     const ed = document.createElement('select'); ed.add(new Option('Show these words', 'words')); ed.add(new Option('Show 00:00', 'zero')); ed.add(new Option('Hide it', 'hide'));
     studio.scenes.forEach((x) => ed.add(new Option('Switch to scene: ' + x.name, 'scene:' + x.name)));
-    ed.value = l.endDo === 'scene' ? 'scene:' + l.endScene : (l.endDo || 'words'); ed.onchange = () => { const v = ed.value; if (v.startsWith('scene:')) { l.endDo = 'scene'; l.endScene = v.slice(6); } else { l.endDo = v; delete l.endScene; } save(); renderProps(); };
+    ed.value = l.endDo === 'scene' ? 'scene:' + l.endScene : (l.endDo || 'words'); ed.onchange = () => { const v = ed.value; if (v.startsWith('scene:')) { l.endDo = 'scene'; l.endScene = v.slice(6); } else { l.endDo = v; delete l.endScene; } save(); rerender(); };
     box.append(field('When it ends', ed));
     if ((l.endDo || 'words') === 'words') box.append(field('Words at the end', inp('doneText')));
     box.append(fontPick(), field('Size', rng(40, 400, 2, l.size || 220, (v) => v + ' px', (v) => { l.size = v; })));
@@ -1856,7 +1905,7 @@ function renderProps() {
     const kc = document.createElement('input'); kc.type = 'color'; kc.value = F.key.color || '#00ff00'; kc.oninput = () => { F.key.color = kc.value; save(); }; row('  colour to remove', kc);
     row('  how much', sl(1, 100, F.key.sim == null ? 40 : F.key.sim, (v) => { F.key.sim = v; }));
     row('  soft edge', sl(1, 50, F.key.smooth == null ? 8 : F.key.smooth, (v) => { F.key.smooth = v; }));
-    const rs = document.createElement('button'); rs.className = 'sm'; rs.textContent = 'Reset picture tools'; rs.onclick = () => { delete l.pfx; save(); renderProps(); }; dt.appendChild(rs);
+    const rs = document.createElement('button'); rs.className = 'sm'; rs.textContent = 'Reset picture tools'; rs.onclick = () => { delete l.pfx; save(); rerender(); }; dt.appendChild(rs);
     box.append(dt);
   }
   // the address is used once you finish typing (Enter, or click away), not on every letter
