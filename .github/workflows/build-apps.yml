@@ -19,22 +19,22 @@ jobs:
             name: Windows
             args: --win --x64
             files: |
-              dist/Multistream3-Setup.exe
+              dist/Multistream-Setup.exe
               dist/latest.yml
-              dist/Multistream3-Setup.exe.blockmap
+              dist/Multistream-Setup.exe.blockmap
           # Each Mac build is its own job, so each gets the ffmpeg made for that kind of Mac
           - os: macos-latest
             name: Mac
             args: --mac --arm64
-            files: dist/Multistream3-Mac-*.dmg
+            files: dist/Multistream-Mac-*.dmg
           - os: macos-latest
             name: Mac Intel
             args: --mac --x64
-            files: dist/Multistream3-Mac-*.dmg
+            files: dist/Multistream-Mac-*.dmg
           - os: ubuntu-latest
             name: Linux
             args: --linux --x64
-            files: dist/Multistream3-Linux.AppImage
+            files: dist/Multistream-Linux.AppImage
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -99,7 +99,7 @@ jobs:
       - name: Keep the installer from this run
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Multistream3-${{ matrix.name }}
+          name: Multistream-${{ matrix.name }}
           path: ${{ matrix.files }}
 
   # Runs the real app on a Linux computer with no screen, with a fake YouTube, and checks it end to end
@@ -120,7 +120,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Multistream3-test-results
+          name: Multistream-test-results
           path: test-out
 
   release:
@@ -139,6 +139,6 @@ jobs:
           echo '{"version":"3.0.${{ github.run_number }}"}' > out/version.json
           ls -l out
           gh release delete v3-latest --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
-          gh release create v3-latest out/* --repo "$GITHUB_REPOSITORY" --latest=false --title "Multistream 3 (latest)" --notes "Version 3 (test): no localhost. Windows: Multistream3-Setup.exe. Mac: Multistream3-Mac-arm64.dmg (M1 and newer) or Multistream3-Mac-x64.dmg (Intel). Linux: Multistream3-Linux.AppImage. Version 1 and 2 stay on their own releases."
+          gh release create v3-latest out/* --repo "$GITHUB_REPOSITORY" --latest=false --title "Multistream (latest)" --notes "Version 3 (test): no localhost. Windows: Multistream-Setup.exe. Mac: Multistream-Mac-arm64.dmg (M1 and newer) or Multistream-Mac-x64.dmg (Intel). Linux: Multistream-Linux.AppImage. Version 1 and 2 stay on their own releases."
         env:
           GH_TOKEN: ${{ github.token }}

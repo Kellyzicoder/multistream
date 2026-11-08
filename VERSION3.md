@@ -6,8 +6,8 @@ Version 3 is a separate app. Version 1 (`main`) and Version 2 (`v2`) are not cha
 
 ## How it is kept apart
 - Own branch: `v3`.
-- Own app name ("Multistream 3"), own app id, own saved settings. You type your keys in again once.
-- Own installers: `Multistream3-Setup.exe`, `Multistream3-Mac-*.dmg`, `Multistream3-Linux.AppImage`.
+- Own app name ("Multistream", it was "Multistream 3"), own app id, own saved settings.
+- Own installers: `Multistream-Setup.exe`, `Multistream-Mac-*.dmg`, `Multistream-Linux.AppImage`.
 - Own release: **v3-latest** (version numbers 3.0.N).
 
 ## What "no localhost" means
