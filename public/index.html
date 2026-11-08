@@ -24,7 +24,7 @@
     background-attachment:fixed;
     font-family:Inter,"SF Pro Text","Segoe UI Variable","Segoe UI",system-ui,-apple-system,Roboto,sans-serif; font-size:13px; -webkit-font-smoothing:antialiased;
   }
-  button, input, select { font:inherit; color:inherit; }
+  button, input, select, textarea { font:inherit; color:inherit; }
   button { cursor:pointer; }
   svg { display:block; }
   [hidden] { display:none !important; }
@@ -374,7 +374,7 @@
   @media (max-width:1000px) {
     .app { grid-template-columns:minmax(0,1fr); height:auto; }
     .side { display:contents; }
-    .gl { order:0; } .stage { order:1; } .chs { order:2; } .cht { order:3; }
+    .stage { order:1; } .chs { order:3; } .cht { order:4; }
     .stage { overflow:visible; }
     .pv-box { width:100%; }
     .ring { margin-top:4vh; }
@@ -387,7 +387,7 @@
     .chip { padding:6px 10px; letter-spacing:1px; }
     .ib { padding:8px; }
     .app { padding:12px; gap:12px; min-height:0; }
-    .gl, .chs, .cht { padding-left:16px; padding-right:16px; }
+    .sd, .chs, .cht { padding-left:16px; padding-right:16px; }
     .cr { padding:4px 12px 16px; }
   }
   /* Version 3: extra options folded away so the main card stays simple */
@@ -527,6 +527,24 @@
   .gs-note { font-size:12.5px; color:var(--muted); }
   #setOverlay, #overlay { z-index:70; }
   @media (max-width:760px) { .gs-grid, .gs-f { grid-template-columns:1fr; } .gs-lay { grid-template-columns:1fr 1fr; } }
+  /* ---------- Go Live layout: picture and stream details on the left, channels and chat on the right ---------- */
+  .mainc { display:flex; flex-direction:column; gap:18px; min-height:0; min-width:0; overflow:auto; }
+  .mainc .stage { flex:1; min-height:340px; padding:22px; align-items:center; }
+  .sd { display:grid; grid-template-columns:260px minmax(0,1fr); gap:20px; padding:18px 20px; }
+  .sd-thumb .th { flex-direction:column; align-items:stretch; margin:0; }
+  .sd-thumb .thp { width:100%; border-radius:14px; }
+  .sd-main { display:flex; flex-direction:column; gap:8px; min-width:0; }
+  .sd-h { display:flex; align-items:center; gap:8px; }
+  .sd-f { display:grid; grid-template-columns:1fr 1.4fr; gap:14px; }
+  .sd-f .gt { margin:0; padding:0; border:0; }
+  .sd-f textarea { width:100%; resize:vertical; min-height:42px; }
+  .sd-pre { display:flex; gap:6px; flex-wrap:wrap; }
+  .sd-pre button { border:1px solid var(--line); background:var(--btn); color:var(--soft); border-radius:999px; padding:5px 12px; font-size:12px; }
+  .sd-pre button.on { background:var(--blue); color:var(--onblue); border-color:transparent; }
+  .sd-pre button.add { border-style:dashed; background:transparent; color:var(--muted); }
+  .chs .gl { padding:0; }
+  .chs .gl .gr:first-child { border-top:0; }
+  @media (max-width:1000px) { .mainc { display:contents; } .sd { order:2; grid-template-columns:1fr; } .sd-f { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -552,8 +570,8 @@
 <div class="alertbar" id="alertBar" role="alert" hidden><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 
 <div class="app">
-  <!-- left: the video, or how to connect -->
-  <main class="stage">
+  <div class="mainc">
+  <main class="stage card">
     <div class="stage-in" id="stageIn">
      <div id="offlineView">
       <div class="ring" aria-hidden="true"><i></i></div>
@@ -592,11 +610,49 @@
 
     </div>
   </main>
+    <section class="card sd" aria-label="Stream details">
+      <div class="sd-thumb">
+        <div class="th" >
+          <div class="thp"><img id="thImg" alt="Thumbnail" hidden><span id="thNone">No picture</span></div>
+          <div class="tha">
+            <span class="fl">Thumbnail</span>
+            <div class="thb"><button class="ghost" id="thBtn" type="button">Choose picture</button><button class="lnk" id="thClear" type="button" hidden>Remove</button></div>
+            <small>PNG or JPG, best at 1280×720. Sent to YouTube.</small>
+            <small class="bad" id="thMsg" hidden></small>
+            <input type="file" id="thFile" accept="image/png,image/jpeg" hidden>
+          </div>
+        </div>
+      </div>
+      <div class="sd-main">
+        <div class="sd-h"><span class="sec-t">Stream details</span><span class="grow"></span><span class="sd-pre" id="presets" aria-label="Saved details"></span></div>
+        <div class="sd-f">
+      <div class="gt">
+        <label class="fl" for="glTitle">Title</label>
+        <input class="t2" id="glTitle" type="text" maxlength="100" placeholder="Title (the date is used if empty)" autocomplete="off">
+      </div>
+          <div class="gt">
+            <label class="fl" for="glDesc">Description</label>
+            <textarea class="t2" id="glDesc" rows="2" maxlength="5000" placeholder="What is this stream about?"></textarea>
+          </div>
+        </div>
+      <label class="tm" id="tmBox">
+        <span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span>
+        <span><b>Private test</b><small id="tmState">Only you can see it. Turn this off for the real service.</small></span>
+      </label>
+      </div>
+    </section>
+  </div>
 
-  <!-- right: go live and channels -->
+  <!-- right: channels and chat -->
   <aside class="side">
-    <section class="card gl" aria-label="Go live">
-      <span class="sec-t">Go live</span>
+    <section class="card chs" aria-label="Channels">
+      <div class="sec-h">
+        <span class="sec-t">Channels</span>
+        <span class="cnt" id="count"><b>0 of 0</b> active</span>
+        <span class="grow"></span>
+        <button class="ghost" id="addBtn" type="button">+ Add</button>
+      </div>
+      <div class="gl">
       <div class="gr">
         <div class="who"><b>YouTube</b><span id="ytSub">Not connected</span></div>
         <button class="ghost" id="ytBtn" type="button" title="Connect the YouTube account">Set up</button>
@@ -607,47 +663,22 @@
         <button class="ghost" id="fbBtn" type="button" title="Add the Facebook Page ID and token">Set up</button>
         <button class="go" id="fbLive" type="button" disabled title="Start Streaming in the Studio first, and add the Facebook Page">Go live</button>
       </div>
-      <div class="gt">
-        <label class="fl" for="glTitle">Title</label>
-        <input class="t2" id="glTitle" type="text" maxlength="100" placeholder="Live from FCCHQ (and the date)" autocomplete="off">
+      <p class="hint" id="glHint"></p>
+      <p class="note" id="fbNote" hidden></p>
       </div>
-      <label class="tm" id="tmBox">
-        <span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span>
-        <span><b>Private test</b><small id="tmState">Only you can see it. Turn this off for the real service.</small></span>
-      </label>
+
+      <div id="list"></div>
+      <div class="meta">
+        <span class="all">Toggle all <button class="lnk" id="allOff" type="button">OFF</button><i></i><button class="lnk" id="allOn" type="button">ON</button></span>
+      </div>
       <details class="more">
-        <summary>More options</summary>
-        <div class="th" style="margin-top:10px">
-          <div class="thp"><img id="thImg" alt="Thumbnail" hidden><span id="thNone">No picture</span></div>
-          <div class="tha">
-            <span class="fl">Thumbnail</span>
-            <div class="thb"><button class="ghost" id="thBtn" type="button">Choose picture</button><button class="lnk" id="thClear" type="button" hidden>Remove</button></div>
-            <small>PNG or JPG, best at 1280×720. Sent to YouTube.</small>
-            <small class="bad" id="thMsg" hidden></small>
-            <input type="file" id="thFile" accept="image/png,image/jpeg" hidden>
-          </div>
-        </div>
+        <summary>Check everything</summary>
       <div class="gr" id="pfRow">
         <div class="who"><b>Check everything</b><span id="pfSub">Do this before the service</span></div>
         <button class="ghost" id="pfBtn" type="button">Run check</button>
       </div>
       <div class="pf" id="pfList" hidden></div>
       </details>
-      <p class="hint" id="glHint"></p>
-      <p class="note" id="fbNote" hidden></p>
-    </section>
-
-    <section class="card chs" aria-label="Channels">
-      <div class="sec-h">
-        <span class="sec-t">Channels</span>
-        <span class="cnt" id="count"><b>0 of 0</b> active</span>
-        <span class="grow"></span>
-        <button class="ghost" id="addBtn" type="button">+ Add</button>
-      </div>
-      <div id="list"></div>
-      <div class="meta">
-        <span class="all">Toggle all <button class="lnk" id="allOff" type="button">OFF</button><i></i><button class="lnk" id="allOn" type="button">ON</button></span>
-      </div>
     </section>
     <section class="card cht" aria-label="Chat">
       <div class="sec-h">
@@ -1338,6 +1369,7 @@ async function loadGl() {
   try {
     const g = await api('/api/golive');
     if (!glLoaded && g && typeof g.title === 'string') $('#glTitle').value = g.title;
+    if (!glLoaded && g && typeof g.description === 'string') $('#glDesc').value = g.description;
     glLoaded = true;
     setThumb(Boolean(g && g.hasThumbnail));
   } catch {}
@@ -1450,7 +1482,7 @@ $('#fbLive').onclick = async () => {
     delete btn.dataset.busy;
     return refresh();
   }
-  const r = await api('/api/facebook/live', 'POST', { test, title: $('#glTitle').value.trim() });
+  const r = await api('/api/facebook/live', 'POST', { test, title: $('#glTitle').value.trim(), description: $('#glDesc').value.trim() });
   delete btn.dataset.busy;
   if (r.error) alert(r.error);
   refresh();
@@ -1501,7 +1533,7 @@ $('#ytLive').onclick = async () => {
     delete btn.dataset.busy;
     return refresh();
   }
-  const r = await api('/api/youtube/live', 'POST', { test, title: $('#glTitle').value.trim() });
+  const r = await api('/api/youtube/live', 'POST', { test, title: $('#glTitle').value.trim(), description: $('#glDesc').value.trim() });
   delete btn.dataset.busy;
   if (r.error) alert(r.error);
   else if (r.thumbnailError) alert('You are live, but YouTube did not take the thumbnail: ' + r.thumbnailError);
@@ -1763,6 +1795,30 @@ setInterval(refresh, 2000);
     }
   });
   $('#gsStudio').onclick = () => { close(); showPage('studio'); };
+})();
+// ---------- saved stream details (title and description), kept on this computer ----------
+(function () {
+  const box = $('#presets'); if (!box) return;
+  const load = () => { try { return JSON.parse(localStorage.getItem('ms_presets') || '[]') || []; } catch { return []; } };
+  const save = (l) => { try { localStorage.setItem('ms_presets', JSON.stringify(l)); } catch {} };
+  function render() {
+    const l = load(), t = $('#glTitle').value.trim(), d = $('#glDesc').value.trim();
+    box.innerHTML = '';
+    l.forEach((p, i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = p.name;
+      if (p.title === t && (p.desc || '') === d) b.className = 'on';
+      b.title = 'Use these details. Right-click to remove.';
+      b.onclick = () => { $('#glTitle').value = p.title; $('#glDesc').value = p.desc || ''; render(); };
+      b.oncontextmenu = (e) => { e.preventDefault(); const n = load(); n.splice(i, 1); save(n); render(); };
+      box.appendChild(b);
+    });
+    const a = document.createElement('button'); a.type = 'button'; a.className = 'add'; a.textContent = '+ Save as new';
+    a.title = 'Save this title and description so you can use them again';
+    a.onclick = () => { const title = $('#glTitle').value.trim(); if (!title) { $('#glTitle').focus(); return; } const n = load().filter((p) => p.name !== title); n.push({ name: title.slice(0, 40), title, desc: $('#glDesc').value.trim() }); save(n.slice(-8)); render(); };
+    box.appendChild(a);
+  }
+  $('#glTitle').addEventListener('input', render); $('#glDesc').addEventListener('input', render);
+  render(); setTimeout(render, 1500);
 })();
 </script>
 </body>
