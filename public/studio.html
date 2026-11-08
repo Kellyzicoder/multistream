@@ -68,6 +68,14 @@
   html, body { height:100%; }
   body { display:flex; flex-direction:column; overflow:hidden; font-size:13px; }
   .obs { display:flex; flex-direction:column; height:100vh; }
+  /* the top bar: the same as the Go Live page (logo, then Go Live / Studio / Multiview in one rounded group) */
+  .ptop { display:flex; align-items:center; gap:14px; height:48px; flex:none; padding:0 16px; border-radius:999px; border:1px solid var(--gl-line); background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
+  .ptop .brand { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; letter-spacing:.3px; }
+  .ptop .brand svg { width:22px; height:28px; color:var(--sel); }
+  .pagetabs { display:inline-flex; padding:3px; border:1px solid var(--gl-line); border-radius:999px; background:var(--gl2); box-shadow:inset 0 1px 0 var(--gl-hi); }
+  .pagetabs button { white-space:nowrap; border:0; background:transparent; color:var(--muted); padding:6px 16px; border-radius:999px; font-size:12px; font-weight:500; box-shadow:none; }
+  .pagetabs button:hover { color:var(--text); background:transparent; }
+  .pagetabs button[aria-pressed="true"] { background:var(--gl-hi); color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.18); }
   .stage { flex:1; min-height:0; display:flex; align-items:center; gap:10px; padding:10px; }
   .screen { flex:1; min-width:0; display:flex; flex-direction:column; height:100%; justify-content:center; }
   .screen .cap { text-align:center; font-size:12px; color:var(--muted); margin-bottom:4px; }
@@ -185,7 +193,8 @@
   .dock h2 { display:flex; align-items:center; gap:6px; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; }
   .dock h2 .pin { margin-left:auto; padding:0 6px; min-width:0; font-size:12px; line-height:18px; background:transparent; border-color:transparent; box-shadow:none; color:var(--muted); backdrop-filter:none; -webkit-backdrop-filter:none; }
   .dock h2 .pin:hover { color:var(--text); background:var(--gl2); }
-  .dock.drag { z-index:50; opacity:.9; cursor:grabbing; box-shadow:0 18px 50px rgba(0,0,0,.5); transition:none; }
+  .dock.drag { z-index:50; opacity:.9; cursor:grabbing; box-shadow:0 18px 50px rgba(0,0,0,.5); transition:none; will-change:transform; }
+  .dock > h2 { touch-action:none; user-select:none; }
   .dock.float { position:fixed; flex:none; z-index:30; resize:both; overflow:auto; min-width:200px; min-height:120px; box-shadow:0 18px 56px rgba(0,0,0,.5), inset 0 1px 0 var(--gl-hi); }
   .dock.float h2 { position:sticky; top:0; z-index:1; }
   .docks.over { outline:2px dashed var(--sel); outline-offset:-3px; border-radius:var(--r); }
@@ -195,14 +204,21 @@
   .dock h2 { white-space:nowrap; } .dock .ctl button, .dock .pad button { white-space:nowrap; }
   /* ---------- vertical audio mixer (like OBS) ---------- */
   #audio { display:flex; flex-direction:row; align-items:stretch; gap:8px; padding:8px; overflow-x:auto; overflow-y:hidden; }
-  #audio .au { flex:none; width:104px; display:flex; flex-direction:column; gap:6px; margin:0; padding:8px 6px; border:1px solid var(--gl-line); border-radius:16px; background:var(--gl2); }
+  #audio .au { flex:none; width:118px; display:flex; flex-direction:column; gap:6px; margin:0; padding:8px 6px; border:1px solid var(--gl-line); border-radius:16px; background:var(--gl2); }
   #audio .au.off { opacity:.5; }
   #audio .au .t { gap:2px; } #audio .au .t .n { font-size:11px; }
   .aub { flex:1; min-height:110px; display:flex; justify-content:center; }
   .aum { display:flex; gap:4px; height:100%; min-height:110px; }
   .scale { position:relative; width:22px; font-size:9px; color:var(--muted); } .scale span { position:absolute; right:0; transform:translateY(50%); line-height:1; }
-  #audio .mt { position:relative; width:10px; height:100%; margin:0; border-radius:999px; overflow:hidden; background:linear-gradient(0deg,#22c55e 0 52%,#f59e0b 52% 72%,#dc3545 72% 83%,#dc3545 100%); background-size:100% 100%; }
-  #audio .mt i { position:absolute; left:0; right:0; top:0; height:100%; background:var(--mcov); transition:height .06s linear; }
+  #audio .mts { display:flex; gap:2px; height:100%; }
+  .aap { width:100%; border-collapse:collapse; font-size:12px; }
+  .aap th { text-align:left; color:var(--muted); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .aap td { padding:6px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .aap td.act { color:var(--red); } .aap td.idle { color:var(--muted); }
+  .aap input[type=number] { width:76px; } .aap select { width:auto; } .aap .bal { display:inline-flex; gap:6px; align-items:center; } .aap .bal input { width:130px; }
+  #audio .mt { position:relative; width:9px; height:100%; margin:0; border-radius:2px; overflow:hidden; background:linear-gradient(0deg,#22c55e 0 66.7%,#f5c400 66.7% 85%,#ef2b2b 85% 100%); background-size:100% 100%; }
+  #audio .mt i { position:absolute; left:0; right:0; top:0; width:auto; height:100%; background:var(--mcov); } /* width:auto: the general .mt i rule sets width 0, which hid this cover, so the meter always looked full */
+  #audio .mt b { position:absolute; left:0; right:0; bottom:0; height:2px; background:#fff; opacity:0; }
   .fdr { position:relative; width:26px; height:100%; cursor:pointer; touch-action:none; outline:none; border-radius:8px; }
   .fdr:focus-visible { outline:2px solid var(--sel); }
   .fdr .trk { position:absolute; left:50%; top:6px; bottom:6px; width:4px; margin-left:-2px; border-radius:999px; background:var(--track, rgba(150,170,165,.4)); }
@@ -220,8 +236,8 @@
   .sdock:not(:empty) { width:clamp(210px, 17vw, 300px); }
   .sdock .dock { flex:1 1 0; min-width:0; min-height:130px; }
   .sdock .dock.wide, .sdock .dock.narrow { flex:1 1 0; min-width:0; }
-  .dz { position:fixed; top:8px; width:110px; display:none; z-index:45; pointer-events:none; border:2px dashed var(--sel); border-radius:22px; background:color-mix(in srgb, var(--sel) 10%, transparent); }
-  .dz.show { display:block; } .dz.hot { background:color-mix(in srgb, var(--sel) 30%, transparent); }
+  .dz { position:fixed; top:8px; width:110px; display:none; z-index:45; pointer-events:none; border:1px solid var(--gl-line); border-radius:var(--r); background:var(--gl); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
+  .dz.show { display:block; } .dz.hot { border-color:var(--sel); background:color-mix(in srgb, var(--sel) 30%, transparent); }
   .dz::after { content:attr(data-t); position:absolute; left:0; right:0; top:50%; text-align:center; font-size:12px; font-weight:600; color:var(--text); }
   @media (max-width:1000px) { .upper { flex-direction:column; } .sdock:not(:empty) { width:auto; } }
   /* ---------- adjusting sizes, with limits ---------- */
@@ -245,9 +261,6 @@
   .ctxi small { display:block; margin-top:1px; font-size:11px; color:var(--muted); }
   .ctxi:hover, .ctxi:focus-visible { background:var(--sel); color:var(--onsel); outline:none; } .ctxi:hover small, .ctxi:focus-visible small { color:inherit; opacity:.8; }
   .ctxs { height:1px; margin:5px 6px; background:var(--gl-line); }
-#vcPrev{margin-top:6px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#000;position:relative}
-#vcPrev canvas{display:block;width:100%;height:auto;aspect-ratio:16/9}
-#vcPrev span{position:absolute;left:6px;bottom:4px;font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff}
 .lyr .cog{flex:none;width:28px;height:26px;padding:0;font-size:16px;line-height:1;border-radius:8px;opacity:.9}
 .lyr .cog:hover{opacity:1;background:var(--gl2);border-color:var(--gl-line)}
   .alertbar { display:none; align-items:flex-start; gap:12px; justify-content:space-between; position:fixed; right:16px; bottom:16px; z-index:100; width:min(440px, calc(100vw - 32px)); box-sizing:border-box; background:var(--errbg); border:1px solid var(--errline); color:var(--errsvg); padding:12px 14px; border-radius:16px; box-shadow:0 14px 36px rgba(0,0,0,.22); font-size:13px; font-weight:500; line-height:1.4; }
@@ -259,11 +272,50 @@
   .alertbar #alertTxt .ok { opacity:.7; }
   .alertbar #alertTxt .ok::before { content:'\2713  '; }
   .alertbar button { border:1px solid var(--errline); background:transparent; color:inherit; border-radius:999px; padding:5px 12px; font-size:12px; flex:none; }
+  /* ---------- OBS look for the panels (same colours as before): flat boxes, a plain title bar, thin lines ---------- */
+  .dock, .sdock .dock { background:var(--card) !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; box-shadow:none !important; border:1px solid var(--line) !important; border-radius:3px !important; }
+  .dock h2, .dlg-h { background:var(--head) !important; border-bottom:1px solid var(--line) !important; font-size:11px; font-weight:700; letter-spacing:.04em; padding:6px 9px; }
+  .dock .list, .dock .pad { background:var(--card) !important; }
+  .dock h2 .pin, button.eye { box-shadow:none !important; }
+  /* ---------- panel title bars like OBS, kept on the glass: a tinted bar with the name, a thin line under it,
+     and a thin outline round every panel, in shades of the main colour so the panels stand apart ---------- */
+  .dock { border:1px solid color-mix(in srgb, var(--sel) 22%, var(--gl-line)) !important; }
+  .dock > h2 { background:color-mix(in srgb, var(--sel) 12%, var(--gl2)) !important; border-bottom:1px solid color-mix(in srgb, var(--sel) 30%, var(--gl-line)) !important; color:var(--text); }
+  html.t-light .dock { border-color:color-mix(in srgb, var(--sel) 30%, rgba(0,0,0,.14)) !important; }
+  html.t-light .dock > h2 { background:color-mix(in srgb, var(--sel) 14%, rgba(255,255,255,.75)) !important; border-bottom-color:color-mix(in srgb, var(--sel) 30%, rgba(0,0,0,.12)) !important; }
+  /* Settings: theme and main colour */
+  .lookbtns { display:flex; gap:6px; } .lookbtns button[aria-pressed="true"] { background:var(--sel); color:var(--onsel); border-color:var(--sel); }
+  .lookcols { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .lookcols .sw { width:24px; height:24px; min-width:0; padding:0; border-radius:50%; border:1px solid rgba(128,128,128,.5); box-shadow:none; }
+  .lookcols .sw[aria-pressed="true"] { box-shadow:0 0 0 2px var(--card), 0 0 0 4px var(--text); }
+  .lookcols .hexin { width:90px; }
+  /* sources: type icon, padlock; Add Source window */
+  .lyr .tico { display:inline-flex; flex:none; opacity:.75; } .lyr .tico svg { width:15px; height:15px; }
+  button.lock.off { opacity:.35; }
+  .ctxi:disabled { opacity:.4; cursor:default; } .ctxi:disabled:hover { background:transparent; color:inherit; }
+  .addsrc { width:min(880px, 94vw) !important; }
+  .as-b { display:flex; gap:16px; min-height:360px; }
+  .as-list { width:230px; flex:none; display:flex; flex-direction:column; gap:2px; overflow:auto; max-height:62vh; padding-right:6px; border-right:1px solid var(--gl-line); }
+  .as-list button { display:flex; align-items:center; gap:10px; text-align:left; padding:8px 10px; border-radius:10px; background:transparent; border:0; box-shadow:none; font-size:13px; }
+  .as-list button svg { width:18px; height:18px; flex:none; }
+  .as-list button:hover { background:var(--gl2); }
+  .as-list button[aria-selected="true"] { background:var(--sel); color:var(--onsel); }
+  .as-r { flex:1; display:flex; flex-direction:column; gap:12px; min-width:0; }
+  .as-head { display:flex; gap:14px; align-items:center; } .as-head .as-ic svg { width:36px; height:36px; color:var(--sel); }
+  .as-head b { font-size:16px; } .as-head small { display:block; color:var(--muted); margin-top:2px; }
+  .as-name { display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); } .as-name input { font-size:14px; }
+  .as-sub { margin:4px 0 0; font-size:12px; color:var(--muted); }
+  .as-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(128px, 1fr)); gap:8px; max-height:34vh; overflow:auto; }
+  .as-grid button { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 8px; border-radius:12px; }
+  .as-grid button svg { width:26px; height:26px; } .as-grid button span { font-size:12px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .as-vis { margin-right:auto; }
 </style>
 </head>
 <body>
 <div class="alertbar" id="alertBar" role="alert"><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 <div class="obs">
+  <header class="ptop"><div class="brand"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="var(--red)"/></svg><span>Multistream</span></div>
+  <nav class="pagetabs" aria-label="Pages"><button type="button" id="tabStream" title="Go to the Go Live page">Go Live</button><button type="button" aria-pressed="true" title="You are here">Studio</button><button type="button" id="tabCr" title="Open the Multiview">Multiview</button></nav></header>
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
   <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside><div class="split v" id="splitL" title="Drag to make the left panels wider or narrower" hidden></div>
   <div class="stage">
@@ -292,7 +344,7 @@
     </section>
     <section class="dock wide"><h2>Audio Mixer</h2>
       <div class="list" id="audio"></div>
-      <div class="tb"><div class="menu"><button id="addAudio" title="Add sound input">Add</button><div class="pop pop-up" id="audPop" hidden><button class="mi" data-addaudio="mic">Sound input<small>A microphone, mixer or the ATEM</small></button><button class="mi" data-addaudio="desktop" id="desktopAudioItem" hidden>Computer sound<small>What this PC plays (Windows)</small></button></div></div><span class="note" id="audNote"></span></div>
+      <div class="tb"><div class="menu"><button id="addAudio" title="Add sound input">Add</button><div class="pop pop-up" id="audPop" hidden><button class="mi" data-addaudio="mic">Sound input<small>A microphone, mixer or the ATEM</small></button><button class="mi" data-addaudio="desktop" id="desktopAudioItem" hidden>Computer sound<small>What this PC plays (Windows)</small></button></div></div><button id="advAudio" type="button" title="Volume, mono, balance, sync offset and monitoring for every sound input">Advanced</button><span class="note" id="audNote"></span></div>
     </section>
     <section class="dock narrow"><h2>Scene Transitions</h2>
       <div class="pad">
@@ -305,7 +357,6 @@
         <button id="sendBtn">Start Streaming</button>
         <button id="recBtn">Start Recording</button>
         <button id="vcBtn" hidden>Start Virtual Camera</button>
-        <div id="vcPrev" hidden title="This is what Zoom sees from Multistream Camera"><canvas id="vcPv" width="320" height="180"></canvas><span>Multistream Camera</span></div>
         <button id="modeBtn" type="button" aria-pressed="true" title="On: a Preview and a Program picture, and a Transition button (like OBS Studio Mode). Off: only the live picture, and a click on a scene puts it on air.">Studio Mode</button>
         <button id="setBtn">Settings</button>
       </div>
@@ -313,7 +364,7 @@
   </div>
 
   <!-- status bar, like OBS -->
-  <footer class="status"><button id="backBtn" hidden title="Go back to the Stream page">&larr; Stream</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
+  <footer class="status"><button id="backBtn" hidden title="Go back to the Go Live page">&larr; Go Live</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
 </div>
 
 <!-- Properties window, like OBS -->
@@ -338,18 +389,18 @@
       <div class="spanes">
         <section class="sp" data-sp="general">
           <h3>Studio</h3>
-          <div class="f"><label>Open the Studio in</label><select id="studioOpen"><option value="window">A new window</option><option value="same">The same window as the Stream page</option></select></div>
-          <p class="note">This is also on the Stream page under Settings, Appearance. It applies the next time you open the Studio.</p>
+          <div class="f"><label>Theme</label><span class="lookbtns" id="lookTheme"><button type="button" data-v="system">System</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></span></div>
+          <div class="f"><label>Main colour</label><span class="lookcols" id="lookCols"></span></div>
+          <p class="note">Theme and main colour are the same as on the Go Live page (Settings, Appearance).</p>
           <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
           <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
           <div class="f"><label>Panels</label><span><button id="resetLayout" type="button">Put the panels back</button> <span class="note">Drag a panel's title to move it. Drag it up to float it, or drop it on the bottom row to dock it again.</span></span></div>
           <h3>Scenes and windows</h3>
           <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes from OBS...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
-          <p class="note">The colours follow the Stream page (Settings, Appearance).</p>
         </section>
         <section class="sp" data-sp="channels">
           <h3>Where your video goes</h3>
-          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the Stream page under Settings.</p>
+          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the Go Live page under Settings.</p>
           <div id="chanList"></div>
           <h3>Add a channel</h3>
           <div class="f"><label>Site</label><select id="chType"><option value="youtube">YouTube</option><option value="facebook">Facebook</option><option value="other">Instagram or another site</option></select></div>
@@ -370,7 +421,7 @@
         </section>
         <section class="sp" data-sp="output">
           <h3>Recording</h3>
-          <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></div>
+          <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal (about 3.6 GB an hour)</option><option value="1080-4">1080p small file (about 1.8 GB an hour)</option><option value="720-6">720p normal (about 2.7 GB an hour)</option><option value="720-3">720p small file (about 1.4 GB an hour)</option></select></div>
           <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Also save the stream as soon as it starts</label></div>
           <div class="f"><label>Saved in</label><span><code id="recDir2"></code></span></div>
           <div class="row"><button id="recOpen2">Open folder</button><span class="note" id="recMsg2"></span></div>
@@ -434,10 +485,11 @@
     document.documentElement.classList.toggle('t-light', light);
     document.documentElement.classList.toggle('glass-off', Boolean(a.contrast));
     const r = document.documentElement.style;
-    if (hexOk(a.accent)) { r.setProperty('--sel', a.accent); r.setProperty('--onsel', lum(a.accent) > 0.3 ? '#05130a' : '#ffffff'); }
+    // a white main colour on the light (white) theme would not show: it becomes dark there
+    if (hexOk(a.accent)) { const acc = light && lum(a.accent) > 0.8 ? '#1f2933' : a.accent; r.setProperty('--sel', acc); r.setProperty('--onsel', lum(acc) > 0.3 ? '#05130a' : '#ffffff'); }
     else { r.removeProperty('--sel'); r.removeProperty('--onsel'); }
   }
-  apply();
+  apply(); window.msApplyLook = apply;
   window.addEventListener('storage', (e) => { if (e.key === 'ms_access') apply(); });
   if (dark && dark.addEventListener) dark.addEventListener('change', apply);
 })();
@@ -865,14 +917,22 @@ async function syncAudio() {
       // the chain: input -> delay -> (gate listens here) -> low cut -> bass/mid/treble -> compressor -> noise gate -> limiter -> fader -> scene gate -> master
       // and after the fader a copy goes to the monitor (your headphones)
       n.delay.connect(n.det); n.delay.connect(n.hp); n.hp.connect(n.eqL); n.eqL.connect(n.eqM); n.eqM.connect(n.eqH); n.eqH.connect(n.comp);
-      n.comp.connect(n.nz); n.nz.connect(n.lim); n.lim.connect(n.gain);
-      n.gain.connect(n.an); n.gain.connect(n.gate); n.gate.connect(master); n.gate.gain.value = 0;
+      n.comp.connect(n.nz); n.nz.connect(n.lim);
+      // Mono (both sides the same) and Balance (left/right), like OBS Advanced Audio Properties
+      n.mono = actx.createGain(); n.mono.channelCountMode = 'explicit'; n.mono.channelInterpretation = 'speakers'; n.mono.channelCount = 2;
+      n.bal = actx.createStereoPanner(); n.lim.connect(n.mono); n.mono.connect(n.bal); n.bal.connect(n.gain);
+      n.gain.connect(n.an); n.gain.connect(n.gate);
+      // left and right meters: the level after the fader, split in two (a one-channel input is copied to both sides)
+      n.st = actx.createGain(); n.st.channelCount = 2; n.st.channelCountMode = 'explicit'; n.st.channelInterpretation = 'speakers';
+      n.spl = actx.createChannelSplitter(2); n.anL = actx.createAnalyser(); n.anR = actx.createAnalyser(); n.anL.fftSize = n.anR.fftSize = 2048;
+      n.gain.connect(n.st); n.st.connect(n.spl); n.spl.connect(n.anL, 0); n.spl.connect(n.anR, 1); n.gate.connect(master); n.gate.gain.value = 0;
       n.mon.gain.value = 0; n.gain.connect(n.mon); n.mon.connect(actx.destination);
       asrc.set(a.id, n);
       const id = pickDevice('audio', a.label, a.device);
       try { const st = a.kind === 'desktop' ? await openDesktopAudio() : await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = ''; } catch (e) { n.err = e.message; }
     }
     n.gain.gain.setTargetAtTime(a.muted ? 0 : (a.vol == null ? 1 : a.vol), actx.currentTime, 0.02);
+    if (n.mono) { n.mono.channelCount = a.mono ? 1 : 2; n.bal.pan.setTargetAtTime(Math.max(-1, Math.min(1, a.bal || 0)), actx.currentTime, 0.02); }
     n.mon.gain.setTargetAtTime(a.monitor === 'only' || a.monitor === 'both' ? 1 : 0, actx.currentTime, 0.02);
     applyFx(a, n);
   }
@@ -953,6 +1013,49 @@ function openTools(a, fx) {
   dlg.querySelector('button').onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
   document.body.appendChild(m);
 }
+// Advanced Audio Properties (like OBS): every sound input in one table
+function openAdvancedAudio() {
+  const m = document.createElement('div'); m.className = 'modal';
+  const dlg = document.createElement('div'); dlg.className = 'dlg big'; dlg.style.height = 'auto'; // only as tall as the list
+  dlg.innerHTML = '<div class="dlg-h"><b>Advanced Audio Properties</b><button type="button" aria-label="Close">×</button></div>';
+  const body = document.createElement('div'); body.className = 'dlg-b';
+  const t = document.createElement('table'); t.className = 'aap';
+  t.innerHTML = '<thead><tr><th>Name</th><th>Status</th><th>Volume %</th><th>Mono</th><th>Balance</th><th>Sync offset (ms)</th><th>Audio monitoring</th></tr></thead>';
+  const tb = document.createElement('tbody'); t.appendChild(tb);
+  const cur = byName(studio.current), live = new Set((cur && cur.audio) || []);
+  studio.audio.forEach((a) => {
+    const tr = document.createElement('tr'), F = fxOf(a);
+    const td = (el) => { const c = document.createElement('td'); if (typeof el === 'string') c.textContent = el; else c.appendChild(el); tr.appendChild(c); return c; };
+    td(a.name);
+    const on = live.has(a.id) && !a.muted;
+    td(on ? 'Active' : a.muted ? 'Muted' : 'Not on air').className = on ? 'act' : 'idle';
+    const vol = document.createElement('input'); vol.type = 'number'; vol.min = '0'; vol.max = '400'; vol.step = '1'; vol.value = String(Math.round((a.vol == null ? 1 : a.vol) * 100));
+    vol.onchange = () => { const v = Math.max(0, Math.min(400, Number(vol.value) || 0)); vol.value = String(v); a.vol = v / 100; save(); syncAudio(); renderAudio(); };
+    td(vol);
+    const mono = document.createElement('input'); mono.type = 'checkbox'; mono.checked = Boolean(a.mono); mono.title = 'Both sides play the same sound';
+    mono.onchange = () => { a.mono = mono.checked; save(); syncAudio(); };
+    td(mono);
+    const bw = document.createElement('span'); bw.className = 'bal';
+    const bal = document.createElement('input'); bal.type = 'range'; bal.min = '-100'; bal.max = '100'; bal.step = '1'; bal.value = String(Math.round((a.bal || 0) * 100)); bal.title = 'Double-click for the middle';
+    bal.oninput = () => { let v = Number(bal.value); if (Math.abs(v) < 4) v = 0; a.bal = v / 100; syncAudio(); };
+    bal.onchange = () => save();
+    bal.ondblclick = () => { bal.value = '0'; a.bal = 0; save(); syncAudio(); };
+    bw.append('L', bal, 'R'); td(bw);
+    const off = document.createElement('input'); off.type = 'number'; off.min = '0'; off.max = '1000'; off.step = '10'; off.value = String(F.delay || 0); off.title = 'Raise it if the sound arrives before the picture';
+    off.onchange = () => { const v = Math.max(0, Math.min(1000, Number(off.value) || 0)); off.value = String(v); F.delay = v; save(); syncAudio(); };
+    td(off);
+    const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only'], ['both', 'Monitor and output']].forEach(([v, x]) => mon.add(new Option(x, v)));
+    mon.value = a.monitor || 'off'; mon.onchange = () => { a.monitor = mon.value; save(); syncAudio(); gateAudio(); };
+    td(mon);
+    tb.appendChild(tr);
+  });
+  if (!studio.audio.length) { const p = document.createElement('p'); p.className = 'note'; p.textContent = 'No sound inputs yet.'; body.appendChild(p); } else body.appendChild(t);
+  const f = document.createElement('div'); f.className = 'dlg-f'; const ok = document.createElement('button'); ok.type = 'button'; ok.textContent = 'Close'; f.appendChild(ok);
+  dlg.append(body, f); m.appendChild(dlg);
+  const close = () => { m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
+  dlg.querySelector('.dlg-h button').onclick = close; ok.onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
+  document.body.appendChild(m);
+}
 function renderAudio() {
   const box = $('#audio'); box.textContent = '';
   const s = byName(editing), on = new Set((s && s.audio) || []);
@@ -965,8 +1068,8 @@ function renderAudio() {
     m.onclick = () => { a.muted = !a.muted; save(); syncAudio(); renderAudio(); };
     t.append(inScene, n);
     const fd = makeFader(a);
-    const mt = document.createElement('div'); mt.className = 'mt'; mt.innerHTML = '<i></i>';
-    const sc = document.createElement('div'); sc.className = 'scale'; [0, -10, -20, -30, -40, -50, -60].forEach((v) => { const e = document.createElement('span'); e.textContent = String(v); e.style.bottom = ((v + 60) / 72 * 100) + '%'; sc.appendChild(e); });
+    const mt = document.createElement('div'); mt.className = 'mts'; mt.title = 'Left and right'; mt.innerHTML = '<div class="mt"><i></i><b></b></div><div class="mt"><i></i><b></b></div>';
+    const sc = document.createElement('div'); sc.className = 'scale'; [0, -6, -12, -18, -24, -30, -36, -42, -48, -54, -60].forEach((v) => { const e = document.createElement('span'); e.textContent = String(v); e.style.bottom = ((v + 60) / 60 * 100) + '%'; sc.appendChild(e); });
     const sl = document.createElement('select');
     if (a.kind === 'desktop') { sl.add(new Option('The sound this computer plays', '')); sl.disabled = true; }
     else {
@@ -979,10 +1082,10 @@ function renderAudio() {
     const slider = (min, max, step, val, fmt, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { o.textContent = fmt(i.value); set(Number(i.value)); save(); syncAudio(); }; w.append(i, o); return w; };
     const sw = (on, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(on); c.onchange = () => { set(c.checked); save(); syncAudio(); }; return c; };
     const F = fxOf(a);
-    const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only (not in the stream)'], ['both', 'Monitor and stream']].forEach(([v, t]) => mon.add(new Option(t, v)));
+    const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only'], ['both', 'Monitor and output']].forEach(([v, t]) => mon.add(new Option(t, v)));
     mon.value = a.monitor || 'off'; mon.onchange = () => { a.monitor = mon.value; save(); syncAudio(); gateAudio(); };
     if (!sl.disabled) row('Input', sl);
-    row('Listen with headphones', mon);
+    row('Audio monitoring', mon);
     row('Delay', slider(0, 1000, 10, F.delay || 0, (v) => v + ' ms', (v) => { F.delay = v; }));
     row('Low cut (rumble)', sw(F.lowcut && F.lowcut.on, (v) => { F.lowcut = { ...(F.lowcut || {}), on: v }; }));
     row('  cuts below', slider(40, 300, 5, F.lowcut && F.lowcut.hz || 80, (v) => v + ' Hz', (v) => { F.lowcut = { ...(F.lowcut || {}), hz: v }; }));
@@ -997,13 +1100,14 @@ function renderAudio() {
     row('  strength', slider(1, 20, 0.5, F.comp && F.comp.ratio || 4, (v) => v + ':1', (v) => { F.comp = { ...(F.comp || {}), ratio: v }; }));
     row('Limiter (stops peaks)', sw(F.lim && F.lim.on, (v) => { F.lim = { ...(F.lim || {}), on: v }; }));
     row('  ceiling', slider(-20, 0, 1, F.lim && F.lim.thr != null ? F.lim.thr : -3, (v) => v + ' dB', (v) => { F.lim = { ...(F.lim || {}), thr: v }; }));
-    const hint = document.createElement('p'); hint.className = 'note'; hint.textContent = 'Headphones: hear this input yourself (use headphones). Delay: raise it if the sound arrives before the picture. Low cut: removes rumble. Gate: cuts hiss when nobody speaks. Compressor: keeps the level even. Limiter: stops sudden loud peaks.'; fx.appendChild(hint);
     const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'sm'; tb.textContent = 'Tools'; tb.title = 'Input, headphones, delay, low cut, bass/treble, gate, compressor, limiter'; tb.onclick = () => openTools(a, fx);
     const body = document.createElement('div'); body.className = 'aub'; const wrap = document.createElement('div'); wrap.className = 'aum'; wrap.append(sc, mt, fd.el); body.appendChild(wrap);
     const bt = document.createElement('div'); bt.className = 'aut'; bt.append(m, tb);
     d.append(t, body, fd.read, bt); box.appendChild(d);
+    // right-click a sound input (like OBS): rename, mute, hear it in this scene, properties and filters
+    d.addEventListener('contextmenu', (e) => showAudioMenu(e, a, n, fx, on.has(a.id)));
   });
-  $('#audNote').textContent = studio.audio.length ? 'Click the eye to hear that input in the scene you are editing.' : 'No sound inputs yet.';
+  $('#audNote').textContent = studio.audio.length ? '' : 'No sound inputs yet.';
 }
 function addAudioInput(kind) {
   const a = { id: uid(), name: kind === 'desktop' ? 'Computer sound' : 'Sound ' + (studio.audio.length + 1), device: '', label: '', vol: 1, muted: false };
@@ -1011,17 +1115,34 @@ function addAudioInput(kind) {
   studio.audio.push(a); const s = byName(editing); if (s) (s.audio = s.audio || []).push(a.id);
   save(); renderAudio(); syncAudio();
 }
+$('#advAudio').onclick = () => openAdvancedAudio();
 document.querySelectorAll('[data-addaudio]').forEach((b) => { b.onclick = () => addAudioInput(b.dataset.addaudio); });
 if (window.msNative && window.msNative.platform === 'win32') $('#desktopAudioItem').hidden = false;
-const buf = new Float32Array(512);
-setInterval(() => {
+// level meters, like OBS: drawn every screen refresh, the bar falls back smoothly (about 26 dB a second),
+// and a white line shows the highest level for 1.5 seconds
+const bufL = new Float32Array(2048), bufR = new Float32Array(2048), meterState = new Map();
+const peakOf = (an, b) => { an.getFloatTimeDomainData(b); let p = 0; for (let i = 0; i < b.length; i++) { const v = b[i] < 0 ? -b[i] : b[i]; if (v > p) p = v; } return Math.max(-60, dB(p)); };
+const meterPct = (v) => Math.max(0, Math.min(100, (v + 60) / 60 * 100));
+let meterT = performance.now();
+function drawMeters(now) {
+  requestAnimationFrame(drawMeters);
+  const dt = Math.min(0.2, (now - meterT) / 1000); meterT = now;
+  if (document.hidden) return;
   document.querySelectorAll('#audio .au').forEach((d) => {
-    const n = asrc.get(d.dataset.id); const bar = d.querySelector('.mt i'); if (!bar) return;
-    if (!n) { bar.style.height = '100%'; return; }
-    n.an.getFloatTimeDomainData(buf); let pk = 0; for (let i = 0; i < buf.length; i++) pk = Math.max(pk, Math.abs(buf[i]));
-    bar.style.height = (100 - Math.max(0, Math.min(100, (dB(pk) + 60) / 72 * 100))) + '%';
+    const bars = d.querySelectorAll('.mt'); if (!bars.length) return;
+    const n = asrc.get(d.dataset.id);
+    let st = meterState.get(d.dataset.id); if (!st) { st = [{ l: -60, p: -60, at: 0 }, { l: -60, p: -60, at: 0 }]; meterState.set(d.dataset.id, st); }
+    const cur = n && n.anL ? [peakOf(n.anL, bufL), peakOf(n.anR, bufR)] : [-60, -60];
+    bars.forEach((bar, k) => {
+      const m = st[k], c = cur[k];
+      m.l = Math.max(c, m.l - 26 * dt);
+      if (c >= m.p) { m.p = c; m.at = now; } else if (now - m.at > 1500) m.p = Math.max(c, m.p - 20 * dt);
+      bar.firstChild.style.height = (100 - meterPct(m.l)) + '%';
+      bar.lastChild.style.bottom = 'calc(' + meterPct(m.p) + '% - 1px)'; bar.lastChild.style.opacity = m.p > -59 ? '1' : '0';
+    });
   });
-}, 80);
+}
+requestAnimationFrame(drawMeters);
 
 // ---------------- scenes UI ----------------
 function renderScenes() {
@@ -1032,7 +1153,8 @@ function renderScenes() {
     // a red dot marks the scene that is on air (Program)
     if (s.name === studio.current) { const a = document.createElement('span'); a.className = 'dot'; a.title = 'On air'; d.appendChild(a); }
     d.onclick = () => { editing = s.name; sel = ''; if (!studioMode && s.name !== studio.current) setCurrent(s.name); else renderAll(); };
-    d.ondblclick = () => { const v = prompt('Scene name', s.name); if (v && !studio.scenes.some((x) => x.name === v)) { if (studio.current === s.name) { studio.current = v; dirtyCurrent = true; } s.name = v; editing = v; save(); renderAll(); } };
+    // the click before the double-click draws the list again, so find the name again
+    d.ondblclick = () => renameInPlace([...document.querySelectorAll('#scenes .scn .n')].find((x) => x.textContent === s.name) || n, s.name, (v) => { if (v && v !== s.name && !studio.scenes.some((x) => x.name === v)) { if (studio.current === s.name) { studio.current = v; dirtyCurrent = true; } s.name = v; editing = v; save(); } renderAll(); });
     box.appendChild(d);
   });
 }
@@ -1056,6 +1178,34 @@ function openProjector(src, displayId) {
   projWins[src] = window.open('/projector.html?src=' + src + (displayId != null ? '&d=' + encodeURIComponent(displayId) : ''), '_blank', 'popup,width=960,height=540');
 }
 function closeCtx() { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } }
+// the right-click menu on a sound input in the Audio Mixer
+function showAudioMenu(ev, a, nameEl, fx, inScene) {
+  ev.preventDefault(); closeCtx();
+  const m = document.createElement('div'); m.className = 'ctxm'; m.setAttribute('role', 'menu');
+  const head = document.createElement('div'); head.className = 'ctxh'; head.textContent = a.name; m.appendChild(head);
+  const item = (t, run) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ctxi'; b.setAttribute('role', 'menuitem'); b.textContent = t; b.onclick = () => { closeCtx(); run(); }; m.appendChild(b); };
+  const sep = () => { const d = document.createElement('div'); d.className = 'ctxs'; m.appendChild(d); };
+  item(a.muted ? 'Unmute' : 'Mute', () => { a.muted = !a.muted; save(); syncAudio(); renderAudio(); });
+  item(inScene ? 'Do not hear it in this scene' : 'Hear it in this scene', () => {
+    const sc = byName(editing); if (!sc) return; sc.audio = sc.audio || [];
+    if (inScene) sc.audio = sc.audio.filter((x) => x !== a.id); else if (!sc.audio.includes(a.id)) sc.audio.push(a.id);
+    save(); gateAudio(); renderAudio();
+  });
+  sep();
+  item('Rename...', () => {
+    // typed in place (a pop-up box does not work in the app)
+    const i = document.createElement('input'); i.type = 'text'; i.value = a.name; i.className = 'n'; i.style.width = '100%';
+    nameEl.replaceWith(i); i.focus(); i.select();
+    let done = false; const finish = (keep) => { if (done) return; done = true; const v = i.value.trim(); if (keep && v) { a.name = v; save(); } renderAudio(); };
+    i.onkeydown = (e) => { if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false); }; i.onblur = () => finish(true);
+  });
+  sep();
+  item('Properties and filters...', () => openTools(a, fx));
+  item('Advanced Audio Properties...', () => openAdvancedAudio());
+  document.body.appendChild(m); ctxMenu = m;
+  const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
+  const first = m.querySelector('.ctxi'); if (first) first.focus();
+}
 async function showViewMenu(ev, src) {
   ev.preventDefault(); closeCtx();
   let ds = []; try { if (window.msNative && window.msNative.displays) ds = await window.msNative.displays(); } catch {}
@@ -1097,6 +1247,119 @@ $('#delScene').onclick = () => {
   editing = studio.current; save(); renderAll();
 };
 const MEDIA = new Set(['image', 'video', 'camera', 'screen', 'window', 'browser', 'ipcam']); // sources that show a picture from somewhere
+// ---------------- sources: icons, lock, right-click menu, Add Source window (like OBS) ----------------
+const SVG = (p) => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
+const SRC_ICON = {
+  camera: SVG('<path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
+  image: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="9" r="1.8"/><path d="M21 16l-5-5-9 9"/>'),
+  video: SVG('<path d="M7 5l12 7-12 7z"/>'),
+  text: SVG('<path d="M5 6V4h14v2M12 4v16M9 20h6"/>'),
+  lower: SVG('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M5 15h10M5 18h6"/>'),
+  timer: SVG('<circle cx="12" cy="13" r="7"/><path d="M12 13V9M10 2h4M19 6l1.5-1.5"/>'),
+  clock: SVG('<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>'),
+  screen: SVG('<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>'),
+  window: SVG('<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 8h18M6 6h.01M8.5 6h.01"/>'),
+  browser: SVG('<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 2.5 14.5 0 17M12 3.5c-2.5 2.5-2.5 14.5 0 17"/>'),
+  ipcam: SVG('<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/>'),
+  color: SVG('<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>'),
+};
+const LOCK_ON = SVG('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>');
+const LOCK_OFF = SVG('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/>');
+// a padlock button: closed = the item cannot be moved by accident, open = it can
+function lockBtn(l) {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'eye lock';
+  const paint = () => { const on = Boolean(l.locked); b.innerHTML = on ? LOCK_ON : LOCK_OFF; b.classList.toggle('off', !on); b.setAttribute('aria-pressed', String(on)); b.title = on ? 'Locked: click to unlock' : 'Click to lock in place'; b.setAttribute('aria-label', b.title); };
+  b.onclick = (e) => { e.stopPropagation(); l.locked = !l.locked; save(); paint(); if (l.id === sel) renderLayers(); };
+  paint(); return b;
+}
+// type a new name in place (pop-up text boxes do not work in the app)
+function renameInPlace(el, cur, done) {
+  const i = document.createElement('input'); i.type = 'text'; i.value = cur; i.className = el.className; i.style.width = '100%'; i.style.minWidth = '0';
+  el.replaceWith(i); i.focus(); i.select();
+  let fin = false; const end = (keep) => { if (fin) return; fin = true; const v = i.value.trim(); done(keep && v ? v : null); };
+  i.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') end(true); if (e.key === 'Escape') end(false); };
+  i.onblur = () => end(true); i.onclick = (e) => e.stopPropagation(); i.ondblclick = (e) => e.stopPropagation();
+}
+// the right-click menu on a source (like OBS): properties, filters, rename, copy, order, transform, show, lock, remove
+function showSourceMenu(ev, l, nameEl) {
+  ev.preventDefault(); ev.stopPropagation(); closeCtx();
+  const s = byName(editing); if (!s) return;
+  sel = l.id;
+  const m = document.createElement('div'); m.className = 'ctxm'; m.setAttribute('role', 'menu');
+  const head = document.createElement('div'); head.className = 'ctxh'; head.textContent = l.name || ICON[l.type] || l.type; m.appendChild(head);
+  const item = (t, run, off) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ctxi'; b.setAttribute('role', 'menuitem'); b.textContent = t; if (off) b.disabled = true; b.onclick = () => { closeCtx(); run(); }; m.appendChild(b); };
+  const sep = () => { const d = document.createElement('div'); d.className = 'ctxs'; m.appendChild(d); };
+  const at = () => s.layers.indexOf(l);
+  const move = (to) => { const i = at(); if (i < 0) return; s.layers.splice(i, 1); s.layers.splice(Math.max(0, Math.min(s.layers.length, to)), 0, l); save(); renderLayers(); };
+  item('Properties', () => { sel = l.id; propsOpen = true; renderLayers(); });
+  item('Filters (colour, crop, green screen)', () => { sel = l.id; propsOpen = true; pfxOpen = true; renderLayers(); });
+  sep();
+  item('Rename...', () => { renderLayers(); const n = document.querySelector('#layers .lyr.on .n'); if (n) renameInPlace(n, l.name || ICON[l.type] || l.type, (v) => { if (v) { l.name = v; save(); } renderLayers(); }); });
+  item('Duplicate', () => { const c = JSON.parse(JSON.stringify(l)); c.id = uid(); c.name = (l.name || ICON[l.type] || l.type) + ' (copy)'; s.layers.splice(at() + 1, 0, c); sel = c.id; save(); renderLayers(); });
+  item('Copy', () => { clip = JSON.stringify(l); flash('Copied. Right-click or Ctrl+V to paste.', true); });
+  item('Paste', () => { const c = JSON.parse(clip); c.id = uid(); c.x = Math.round((c.x || 0) + 20); c.y = Math.round((c.y || 0) + 20); c.name = (c.name || ICON[c.type] || c.type) + ' (copy)'; s.layers.push(c); sel = c.id; save(); renderLayers(); }, !clip);
+  sep();
+  item(l.visible === false ? 'Show' : 'Hide', () => { l.visible = l.visible === false; save(); renderLayers(); });
+  item(l.locked ? 'Unlock' : 'Lock in place', () => { l.locked = !l.locked; save(); renderLayers(); });
+  sep();
+  item('Order: move to the front', () => move(s.layers.length - 1));
+  item('Order: move forward', () => move(at() + 1));
+  item('Order: move back', () => move(at() - 1));
+  item('Order: move to the back', () => move(0));
+  sep();
+  item('Transform: fit to screen', () => { Object.assign(l, { x: 0, y: 0, w: SW, h: SH, fit: 'fit' }); save(); renderLayers(); }, l.locked);
+  item('Transform: stretch to screen', () => { Object.assign(l, { x: 0, y: 0, w: SW, h: SH, fit: 'stretch' }); save(); renderLayers(); }, l.locked);
+  item('Transform: centre on screen', () => { l.x = Math.round((SW - (l.w || SW)) / 2); l.y = Math.round((SH - (l.h || SH)) / 2); save(); renderLayers(); }, l.locked);
+  sep();
+  item('Remove', () => { const i = at(); if (i >= 0) s.layers.splice(i, 1); sel = ''; save(); renderLayers(); });
+  document.body.appendChild(m); ctxMenu = m;
+  const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
+  const first = m.querySelector('.ctxi'); if (first) first.focus();
+}
+// Add Source window (like OBS): the kinds on the left with icons; on the right a name for the new one,
+// or a source that is already in another scene (a copy is added)
+function openAddSource() {
+  const s = byName(editing); if (!s) { flash('Add a scene first.', false); return; }
+  const kinds = [...document.querySelectorAll('#addPop [data-add]')].map((b) => ({ t: b.dataset.add, name: b.childNodes[0].textContent, sub: (b.querySelector('small') || {}).textContent || '' }));
+  let pick = kinds[0].t;
+  const m = document.createElement('div'); m.className = 'modal';
+  const dlg = document.createElement('div'); dlg.className = 'dlg big addsrc'; dlg.style.height = 'auto';
+  dlg.innerHTML = '<div class="dlg-h"><b>Add Source</b><button type="button" aria-label="Close">×</button></div>';
+  const body = document.createElement('div'); body.className = 'dlg-b as-b';
+  const list = document.createElement('div'); list.className = 'as-list'; list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', 'Kind of source');
+  const right = document.createElement('div'); right.className = 'as-r';
+  body.append(list, right); dlg.appendChild(body);
+  const foot = document.createElement('div'); foot.className = 'dlg-f';
+  const vis = document.createElement('label'); vis.className = 'chk as-vis'; vis.innerHTML = '<input type="checkbox" checked> Make source visible';
+  const addB = document.createElement('button'); addB.type = 'button'; addB.className = 'on'; addB.textContent = 'Add';
+  const closeB = document.createElement('button'); closeB.type = 'button'; closeB.textContent = 'Close';
+  foot.append(vis, addB, closeB); dlg.appendChild(foot); m.appendChild(dlg);
+  const close = () => { m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
+  dlg.querySelector('.dlg-h button').onclick = close; closeB.onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
+  let nameIn = null;
+  const visible = () => vis.querySelector('input').checked;
+  const addNew = () => { const l = newLayer(pick); const v = nameIn && nameIn.value.trim(); if (v) l.name = v; l.visible = visible(); close(); addLayer(l); };
+  addB.onclick = addNew;
+  function draw() {
+    list.textContent = '';
+    kinds.forEach((k) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(k.t === pick)); b.innerHTML = SRC_ICON[k.t] || ''; b.append(k.name); b.onclick = () => { pick = k.t; draw(); }; b.ondblclick = addNew; list.appendChild(b); });
+    const k = kinds.find((x) => x.t === pick);
+    right.textContent = '';
+    const h = document.createElement('div'); h.className = 'as-head'; h.innerHTML = '<span class="as-ic">' + (SRC_ICON[k.t] || '') + '</span>'; const tx = document.createElement('div'); const b = document.createElement('b'); b.textContent = k.name; const sm = document.createElement('small'); sm.textContent = k.sub; tx.append(b, sm); h.appendChild(tx); right.appendChild(h);
+    const f = document.createElement('label'); f.className = 'as-name'; f.textContent = 'Name'; nameIn = document.createElement('input'); nameIn.type = 'text'; nameIn.value = k.name; nameIn.onkeydown = (e) => { if (e.key === 'Enter') addNew(); }; f.appendChild(nameIn); right.appendChild(f);
+    // the same kind already in other scenes: add a copy of it
+    const seen = new Set(), have = [];
+    studio.scenes.forEach((sc) => (sc.layers || []).forEach((l) => { if (l.type !== pick || s.layers.some((x) => x.id === l.id)) return; const key = (l.name || '') + '|' + (l.url || l.src || l.device || l.text || ''); if (seen.has(key)) return; seen.add(key); have.push({ l, scene: sc.name }); }));
+    if (have.length) {
+      const t = document.createElement('p'); t.className = 'as-sub'; t.textContent = 'Or add one you already have (from another scene):'; right.appendChild(t);
+      const g = document.createElement('div'); g.className = 'as-grid';
+      have.forEach(({ l, scene }) => { const b2 = document.createElement('button'); b2.type = 'button'; b2.title = 'From the scene ' + scene; b2.innerHTML = SRC_ICON[l.type] || ''; const sp = document.createElement('span'); sp.textContent = l.name || ICON[l.type] || l.type; b2.appendChild(sp);
+        b2.onclick = () => { const c = JSON.parse(JSON.stringify(l)); c.id = uid(); c.visible = visible(); close(); addLayer(c); }; g.appendChild(b2); });
+      right.appendChild(g);
+    }
+  }
+  draw(); document.body.appendChild(m); nameIn.focus(); nameIn.select();
+}
 const ICON = { camera: 'Video capture', window: 'Window', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera', lower: 'Name bar', timer: 'Countdown', clock: 'Clock' };
 function renderLayers() {
   const s = byName(editing), box = $('#layers'); box.textContent = '';
@@ -1108,12 +1371,14 @@ function renderLayers() {
     const l = s.layers[i];
     const d = document.createElement('div'); d.className = 'lyr' + (l.id === sel ? ' on' : '');
     const eye = eyeBtn(l.visible !== false, 'Show or hide', (v) => { l.visible = v; save(); });
-    const n = document.createElement('span'); n.className = 'n'; n.textContent = (l.name || ICON[l.type] || l.type) + (l.locked ? ' (locked)' : ''); n.title = n.textContent;
+    const ti = document.createElement('span'); ti.className = 'tico'; ti.innerHTML = SRC_ICON[l.type] || ''; ti.title = ICON[l.type] || l.type;
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = l.name || ICON[l.type] || l.type; n.title = n.textContent;
     const up = document.createElement('button'); up.className = 'sm'; up.textContent = '\u2191'; up.title = 'Move in front'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
     const x = document.createElement('button'); x.className = 'sm'; x.textContent = '\u00d7'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
     const cog = document.createElement('button'); cog.className = 'cog'; cog.textContent = '\u2699'; cog.title = 'Settings for ' + (l.name || l.type); cog.setAttribute('aria-label', cog.title);
     cog.onclick = (e) => { e.stopPropagation(); sel = l.id; propsOpen = true; renderLayers(); };
-    d.append(eye, n, cog); d.onclick = () => { sel = l.id; renderLayers(); };
+    d.append(eye, ti, n, lockBtn(l), cog); d.onclick = () => { sel = l.id; renderLayers(); };
+    d.addEventListener('contextmenu', (e) => showSourceMenu(e, l, n));
     d.ondblclick = () => { sel = l.id; propsOpen = true; renderLayers(); };
     box.appendChild(d);
   }
@@ -1265,9 +1530,8 @@ function pickFile(l) {
     if (r.url) { l.url = r.url; l.file = ''; save(); renderLayers(); }
   }; f.click();
 }
-document.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
-  const s = byName(editing); if (!s) return;
-  const t = b.dataset.add, l = { id: uid(), type: t, x: 0, y: 0, w: SW, h: SH, fit: 'stretch', visible: true };
+function newLayer(t) {
+  const l = { id: uid(), type: t, x: 0, y: 0, w: SW, h: SH, fit: 'stretch', visible: true };
   if (t === 'text') Object.assign(l, { text: 'Welcome', size: 110, color: '#ffffff', x: 120, y: 800, w: 1600, h: 160 });
   if (t === 'color') l.color = '#0b3d1e';
   if (t === 'window') { l.display = ''; l.winName = ''; l.fit = 'fit'; }
@@ -1278,8 +1542,10 @@ document.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => {
   if (t === 'browser') { l.url = 'http://'; l.bw = SW; l.bh = SH; }
   if (t === 'ipcam') { l.url = 'http://192.168.0.0:4747/video'; l.fit = 'fit'; }
   if (t === 'video' || t === 'image') l.fit = 'fit';
-  s.layers.push(l); sel = l.id; propsOpen = true; save(); renderLayers();
-});
+  return l;
+}
+function addLayer(l) { const s = byName(editing); if (!s) return; s.layers.push(l); sel = l.id; propsOpen = true; save(); renderLayers(); }
+document.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => { if (byName(editing)) addLayer(newLayer(b.dataset.add)); });
 function renderAll() { renderScenes(); renderLayers(); renderAudio(); updateVideos(); gateAudio(); }
 
 // ---------------- import from OBS ----------------
@@ -1329,6 +1595,59 @@ function importObs(j) {
   });
   return { scenes, audio, current: j.current_program_scene || (scenes[0] || {}).name || '' };
 }
+// ---------------- scene collections (the menu bar: Scene Collection) ----------------
+// a small window that asks for a name (a pop-up text box does not work in the app)
+function askName(title, value) {
+  return new Promise((done) => {
+    const m = document.createElement('div'); m.className = 'modal';
+    const d = document.createElement('div'); d.className = 'dlg'; d.style.height = 'auto'; d.style.width = 'min(420px, 92vw)';
+    d.innerHTML = '<div class="dlg-h"><b></b><button type="button" aria-label="Close">×</button></div><div class="dlg-b"><input type="text" maxlength="60" style="width:100%"></div><div class="dlg-f"><button type="button" class="on">OK</button><button type="button">Cancel</button></div>';
+    d.querySelector('b').textContent = title; const i = d.querySelector('input'); i.value = value || '';
+    const end = (v) => { m.remove(); done(v); };
+    const [ok, no] = d.querySelectorAll('.dlg-f button');
+    ok.onclick = () => end(i.value.trim() || null); no.onclick = () => end(null); d.querySelector('.dlg-h button').onclick = () => end(null);
+    i.onkeydown = (e) => { e.stopPropagation(); if (e.key === 'Enter') ok.click(); if (e.key === 'Escape') end(null); };
+    m.appendChild(d); document.body.appendChild(m); i.focus(); i.select();
+  });
+}
+async function reloadStudio() {
+  const s = await fetch('/api/studio').then((r) => r.json());
+  studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '' }; lastRev = s.rev;
+  editing = studio.current; sel = ''; propsOpen = false;
+  asrc.forEach((n) => { try { n.node && n.node.disconnect(); n.gain.disconnect(); n.gate.disconnect(); } catch {} }); asrc.clear();
+  renderAll(); syncAudio();
+}
+window.msColl = async (act, name) => {
+  const list = await fetch('/api/collections').then((r) => r.json()).catch(() => ({ current: '', names: [] }));
+  const cur = list.current;
+  let body = null;
+  if (act === 'new') { const n = await askName('New scene collection', 'Untitled'); if (!n) return; body = { do: 'new', name: n }; }
+  else if (act === 'duplicate') { const n = await askName('Duplicate scene collection', cur + ' copy'); if (!n) return; body = { do: 'duplicate', name: n }; }
+  else if (act === 'rename') { const n = await askName('Rename scene collection', cur); if (!n || n === cur) return; body = { do: 'rename', name: n }; }
+  else if (act === 'remove') { if (!confirm('Remove the scene collection "' + cur + '"? Its scenes are deleted.')) return; body = { do: 'remove' }; }
+  else if (act === 'switch') { if (name === cur) return; body = { do: 'switch', name }; }
+  else if (act === 'export') {
+    const s = await fetch('/api/studio').then((r) => r.json());
+    const blob = new Blob([JSON.stringify({ multistream: 'scene collection', name: cur, scenes: s.scenes, audio: s.audio, current: s.current }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = cur.replace(/[\\/:*?"<>|]/g, '_') + '.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    flash('Exported "' + cur + '".', true); return;
+  } else if (act === 'import') {
+    // our own exported file, or a scene collection exported from OBS (Scene Collection, Export)
+    const f = $('#file'); f.value = ''; f.accept = '.json,application/json';
+    const file = await new Promise((ok) => { f.onchange = () => ok(f.files[0] || null); f.click(); }); if (!file) return;
+    let j; try { j = JSON.parse(await file.text()); } catch { alert('That file could not be read.'); return; }
+    let data = j; if (Array.isArray(j.sources)) { try { data = importObs(j); } catch { alert('That file could not be read as an OBS scene file.'); return; } }
+    if (!data || !Array.isArray(data.scenes) || !data.scenes.length) { alert('No scenes found in that file.'); return; }
+    const n = await askName('Name for the imported scene collection', j.name || file.name.replace(/\.json$/i, '')); if (!n) return;
+    body = { do: 'import', name: n, data: { scenes: data.scenes, audio: data.audio || [], current: data.current || '' } };
+  } else return;
+  if (wantSend && ['new', 'switch', 'remove', 'import'].includes(act) && !confirm('You are streaming. The scenes on air change to the other scene collection. Continue?')) return;
+  // send any change still waiting first, so it is not lost or saved into the other collection
+  if (saveT) { clearTimeout(saveT); saveT = 0; try { await fetch('/api/studio', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ scenes: studio.scenes, audio: studio.audio, ...(dirtyCurrent ? { current: studio.current } : {}) }) }); dirtyCurrent = false; } catch {} }
+  const r = await fetch('/api/collections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()).catch(() => ({ error: 'The app did not answer' }));
+  if (r.error) { flash(r.error, false); return; }
+  await reloadStudio(); flash('Scene collection: ' + r.current, true);
+};
 $('#impBtn').onclick = () => {
   const f = $('#file'); f.value = ''; f.accept = '.json,application/json';
   f.onchange = async () => {
@@ -1376,7 +1695,7 @@ function openPipe(p) {
 if (/[?&]same=1/.test(location.search) && window.msNative) {
   $('#backBtn').hidden = false;
   $('#backBtn').onclick = () => {
-    if ((wantSend || recWs) && !confirm('Going back to the Stream page stops streaming and recording. Go back?')) return;
+    if ((wantSend || recWs) && !confirm('Going back to the Go Live page stops streaming and recording. Go back?')) return;
     window.msNative.openDashboard();
   };
 }
@@ -1430,6 +1749,24 @@ function stopSend() {
   setProgramSize(1280, 720); setFps(30); lockOut();
   $('#sendBtn').textContent = 'Start Streaming'; $('#sendBtn').className = ''; liveT0 = 0;
 }
+// Theme and main colour (the same setting as the Stream page: Settings, Appearance). White is one of the colours.
+(function () {
+  const COLS = ['#22c55e', '#14b8a6', '#3b9eff', '#6366f1', '#a78bfa', '#fb923c', '#eab308', '#ffffff'];
+  const th = document.getElementById('lookTheme'), cols = document.getElementById('lookCols'); if (!th || !cols) return;
+  const get = () => { try { return JSON.parse(localStorage.getItem('ms_access') || '{}') || {}; } catch { return {}; } };
+  const hex = document.createElement('input'); hex.type = 'text'; hex.maxLength = 7; hex.className = 'hexin'; hex.placeholder = '#22c55e'; hex.title = 'Any colour, for example #ff0080';
+  const show = () => {
+    const a = get(); th.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((a.theme || 'system') === b.dataset.v)));
+    const cur = (a.accent || COLS[0]).toLowerCase(); cols.querySelectorAll('.sw').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === cur))); hex.value = cur;
+  };
+  const set = (k, v) => { const a = get(); a[k] = v; try { localStorage.setItem('ms_access', JSON.stringify(a)); } catch {} if (window.msApplyLook) window.msApplyLook(); show(); };
+  th.querySelectorAll('button').forEach((b) => { b.onclick = () => set('theme', b.dataset.v); });
+  COLS.forEach((c) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sw'; b.style.background = c; b.dataset.v = c; b.title = c === '#ffffff' ? 'White' : c; b.setAttribute('aria-label', b.title); b.onclick = () => set('accent', c); cols.appendChild(b); });
+  hex.onchange = () => { let v = hex.value.trim(); if (!v.startsWith('#')) v = '#' + v; if (/^#[0-9a-f]{6}$/i.test(v)) set('accent', v.toLowerCase()); else show(); };
+  cols.appendChild(hex); show();
+})();
+$('#tabStream').onclick = () => { if (!$('#backBtn').hidden) { $('#backBtn').click(); return; } if (window.msNative) window.msNative.openDashboard(); else location.href = '/'; };
+$('#tabCr').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else location.href = '/#control-room'; };
 $('#sendBtn').onclick = () => { if (wantSend) { if (askStop && !confirm('Stop streaming now?')) return; stopSend(); } else startSend(); };
 
 // ---------------- status bar clocks (LIVE and REC), like OBS ----------------
@@ -1461,7 +1798,8 @@ async function startRec() {
   const ws = recWs = openPipe(`/studio-record?h=${rcv.height}&mbit=${mb}&fps=${rfps}${fast ? '&copy=1' : ''}`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
-    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.min(80, Math.max(mb, 6)) * 1000000, audioBitsPerSecond: 160000 });
+    // fast (encode once): the file is exactly what the browser makes, so use the chosen size. Normal way: give ffmpeg a bit more to work from.
+    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: (fast ? mb : Math.min(80, Math.max(mb, 6))) * 1000000, audioBitsPerSecond: 160000 });
     recMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     recMr.start(500);
     recT0 = Date.now(); $('#recBtn').textContent = 'Stop Recording'; $('#recBtn').className = 'stop';
@@ -1486,26 +1824,20 @@ document.addEventListener('click', () => ensureAudio(), { once: true });
 // Sends the Studio picture to the Windows virtual camera. In Zoom, pick the camera called "Multistream Camera".
 let vcWs = null, vcMr = null;
 fetch('/api/vcam').then((r) => r.json()).then((s) => { if (s.available) $('#vcBtn').hidden = false; }).catch(() => {});
-let vcPvT = null;
-function vcPrevStart() {
-  const c = $('#vcPv'), x = c.getContext('2d'); $('#vcPrev').hidden = false;
-  clearInterval(vcPvT); vcPvT = setInterval(() => { if (!document.hidden) x.drawImage(vcv, 0, 0, c.width, c.height); }, 100);
-}
-function vcPrevStop() { clearInterval(vcPvT); vcPvT = null; $('#vcPrev').hidden = true; }
 function vcOff(msg) {
   try { vcMr && vcMr.state !== 'inactive' && vcMr.stop(); } catch {}
   try { vcWs && vcWs.close(); } catch {}
-  vcWs = vcMr = null; vcOn = false; vcPrevStop(); $('#vcBtn').textContent = 'Start Virtual Camera'; $('#vcBtn').className = '';
+  vcWs = vcMr = null; vcOn = false; $('#vcBtn').textContent = 'Start Virtual Camera'; $('#vcBtn').className = '';
   if (msg) { $('#st').textContent = msg; $('#st').className = 'stat bad'; }
 }
 $('#vcBtn').onclick = async () => {
   if (vcWs) { vcOff(); $('#st').textContent = 'Virtual camera is off.'; $('#st').className = 'stat'; return; }
-  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok3') === '1'; } catch {}
+  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok4') === '1'; } catch {}
   if (!ok) {
-    if (!confirm('Windows will ask for permission one time, to add the camera called Multistream Camera (it replaces the old DirectShow Softcam name). Continue?')) return;
+    if (!confirm('Windows will ask for permission one time, to add the camera called Multistream Camera (it replaces the old DirectShow Softcam name). Quit Zoom fully first (also from the icons next to the clock). Continue?')) return;
     const r = await fetch('/api/vcam/install', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then((x) => x.json()).catch(() => ({ error: 'Could not reach the app' }));
     if (r.error) { $('#st').textContent = 'Virtual camera setup: ' + r.error; $('#st').className = 'stat bad'; return; }
-    try { localStorage.setItem('ms_vcam_ok3', '1'); } catch {}
+    try { localStorage.setItem('ms_vcam_ok4', '1'); } catch {}
   }
   const ws = vcWs = openPipe('/studio-vcam');
   ws.binaryType = 'arraybuffer';
@@ -1514,7 +1846,7 @@ $('#vcBtn').onclick = async () => {
     vcOn = true;
     vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000 });
     vcMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
-    vcMr.start(100); vcPrevStart();
+    vcMr.start(100);
     $('#vcBtn').textContent = 'Stop Virtual Camera'; $('#vcBtn').className = 'stop';
     $('#st').textContent = 'Virtual camera is on. In Zoom, choose the camera called Multistream Camera.'; $('#st').className = 'stat ok';
   };
@@ -1528,7 +1860,7 @@ function popMenu(btn, pop) {
   btn.addEventListener('click', (e) => { e.stopPropagation(); const show = pop.hidden; document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }); pop.hidden = !show; btn.setAttribute('aria-expanded', String(show)); });
   pop.addEventListener('click', (e) => { if (e.target.closest('button')) pop.hidden = true; e.stopPropagation(); });
 }
-popMenu($('#addBtn'), $('#addPop'));
+$('#addBtn').onclick = (e) => { e.stopPropagation(); openAddSource(); };
 popMenu($('#addAudio'), $('#audPop'));
 document.addEventListener('click', () => document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }));
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.pop').forEach((p) => { p.hidden = true; }); });
@@ -1750,7 +2082,6 @@ function showPane(n) {
 document.querySelectorAll('#setNav button').forEach((b) => { b.onclick = () => showPane(b.dataset.sp); });
 function openSettings(pane) {
   fillMon(); lockOut();
-  try { $('#studioOpen').value = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
   $('#optSnap').checked = snapOn; $('#optConfirm').checked = askStop;
   $('#setBox').hidden = false; showPane(typeof pane === 'string' ? pane : spane);
 }
@@ -1763,13 +2094,12 @@ let snapOn = true, askStop = false;
 try { snapOn = localStorage.getItem('ms_snap') !== '0'; askStop = localStorage.getItem('ms_askstop') === '1'; } catch {}
 $('#optSnap').onchange = () => { snapOn = $('#optSnap').checked; try { localStorage.setItem('ms_snap', snapOn ? '1' : '0'); } catch {} };
 $('#optConfirm').onchange = () => { askStop = $('#optConfirm').checked; try { localStorage.setItem('ms_askstop', askStop ? '1' : '0'); } catch {} };
-$('#studioOpen').onchange = () => { try { localStorage.setItem('ms_studio_open', $('#studioOpen').value); } catch {} };
 // Encode once: the browser's H.264 is passed on as it is. fastOff becomes true for this session if that fails here.
 let fastOff = false;
 const useFast = (mt) => !fastOff && /h264/.test(mt || '');
 $('#resetStudio').onclick = () => {
   if (!confirm('Put the video size, recording quality, transition, monitoring output and options back to how they started?')) return;
-  ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_studio_open', 'ms_layout'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_layout'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
   flash('Studio settings were reset. Close and open the Studio to see them.', true); closeSettings();
 };
 // ----- Video pane: which encoder is used -----
@@ -1868,7 +2198,7 @@ document.addEventListener('keydown', (e) => {
   if (ctrl && !e.altKey && e.key === ',') { e.preventDefault(); openSettings(); return; }
   if (!$('#setBox').hidden || document.querySelector('.modal:not([hidden]):not(#setBox)')) return;
   if (ctrl && !e.altKey && (k === 'z' || k === 'y')) { e.preventDefault(); histGo(k === 'y' || e.shiftKey ? 1 : -1); return; }
-  if (e.key === 'F2' && cl) { e.preventDefault(); const v = prompt('Source name', cl.name || ICON[cl.type] || cl.type); if (v != null && v.trim()) { cl.name = v.trim(); save(); renderLayers(); } return; }
+  if (e.key === 'F2' && cl) { e.preventDefault(); const n = document.querySelector('#layers .lyr.on .n'); if (n) renameInPlace(n, cl.name || ICON[cl.type] || cl.type, (v) => { if (v) { cl.name = v; save(); } renderLayers(); }); return; }
   if (e.key === 'Escape' && sel && $('#propsBox').hidden) { sel = ''; renderLayers(); return; }
   if (!ctrl || e.altKey) return;
   histLast = 0; // each shortcut is its own undo step
@@ -1939,7 +2269,7 @@ $('#projBtn').onclick = () => {
   projWin.document.body.appendChild(v); v.play().catch(() => {});
 };
 
-// ---------------- follow the phone / Control Room, and give it pictures ----------------
+// ---------------- follow the phone / Multiview, and give it pictures ----------------
 async function poll() {
   try {
     // ?rev: the app answers with the scenes only when they changed since the last look
@@ -1960,27 +2290,28 @@ async function poll() {
     }
   } catch {}
 }
-const small = document.createElement('canvas'); small.width = 480; small.height = 270;
+// Multiview pictures: Preview and Program at 960x540 (sharp on a big screen), scene pictures at 480x270
+const small = document.createElement('canvas'); small.width = 960; small.height = 540;
 const sctx = small.getContext('2d');
-const tiny = document.createElement('canvas'); tiny.width = 320; tiny.height = 180; const tctx = tiny.getContext('2d');
+const tiny = document.createElement('canvas'); tiny.width = 480; tiny.height = 270; const tctx = tiny.getContext('2d');
 let thumbs = {}, thumbAt = 0, shotBusy = false, watching = true, pingAt = 0;
 async function shots() {
   if (shotBusy) return; shotBusy = true;
   try {
-    // nobody is looking at the Control Room: skip the drawing, only say "still here" now and then
+    // nobody is looking at the Multiview: skip the drawing, only say "still here" now and then
     if (!watching) {
       if (Date.now() - pingAt < 1500) { shotBusy = false; return; }
       pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;
     }
     // the Program picture is a small copy of what is on air (one quick copy, not drawing the scene again)
-    if (cv.width >= 480) sctx.drawImage(cv, 0, 0, 480, 270); else drawScene(sctx, byName(studio.current), 480 / SW, true);
-    const prog = small.toDataURL('image/jpeg', 0.5);
-    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 480 / SW, false); pv = small.toDataURL('image/jpeg', 0.5); }
+    if (cv.width >= 960) sctx.drawImage(cv, 0, 0, 960, 540); else drawScene(sctx, byName(studio.current), 960 / SW, true);
+    const prog = small.toDataURL('image/jpeg', 0.8);
+    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 960 / SW, false); pv = small.toDataURL('image/jpeg', 0.8); }
     const body = { prog, pv };
     // the small scene pictures are sent only when one of them changed (a scene with a camera changes each time)
-    if (Date.now() - thumbAt > 4000 || !Object.keys(thumbs).length) {
+    if (Date.now() - thumbAt > 1500 || !Object.keys(thumbs).length) {
       thumbAt = Date.now(); const next = {};
-      studio.scenes.forEach((s) => { drawScene(tctx, s, 320 / SW, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.5); });
+      studio.scenes.forEach((s) => { drawScene(tctx, s, 480 / SW, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.75); });
       const names = Object.keys(next), changed = names.length !== Object.keys(thumbs).length || names.some((n) => next[n] !== thumbs[n]);
       thumbs = next;
       if (changed) body.thumbs = thumbs;
@@ -2000,7 +2331,7 @@ async function shots() {
   if (!byName(studio.current)) { studio.current = studio.scenes[0].name; dirtyCurrent = true; }
   editing = studio.current;
   renderAll(); await loadDevices(); ensureAudio();
-  setInterval(poll, 700); setInterval(shots, 400);
+  setInterval(poll, 700); setInterval(shots, 200); // Multiview pictures 5 times a second (only while a Multiview is open)
 })();
 </script>
 <div id="keysBox" hidden style="position:fixed;right:12px;top:52px;z-index:50;background:var(--card,#101814);border:1px solid var(--line);border-radius:10px;padding:12px 14px;max-width:300px;font-size:13px;line-height:1.7;box-shadow:0 8px 30px #0008">
@@ -2019,7 +2350,8 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   const row = document.querySelector('.docks'); if (!row) return;
   const names = ['scenes', 'sources', 'mixer', 'transitions', 'controls'];
   const docks = [...row.querySelectorAll('.dock')]; docks.forEach((d, i) => { d.dataset.id = names[i]; });
-  const fresh = () => ({ order: names.slice(), float: {}, pos: {}, fx: {}, h: 0, wl: 0, wr: 0 });
+  // the starting layout is like OBS: Scenes and Sources on the left, Controls and Transitions on the right, Audio Mixer along the bottom
+  const fresh = () => ({ order: names.slice(), float: {}, pos: { scenes: 'left', sources: 'left', controls: 'right', transitions: 'right' }, fx: {}, h: 0, wl: 0, wr: 0 });
   const side = { left: document.getElementById('dockL'), right: document.getElementById('dockR') };
   let L = fresh();
   try { const j = JSON.parse(localStorage.getItem('ms_layout') || 'null'); if (j && Array.isArray(j.order)) { L.order = j.order.filter((x) => names.includes(x)); names.forEach((n) => { if (!L.order.includes(n)) L.order.push(n); }); if (j.float && typeof j.float === 'object') L.float = j.float; if (j.pos && typeof j.pos === 'object') L.pos = j.pos; if (j.fx && typeof j.fx === 'object') L.fx = j.fx; ['h', 'wl', 'wr'].forEach((k) => { if (Number.isFinite(j[k])) L[k] = j[k]; }); } } catch {}
@@ -2105,17 +2437,36 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   document.addEventListener('pointerdown', (e) => {
     const h = e.target.closest('.dock > h2'); if (!h || e.button !== 0 || e.target.closest('button')) return;
     const d = h.parentElement, r0 = d.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, ox = sx - r0.left, oy = sy - r0.top, wasFloat = d.classList.contains('float');
-    const rowTop = () => row.getBoundingClientRect().top; let moving = false;
-    const zoneOf = (ev) => (ev.clientY < rowTop() ? (ev.clientX < 110 ? 'left' : ev.clientX > innerWidth - 110 ? 'right' : '') : '');
-    const showZones = (on, ev) => { const bot = (innerHeight - rowTop() + 8) + 'px'; ['left', 'right'].forEach((k) => { dz[k].style.bottom = bot; dz[k].classList.toggle('show', on); dz[k].classList.toggle('hot', on && zoneOf(ev) === k); }); };
+    e.preventDefault(); try { h.setPointerCapture(e.pointerId); } catch {}
+    const rowTop = () => row.getBoundingClientRect().top; let moving = false, frame = 0, last = null;
+    const colRect = (k) => { const r = side[k].childElementCount ? side[k].getBoundingClientRect() : null; return r && r.width > 20 ? r : null; };
+    const zoneOf = (ev) => {
+      if (ev.clientY >= rowTop()) return '';
+      for (const k of ['left', 'right']) { const r = colRect(k); if (r && ev.clientX >= r.left && ev.clientX <= r.right) return k; }
+      return ev.clientX < 110 ? 'left' : ev.clientX > innerWidth - 110 ? 'right' : '';
+    };
+    const showZones = (on, ev) => {
+      const bot = (innerHeight - rowTop() + 8) + 'px';
+      ['left', 'right'].forEach((k) => {
+        const z = dz[k], r = colRect(k);
+        if (r) { z.style.left = r.left + 'px'; z.style.right = 'auto'; z.style.width = r.width + 'px'; z.style.top = r.top + 'px'; }
+        else { z.style.width = ''; z.style.top = ''; z.style.left = k === 'left' ? '8px' : 'auto'; z.style.right = k === 'right' ? '8px' : 'auto'; }
+        z.style.bottom = bot; z.classList.toggle('show', on); z.classList.toggle('hot', on && zoneOf(ev) === k);
+      });
+    };
     const move = (ev) => {
-      if (!moving) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return; moving = true; d.classList.add('drag'); showZones(true, ev); try { h.setPointerCapture(e.pointerId); } catch {} }
+      if (!moving) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return; moving = true; d.classList.add('drag'); }
+      // draw at most once per screen refresh (smooth, no jumping)
+      last = ev; if (frame) return; frame = requestAnimationFrame(() => { frame = 0; place(last); });
+    };
+    const place = (ev) => {
       if (wasFloat) { d.style.left = Math.max(0, Math.min(ev.clientX - ox, innerWidth - 120)) + 'px'; d.style.top = Math.max(0, Math.min(ev.clientY - oy, innerHeight - 60)) + 'px'; }
       else d.style.transform = `translate(${ev.clientX - sx}px, ${ev.clientY - sy}px)`;
-      row.classList.toggle('over', wasFloat && ev.clientY > rowTop()); showZones(true, ev);
+      row.classList.toggle('over', ev.clientY > rowTop()); showZones(true, ev);
     };
     const up = (ev) => {
       h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up);
+      if (frame) { cancelAnimationFrame(frame); frame = 0; }
       try { h.releasePointerCapture(e.pointerId); } catch {}
       row.classList.remove('over'); showZones(false, ev); if (!moving) return;
       d.classList.remove('drag'); d.style.transform = '';
@@ -2132,7 +2483,7 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   layout();
 })();
 // Studio alerts (no video arriving, video stopped) and Stream alerts (a channel stopped) both show here,
-// because the Stream is the most important. Dismiss here clears both; Dismiss on the Stream page clears its own.
+// because the Stream is the most important. Dismiss here clears both; Dismiss on the Go Live page clears its own.
 (function () {
   // Alerts are pushed by the app as they happen (no polling). In the app they come through a pipe;
   // in a browser on the church Wi-Fi they come through an event stream. If the link drops it comes back.

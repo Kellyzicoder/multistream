@@ -102,7 +102,7 @@ const status = new Map(); // id -> { state, message }
 const destStats = new Map(); // id -> { kbps, speed }  (what we are really sending to each platform)
 
 // ---- alerts: pushed to the open pages as they happen (no polling) ----
-// Each page joins one group: 'stream' (Stream and Control Room) or 'studio' (the Studio window).
+// Each page joins one group: 'stream' (Stream and Multiview) or 'studio' (the Studio window).
 // A channel problem goes to 'stream'; a problem with the video from the Studio goes to 'studio'.
 // The app keeps one alert per source (for example "YouTube"), so retries update it instead of piling up,
 // and a page that opens later (or reloads) still gets the alerts that are not dismissed yet.
@@ -889,8 +889,24 @@ let studio = { scenes: [], current: '', preview: '', audio: [] };
 try { studio = { ...studio, ...JSON.parse(fs.readFileSync(STUDIO_FILE, 'utf8')) }; } catch {}
 // Uploaded pictures and videos that no scene uses any more are removed when the app starts
 // (only ones older than a day, so something you just added is never touched).
+// Scene collections (like OBS): several saved sets of scenes and sound inputs. The one in use is studio.json;
+// the others are in the collections folder. Only one is in use at a time.
+const COLL_DIR = path.join(DATA_DIR, 'collections');
+const COLL_FILE = path.join(DATA_DIR, 'collections.json');
+let coll = { current: 'Main' };
+try { coll = { ...coll, ...JSON.parse(fs.readFileSync(COLL_FILE, 'utf8')) }; } catch {}
+const collPath = (name) => path.join(COLL_DIR, encodeURIComponent(name) + '.json');
+const collNames = () => {
+  let n = []; try { n = fs.readdirSync(COLL_DIR).filter((f) => f.endsWith('.json')).map((f) => decodeURIComponent(f.slice(0, -5))); } catch {}
+  if (!n.includes(coll.current)) n.push(coll.current);
+  return n.sort((a, b) => a.localeCompare(b));
+};
+const collOf = (st) => ({ scenes: st.scenes || [], audio: st.audio || [], current: st.current || '' });
+const allCollections = () => { const out = [collOf(studio)]; for (const n of collNames()) { if (n === coll.current) continue; try { out.push(JSON.parse(fs.readFileSync(collPath(n), 'utf8'))); } catch {} } return out; };
+let collHook = () => {};
 try {
-  const used = JSON.stringify(studio);
+  // a picture or video used in any scene collection is kept
+  const used = JSON.stringify(allCollections());
   for (const n of fs.readdirSync(ASSET_DIR)) {
     if (used.includes(n) || used.includes(encodeURIComponent(n))) continue;
     const f = path.join(ASSET_DIR, n);
@@ -903,6 +919,38 @@ function saveStudio() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.wr
 app.get('/api/studio', (req, res) => {
   if (req.query && String(req.query.rev) === String(studioRev)) return res.json({ same: true, rev: studioRev, preview: studio.preview || '' });
   res.json({ ...studio, rev: studioRev });
+});
+// Scene collections: list, and New / Duplicate / Rename / Remove / Switch / Import (the Studio asks for names)
+app.get('/api/collections', (req, res) => res.json({ current: coll.current, names: collNames() }));
+app.post('/api/collections', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change scene collections on the church PC' });
+  const b = req.body || {}, act = String(b.do || ''), name = String(b.name || '').trim().slice(0, 60);
+  const names = collNames();
+  const stash = () => { fs.mkdirSync(COLL_DIR, { recursive: true }); fs.writeFileSync(collPath(coll.current), JSON.stringify(collOf(studio))); };
+  const use = (n, data) => {
+    coll.current = n; try { fs.writeFileSync(COLL_FILE, JSON.stringify(coll)); } catch {}
+    const d = collOf(data || {}); if (!d.scenes.length) d.scenes = [{ name: 'Scene', layers: [] }];
+    if (!d.scenes.some((x) => x.name === d.current)) d.current = d.scenes[0].name;
+    studio = { ...studio, ...d, preview: '' }; saveStudio(); stash(); collHook();
+  };
+  const read = (n) => { try { return JSON.parse(fs.readFileSync(collPath(n), 'utf8')); } catch { return null; } };
+  try {
+    if (['new', 'duplicate', 'rename', 'import'].includes(act)) {
+      if (!name) return res.status(400).json({ error: 'Type a name' });
+      if (names.includes(name) && !(act === 'rename' && name === coll.current)) return res.status(400).json({ error: 'There is already a scene collection called ' + name });
+    }
+    if (act === 'new') { stash(); use(name, {}); }
+    else if (act === 'duplicate') { stash(); use(name, JSON.parse(JSON.stringify(collOf(studio)))); }
+    else if (act === 'import') { const d = b.data || {}; if (!Array.isArray(d.scenes)) return res.status(400).json({ error: 'That file has no scenes' }); stash(); use(name, { scenes: d.scenes.slice(0, 60), audio: Array.isArray(d.audio) ? d.audio.slice(0, 40) : [], current: String(d.current || '') }); }
+    else if (act === 'rename') { const old = coll.current; stash(); use(name, collOf(studio)); if (old !== name) { try { fs.unlinkSync(collPath(old)); } catch {} } }
+    else if (act === 'switch') { if (!names.includes(name)) return res.status(400).json({ error: 'No scene collection called ' + name }); if (name !== coll.current) { stash(); use(name, read(name) || {}); } }
+    else if (act === 'remove') {
+      if (names.length < 2) return res.status(400).json({ error: 'This is the only scene collection' });
+      const old = coll.current, next = names.find((n) => n !== old);
+      use(next, read(next) || {}); try { fs.unlinkSync(collPath(old)); } catch {}
+    } else return res.status(400).json({ error: 'Unknown' });
+  } catch (e) { return res.status(500).json({ error: e.message }); }
+  res.json({ ok: true, current: coll.current, names: collNames(), rev: studioRev });
 });
 app.put('/api/studio', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Edit scenes on the church PC' });
@@ -960,8 +1008,8 @@ app.get('/api/studio/ipcam', (req, res) => {
   r.on('error', () => { try { res.status(502).end(); } catch {} });
   req.on('close', () => r.destroy());
 });
-// pictures of the scenes, drawn by the studio page and shown in the Control Room
-// The Studio only draws these while a Control Room is looking (it asks `watching` in the answer), so a Studio that is
+// pictures of the scenes, drawn by the studio page and shown in the Multiview
+// The Studio only draws these while a Multiview is looking (it asks `watching` in the answer), so a Studio that is
 // sending, recording and running the virtual camera does not also draw pictures nobody sees.
 let studioShots = { at: 0, prog: '', pv: '', thumbs: {}, tv: 0, watched: 0 };
 app.put('/api/studio/shots', (req, res) => {
@@ -974,7 +1022,7 @@ app.put('/api/studio/shots', (req, res) => {
   }
   res.json({ ok: true, watching: Date.now() - studioShots.watched < 3000, wantThumbs: studioShots.tv === 0 });
 });
-// ?tv=N: the Control Room already has the small scene pictures number N, so they are not sent again
+// ?tv=N: the Multiview already has the small scene pictures number N, so they are not sent again
 app.get('/api/studio/shots', (req, res) => {
   studioShots.watched = Date.now();
   const tv = Number((req.query || {}).tv);
@@ -1099,4 +1147,6 @@ if (STANDALONE) {
 }
 
 // used by the desktop app (main.js)
-module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => { openFolderHook = fn; } };
+module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => { openFolderHook = fn; },
+  // scene collections for the menu bar
+  collections: () => ({ current: coll.current, names: collNames() }), onCollections: (fn) => { collHook = fn; } };

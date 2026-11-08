@@ -1,4 +1,4 @@
-// Starts the real Multistream 3 desktop app and checks it end to end. Run: npm run test:app
+// Starts the real Multistream desktop app and checks it end to end. Run: npm run test:app
 // (On Linux with no screen: xvfb-run -a npm run test:app)
 // A fake "YouTube" runs on this computer, so nothing goes to the real internet.
 const { _electron: electron } = require('playwright-core');
@@ -99,8 +99,8 @@ async function until(fn, ms, what) {
       ] }] }) });
   });
 
-  // 4b. "Open the Studio in: the same window" replaces the dashboard, and a button comes back
-  await dash.evaluate(() => localStorage.setItem('ms_studio_open', 'same'));
+  // 4b. the Studio opens in the same window (it replaces the dashboard), and a button comes back
+  await dash.evaluate(() => localStorage.removeItem('ms_studio_window'));
   await dash.click('#pageTabs [data-page=studio]');
   await until(() => dash.url().includes('studio.html?same=1'), 20000, 'the Studio in the same window');
   await dash.waitForLoadState('domcontentloaded'); await sleep(1500);
@@ -110,7 +110,7 @@ async function until(fn, ms, what) {
   await until(() => dash.url() === 'app://multistream/', 20000, 'back to the dashboard');
   await dash.waitForLoadState('domcontentloaded'); await sleep(2000);
   ok('Studio can open in the same window (one window only) and the Dashboard button comes back');
-  await dash.evaluate(() => localStorage.setItem('ms_studio_open', 'window'));
+  await dash.evaluate(() => localStorage.setItem('ms_studio_window', '1')); // test only: the rest of the test needs the Stream page and the Studio side by side
 
   // 5. open the Studio from the dashboard
   const [studio] = await Promise.all([app.waitForEvent('window', { timeout: 30000 }), dash.click('#pageTabs [data-page=studio]')]);
@@ -148,7 +148,8 @@ async function until(fn, ms, what) {
   assert.strictEqual(await studio.evaluate(() => sel), 'box', 'clicking an item selects it');
   await dragScene([450, 750], [550, 750]);
   let bx = await layer('box');
-  assert.ok(Math.abs(bx.x - 300) <= 30 && bx.y === 600, 'moved by dragging: ' + JSON.stringify(bx));
+  // the Preview is a little smaller now that the panels start at the sides (OBS layout), so a mouse step is a few more picture points: allow the same 30 points in both directions
+  assert.ok(Math.abs(bx.x - 300) <= 30 && Math.abs(bx.y - 600) <= 30, 'moved by dragging: ' + JSON.stringify(bx));
   ok(`drag to move in the Preview (x 200 -> ${bx.x})`);
   // resize from the corner (keeps the shape)
   const b1 = await studio.evaluate(() => boundsOf(byName(editing).layers.find((x) => x.id === 'box')));
@@ -319,6 +320,20 @@ async function until(fn, ms, what) {
   const badUrl = await dash.evaluate(() => fetch('/api/destinations', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Bad', url: 'tcp://127.0.0.1:9', key: 'k' }) }).then((r) => r.status));
   assert.strictEqual(badUrl, 400, 'a tcp:// channel address is refused');
   ok('phone control is gone (port 3000 stays closed) and channel addresses must be rtmp(s)');
+
+  // 12. scene collections: a new one starts with one empty scene, switching back brings the scenes back, removing leaves one
+  const col = (b) => dash.evaluate((x) => fetch('/api/collections', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(x) }).then((r) => r.json()), b);
+  const sceneNames = () => dash.evaluate(() => fetch('/api/studio').then((r) => r.json()).then((s) => s.scenes.map((x) => x.name)));
+  const before = await sceneNames(), first = (await dash.evaluate(() => fetch('/api/collections').then((r) => r.json()))).current;
+  let c = await col({ do: 'new', name: 'Test collection' });
+  assert.ok(c.ok && c.current === 'Test collection' && c.names.includes(first), 'new collection: ' + JSON.stringify(c));
+  assert.deepStrictEqual(await sceneNames(), ['Scene'], 'a new collection starts with one empty scene');
+  c = await col({ do: 'switch', name: first }); assert.ok(c.ok, 'switch back: ' + JSON.stringify(c));
+  assert.deepStrictEqual(await sceneNames(), before, 'switching back brings the scenes back');
+  await col({ do: 'switch', name: 'Test collection' }); c = await col({ do: 'remove' });
+  assert.ok(c.ok && c.current === first && c.names.length === 1, 'remove: ' + JSON.stringify(c));
+  assert.deepStrictEqual(await sceneNames(), before, 'after removing, the first collection is in use again');
+  ok('scene collections: new, switch, remove');
 
   await dash.screenshot({ path: path.join(OUT, '4-dashboard-after.png') });
   await app.close();
