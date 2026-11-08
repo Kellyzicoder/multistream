@@ -903,8 +903,7 @@
   .glp-ic { display:none; width:64px; height:64px; border-radius:20px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); place-items:center; color:#cdd3e4; } .glp-ic svg { width:28px; height:28px; }
   .glp-off.empty .ring { display:none; } .glp-off.empty .glp-ic { display:grid; }
   /* nothing to show: a dark shade of the main colour (like OBS), everywhere a picture is missing */
-  .glp-off { background:color-mix(in srgb, var(--blue) 16%, #05070f) !important; }
-  .mv2 .mvt { background:color-mix(in srgb, var(--blue) 16%, #05070f); } .mv2 .mvt.empty { background:color-mix(in srgb, var(--blue) 8%, rgba(5,7,15,.5)); }
+  .mv2 .mvt { background:#000; }
   /* drop-downs as in the design: one small arrow, not the computer's own up and down arrows */
   select:not([multiple]) { -webkit-appearance:none; appearance:none; padding-right:36px !important; background-image:linear-gradient(45deg,transparent 50%,#a3abc4 50%),linear-gradient(135deg,#a3abc4 50%,transparent 50%) !important; background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50% !important; background-size:5px 5px,5px 5px !important; background-repeat:no-repeat !important; }
   html.t-light select:not([multiple]) { background-image:linear-gradient(45deg,transparent 50%,#5b6377 50%),linear-gradient(135deg,#5b6377 50%,transparent 50%) !important; }
@@ -924,6 +923,25 @@
   .gs-card { box-sizing:content-box !important; max-width:calc(100vw - var(--navw, 0px) - 120px); }
   #gsGrid .pk b { font-size:15px; } #gsGrid .pk small { font-size:12.5px; }
   .pf-two > div.on { display:block !important; } .pf-two > div.on .si { width:auto; display:inline-flex; } .pf-two > div > b, .pf-two > div.on > b { font-size:15px; }
+  /* Analytics (as in the design) */
+  .xpage.an2:not([hidden]) { display:flex; flex-direction:column; gap:16px; padding:0 28px 24px; }
+  .an-sub { color:#a3abc4; font-size:13px; margin-top:0; }
+  .an-k { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; }
+  .abx { display:flex; flex-direction:column; gap:6px; padding:18px 20px; border-radius:20px; background:rgba(255,255,255,.07); -webkit-backdrop-filter:blur(24px) saturate(140%); backdrop-filter:blur(24px) saturate(140%); border:1px solid rgba(255,255,255,.12); min-width:0; }
+  html.t-light .abx { background:var(--card); border-color:var(--line); }
+  .abx > small { font-size:12px; color:#a3abc4; } .abx > b { font-size:28px; font-weight:700; line-height:1.1; } .abx > b .u { font-size:14px; font-weight:600; } .abx > span { font-size:12px; color:#a3abc4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .an-ch { gap:10px; } .an-lg { display:flex; gap:16px; font-size:12px; color:#a3abc4; align-items:center; } .an-lg b { font-size:14px; color:var(--text); margin-right:auto; } .an-lg i { display:inline-block; width:10px; height:3px; margin-right:6px; vertical-align:middle; }
+  #anChart { width:100%; height:220px; display:block; } .an-x { display:flex; justify-content:space-between; font-size:11px; color:#8a93ad; }
+  .an-p { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+  .ap { gap:10px; } .ap-h { display:flex; align-items:center; gap:10px; } .ap-h .tile { width:30px; height:30px; border-radius:9px; } .ap-h b { font-size:15px; } .ap-h em { margin-left:auto; font-style:normal; font-size:12px; color:#8a93ad; } .ap-h em.on { color:#ff6b74; font-weight:700; }
+  .ap-g { display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; font-size:12px; color:#a3abc4; } .ap-g b { display:block; font-size:20px; font-weight:700; color:var(--text); } .ap-g i { display:block; font-style:normal; font-size:15px; font-weight:600; color:var(--text); }
+  .an-msg { padding:12px 16px; border-radius:14px; background:rgba(255,77,90,.1); border:1px solid rgba(255,77,90,.3); color:#ffb4ba; font-size:13px; }
+  @media (max-width:1100px) { .an-k { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  /* Auto start card: a small button to make it smaller, and the small version */
+  .asrun .as-min { width:26px; height:26px; min-width:0; padding:0 !important; border-radius:8px; border:0; background:rgba(255,255,255,.08); color:#cdd3e4; display:grid; place-items:center; font-size:16px; line-height:1; margin-left:auto; order:1 !important; flex:none !important; }
+  .asrun.mini { width:auto !important; padding:8px 12px !important; border-radius:999px !important; cursor:pointer; gap:0 !important; }
+  .asrun.mini .as-seg, .asrun.mini .as-r1 > button:not(.as-min), .asrun.mini .sp { display:none !important; } .asrun.mini #asRunT { flex:none !important; margin-left:8px !important; order:1; }
+  .asrun.mini .as-r1 { flex-wrap:nowrap !important; } .asrun.mini .as-min { margin-left:10px; }
 </style>
 </head>
 <body>
@@ -951,6 +969,7 @@
   <h1 class="pgt" id="pageTitle">Go Live</h1><span class="hl-badge" id="pageBadge" hidden></span><span class="mv-chip" id="mvShape" hidden></span>
   <span class="sp"></span>
   <span class="gl-acts" id="rcActs" hidden><span class="rc-where" id="rcWhere"></span><button type="button" class="hb pl" id="rcOpen">Open folder</button><button type="button" class="hb pl" id="rcRemux">Remux to MP4</button></span>
+  <span class="gl-acts" id="anActs" hidden><span class="rc-where" id="anAddr"></span><button type="button" class="hb pl" id="anEdit">Change address</button><button type="button" class="hb pl" id="anOpen">Open in browser</button></span>
   <span class="gl-acts" id="mvActs" hidden><button type="button" class="hb pl" id="mvDisp" hidden>Show on a display ▾</button><button type="button" class="hb pl" id="mvWin">New window</button></span>
   <span class="gl-acts" id="scActs" hidden><button type="button" class="hb pl" id="scObs">Import from OBS</button><button type="button" class="hb pl" id="scImp">Import file</button><button type="button" class="hb sb" id="scNew">+ New collection</button></span>
   <span class="gl-acts" id="glActs">
@@ -961,7 +980,7 @@
   </span>
   <span class="chip" id="chip" hidden>OFFLINE</span>
 </header>
-<div class="asrun" id="asRun" hidden><div class="as-r1"><span class="as-dot"></span><b id="asRunS">Auto start</b><span id="asRunT"></span><span class="sp"></span><button type="button" class="gb pri sm" id="asRunNext">Next step now</button><button type="button" class="gb sm" id="asRunStop">Stop plan</button></div><div class="as-seg" id="asRunSeg"></div></div>
+<div class="asrun" id="asRun" hidden><div class="as-r1"><span class="as-dot"></span><b id="asRunS">Auto start</b><span id="asRunT"></span><button type="button" class="as-min" id="asRunMin" title="Make smaller" aria-label="Make smaller">−</button><span class="sp"></span><button type="button" class="gb pri sm" id="asRunNext">Next step now</button><button type="button" class="gb sm" id="asRunStop">Stop plan</button></div><div class="as-seg" id="asRunSeg"></div></div>
 <div class="alertbar" id="alertBar" role="alert" hidden><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 
 <div class="app">
@@ -1136,9 +1155,18 @@
     </ul><div class="hp-b"><button type="button" class="ghost" id="hpRel">Download page</button><span class="hp-v" id="hpVer"></span></div></div>
   </div>
 </section>
-<section class="xpage an" id="statsView" hidden aria-label="Analytics">
-  <div class="rc-top"><span class="rc-where" id="anAddr"></span><span class="sp"></span><button type="button" class="ghost" id="anReload">Reload</button><button type="button" class="ghost" id="anEdit">Change address</button><button type="button" class="ghost" id="anOpen">Open in browser</button></div>
-  <div class="card an-fr"><iframe id="anFrame" title="Live dashboard"></iframe><div class="an-empty" id="anNone" hidden>Add the address of your live dashboard with Change address.</div></div>
+<section class="xpage an2" id="statsView" hidden aria-label="Analytics">
+  <div class="an-sub" id="anSub"></div>
+  <div class="an-k">
+    <div class="abx"><small>Total views</small><b id="akViews">–</b><span id="akViewsS">All platforms</span></div>
+    <div class="abx"><small>Highest live viewers</small><b id="akPeak">–</b><span id="akPeakS"></span></div>
+    <div class="abx"><small>Watch time</small><b id="akWatch">–</b><span id="akWatchS"></span></div>
+    <div class="abx"><small>Comments</small><b id="akCom">–</b><span id="akComS"></span></div>
+    <div class="abx"><small>Watching now</small><b id="akNow">–</b><span id="akNowS"></span></div>
+  </div>
+  <div class="abx an-ch"><div class="an-lg"><b>Viewers during the service</b><span><i style="background:#eef1f8"></i>All</span><span><i style="background:#3b6cff"></i>YouTube</span><span><i style="background:#9fc2ff"></i>Facebook</span><span><i style="background:#2dd4bf"></i>Zoom</span></div><svg id="anChart" viewBox="0 0 1000 220" preserveAspectRatio="none" aria-label="Viewers over time"></svg><div class="an-x" id="anX"></div></div>
+  <div class="an-p" id="anPlat"></div>
+  <div class="an-msg" id="anNone" hidden></div>
 </section>
 <div class="cr mv2" id="crView" hidden>
   <div class="mv-top"><div class="mvt prog" id="crProgBox"><img id="crProg" alt="Program, what is on air" draggable="false"><span class="mv-tag" id="crLive" hidden>● LIVE</span><div class="lb"><span id="crProgL">Program</span><small id="crTime"></small></div></div></div>
@@ -1338,6 +1366,7 @@ const TILE = {
   tw: ['#9146ff', '<path d="M6 4.5h13v8.3l-3.6 3.6h-3l-2.6 2.6v-2.6H6z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><path d="M11 8.3v3.6M15 8.3v3.6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>'],
   other: ['#2b3354', '<path d="M12 15V5.5M8 9.3l4-3.8 4 3.8M6 18.5h12" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>'],
 };
+TILE.zoom = TILE.zoom || ['#2d8cff', '<path fill="#fff" d="M4 8.5A1.5 1.5 0 0 1 5.5 7h8A1.5 1.5 0 0 1 15 8.5v7a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 4 15.5zM16 10.5l4-2.5v8l-4-2.5z"/>'];
 function tileHTML(c) { const t = TILE[c] || TILE.other; return '<span class="tile" style="background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 55%),' + t[0] + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + t[1] + '</svg></span>'; }
 function platform(name) {
   const n = String(name).toLowerCase();
@@ -1612,6 +1641,10 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     labels.forEach((l, k) => { const d = document.createElement('div'); d.className = k === r.step - 1 ? 'cur' : ''; d.innerHTML = '<i></i><span></span>'; d.lastChild.textContent = l; const b = d.firstChild; if (k < r.step - 1) b.className = 'done'; else if (k === r.step - 1) b.style.background = 'linear-gradient(90deg,var(--blue) ' + Math.round((r.frac || 0) * 100) + '%,rgba(59,108,255,.25) ' + Math.round((r.frac || 0) * 100) + '%)'; sg.appendChild(d); });
   }
   load(); setInterval(load, 1000);
+  const setMini = (on) => { $('#asRun').classList.toggle('mini', on); const b = $('#asRunMin'); b.textContent = on ? '\u2197' : '\u2212'; b.title = on ? 'Make bigger' : 'Make smaller'; b.setAttribute('aria-label', b.title); try { localStorage.setItem('ms_as_mini', on ? '1' : '0'); } catch {} };
+  try { if (localStorage.getItem('ms_as_mini') === '1') setMini(true); } catch {}
+  $('#asRunMin').onclick = (e) => { e.stopPropagation(); setMini(!$('#asRun').classList.contains('mini')); };
+  $('#asRun').addEventListener('click', (e) => { if ($('#asRun').classList.contains('mini') && !e.target.closest('button')) setMini(false); });
   $('#asRunNext').onclick = () => api('/api/autostart/cmd', 'POST', { cmd: 'next' });
   $('#asRunStop').onclick = () => api('/api/autostart/cmd', 'POST', { cmd: 'stop' });
   // the "Use the Auto start plan?" question (Go Live asks it when you press Start streaming)
@@ -1890,7 +1923,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const live = st && st.obsLive, w = sw();
     let cv = null; try { cv = w && w.document && w.document.getElementById('cv'); } catch {}
     // nothing connected yet (no camera, screen or picture coming through): a placeholder instead of a black picture
-    let has = true; try { has = !w || !w.msHasPicture || w.msHasPicture(); } catch {}
+    const has = true; // an empty scene shows as black, like OBS
     const empty = !live && Boolean(cv) && !has;
     const show = !live && Boolean(cv) && has && page === 'dash';
     $('#pvStudio').hidden = !show; $('#offlineView').hidden = live || (Boolean(cv) && has);
@@ -2091,15 +2124,74 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     $('#glView').textContent = v.toLocaleString(); $('#glLikes').textContent = l.toLocaleString();
   }, 10000);
 })();
-// Analytics: your own live dashboard website, shown inside the app (the address can be changed)
+// Analytics (as in the design): the numbers come from your live dashboard website (live.fcchq.workers.dev) and from
+// this app (views, likes and comments while you are live). The website itself is not shown.
 (() => {
   const DEF = 'https://live.fcchq.workers.dev';
   const get = () => { try { const v = localStorage.getItem('ms_dash_url'); return v == null ? DEF : v; } catch { return DEF; } };
-  const show = () => { const u = get(); $('#anAddr').textContent = u ? 'Live dashboard: ' + u.replace(/^https?:\/\//, '') : 'No dashboard yet'; $('#anNone').hidden = Boolean(u); $('#anFrame').hidden = !u; if (u && $('#anFrame').dataset.src !== u) { $('#anFrame').dataset.src = u; $('#anFrame').src = u; } if (!u) { $('#anFrame').removeAttribute('src'); $('#anFrame').dataset.src = ''; } };
-  $('#anReload').onclick = () => { const f = $('#anFrame'); if (f.dataset.src) f.src = f.dataset.src; };
+  let t = null, firstMsg = true;
+  const N = (v) => (v == null ? '–' : Number(v).toLocaleString());
+  const tm = (ms) => new Date(ms).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+  const hm = (min) => (min >= 60 ? Math.floor(min / 60) + ' h ' + Math.round(min % 60) + ' min' : Math.round(min) + ' min');
+  const SITES = [['youtube', 'YouTube', '#3b6cff', 'yt'], ['facebook', 'Facebook', '#9fc2ff', 'fb'], ['zoom', 'Zoom', '#2dd4bf', 'zoom']];
+  function chart(hist) {
+    const svg = $('#anChart'); svg.textContent = '';
+    if (hist.length < 2) { $('#anX').textContent = ''; return; }
+    const t0 = hist[0].t, t1 = hist[hist.length - 1].t, all = hist.map((h) => (h.youtube || 0) + (h.facebook || 0) + (h.zoom || 0));
+    const top = Math.max(4, ...all) * 1.15, X = (tt) => ((tt - t0) / Math.max(1, t1 - t0)) * 1000, Y = (v) => 210 - (v / top) * 200;
+    const NS = 'http://www.w3.org/2000/svg';
+    for (let k = 1; k < 4; k++) { const l = document.createElementNS(NS, 'line'); l.setAttribute('x1', 0); l.setAttribute('x2', 1000); l.setAttribute('y1', 10 + k * 50); l.setAttribute('y2', 10 + k * 50); l.setAttribute('stroke', 'rgba(255,255,255,.06)'); svg.appendChild(l); }
+    const path = (vals, col, w) => { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', vals.map((v, i) => (i ? 'L' : 'M') + X(hist[i].t).toFixed(1) + ' ' + Y(v).toFixed(1)).join('')); p.setAttribute('fill', 'none'); p.setAttribute('stroke', col); p.setAttribute('stroke-width', w); p.setAttribute('vector-effect', 'non-scaling-stroke'); p.setAttribute('stroke-linejoin', 'round'); svg.appendChild(p); };
+    SITES.forEach(([k, , col]) => path(hist.map((h) => h[k] || 0), col, 2));
+    path(all, '#eef1f8', 2.5);
+    const x = $('#anX'); x.textContent = ''; for (let k = 0; k <= 4; k++) { const s2 = document.createElement('span'); s2.textContent = tm(t0 + (t1 - t0) * k / 4); x.appendChild(s2); }
+  }
+  async function load() {
+    const u = get();
+    $('#anAddr').textContent = u ? 'From ' + u.replace(/^https?:\/\//, '') : 'No live dashboard yet';
+    $('#anOpen').hidden = !u;
+    if (!u) { $('#anNone').hidden = false; $('#anNone').textContent = 'Add the address of your live dashboard with Change address.'; return; }
+    let d = null, err = '';
+    try { d = await api('/api/analytics?url=' + encodeURIComponent(u)); if (!d || d.error || !d.platforms) { err = (d && d.error) || 'Could not read the dashboard'; d = null; } } catch { err = 'Could not reach the dashboard'; }
+    let ls = {}, ch = { items: [] };
+    try { ls = await api('/api/live/stats'); } catch {}
+    try { ch = await api('/api/chat?after=0'); } catch {}
+    $('#anNone').hidden = !err; if (err) $('#anNone').textContent = err + '. The numbers show again when it answers.';
+    if (!d) return;
+    const hist = (d.history || []).filter((h) => h && h.t), step = hist.length > 1 ? (hist[hist.length - 1].t - hist[0].t) / (hist.length - 1) / 60000 : 0.25;
+    const sum = (k) => hist.reduce((a, h) => a + (k ? h[k] || 0 : (h.youtube || 0) + (h.facebook || 0) + (h.zoom || 0)), 0) * step; // person-minutes
+    const peakOf = (k) => hist.reduce((m, h) => Math.max(m, h[k] || 0), 0);
+    let pk = 0, pkAt = 0; hist.forEach((h) => { const v = (h.youtube || 0) + (h.facebook || 0) + (h.zoom || 0); if (v > pk) { pk = v; pkAt = h.t; } });
+    const live = SITES.some(([k]) => d.platforms[k] && d.platforms[k].status === 'live');
+    const since = Math.min(...SITES.map(([k]) => (d.platforms[k] && d.platforms[k].since) || Infinity));
+    $('#anSub').textContent = (d.church || 'Live service') + ' · ' + (live ? 'live now' + (isFinite(since) ? ' since ' + tm(since) : '') : hist.length ? tm(hist[0].t) + ' – ' + tm(hist[hist.length - 1].t) : 'nothing live yet');
+    const yv = ls.youtube ? ls.youtube.views : null;
+    $('#akViews').textContent = N(yv); $('#akViewsS').textContent = yv != null ? 'YouTube, this stream' : 'Shows while you are live on YouTube';
+    $('#akPeak').textContent = N(Math.max(pk, d.peak || 0)); $('#akPeakS').textContent = pkAt ? 'at ' + tm(pkAt) : 'No viewers yet';
+    const wt = sum(); $('#akWatch').innerHTML = ''; $('#akWatch').append(wt >= 60 ? (wt / 60).toFixed(wt >= 600 ? 0 : 1) : String(Math.round(wt))); { const sp = document.createElement('span'); sp.className = 'u'; sp.textContent = wt >= 60 ? ' hours' : ' min'; $('#akWatch').appendChild(sp); }
+    $('#akWatchS').textContent = pk ? 'Average ' + hm(wt / Math.max(1, pk)) + ' a person' : 'Last 3 hours';
+    const items = ch.items || [], cnt = (src) => items.filter((m) => m.source === src).length;
+    const likes = ((ls.youtube && ls.youtube.likes) || 0) + ((ls.facebook && ls.facebook.likes) || 0);
+    $('#akCom').textContent = N(items.length); $('#akComS').textContent = 'Likes ' + N(likes);
+    $('#akNow').textContent = N(d.total || 0); $('#akNowS').textContent = SITES.map(([k, n]) => n + ' ' + N((d.platforms[k] && d.platforms[k].viewers) || 0)).join(' · ');
+    chart(hist);
+    const box = $('#anPlat'); box.textContent = '';
+    SITES.forEach(([k, n, , c]) => {
+      const p = d.platforms[k] || {}, el = document.createElement('div'); el.className = 'abx ap';
+      el.innerHTML = '<div class="ap-h">' + tileHTML(c) + '<b></b><em></em></div><div class="ap-g"><div>Watching now<b></b></div><div>Peak live<b></b></div><div>Watch time<i></i></div><div><span></span><i></i></div></div>';
+      el.querySelector('.ap-h b').textContent = n;
+      const st = p.status === 'live' ? 'Live' : p.status === 'not_configured' ? 'Not set up' : p.status === 'error' ? 'Problem' : 'Offline';
+      const em = el.querySelector('.ap-h em'); em.textContent = st; em.className = p.status === 'live' ? 'on' : '';
+      const v = el.querySelectorAll('.ap-g b, .ap-g i');
+      v[0].textContent = N(p.status === 'live' ? p.viewers || 0 : 0); v[1].textContent = N(peakOf(k)); v[2].textContent = hm(sum(k));
+      el.querySelector('.ap-g span').textContent = k === 'zoom' ? 'Devices' : 'Comments';
+      v[3].textContent = k === 'zoom' ? N(p.devices != null ? p.devices : null) : N(cnt(k));
+      box.appendChild(el);
+    });
+  }
   $('#anOpen').onclick = () => { const u = get(); if (u) window.open(u, '_blank'); };
-  $('#anEdit').onclick = async () => { const v = await window.askText('Address of your live dashboard', get(), 'Leave it empty to remove it. It must start with https://'); if (v == null) return; let u = v.trim(); if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u; if (u && !/^https:\/\//i.test(u)) { alert('The address must start with https://'); return; } try { localStorage.setItem('ms_dash_url', u); } catch {} show(); };
-  XPAGES.stats = { title: 'Analytics', el: 'statsView', open() { show(); }, close() {} };
+  $('#anEdit').onclick = async () => { const v = await window.askText('Address of your live dashboard', get(), 'Leave it empty to remove it. It must start with https://'); if (v == null) return; let u = v.trim(); if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u; if (u && !/^https:\/\//i.test(u)) { alert('The address must start with https://'); return; } try { localStorage.setItem('ms_dash_url', u); } catch {} load(); };
+  XPAGES.stats = { title: 'Analytics', el: 'statsView', open() { load(); if (!t) t = setInterval(load, 15000); }, close() { clearInterval(t); t = null; } };
 })();
 // Help: start here, fixing problems, keys; the search box hides what does not match
 (() => {
@@ -2302,7 +2394,7 @@ function showPage(p) {
   }
   page = XPAGES[p] || p === 'cr' ? p : 'dash';
   document.documentElement.classList.toggle('on-studio', page === 'studio');
-  $('#glActs').hidden = page !== 'dash'; $('#rcActs').hidden = page !== 'rec'; $('#mvActs').hidden = page !== 'cr'; if (page !== 'cr') $('#mvShape').hidden = true;
+  $('#glActs').hidden = page !== 'dash'; $('#rcActs').hidden = page !== 'rec'; $('#mvActs').hidden = page !== 'cr'; $('#anActs').hidden = page !== 'stats'; if (page !== 'cr') $('#mvShape').hidden = true;
   { let small = false; try { small = localStorage.getItem('ms_nav_small') === '1'; } catch {} document.documentElement.classList.toggle('nav-small', page === 'cr' || small); } $('#scActs').hidden = page !== 'coll';
   $('#pageTitle').textContent = page === 'cr' ? 'Multiview' : XPAGES[page] ? XPAGES[page].title : 'Go Live';
   $('.app').hidden = page !== 'dash';
