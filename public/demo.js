@@ -40,6 +40,7 @@ window.demoApi = function (url, method) {
     { name: 'Studio 2026-11-02 10-00-00.mkv', size: 7.1e9, at: Date.now() - 8 * 86400e3, secs: 6662, hasMp4: false, job: null, youtube: null, queued: false },
     { name: 'Prayer night 2026-10-31.mp4', size: 3.0e9, at: Date.now() - 9 * 86400e3, secs: 2900, hasMp4: false, job: null, youtube: null, queued: false }] };
   else if (p === '/api/collections') out = { current: 'Sunday Services', list: [{ name: 'Sunday Services', current: true, shape: 'landscape', only: [], scenes: 8, sources: 14, at: Date.now() - 3600e3 }, { name: 'Youth (Instagram)', current: false, shape: 'portrait', only: ['Instagram'], scenes: 3, sources: 4, at: Date.now() - 4 * 86400e3 }] };
+  else if (p === '/api/autostart') out = { on: true, name: 'Sunday Service', ask: true, offAfter: false, onMissing: 'skip', run: { running: true, step: 2, total: 4, label: 'Show scene · Welcome', left: 7 }, steps: [{ type: 'video', name: 'intro-video.mp4', url: '/x.mp4', loop: false, vol: 70, end: 'next' }, { type: 'scene', scene: 'Welcome', how: 'for', secs: 10, tr: 'fade' }, { type: 'scene', scene: 'Countdown', how: 'until', at: '10:00', optional: true, tr: 'fade' }, { type: 'scene', scene: 'Camera', how: 'now', tr: 'cut' }] };
   else if (p === '/api/remote') out = { enabled: false, hasPassword: false, urls: [] };
   else out = {};
   return Promise.resolve(out);

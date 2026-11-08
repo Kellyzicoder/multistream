@@ -153,6 +153,21 @@
   /* ---------- layout ---------- */
   .app { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:18px; padding:18px 22px 22px; height:calc(100% - 60px); min-height:560px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; }
+  /* ---------- Auto start ---------- */
+  .as-tg { margin-right:10px; } .as-tg.on { border-color:var(--blue); color:var(--text); background:rgba(59,108,255,.15); }
+  .asrun { margin:0 18px 10px; display:flex; align-items:center; gap:10px; padding:8px 10px 8px 16px; border-radius:999px; background:rgba(59,108,255,.12); border:1px solid rgba(59,108,255,.45); font-size:13px; }
+  .asrun[hidden] { display:none; } .asrun .sp { flex:1; } .asrun button { padding:6px 14px; font-size:12.5px; } .asrun #asRunT { color:var(--muted); }
+  .as-dot { width:8px; height:8px; border-radius:50%; background:var(--blue); box-shadow:0 0 0 4px rgba(59,108,255,.25); }
+  .asd > div { width:min(640px, 94vw) !important; max-height:90vh; overflow:auto; }
+  .as-steps { display:flex; flex-direction:column; gap:8px; }
+  .as-s { display:grid; grid-template-columns:28px minmax(0,1fr) auto; gap:12px; align-items:start; padding:12px; border-radius:14px; background:var(--card2); border:1px solid var(--line); }
+  .as-s.drag { opacity:.5; } .as-s.over { border-color:var(--blue); }
+  .as-n { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; background:var(--blue); color:#fff; font-size:12px; font-weight:700; cursor:grab; }
+  .as-b { display:flex; flex-direction:column; gap:8px; min-width:0; } .as-b > b { font-size:13.5px; }
+  .as-r { display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12.5px; color:var(--muted); }
+  .as-r select, .as-r input[type=time], .as-r input[type=number] { padding:5px 8px; border-radius:8px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:12.5px; }
+  .as-x { display:flex; flex-direction:column; gap:4px; } .as-x button { width:28px; height:26px; padding:0; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--muted); }
+  .as-add { display:flex; gap:8px; } .asd .rc-sw { flex-direction:row; align-items:center; text-align:left; } .as-opt { display:flex; flex-direction:column; gap:8px; font-size:13px; } .as-opt label { display:flex; align-items:center; gap:8px; color:var(--text); flex-direction:row; }
   /* ---------- Scene collections ---------- */
   .sc-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; }
   .sc-c { padding:16px; display:flex; flex-direction:column; gap:12px; } .sc-c.cur { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue); }
@@ -636,8 +651,10 @@
 <header class="top">
   <h1 class="pgt" id="pageTitle">Go Live</h1>
   <span class="sp"></span>
+  <button type="button" class="ghost as-tg" id="asBtn" title="Auto start: what happens when you press Start streaming">Auto start: Off</button>
   <span class="chip" id="chip">OFFLINE</span>
 </header>
+<div class="asrun" id="asRun" hidden><span class="as-dot"></span><b>Auto start</b><span id="asRunT"></span><span class="sp"></span><button type="button" class="go" id="asRunNext">Next step now</button><button type="button" class="ghost" id="asRunStop">Stop plan</button></div>
 <div class="alertbar" id="alertBar" role="alert" hidden><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 
 <div class="app">
@@ -1289,6 +1306,80 @@ let crPrev = '';
 const pageTabs = document.querySelectorAll('#pageTabs button');
 // ---------------- pages in the side menu (other than Go Live and Multiview) ----------------
 const XPAGES = {};
+// Auto start: the plan the Studio runs when you press Start streaming (edited here), and its progress while it runs
+(() => {
+  let plan = null;
+  const paintBtn = () => { const b = $('#asBtn'); b.textContent = 'Auto start: ' + (plan && plan.on ? 'On' : 'Off'); b.classList.toggle('on', Boolean(plan && plan.on)); };
+  async function load() { try { plan = await api('/api/autostart'); } catch { return; } paintBtn(); const r = plan.run || {}; $('#asRun').hidden = !r.running; if (r.running) $('#asRunT').textContent = '· step ' + r.step + ' of ' + r.total + ' · ' + r.label + (r.left != null ? ' · ' + Math.floor(r.left / 60) + ':' + String(r.left % 60).padStart(2, '0') + ' left' : r.waiting ? ' · waiting for Next' : ''); }
+  load(); setInterval(load, 1500);
+  $('#asRunNext').onclick = () => api('/api/autostart/cmd', 'POST', { cmd: 'next' });
+  $('#asRunStop').onclick = () => api('/api/autostart/cmd', 'POST', { cmd: 'stop' });
+  $('#asBtn').onclick = async () => {
+    await load(); if (!plan) return;
+    let scenes = []; try { scenes = ((await api('/api/studio')).scenes || []).map((x) => x.name); } catch {}
+    const P = JSON.parse(JSON.stringify(plan)); delete P.run;
+    const w = document.createElement('div'); w.className = 'scd asd'; const d = document.createElement('div'); w.appendChild(d);
+    const close = () => w.remove();
+    w.onclick = (e) => { if (e.target === w) close(); };
+    const sel = (opts, val, set) => { const x = document.createElement('select'); opts.forEach(([v, t]) => x.add(new Option(t, v))); x.value = val; x.onchange = () => set(x.value); return x; };
+    function draw() {
+      d.textContent = '';
+      const h = document.createElement('h3'); h.textContent = 'Auto start'; d.appendChild(h);
+      const on = document.createElement('label'); on.className = 'rc-sw'; on.innerHTML = '<input type="checkbox"><span class="rc-tg" aria-hidden="true"></span><span><b>Use this plan when I press Start streaming</b><small>In the Studio. You can stop it any time.</small></span>'; on.querySelector('input').checked = P.on; on.querySelector('input').onchange = (e) => { P.on = e.target.checked; }; d.appendChild(on);
+      const nl = document.createElement('label'); nl.textContent = 'Plan name'; const ni = document.createElement('input'); ni.type = 'text'; ni.value = P.name || ''; ni.oninput = () => { P.name = ni.value; }; nl.appendChild(ni); d.appendChild(nl);
+      const st = document.createElement('label'); st.textContent = 'What happens, in order · drag to change the order'; d.appendChild(st);
+      const list = document.createElement('div'); list.className = 'as-steps'; d.appendChild(list);
+      let dragFrom = -1;
+      P.steps.forEach((x, i) => {
+        const r = document.createElement('div'); r.className = 'as-s'; r.draggable = true;
+        r.ondragstart = () => { dragFrom = i; r.classList.add('drag'); }; r.ondragend = () => r.classList.remove('drag');
+        r.ondragover = (e) => { e.preventDefault(); r.classList.add('over'); }; r.ondragleave = () => r.classList.remove('over');
+        r.ondrop = (e) => { e.preventDefault(); if (dragFrom < 0 || dragFrom === i) return; const [m] = P.steps.splice(dragFrom, 1); P.steps.splice(i, 0, m); draw(); };
+        const n = document.createElement('span'); n.className = 'as-n'; n.textContent = i + 1;
+        const b = document.createElement('div'); b.className = 'as-b';
+        const t = document.createElement('b'); t.textContent = x.type === 'video' ? 'Play a video' : 'Show scene'; b.appendChild(t);
+        const row = () => { const q = document.createElement('div'); q.className = 'as-r'; b.appendChild(q); return q; };
+        if (x.type === 'video') {
+          const r1 = row(); const nm = document.createElement('span'); nm.textContent = x.name || (x.file || x.url || 'No video chosen').split(/[\\/]/).pop(); nm.style.color = 'var(--text)';
+          const ch = document.createElement('button'); ch.type = 'button'; ch.className = 'ghost'; ch.textContent = 'Choose...';
+          ch.onclick = () => { const f = document.createElement('input'); f.type = 'file'; f.accept = 'video/*'; f.onchange = async () => { const file = f.files[0]; if (!file) return; ch.textContent = 'Uploading...'; try { const u = await fetch('/api/studio/asset/' + encodeURIComponent(Date.now().toString(36) + '-' + file.name), { method: 'PUT', body: file }).then((y) => y.json()); if (u.url) { x.url = u.url; x.file = ''; x.name = file.name; } else alert(u.error || 'Could not add the video'); } catch { alert('Could not add the video'); } draw(); }; f.click(); };
+          r1.append(nm, ch);
+          const r2 = row(); r2.append('Play it', sel([['once', 'Once'], ['loop', 'On a loop']], x.loop ? 'loop' : 'once', (v) => { x.loop = v === 'loop'; draw(); }), 'Volume');
+          const vol = document.createElement('input'); vol.type = 'range'; vol.min = 0; vol.max = 100; vol.value = x.vol == null ? 70 : x.vol; const vb = document.createElement('b'); vb.textContent = vol.value + '%'; vol.oninput = () => { x.vol = Number(vol.value); vb.textContent = vol.value + '%'; }; r2.append(vol, vb);
+          if (!x.loop) { const r3 = row(); r3.append('When it ends', sel([['next', 'Go to the next step'], ['wait', 'Wait for me']], x.end || 'next', (v) => { x.end = v; })); }
+        } else {
+          const r1 = row(); const sc = sel([['', 'Pick a scene']].concat(scenes.map((n2) => [n2, n2])), x.scene || '', (v) => { x.scene = v; });
+          if (x.scene && !scenes.includes(x.scene)) sc.add(new Option(x.scene + ' (not found)', x.scene)), sc.value = x.scene;
+          r1.append('Scene', sc, 'Change with', sel([['fade', 'Fade'], ['cut', 'Cut'], ['slide', 'Slide'], ['dip', 'Dip to black']], x.tr || 'fade', (v) => { x.tr = v; }));
+          const r2 = row(); r2.append('How long', sel([['now', 'Straight away'], ['for', 'For a time'], ['until', 'Until a time'], ['next', 'Until Next']], x.how || 'now', (v) => { x.how = v; draw(); }));
+          if (x.how === 'for') r2.append(sel([['10', '10 seconds'], ['20', '20 seconds'], ['30', '30 seconds'], ['60', '1 minute'], ['120', '2 minutes'], ['300', '5 minutes'], ['600', '10 minutes']], String(x.secs || 10), (v) => { x.secs = Number(v); }));
+          if (x.how === 'until') { const at = document.createElement('input'); at.type = 'time'; at.value = x.at || '10:00'; at.oninput = () => { x.at = at.value; }; r2.append(at); const op = document.createElement('label'); const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(x.optional); c.onchange = () => { x.optional = c.checked; }; op.append(c, ' Skip it if the time has passed'); op.style.cssText = 'display:flex;flex-direction:row;align-items:center;gap:6px;color:var(--text)'; r2.append(op); }
+        }
+        const xs = document.createElement('div'); xs.className = 'as-x';
+        const mv = (t2, k) => { const z = document.createElement('button'); z.type = 'button'; z.textContent = t2; z.title = k === -1 ? 'Move up' : k === 1 ? 'Move down' : 'Remove'; z.onclick = () => { if (!k) P.steps.splice(i, 1); else { const j = i + k; if (j < 0 || j >= P.steps.length) return; [P.steps[i], P.steps[j]] = [P.steps[j], P.steps[i]]; } draw(); }; xs.appendChild(z); };
+        mv('↑', -1); mv('↓', 1); mv('×', 0);
+        r.append(n, b, xs); list.appendChild(r);
+      });
+      if (!P.steps.length) { const e = document.createElement('p'); e.style.cssText = 'margin:0;font-size:13px;color:var(--muted)'; e.textContent = 'No steps yet. For example: play an intro video, show Welcome for 10 seconds, a countdown until the start time, then the camera.'; list.appendChild(e); }
+      const ad = document.createElement('div'); ad.className = 'as-add';
+      const a1 = document.createElement('button'); a1.type = 'button'; a1.className = 'ghost'; a1.textContent = '+ Play a video'; a1.onclick = () => { P.steps.push({ type: 'video', file: '', url: '', name: '', loop: false, vol: 70, end: 'next' }); draw(); };
+      const a2 = document.createElement('button'); a2.type = 'button'; a2.className = 'ghost'; a2.textContent = '+ Show scene'; a2.onclick = () => { P.steps.push({ type: 'scene', scene: scenes[0] || '', how: 'for', secs: 10, at: '10:00', tr: 'fade' }); draw(); };
+      ad.append(a1, a2); d.appendChild(ad);
+      const op = document.createElement('div'); op.className = 'as-opt';
+      const ck = (label, key) => { const l = document.createElement('label'); const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(P[key]); c.onchange = () => { P[key] = c.checked; }; l.append(c, label); op.appendChild(l); };
+      ck('Ask me first each time (so an old video never plays by mistake)', 'ask');
+      ck('Turn the plan off after this stream', 'offAfter');
+      const mr = document.createElement('label'); mr.append('If a video or scene is missing:', sel([['skip', 'Skip that step'], ['stop', 'Stop the plan']], P.onMissing || 'skip', (v) => { P.onMissing = v; })); op.appendChild(mr);
+      const nt = document.createElement('small'); nt.style.cssText = 'color:var(--muted);font-size:12px'; nt.textContent = 'Clicking any scene yourself stops the plan, so you are always in control.'; op.appendChild(nt);
+      d.appendChild(op);
+      const ft = document.createElement('div'); ft.className = 'ft'; const cb = document.createElement('button'); cb.type = 'button'; cb.className = 'ghost'; cb.textContent = 'Cancel'; cb.onclick = close;
+      const ob = document.createElement('button'); ob.type = 'button'; ob.className = 'go'; ob.textContent = 'Save plan';
+      ob.onclick = async () => { if (P.steps.some((x) => x.type === 'scene' && !x.scene)) { alert('Pick a scene for each Show scene step.'); return; } const r = await api('/api/autostart', 'PUT', P); if (r && r.error) { alert(r.error); return; } close(); load(); };
+      ft.append(cb, ob); d.appendChild(ft);
+    }
+    draw(); document.body.appendChild(w);
+  };
+})();
 // Scene collections: sets of scenes; wide (16:9), tall (9:16) or square; switch, rename, copy, export, remove
 (() => {
   const SHP = { landscape: ['16:9 Landscape', '1920 x 1080'], portrait: ['9:16 Portrait', '1080 x 1920'], square: ['1:1 Square', '1080 x 1080'] };
