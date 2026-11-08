@@ -744,6 +744,29 @@ function goLiveDescription(req) {
   if (d !== gl.description) { gl.description = d; try { fs.writeFileSync(GL_FILE, JSON.stringify(gl, null, 2)); } catch {} }
   return d;
 }
+// "Update title for all channels" while live: the YouTube broadcast and the Facebook live video get the new title
+app.post('/api/golive/title', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
+  const b = req.body || {}, title = String(b.title || '').trim().slice(0, 100), description = String(b.description || '').trim().slice(0, 5000);
+  if (!title) return res.status(400).json({ error: 'Type a title' });
+  gl.title = title; gl.description = description; try { fs.writeFileSync(GL_FILE, JSON.stringify(gl, null, 2)); } catch {}
+  const errs = [];
+  if (session.youtube) {
+    try {
+      const cur = ((await ytApi('GET', 'liveBroadcasts', { part: 'snippet', id: session.youtube })).items || [])[0];
+      const sn = (cur && cur.snippet) || {};
+      await ytApi('PUT', 'liveBroadcasts', { part: 'snippet' }, { id: session.youtube, snippet: { title, description, scheduledStartTime: sn.scheduledStartTime || new Date().toISOString() } });
+    } catch (e) { errs.push('YouTube: ' + e.message); }
+  }
+  if (session.facebook) {
+    try {
+      const r = await fetch(`${GRAPH}/${session.facebook}`, { method: 'POST', body: new URLSearchParams({ access_token: fb.token, title, description }) });
+      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error((j.error && j.error.message) || 'Facebook did not change it');
+    } catch (e) { errs.push('Facebook: ' + e.message); }
+  }
+  if (errs.length) return res.json({ error: errs.join(' · ') });
+  res.json({ ok: true });
+});
 app.get('/api/golive', (req, res) => res.json({ title: gl.title, description: gl.description || '', hasThumbnail: Boolean(thumbFile()) }));
 app.put('/api/golive/thumbnail', express.raw({ type: '*/*', limit: '10mb' }), (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });

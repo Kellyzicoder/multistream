@@ -99,19 +99,17 @@ async function until(fn, ms, what) {
       ] }] }) });
   });
 
-  // 4b. the Studio opens in the same window (it replaces the dashboard), and a button comes back
+  // 4b. the Studio opens inside the same window (it keeps running in the background on other pages)
   await dash.evaluate(() => localStorage.removeItem('ms_studio_window'));
   // close the Welcome screen that a new start shows, so the side menu can be clicked
   await dash.evaluate(() => { try { sessionStorage.setItem('ms_welcomed', '1'); } catch {} const w = document.getElementById('welcome'); if (w) w.classList.remove('open'); });
   await dash.click('#pageTabs [data-page=studio]');
-  await until(() => dash.url().includes('studio.html?same=1'), 20000, 'the Studio in the same window');
-  await dash.waitForLoadState('domcontentloaded'); await sleep(1500);
+  await until(() => dash.evaluate(() => { const f = document.querySelector('#studioView iframe'); try { return Boolean(f && f.contentWindow && typeof f.contentWindow.msStart === 'function'); } catch { return false; } }), 30000, 'the Studio inside the window');
   assert.strictEqual(app.windows().length, 1, 'no second window was opened');
-  assert.ok(await dash.isVisible('#backBtn'), 'the Dashboard button shows');
-  await dash.click('#backBtn');
-  await until(() => dash.url() === 'app://multistream/', 20000, 'back to the dashboard');
-  await dash.waitForLoadState('domcontentloaded'); await sleep(2000);
-  ok('Studio can open in the same window (one window only) and the Dashboard button comes back');
+  assert.ok(await dash.evaluate(() => !document.getElementById('studioView').hidden), 'the Studio page shows');
+  await dash.click('#pageTabs [data-page=dash]'); await sleep(800);
+  assert.ok(await dash.evaluate(() => document.getElementById('studioView').hidden && Boolean(document.querySelector('#studioView iframe'))), 'Go Live shows and the Studio keeps running');
+  ok('Studio opens inside the window (one window only) and keeps running on the Go Live page');
   await dash.evaluate(() => localStorage.setItem('ms_studio_window', '1')); // test only: the rest of the test needs the Stream page and the Studio side by side
 
   // 5. open the Studio from the dashboard

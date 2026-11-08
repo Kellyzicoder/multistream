@@ -256,7 +256,7 @@
   .hl-log li { display:flex; gap:12px; font-size:13px; line-height:1.4; } .hl-log li time { flex:none; width:74px; white-space:nowrap; color:var(--muted); font-variant-numeric:tabular-nums; }
   .stage { position:relative; display:flex; justify-content:center; align-items:flex-start; padding:0 6px; overflow:auto; }
   .stage-in { width:100%; max-width:760px; text-align:center; }
-  #offlineView { max-width:460px; margin:0 auto; text-align:center; }
+  #offlineView { text-align:center; } #offlineView > * { max-width:460px; }
   #offlineView .lead { margin:10px auto 22px; text-align:center; }
   .side { display:flex; flex-direction:column; gap:14px; min-height:0; overflow:auto; }
   .sec-t { font-size:10.5px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
@@ -651,6 +651,134 @@
   .tile { width:38px; height:38px; flex:none; border-radius:11px; display:grid; place-items:center; box-shadow:inset 0 0 0 1px rgba(255,255,255,.12), 0 4px 12px rgba(0,0,0,.25); }
   .tile svg { width:24px; height:24px; }
   .ch { align-items:center; }
+
+  /* =================== the design (app frame and Go Live) =================== */
+  html { --navw:230px; } html.nav-small { --navw:76px; }
+  body { background:radial-gradient(520px 420px at 78% 18%, color-mix(in srgb, var(--blue) 45%, transparent), transparent 70%), radial-gradient(480px 420px at 30% 85%, rgba(168,85,247,.32), transparent 70%), radial-gradient(420px 360px at 95% 90%, rgba(20,184,166,.28), transparent 70%), var(--bg); background-attachment:fixed; }
+  html.t-light body { background:radial-gradient(520px 420px at 78% 18%, rgba(59,108,255,.14), transparent 70%), radial-gradient(480px 420px at 30% 85%, rgba(168,85,247,.10), transparent 70%), var(--bg); }
+  :root:not(.t-light):not(.a-contrast) { --gl:rgba(255,255,255,.07); --gl2:rgba(255,255,255,.06); --gl-line:rgba(255,255,255,.12); --gl-sh:none; --gl-hi:transparent; --gl-blur:blur(24px) saturate(140%); }
+  .snv { padding:24px 18px; border-right:1px solid rgba(255,255,255,.08); background:transparent; -webkit-backdrop-filter:none; backdrop-filter:none; }
+  html.t-light .snv { border-right-color:var(--line); }
+  .snv-top { margin:0 6px 26px; } .snv-name { font-size:17px; } .snv-logo svg { width:26px; height:32px; }
+  .snv-tg { background:rgba(255,255,255,.07); }
+  #pageTabs button, .snv-b { gap:13px; padding:11px 12px; font-size:14px; }
+  #pageTabs button[aria-current="page"], .snv-b[aria-current="page"] { color:var(--text); background:color-mix(in srgb, var(--blue) 14%, transparent); }
+  .snv-b[aria-current="page"] svg { color:var(--blue); }
+  .snv-live { display:flex; align-items:center; gap:8px; padding:13px 14px; border-radius:14px; margin-top:6px; background:var(--gl); border:1px solid var(--gl-line); font-weight:700; font-size:14px; white-space:nowrap; }
+  .snv-live i { width:8px; height:8px; border-radius:50%; background:#5a6385; flex:none; } .snv-live span { margin-left:auto; color:var(--muted); font-weight:500; font-variant-numeric:tabular-nums; }
+  .snv-live.on i { background:#ff4d5a; box-shadow:0 0 8px #ff4d5a; animation:navP 1.8s ease-out infinite; } .snv-live.on span { color:var(--text); }
+  @keyframes navP { 0%,100% { box-shadow:0 0 0 0 rgba(255,77,90,.55); } 60% { box-shadow:0 0 0 7px rgba(255,77,90,0); } }
+  html.nav-small .snv-live { justify-content:center; padding:13px 0; } html.nav-small .snv-live b, html.nav-small .snv-live span { display:none; }
+  .top { margin:0; height:auto; padding:22px 28px 0; border:0; border-radius:0; background:transparent; box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none; gap:12px; }
+  .pgt { font-size:22px; } .top .hl-badge { padding:4px 10px; font-size:12.5px; }
+  .gl-acts { display:flex; align-items:center; gap:12px; } .gl-acts[hidden] { display:none; }
+  .hb { display:flex; align-items:center; gap:8px; padding:10px 18px; border-radius:999px; border:0; background:rgba(255,255,255,.07); color:var(--soft); font-size:13px; font-weight:600; white-space:nowrap; }
+  html.t-light .hb { background:var(--btn); color:var(--text); }
+  .hb svg { width:15px; height:15px; } .hb:hover { color:var(--text); background:rgba(255,255,255,.12); }
+  .hb.as-tg { background:transparent; border:1px solid var(--gl-line); } .hb.as-tg.on { background:color-mix(in srgb, var(--blue) 18%, transparent); border-color:color-mix(in srgb, var(--blue) 50%, transparent); color:var(--text); }
+  .hb.pt-on { background:color-mix(in srgb, var(--amber) 18%, transparent); color:var(--text); }
+  .hb.sb { padding:11px 22px; background:var(--blue); color:var(--onblue); font-size:14px; font-weight:700; box-shadow:0 8px 24px color-mix(in srgb, var(--blue) 40%, transparent); }
+  .hb.sb i { width:9px; height:9px; border-radius:50%; background:currentColor; } .hb.sb.stop { background:#ff4d5a; color:#fff; box-shadow:0 8px 24px rgba(255,77,90,.4); } .hb.sb.stop i { border-radius:2px; }
+  .hb.sb:disabled { opacity:.6; }
+  .asrun { margin:14px 28px 0; }
+  .app { padding:22px 28px 24px; gap:22px; grid-template-columns:minmax(0,1fr) 330px; height:auto; min-height:0; }
+  .mainc { gap:22px; overflow:visible; }
+  .side { overflow:visible; } .side > .card { flex:1; } .mainc { display:block; } .stage.glp { height:100%; } .glp-v { flex:1; aspect-ratio:auto; min-height:300px; max-height:none; height:calc(100vh - 470px); }
+  /* preview */
+  .stage.glp { padding:0; min-height:0; flex:none; display:flex; flex-direction:column; align-items:stretch; overflow:hidden; border-radius:26px; background:linear-gradient(135deg,#1a1f4a,#2a1a48 55%,#0f2a2e); border:0; }
+  .glp-v { position:relative; aspect-ratio:16/9; max-height:calc(100vh - 330px); min-height:260px; background:#05070f; }
+  .glp-v > canvas, .glp-v > video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000; display:block; }
+  .glp-v > canvas[hidden], .glp-v > video[hidden] { display:none; }
+  .glp-off { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; padding:20px; background:linear-gradient(135deg,#262a63,#3a1f5e 55%,#14363a); }
+  .glp-off[hidden] { display:none; } .glp-off h1 { font-size:26px; font-weight:300; margin:0; } .glp-off .lead { margin:0; color:var(--muted); font-size:13px; }
+  .glp-tr { position:absolute; right:16px; top:16px; display:flex; gap:8px; }
+  .glp-tr .ov { padding:7px 13px; border-radius:999px; font-weight:700; font-size:12.5px; letter-spacing:.5px; background:rgba(255,255,255,.16); color:#fff; }
+  .glp-tr .ov.dark { background:rgba(10,14,31,.65); font-weight:600; letter-spacing:0; font-variant-numeric:tabular-nums; } .glp-tr .ov[hidden] { display:none; }
+  .glp-tr .ov.live { background:#ff4d5a; } .glp-tr .ov.live::before { content:""; display:inline-block; width:8px; height:8px; border-radius:50%; background:#fff; margin-right:6px; vertical-align:1px; }
+  .glp-side { position:absolute; right:16px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; align-items:center; gap:6px; font-size:13px; font-weight:700; }
+  .glp-side[hidden] { display:none; }
+  .glp-r { width:40px; height:40px; border-radius:50%; border:0; display:grid; place-items:center; background:rgba(10,14,31,.6); color:#fff; padding:0; } .glp-r svg { width:18px; height:18px; } .glp-r.on { background:var(--blue); }
+  .glp-msg { position:absolute; left:18px; bottom:16px; display:flex; align-items:center; gap:10px; max-width:70%; padding:8px 16px 8px 8px; border-radius:999px; background:rgba(10,14,31,.75); font-size:13.5px; animation:xpIn .3s ease-out; }
+  .glp-msg[hidden] { display:none; } .glp-msg .av { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; background:#7c3aed; font-size:11px; font-weight:700; flex:none; } .glp-msg span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .glp-bar { display:flex; align-items:center; gap:14px; min-height:74px; padding:0 18px; background:rgba(18,24,51,.85); }
+  .glp-t { min-width:0; line-height:1.4; } .glp-t b { display:block; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .glp-t small { display:block; color:var(--muted); font-size:13px; }
+  .pb { height:40px; border-radius:999px; display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.1); border:0; color:#eef1f8; padding:0 14px; font-size:13px; font-weight:600; } .pb svg { width:16px; height:16px; } .pb.on { background:var(--blue); }
+  .app.tall .glp-v { aspect-ratio:9/16; max-height:calc(100vh - 300px); align-self:center; width:auto; height:calc(100vh - 300px); }
+  /* stream details */
+  .sd { display:flex; gap:20px; padding:18px; border-radius:22px; }
+  .sd-thumb { width:300px; flex:none; }
+  .sd .thp { position:relative; width:100%; aspect-ratio:auto; height:100%; min-height:170px; border:0; border-radius:16px; overflow:hidden; background:linear-gradient(135deg,var(--blue),#7a3cff); display:block; color:#fff; }
+  .sd .thp img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .sd #thNone { position:absolute; left:22px; top:22px; right:22px; display:flex; flex-direction:column; gap:6px; text-align:left; } .sd #thNone b { font-size:26px; font-weight:800; line-height:1.05; } .sd #thNone small { font-size:11px; letter-spacing:4px; text-transform:uppercase; opacity:.8; }
+  .th-up { position:absolute; right:10px; bottom:10px; display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px; border:0; background:rgba(10,14,31,.75); color:#fff; font-size:12.5px; font-weight:600; } .th-up svg { width:14px; height:14px; }
+  .th-x { position:absolute; left:10px; bottom:12px; color:#fff; font-size:12px; }
+  .sd-main { flex:1; gap:12px; }
+  .sd-t { font-size:18px; font-weight:700; }
+  .sd-tabs { display:flex; gap:6px; } .sd-tabs button { display:flex; align-items:center; gap:6px; padding:6px 13px; border-radius:999px; border:1px solid var(--gl-line); background:transparent; color:var(--soft); font-size:12.5px; font-weight:600; }
+  .sd-tabs button.on { background:var(--blue); border-color:transparent; color:var(--onblue); } .sd-tabs .d { width:7px; height:7px; border-radius:50%; } .sd-tabs .d.yt { background:#ff4d4d; } .sd-tabs .d.fb { background:#4f8cff; }
+  .sd .fl { font-size:12.5px; color:var(--muted); text-transform:none; letter-spacing:0; font-weight:500; margin:0 0 6px; display:block; }
+  .sd .t2 { border-radius:12px; padding:11px 14px; font-size:14px; background:rgba(5,8,20,.45); border:1px solid var(--gl-line); }
+  .sd-f { grid-template-columns:1fr 1.2fr; }
+  .sd-pre-row { display:flex; align-items:center; gap:10px; } .sd-pre-row .fl { margin:0; }
+  .sd-pre button { padding:7px 14px; font-size:12.5px; font-weight:600; border:0; background:transparent; color:var(--soft); } .sd-pre button.on { background:var(--blue); } .sd-pre button.add { border:1px dashed var(--gl-line); }
+  /* channels */
+  .chs { padding:18px 14px 16px; border-radius:26px; display:flex; flex-direction:column; gap:8px; }
+  .chs-h { display:flex; align-items:center; gap:10px; padding:0 6px 4px; } .chs-t { font-size:17px; font-weight:700; } .chs .cnt { font-size:12px; color:var(--muted); }
+  #chList, #chOff { display:flex; flex-direction:column; gap:8px; }
+  .cc { display:flex; align-items:center; gap:12px; padding:12px; border-radius:16px; background:rgba(255,255,255,.06); border:1.5px solid transparent; }
+  html.t-light .cc { background:var(--card2); }
+  .cc.on { border-color:color-mix(in srgb, var(--blue) 60%, transparent); } .cc.err { border-color:rgba(255,77,90,.55); }
+  .cc .tile { width:38px; height:38px; border-radius:11px; } .cc .cmn { flex:1; min-width:0; line-height:1.35; }
+  .cc .nm { font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .cc .nm small { color:var(--muted); font-weight:500; font-size:12px; }
+  .cc .st { font-size:12px; font-weight:600; } .cc .st.live { color:#ff8a90; } .cc .st.live::before { content:"● "; } .cc .st.bad { color:#ff8a90; }
+  .cc .sub { color:var(--soft); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cc .ed { width:32px; height:32px; border-radius:9px; display:grid; place-items:center; background:transparent; border:0; color:var(--muted); padding:0; flex:none; } .cc .ed svg { width:16px; height:16px; } .cc .ed:hover { color:var(--text); background:rgba(255,255,255,.08); }
+  .tg2 { width:34px; height:20px; border-radius:10px; background:#2a3150; position:relative; flex:none; border:0; padding:0; } .tg2::after { content:""; position:absolute; left:3px; top:3px; width:14px; height:14px; border-radius:50%; background:#8a93ad; transition:left .25s ease; }
+  .tg2.on { background:var(--blue); } .tg2.on::after { left:17px; background:#fff; }
+  .cc.sm { padding:8px 10px; gap:10px; border-radius:12px; } .cc.sm .tile { width:24px; height:24px; border-radius:7px; } .cc.sm .tile svg { width:13px; height:13px; } .cc.sm .nm { font-weight:500; font-size:13.5px; }
+  .ch-lbl { font-size:11px; font-weight:700; letter-spacing:1px; color:var(--muted); padding:8px 6px 0; text-transform:uppercase; }
+  .ch-add { display:flex; align-items:center; gap:12px; padding:12px; border-radius:16px; background:transparent; border:1.5px dashed rgba(255,255,255,.18); color:var(--muted); font-size:14px; font-weight:600; text-align:left; }
+  .ch-add .pl { width:38px; height:38px; border-radius:50%; display:grid; place-items:center; border:1.5px dashed rgba(255,255,255,.3); }
+  .ch-add:hover { color:var(--text); border-color:var(--blue); }
+  /* chat panel */
+  .cht { border-radius:26px; padding:18px 14px 16px; } .cht-b { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; background:rgba(255,255,255,.07); border:0; color:var(--text); padding:0; } .cht-b svg { width:16px; height:16px; }
+  .cht .chat { max-height:none; }
+  /* stream health under the preview, while live */
+  .glh2, .app > .sd { grid-column:1 / -1; }
+  .glh2 { display:flex; flex-direction:column; gap:14px; } .glh2[hidden] { display:none; }
+  .glh2-h { display:flex; align-items:center; gap:12px; font-size:17px; font-weight:700; } .glh2-h .lnk { font-size:13px; font-weight:600; color:var(--link); }
+  .glh2-g { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)) minmax(0,1.6fr); gap:14px; }
+  .glh2-g .card { padding:18px; border-radius:22px; display:flex; flex-direction:column; justify-content:center; gap:6px; min-height:150px; }
+  .glh2-g small { font-size:12.5px; color:var(--muted); } .glh2-g b { font-size:28px; font-weight:700; font-variant-numeric:tabular-nums; } .glh2-g b i { font-style:normal; font-size:14px; color:var(--muted); margin-left:4px; }
+  .glh2-g em { font-style:normal; font-size:12.5px; color:var(--muted); } .glh2-g em.good { color:#4ade80; } .glh2-g em.bad { color:#ff8a90; }
+  .glh2-g svg { width:100%; height:20px; } .glh2-g .card.gh-ch { margin:0; }
+  .glh2-g .gh-ch > div { display:flex; flex-direction:column; gap:10px; margin-top:4px; } .glh2-g .gh-ch > div > div { display:flex; align-items:center; gap:10px; font-size:13px; }
+  .glh2-g .gh-ch .tile { width:22px; height:22px; border-radius:6px; } .glh2-g .gh-ch .tile svg { width:12px; height:12px; } .glh2-g .gh-ch .r { margin-left:auto; color:var(--muted); font-variant-numeric:tabular-nums; } .glh2-g .gh-ch .hl-st { min-width:58px; text-align:right; font-weight:700; }
+  @media (max-width:1180px) { .glh2-g { grid-template-columns:repeat(2, minmax(0,1fr)); } .glh2-g .gh-ch { grid-column:1 / -1; } }
+  @media (max-width:1000px) { .app { grid-template-columns:1fr; } .sd { flex-direction:column; } .sd-thumb { width:100%; } .gl-acts { flex-wrap:wrap; justify-content:flex-end; } }
+  /* the Studio, shown inside this window */
+  html.on-studio .top, html.on-studio .asrun, html.on-studio .alertbar { display:none !important; }
+  .stv { position:fixed; left:var(--navw); top:0; right:0; bottom:0; padding:0; z-index:4; } .stv iframe { width:100%; height:100%; border:0; display:block; background:var(--bg); }
+  .stv.bg { visibility:hidden; pointer-events:none; } .stv[hidden] { display:block; visibility:hidden; pointer-events:none; }
+  /* dialogs from the design (Add a channel, Edit a channel) */
+  .mdl { position:fixed; inset:0; z-index:80; display:grid; place-items:center; background:rgba(4,6,15,.6); animation:xpIn .2s ease-out; }
+  .mdl > div { position:relative; width:min(790px, 94vw); max-height:92vh; overflow:auto; padding:28px 30px; border-radius:26px; background:rgba(20,26,54,.98); border:1px solid rgba(255,255,255,.14); box-shadow:0 24px 60px rgba(0,0,0,.55); display:flex; flex-direction:column; gap:16px; }
+  html.t-light .mdl > div { background:var(--card); border-color:var(--line); }
+  .mdl h3 { margin:0; font-size:18px; } .mdl .x { position:absolute; right:22px; top:22px; width:34px; height:34px; border-radius:10px; border:0; background:rgba(255,255,255,.08); color:var(--text); display:grid; place-items:center; }
+  .pf-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
+  .pf-grid button { display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; border:1.5px solid transparent; background:rgba(255,255,255,.06); color:var(--text); text-align:left; }
+  .pf-grid button.on { border-color:var(--blue); background:color-mix(in srgb, var(--blue) 12%, transparent); } .pf-grid b { display:block; font-size:15px; } .pf-grid small { display:block; color:var(--muted); font-size:12.5px; margin-top:2px; }
+  .pf-grid .tile { width:38px; height:38px; border-radius:11px; }
+  .pf-box { padding:20px; border-radius:20px; background:rgba(255,255,255,.05); display:flex; flex-direction:column; gap:14px; } .pf-box > b { font-size:15px; }
+  .pf-two { display:grid; grid-template-columns:1fr 1fr; gap:16px; } .pf-two > div { padding:18px; border-radius:16px; border:1px solid var(--gl-line); display:flex; flex-direction:column; gap:10px; } .pf-two > div.on { border:1.5px solid var(--blue); }
+  .mdl label { display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:var(--muted); }
+  .mdl input[type=text], .mdl input[type=password], .mdl select { padding:11px 14px; border-radius:12px; border:1px solid var(--gl-line); background:rgba(5,8,20,.55); color:var(--text); font-size:14px; }
+  .mdl .row { display:flex; align-items:center; gap:10px; } .mdl .row .grow { flex:1; }
+  .mdl .btn { padding:11px 22px; border-radius:999px; border:0; font-size:14px; font-weight:600; background:rgba(255,255,255,.08); color:var(--text); }
+  .mdl .btn.pri { background:var(--blue); color:var(--onblue); } .mdl .btn.del { background:transparent; border:1px solid rgba(255,77,90,.6); color:#ff8a90; }
+  .mdl .note { margin:0; font-size:12.5px; color:var(--muted); line-height:1.5; }
+  .mdl .who { display:flex; align-items:center; gap:14px; } .mdl .who .tile { width:42px; height:42px; border-radius:12px; } .mdl .who b { display:block; font-size:17px; } .mdl .who small { color:var(--muted); font-size:13px; }
+  .mdl .signin { display:flex; align-items:center; gap:12px; padding:16px; border-radius:14px; background:rgba(255,255,255,.06); }
 </style>
 </head>
 <body>
@@ -668,125 +796,63 @@
     <button type="button" data-page="stats" title="Analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Analytics</span></button>
     <button type="button" data-page="rec" title="Recordings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg><span>Recordings</span></button>
     <button type="button" data-page="coll" title="Scene collections"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="14" height="12" rx="2"/><path d="M7 4h12a2 2 0 0 1 2 2v10"/></svg><span>Scene collections</span></button>
-    <button type="button" data-page="help" title="Help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.2v.1"/></svg><span>Help</span></button>
   </nav>
   <span class="snv-sp"></span>
+    <button type="button" class="snv-b" data-page="help" title="Help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.2v.1"/></svg><span>Help</span></button>
   <button type="button" class="snv-b" id="setBtn" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
+  <div class="snv-live" id="navLive" title="Is the Studio sending?"><i></i><b id="navLiveT">Offline</b><span id="navLiveS">Ready</span></div>
 </aside>
 <header class="top">
-  <h1 class="pgt" id="pageTitle">Go Live</h1>
+  <h1 class="pgt" id="pageTitle">Go Live</h1><span class="hl-badge" id="pageBadge" hidden></span>
   <span class="sp"></span>
-  <button type="button" class="ghost as-tg" id="asBtn" title="Auto start: what happens when you press Start streaming">Auto start: Off</button>
-  <span class="chip" id="chip">OFFLINE</span>
+  <span class="gl-acts" id="glActs">
+    <button type="button" class="hb" id="glUpd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Update title for all channels</button>
+    <button type="button" class="hb" id="ptBtn" title="Private test: only you can see the live">Private test: on</button>
+    <button type="button" class="hb as-tg" id="asBtn" title="Auto start: what happens when you press Start streaming"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Auto start: Off</span></button>
+    <button type="button" class="hb sb" id="sbBtn"><i></i><span>Start streaming</span></button>
+  </span>
+  <span class="chip" id="chip" hidden>OFFLINE</span>
 </header>
 <div class="asrun" id="asRun" hidden><span class="as-dot"></span><b>Auto start</b><span id="asRunT"></span><span class="sp"></span><button type="button" class="go" id="asRunNext">Next step now</button><button type="button" class="ghost" id="asRunStop">Stop plan</button></div>
 <div class="alertbar" id="alertBar" role="alert" hidden><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 
 <div class="app">
   <div class="mainc">
-  <main class="stage card">
-    <div class="stage-in" id="stageIn">
-     <div id="offlineView">
-      <div class="ring" aria-hidden="true"><i></i></div>
-      <h1 id="h1">Waiting for the Studio</h1>
-      <p class="lead" id="lead">Open the Studio and press <b>Start Streaming</b>. The channels below start by themselves.</p>
-      <p style="text-align:center;margin:0 0 18px"><button type="button" class="b2 pri" id="openStudioBtn">Open Studio</button></p>
-
-     </div>
-
-     <!-- shown while the Studio is sending video -->
-     <div id="liveView" hidden>
-      <div class="pv-box">
-        <video id="pv" muted autoplay playsinline></video>
-        <div class="pv-msg" id="pvMsg">Preview is off</div>
-        <div class="pv-ov"><span class="ov live">LIVE</span><span class="ov" id="ovTime">00:00:00</span></div>
+  <main class="stage card glp" id="glPrev">
+    <div class="glp-v">
+      <canvas id="pvStudio" width="960" height="540" aria-hidden="true"></canvas>
+      <video id="pv" muted autoplay playsinline hidden></video>
+      <div id="offlineView" class="glp-off">
+        <div class="ring" aria-hidden="true"><i></i></div>
+        <h1 id="h1">Waiting for the Studio</h1>
+        <p class="lead" id="lead">The Studio makes the picture. It starts by itself when the app opens.</p>
+        <p style="text-align:center;margin:0"><button type="button" class="b2 pri" id="openStudioBtn">Open Studio</button></p>
       </div>
-      <div class="pv-ig" id="pvIg" hidden><div><small>Live for</small><b id="igFor">0:00</b></div><div><small>Scene</small><b id="igScene">–</b></div><div><small>Collection</small><b id="igColl">–</b></div><p>Viewers, likes and comments show in the Instagram app.</p></div>
-      <div class="pv-ctl"><span id="lvLead"></span><span class="grow"></span><span>Preview (no sound)</span>
-        <label class="sw"><input type="checkbox" id="pvSwitch" checked aria-label="Show the preview"><span></span></label>
-      </div>
-
-      <div class="bar">
-        <div class="bi"><b id="sgHealth">…</b><span>Health</span></div>
-        <div class="bi"><b id="sgRes">…</b><span id="sgResL">Resolution</span></div>
-        <div class="bi"><b id="sgRate">…</b><span>Bitrate</span></div>
-        <div class="bi"><b id="sgFps">…</b><span>Frame rate</span></div>
-        <div class="bi" id="kfBox"><b id="sgKey">…</b><span>Keyframe</span></div>
-        <div class="bi"><b id="sgAudio">…</b><span>Audio</span></div>
-      </div>
-      <p class="kfnote" id="kfNote" hidden>Facebook and YouTube want a keyframe every 2 seconds (4 at most). The Studio already sends one every 2 seconds.</p>
-      <div class="spark">
-        <svg viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true"><polyline id="sparkLine" fill="none" stroke="#4ade80" stroke-width="2" vector-effect="non-scaling-stroke" points=""/></svg>
-        <small id="sparkNote">Bitrate, last minute</small>
-      </div>
-     </div>
-
-
+      <div class="pv-msg" id="pvMsg" hidden></div>
+      <div class="glp-tr"><span class="ov dark" id="ovPrev">Preview from the Studio</span><span class="ov dark" id="ovTime" hidden>00:00:00</span><span class="ov" id="ovState">OFFLINE</span></div>
+      <div class="glp-side" id="glpSide" hidden><button type="button" class="glp-r" id="glChatBtn" title="Open the live chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></button><b id="glChatN">0</b></div>
+      <div class="glp-msg" id="glpMsg" hidden><span class="av" id="glpAv"></span><b id="glpWho"></b><span id="glpTxt"></span></div>
+    </div>
+    <div class="glp-bar">
+      <div class="glp-t"><b id="glpTitle">Your stream</b><small id="glpSub"></small></div>
+      <span class="grow"></span>
+      <button type="button" class="pb" id="glpStudio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg>Studio</button>
+      <button type="button" class="pb" id="glpListen" title="Hear the stream on this computer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg><span>Listen</span></button>
     </div>
   </main>
-    <section class="card sd" aria-label="Stream details">
-      <div class="sd-thumb">
-        <div class="th" >
-          <div class="thp"><img id="thImg" alt="Thumbnail" hidden><span id="thNone">No picture</span></div>
-          <div class="tha">
-            <span class="fl">Thumbnail</span>
-            <div class="thb"><button class="ghost" id="thBtn" type="button">Choose picture</button><button class="lnk" id="thClear" type="button" hidden>Remove</button></div>
-            <small>PNG or JPG, best at 1280×720. Sent to YouTube.</small>
-            <small class="bad" id="thMsg" hidden></small>
-            <input type="file" id="thFile" accept="image/png,image/jpeg" hidden>
-          </div>
-        </div>
-      </div>
-      <div class="sd-main">
-        <div class="sd-h"><span class="sec-t">Stream details</span><span class="grow"></span><span class="sd-pre" id="presets" aria-label="Saved details"></span></div>
-        <div class="sd-f">
-      <div class="gt">
-        <label class="fl" for="glTitle">Title</label>
-        <input class="t2" id="glTitle" type="text" maxlength="100" placeholder="Title (the date is used if empty)" autocomplete="off">
-      </div>
-          <div class="gt">
-            <label class="fl" for="glDesc">Description</label>
-            <textarea class="t2" id="glDesc" rows="2" maxlength="5000" placeholder="What is this stream about?"></textarea>
-          </div>
-        </div>
-      <label class="tm" id="tmBox">
-        <span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span>
-        <span><b>Private test</b><small id="tmState">Only you can see it. Turn this off for the real service.</small></span>
-      </label>
-      </div>
-    </section>
   </div>
 
-  <!-- right: channels and chat -->
   <aside class="side">
-    <section class="card chs" aria-label="Channels">
-      <div class="sec-h">
-        <span class="sec-t">Channels</span>
-        <span class="cnt" id="count"><b>0 of 0</b> active</span>
-        <span class="grow"></span>
-        <button class="ghost" id="addBtn" type="button">+ Add</button>
-      </div>
-      <div class="gl">
-      <div class="gr">
-        <span class="tile-yt"></span>
-        <div class="who"><b>YouTube</b><span id="ytSub">Not connected</span></div>
-        <button class="ghost" id="ytBtn" type="button" title="Connect the YouTube account">Set up</button>
-        <button class="go" id="ytLive" type="button" disabled title="Start Streaming in the Studio first, and connect YouTube">Go live</button>
-      </div>
-      <div class="gr">
-        <span class="tile-fb"></span>
-        <div class="who"><b>Facebook</b><span id="fbSub">No Page added</span></div>
-        <button class="ghost" id="fbBtn" type="button" title="Add the Facebook Page ID and token">Set up</button>
-        <button class="go" id="fbLive" type="button" disabled title="Start Streaming in the Studio first, and add the Facebook Page">Go live</button>
-      </div>
-      <p class="hint" id="glHint"></p>
-      <p class="note" id="fbNote" hidden></p>
-      </div>
-
-      <div id="list"></div>
-      <div class="meta">
-        <span class="all">Toggle all <button class="lnk" id="allOff" type="button">OFF</button><i></i><button class="lnk" id="allOn" type="button">ON</button></span>
-      </div>
+    <section class="card chs" id="chCard" aria-label="Channels">
+      <div class="chs-h"><span class="chs-t">Channels</span><span class="grow"></span><span class="cnt" id="count"></span></div>
+      <div id="chList"></div>
+      <div id="chOff"></div>
+      <button type="button" class="ch-add" id="addBtn"><span class="pl">+</span>Add channel</button>
+      <div hidden>
+        <div id="list"></div><span id="glHint"></span><span id="lvLead"></span><span id="ytSub"></span><span id="fbSub"></span>
+        <button id="allOn" type="button"></button><button id="allOff" type="button"></button>
+        <button id="ytLive" type="button"></button><button id="fbLive" type="button"></button><button id="ytBtn" type="button"></button><button id="fbBtn" type="button"></button>
+        <input type="checkbox" id="pvSwitch" checked>
       <details class="more">
         <summary>Check everything</summary>
       <div class="gr" id="pfRow">
@@ -795,22 +861,46 @@
       </div>
       <div class="pf" id="pfList" hidden></div>
       </details>
-    </section>
-    <section class="card glh" id="glHealth" aria-label="Stream health" hidden>
-      <div class="sec-h"><span class="sec-t">Stream health</span><span class="hl-badge" id="ghBadge"></span><span class="grow"></span><button type="button" class="lnk" id="ghMore">Details in Stream health →</button></div>
-      <div class="gh-g"><div><small>Sending</small><b id="ghK">0</b><i>Mbit/s</i><em id="ghKn"></em></div><div><small>Frame rate</small><b id="ghF">–</b><i>fps</i><em id="ghFn"></em></div><div><small>Dropped frames</small><b id="ghD">0</b><em id="ghDn"></em></div><div><small>Computer</small><b id="ghC">0</b><i>%</i><em id="ghCn"></em></div></div>
-      <div class="gh-ch" id="ghCh"></div>
-    </section>
-    <section class="card cht" aria-label="Chat">
-      <div class="sec-h">
-        <span class="sec-t">Chat</span>
-        <span class="cnt" id="chatCnt"></span>
       </div>
-      <div class="chat" id="chatList" role="log" aria-live="polite"><p class="none" id="chatNone">Comments from YouTube and Facebook show here after you press Go live. Reading only: you cannot reply from here.</p></div>
+    </section>
+    <section class="card cht" id="chatCard" aria-label="Live chat" hidden>
+      <div class="chs-h"><button type="button" class="cht-b" id="chatBack" title="Back to the channels" aria-label="Back to the channels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="chs-t">Live chat</span><span class="grow"></span><span class="cnt" id="chatCnt"></span></div>
+      <div class="chat" id="chatList" role="log" aria-live="polite"><p class="none" id="chatNone">Comments from YouTube and Facebook show here while you are live. Reading only: you cannot reply from here.</p></div>
       <p class="note" id="chatSt" hidden></p>
     </section>
   </aside>
+    <section class="glh2" id="glHealth" aria-label="Stream health" hidden>
+      <div class="glh2-h"><span>Stream health</span><span class="hl-badge" id="ghBadge"></span><span class="grow"></span><button type="button" class="lnk" id="ghMore">Details in Stream health →</button></div>
+      <div class="glh2-g">
+        <div class="card"><small>Sending</small><b><span id="ghK">0</span><i>Mbit/s</i></b><svg viewBox="0 0 120 20" preserveAspectRatio="none" aria-hidden="true"><polyline id="ghSpark" fill="none" stroke="#4ade80" stroke-width="2" vector-effect="non-scaling-stroke" points=""/></svg><em id="ghKn"></em></div>
+        <div class="card"><small>Frame rate</small><b><span id="ghF">–</span><i>fps</i></b><em id="ghFn"></em></div>
+        <div class="card"><small>Dropped frames</small><b><span id="ghD">0</span></b><em id="ghDn"></em></div>
+        <div class="card"><small>Computer</small><b><span id="ghC">0</span><i>%</i></b><em id="ghCn"></em></div>
+        <div class="card gh-ch"><small>Each channel</small><div id="ghCh"></div></div>
+      </div>
+    </section>
+    <section class="card sd" id="glDetails" aria-label="Stream details">
+      <div class="sd-thumb">
+        <div class="thp"><img id="thImg" alt="Thumbnail" hidden><span id="thNone"><b id="thBig">Your stream</b><small>Thumbnail</small></span>
+          <button type="button" class="th-up" id="thBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>Upload thumbnail</button>
+          <button class="lnk th-x" id="thClear" type="button" hidden title="Remove the thumbnail">Remove</button>
+        </div>
+        <small class="bad" id="thMsg" hidden></small>
+        <input type="file" id="thFile" accept="image/png,image/jpeg" hidden>
+      </div>
+      <div class="sd-main">
+        <div class="sd-h"><span class="sd-t">Stream details</span><span class="grow"></span><span class="sd-tabs" id="sdTabs"><button type="button" data-t="all" class="on">All channels</button><button type="button" data-t="yt"><i class="d yt"></i>YouTube</button><button type="button" data-t="fb"><i class="d fb"></i>Facebook</button></span></div>
+        <div class="sd-f">
+          <div class="gt"><label class="fl" for="glTitle" id="glTitleL">Title</label><input class="t2" id="glTitle" type="text" maxlength="100" placeholder="Title (the date is used if empty)" autocomplete="off"></div>
+          <div class="gt"><label class="fl" for="glDesc" id="glDescL">Description</label><textarea class="t2" id="glDesc" rows="2" maxlength="5000" placeholder="What is this stream about?"></textarea></div>
+        </div>
+        <div class="sd-pre-row"><span class="fl">Saved:</span><span class="sd-pre" id="presets" aria-label="Saved details"></span></div>
+      </div>
+      <label class="tm" id="tmBox" hidden><span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span><span><b>Private test</b><small id="tmState"></small></span></label>
+    </section>
 </div>
+
+<section class="xpage stv" id="studioView" hidden aria-label="Studio"></section>
 
 <!-- multiview -->
 <section class="xpage hl" id="healthView" hidden aria-label="Stream health">
@@ -1166,36 +1256,8 @@ function healthOf(sg, warmingUp) {
   return dips ? { t: 'Unsteady', c: 'wait' } : { t: 'Excellent', c: 'good' };
 }
 
-function renderSignal(state) {
-  if (!state.obsLive) return;
-  const sg = state.signal;
-  const warmingUp = Date.now() - sg.startedAt < 5000;
-  const hl = healthOf(sg, warmingUp);
-  setSig('#sgHealth', hl.t, hl.c);
-  setSig('#sgRate', sg.kbps ? fmtRate(sg.kbps) : '—');
-  const v = sg.video;
-  setSig('#sgRes', v && v.width && v.height ? `${v.width}×${v.height}` : '—');
-  $('#sgResL').textContent = v && v.codec ? `Resolution · ${CODEC[v.codec] || v.codec}` : 'Resolution';
-  setSig('#sgFps', v && v.fps ? `${v.fps} fps` : '—');
-  const a = sg.audio;
-  setSig('#sgAudio', a ? [CODEC[a.codec] || a.codec, a.rate ? `${a.rate / 1000} kHz` : null].filter(Boolean).join(' · ') : '—');
-  // keyframe interval: more than 4 seconds is too long for Facebook and YouTube
-  const kf = sg.keyframe;
-  const tooLong = kf != null && kf > 4.05;
-  setSig('#sgKey', kf == null ? '—' : (tooLong ? '⚠ ' : '') + kf.toFixed(1) + ' sec');
-  $('#kfBox').classList.toggle('warn', tooLong);
-  $('#kfNote').hidden = !tooLong;
-  $('#ovTime').textContent = sg.startedAt ? fmtTime(Date.now() - sg.startedAt) : '00:00:00';
+function renderSignal() {}
 
-  // small line graph of the bitrate over the last minute
-  const h = sg.history;
-  if (h.length > 1) {
-    const max = Math.max(...h, 1);
-    const step = 300 / (h.length - 1);
-    $('#sparkLine').setAttribute('points', h.map((val, i) => `${(i * step).toFixed(1)},${(58 - (val / max) * 54).toFixed(1)}`).join(' '));
-    $('#sparkNote').textContent = `Bitrate, last minute (highest ${fmtRate(max)})`;
-  }
-}
 setInterval(() => { if (last.obsLive && last.signal && last.signal.startedAt) $('#ovTime').textContent = fmtTime(Date.now() - last.signal.startedAt); }, 1000);
 
 // ---------- video preview ----------
@@ -1254,27 +1316,7 @@ setInterval(() => {
 
 function render(state) {
   last = state;
-  const live = state.obsLive;
-  const n = state.destinations.filter((d) => d.enabled).length;
-  const nLive = state.destinations.filter((d) => d.enabled && d.status.state === 'live').length;
-
-  const chip = $('#chip');
-  chip.textContent = live ? 'LIVE' : 'OFFLINE';
-  chip.className = 'chip' + (live ? ' live' : '');
-  document.querySelector('.stage').classList.toggle('live', live);
-  $('#offlineView').hidden = live;
-  $('#liveView').hidden = !live;
-  $('#stageIn').classList.toggle('wide', live);
-  $('#glHint').textContent = live ? '' : 'Start Streaming in the Studio first. Then Go live turns on.';
-  $('#lvLead').textContent = `Your stream is going to ${nLive} of ${n} active channel${n === 1 ? '' : 's'}.`;
-  renderSignal(state);
-  syncPreview();
-  $('#count').innerHTML = `<b>${n} of ${state.destinations.length}</b> active`;
-
-  if (editing.size) return; // do not redraw while an edit form is open
-  $('#list').innerHTML = state.destinations.length
-    ? state.destinations.map(rowHTML).join('')
-    : '<div class="empty">No channels yet. Click Add Channel.</div>';
+  if (window.drawGoLive) window.drawGoLive(state);
 }
 
 function openEdit(rowEl, d) {
@@ -1375,13 +1417,13 @@ function pollThumbs() {}
 // Multiview and the page switcher
 let page = 'dash';
 let crPrev = '';
-const pageTabs = document.querySelectorAll('#pageTabs button');
+const pageTabs = document.querySelectorAll('#sideNav [data-page]');
 // ---------------- pages in the side menu (other than Go Live and Multiview) ----------------
 const XPAGES = {};
 // Auto start: the plan the Studio runs when you press Start streaming (edited here), and its progress while it runs
 (() => {
   let plan = null;
-  const paintBtn = () => { const b = $('#asBtn'); b.textContent = 'Auto start: ' + (plan && plan.on ? 'On' : 'Off'); b.classList.toggle('on', Boolean(plan && plan.on)); };
+  const paintBtn = () => { const b = $('#asBtn'); (b.querySelector('span') || b).textContent = 'Auto start: ' + (plan && plan.on ? 'On' : 'Off'); b.classList.toggle('on', Boolean(plan && plan.on)); };
   async function load() { try { plan = await api('/api/autostart'); } catch { return; } paintBtn(); const r = plan.run || {}; $('#asRun').hidden = !r.running; if (r.running) $('#asRunT').textContent = '· step ' + r.step + ' of ' + r.total + ' · ' + r.label + (r.left != null ? ' · ' + Math.floor(r.left / 60) + ':' + String(r.left % 60).padStart(2, '0') + ' left' : r.waiting ? ' · waiting for Next' : ''); }
   load(); setInterval(load, 1500);
   $('#asRunNext').onclick = () => api('/api/autostart/cmd', 'POST', { cmd: 'next' });
@@ -1452,44 +1494,342 @@ const XPAGES = {};
     draw(); document.body.appendChild(w);
   };
 })();
-// Go Live while live: a short Stream health in the side; a tall (9:16) stream shows a tall preview
+// ======================= Go Live (as in the design) =======================
+// The Studio runs inside this window (hidden while you look at other pages), so streaming never stops when you move around.
 (() => {
-  const STATE = { live: 'Good', starting: 'Starting', error: 'Trouble', off: 'Off' };
-  let collName = '';
-  async function tick() {
-    if (page !== 'dash' || !last.obsLive) { $('#glHealth').hidden = true; $('.app').classList.remove('tall'); $('#pvIg').hidden = true; return; }
+  const ICON_PEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
+  const PLAT = { yt: 'YouTube', fb: 'Facebook', ig: 'Instagram', tt: 'TikTok', tw: 'Twitch', x: 'X', other: 'Custom RTMP' };
+  let st = null, health = null, studioFrame = null, starting = false;
+  const prefs = (() => { try { return JSON.parse(localStorage.getItem('ms_api_on') || '{}') || {}; } catch { return {}; } })();
+  const savePrefs = () => { try { localStorage.setItem('ms_api_on', JSON.stringify(prefs)); } catch {} };
+  const apiOn = (site) => prefs[site] !== false;
+  const fmtClock = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return String(Math.floor(s / 3600)).padStart(2, '0') + ':' + String(Math.floor(s / 60) % 60).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+
+  // ---------- the Studio inside this window ----------
+  const isMv = location.hash === '#control-room';
+  function studio() {
+    if (studioFrame) return studioFrame;
+    const f = document.createElement('iframe');
+    f.src = '/studio.html?embed=1'; f.title = 'Studio';
+    f.allow = 'camera; microphone; display-capture; autoplay; fullscreen; clipboard-read; clipboard-write';
+    $('#studioView').appendChild(f); studioFrame = f; return f;
+  }
+  const sw = () => { try { return studioFrame && studioFrame.contentWindow; } catch { return null; } };
+  const studioReady = () => { const w = sw(); return Boolean(w && typeof w.msStart === 'function'); };
+  async function waitStudio(ms) { const t0 = Date.now(); studio(); while (!studioReady() && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 200)); return studioReady(); }
+  // start the Studio a moment after the app opens, so its picture shows here before going live
+  if (window.msNative && !isMv) setTimeout(() => { try { if (localStorage.getItem('ms_studio_window') !== '1') studio(); } catch { studio(); } }, 1200);
+  let navWasSmall = null;
+  XPAGES.studio = { title: 'Studio', el: 'studioView',
+    // like the design: the menu shows only icons next to the Studio
+    open() { studio(); $('#studioView').classList.remove('bg'); if (navWasSmall === null) { navWasSmall = document.documentElement.classList.contains('nav-small'); document.documentElement.classList.add('nav-small'); } setTimeout(() => { try { studioFrame.contentWindow.focus(); } catch {} }, 50); },
+    close() { $('#studioView').classList.add('bg'); if (navWasSmall !== null) { document.documentElement.classList.toggle('nav-small', navWasSmall); navWasSmall = null; } } };
+  $('#glpStudio').onclick = () => showPage('studio');
+  $('#openStudioBtn').onclick = () => showPage('studio');
+
+  // ---------- titles for each site (All channels, or only YouTube or Facebook) ----------
+  let tab = 'all';
+  const titles = (() => { try { return JSON.parse(localStorage.getItem('ms_titles') || '{}') || {}; } catch { return {}; } })();
+  const saveTitles = () => { try { localStorage.setItem('ms_titles', JSON.stringify(titles)); } catch {} };
+  const allT = () => (tab === 'all' ? { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() } : titles.all || { t: '', d: '' });
+  function titleFor(site) { const a = allT(), o = site === 'all' ? null : tab === site ? { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() } : titles[site]; return { title: (o && o.t) || a.t, description: (o && o.d) || a.d }; }
+  function setTab(t) {
+    titles[tab] = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() };
+    tab = t; const v = titles[t] || { t: '', d: '' };
+    $('#glTitle').value = v.t || ''; $('#glDesc').value = v.d || '';
+    $('#glTitle').placeholder = t === 'all' ? 'Title (the date is used if empty)' : 'Same as All channels: ' + ((titles.all && titles.all.t) || 'the date');
+    $('#glDesc').placeholder = t === 'all' ? 'What is this stream about?' : 'Same as All channels';
+    $('#glTitleL').textContent = t === 'all' ? 'Title' : 'Title on ' + (t === 'yt' ? 'YouTube' : 'Facebook');
+    document.querySelectorAll('#sdTabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+    saveTitles(); paintTitle();
+  }
+  document.querySelectorAll('#sdTabs button').forEach((b) => { b.onclick = () => setTab(b.dataset.t); });
+  setTimeout(() => { titles.all = titles.all || { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() }; }, 1600);
+  const paintTitle = () => { const t = titleFor('all').title; $('#glpTitle').textContent = t || 'Live ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); $('#thBig').textContent = t || 'Your stream'; };
+  $('#glTitle').addEventListener('input', () => { if (tab === 'all') titles.all = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() }; else titles[tab] = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() }; saveTitles(); paintTitle(); });
+
+  // ---------- the channels: one list (sign-in channels and stream-key channels together) ----------
+  function channels(s) {
+    const out = [], hid = new Set();
+    const yt = s.youtube || {}, fbs = s.facebook || {};
+    const keyOf = (re) => s.destinations.find((d) => re.test(d.name));
+    if (yt.connected) { const d = keyOf(/youtube/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'youtube', c: 'yt', name: 'YouTube', on: apiOn('youtube'), dest: d, session: Boolean(s.session && s.session.youtube), sub: yt.channelTitle || '' }); }
+    if (fbs.hasToken && fbs.pageId) { const d = keyOf(/facebook/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'facebook', c: 'fb', name: 'Facebook', on: apiOn('facebook'), dest: d, session: Boolean(s.session && s.session.facebook), sub: fbs.pageName || '' }); }
+    s.destinations.forEach((d) => { if (!hid.has(d.id)) out.push({ kind: 'key', c: platform(d.name).c, name: d.name, on: d.enabled, dest: d }); });
+    return out;
+  }
+  function stateOf(ch, live) {
+    const d = ch.dest, ds = d && d.status ? d.status.state : 'off';
+    if (!ch.on) return { t: 'Off', cls: '' };
+    if (live && d && d.enabled && ds === 'live') return { t: 'Live' + (d.stats && d.stats.kbps ? ' · ' + (d.stats.kbps / 1000).toFixed(1) + ' Mbit/s' : ''), cls: 'live' };
+    if (live && d && d.enabled && ds === 'error') return { t: 'Problem', cls: 'bad', msg: d.status.message };
+    if (live && d && d.enabled && ds === 'starting') return { t: 'Starting', cls: '' };
+    if (ch.kind === 'key' && !d.hasKey) return { t: 'Needs a stream key', cls: 'bad' };
+    return { t: 'Ready', cls: '' };
+  }
+  function row(ch, live, small) {
+    const r = document.createElement('div'); r.className = 'cc' + (small ? ' sm' : '') + (ch.on && !small ? ' on' : '');
+    const s2 = stateOf(ch, live); if (s2.cls === 'bad' && !small) r.classList.add('err');
+    r.innerHTML = tileHTML(ch.c) + '<div class="cmn"><div class="nm"></div><div class="sub"></div></div>' + (small ? '' : '<button type="button" class="ed" title="Edit">' + ICON_PEN + '</button>') + '<button type="button" class="tg2" role="switch"></button>';
+    const nm = r.querySelector('.nm'); nm.textContent = ch.name;
+    if (!small) { if (live && s2.cls === 'live') { const x = document.createElement('div'); x.className = 'st live'; x.textContent = s2.t; nm.after(x); } else { const x = document.createElement('small'); x.textContent = ' · ' + s2.t; nm.appendChild(x); } }
+    const sub = r.querySelector('.sub');
+    if (small) sub.remove();
+    else if (s2.msg) { sub.textContent = s2.msg; sub.title = s2.msg; sub.style.color = '#ff8a90'; }
+    else sub.textContent = ch.kind === 'api' ? (titleFor(ch.c).title || ch.sub) : ch.dest.hasKey ? (live ? 'Stream key' : 'Stream key saved') : 'Add its stream key';
+    if (!sub.textContent) sub.remove();
+    const tg = r.querySelector('.tg2'); tg.classList.toggle('on', ch.on); tg.setAttribute('aria-checked', String(ch.on)); tg.setAttribute('aria-label', ch.name + (ch.on ? ' on' : ' off'));
+    tg.onclick = () => toggleCh(ch, !ch.on);
+    const ed = r.querySelector('.ed'); if (ed) ed.onclick = () => editChannel(ch);
+    if (small) r.onclick = (e) => { if (e.target !== tg) editChannel(ch); };
+    return r;
+  }
+  async function toggleCh(ch, on) {
+    if (ch.kind === 'api') {
+      prefs[ch.site] = on; savePrefs();
+      if (!on && ch.session) { if (confirm('End the live on ' + ch.name + ' now?')) { await api('/api/' + ch.site + '/end', 'POST'); } }
+      else if (on && st && st.obsLive && !ch.session) await goLiveOn(ch.site);
+      else if (!on && ch.dest && ch.dest.enabled) await api('/api/destinations/' + ch.dest.id, 'PUT', { enabled: false });
+    } else await api('/api/destinations/' + ch.dest.id, 'PUT', { enabled: on });
+    refresh();
+  }
+  window.drawGoLive = (s) => {
+    st = s; const live = s.obsLive, chs = channels(s);
+    // the side menu's live box and the header
+    const nl = $('#navLive'); nl.classList.toggle('on', live); $('#navLiveT').textContent = live ? 'LIVE' : 'Offline';
+    $('#navLiveS').textContent = live && s.signal && s.signal.startedAt ? fmtClock(Date.now() - s.signal.startedAt) : 'Ready';
+    const sb = $('#sbBtn'); if (!starting) { sb.classList.toggle('stop', live); sb.querySelector('span').textContent = live ? 'Stop streaming' : 'Start streaming'; sb.disabled = false; }
+    $('#glUpd').hidden = !(live && s.session && (s.session.youtube || s.session.facebook));
+    $('#asBtn').hidden = live;
+    // preview
+    $('#ovState').textContent = live ? 'LIVE' : 'OFFLINE'; $('#ovState').classList.toggle('live', live);
+    $('#ovPrev').hidden = live; $('#ovTime').hidden = !live;
+    if (live && s.signal && s.signal.startedAt) $('#ovTime').textContent = fmtClock(Date.now() - s.signal.startedAt);
+    $('#glpSide').hidden = !live;
+    const onList = chs.filter((c) => c.on);
+    const sites = onList.map((c) => c.name).join(' + ') || 'no channels yet';
+    const out = (s.studio && s.studio.out) || '';
+    $('#glpSub').textContent = (live ? sites : 'Will go to ' + sites) + (out ? ' · ' + out.replace(/, [\d.]+ Mbit.*$/, '').replace(/ (\d+) fps/, ' · $1 fps') : '') + (live && studioRec() ? ' · recording in the Studio' : '');
+    paintTitle();
+    // channels
+    const L = $('#chList'), O = $('#chOff'); L.textContent = ''; O.textContent = '';
+    if (live) {
+      const on = chs.filter((c) => c.on), off = chs.filter((c) => !c.on);
+      $('#count').textContent = on.filter((c) => stateOf(c, true).cls === 'live').length + ' of ' + chs.length + ' live';
+      on.forEach((c) => L.appendChild(row(c, true)));
+      if (off.length) { const h = document.createElement('div'); h.className = 'ch-lbl'; h.textContent = 'Turned off'; O.appendChild(h); off.forEach((c) => O.appendChild(row(c, true, true))); }
+      $('#addBtn').hidden = true;
+    } else {
+      const ready = chs.filter((c) => c.on && stateOf(c, false).t === 'Ready').length;
+      $('#count').textContent = ready + ' ready';
+      chs.forEach((c) => L.appendChild(row(c, false)));
+      $('#addBtn').hidden = false;
+    }
+    // while live: health under the preview instead of the stream details
+    $('#glHealth').hidden = !live; $('#glDetails').hidden = live;
+    syncPreview(); offlinePreview();
+  };
+  const studioRec = () => { try { const w = sw(); return Boolean(w && w.msState && w.msState().recording); } catch { return false; } };
+  setInterval(() => { if (st && st.obsLive && st.signal && st.signal.startedAt) { const t = fmtClock(Date.now() - st.signal.startedAt); $('#navLiveS').textContent = t; $('#ovTime').textContent = t; } }, 1000);
+
+  // ---------- before going live: the Studio's own picture ----------
+  function offlinePreview() {
+    const live = st && st.obsLive, w = sw();
+    let cv = null; try { cv = w && w.document && w.document.getElementById('cv'); } catch {}
+    const show = !live && Boolean(cv) && page === 'dash';
+    $('#pvStudio').hidden = !show; $('#offlineView').hidden = live || Boolean(cv);
+    $('#pv').hidden = !live;
+  }
+  setInterval(() => {
+    if (page !== 'dash' || (st && st.obsLive) || document.hidden) return;
+    let cv = null; try { const w = sw(); cv = w && w.document && w.document.getElementById('cv'); } catch {}
+    if (!cv || !cv.width) return;
+    const c = $('#pvStudio'); if (c.width !== cv.width || c.height !== cv.height) { c.width = cv.width; c.height = cv.height; }
+    try { c.getContext('2d').drawImage(cv, 0, 0); } catch {}
+    offlinePreview();
+  }, 100);
+  // Listen: hear the stream (the live preview's sound) on this computer
+  $('#glpListen').onclick = () => {
+    const v = $('#pv'); if (!(st && st.obsLive)) { alert('Listen works while you are live. Before that, use Listen in headphones in the Studio’s Audio Mixer.'); return; }
+    v.muted = !v.muted; $('#glpListen').classList.toggle('on', !v.muted); $('#glpListen').querySelector('span').textContent = v.muted ? 'Listen' : 'Listening';
+  };
+
+  // ---------- Private test ----------
+  const paintPt = () => { const on = $('#fbTest').checked; $('#ptBtn').textContent = 'Private test: ' + (on ? 'on' : 'off'); $('#ptBtn').classList.toggle('pt-on', on); $('#ptBtn').title = on ? 'Only you can see the live on YouTube and Facebook. Turn off for the real thing.' : 'Everyone can watch when you go live'; };
+  $('#ptBtn').onclick = () => { $('#fbTest').checked = !$('#fbTest').checked; $('#fbTest').dispatchEvent(new Event('change')); paintPt(); };
+  paintPt();
+
+  // ---------- Start / Stop streaming ----------
+  async function goLiveOn(site) {
+    const t = titleFor(site === 'youtube' ? 'yt' : 'fb');
+    const r = await api('/api/' + site + '/live', 'POST', { test: $('#fbTest').checked, title: t.title, description: t.description });
+    if (r && r.error) alert((site === 'youtube' ? 'YouTube' : 'Facebook') + ': ' + r.error);
+    else if (r && r.thumbnailError) alert('You are live on YouTube, but YouTube did not take the thumbnail: ' + r.thumbnailError);
+  }
+  $('#sbBtn').onclick = async () => {
+    const sb = $('#sbBtn');
+    if (st && st.obsLive) {
+      if (!confirm('Stop streaming now? Every channel stops.')) return;
+      starting = true; sb.disabled = true; sb.querySelector('span').textContent = 'Stopping...';
+      const w = sw(); if (w && w.msStop) w.msStop();
+      if (st.session && st.session.youtube) await api('/api/youtube/end', 'POST');
+      if (st.session && st.session.facebook) await api('/api/facebook/end', 'POST');
+      starting = false; refresh(); return;
+    }
+    const chs = st ? channels(st) : [], apis = chs.filter((c) => c.kind === 'api' && c.on);
+    if (!chs.some((c) => c.on)) { if (!confirm('No channel is on. Start streaming anyway (only the Studio and recording)?')) return; }
+    if (apis.length && !$('#fbTest').checked && !confirm('Private test is off. This goes live publicly on ' + apis.map((c) => c.name).join(' and ') + '. Continue?')) return;
+    let usePlan = false;
+    try { const plan = await api('/api/autostart'); if (plan && plan.on && (plan.steps || []).length) usePlan = plan.ask ? await askPlan(plan) : true; } catch {}
+    if (usePlan === null) return;
+    starting = true; sb.disabled = true; sb.querySelector('span').textContent = 'Starting...';
+    if (!(await waitStudio(20000))) { starting = false; sb.disabled = false; alert('The Studio did not start. Open the Studio page and try again.'); return; }
+    await sw().msStart(usePlan);
+    // wait for the picture to arrive, then go live on the sign-in channels
+    const t0 = Date.now(); let s2 = st;
+    while (Date.now() - t0 < 25000) { await new Promise((r) => setTimeout(r, 700)); try { s2 = await api('/api/state'); } catch {} if (s2 && s2.obsLive) break; }
+    if (s2 && s2.obsLive) for (const c of apis) if (!(s2.session && s2.session[c.site])) await goLiveOn(c.site);
+    else if (!(s2 && s2.obsLive)) alert('The Studio started, but no picture arrived yet. Check the Studio page.');
+    starting = false; refresh();
+  };
+  function askPlan(plan) {
+    return new Promise((ok) => {
+      const w = document.createElement('div'); w.className = 'mdl'; const d = document.createElement('div'); d.style.width = 'min(480px, 94vw)'; w.appendChild(d);
+      d.innerHTML = '<h3>Use the Auto start plan?</h3><p class="note"></p><ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:13.5px"></ol><div class="row"><span class="grow"></span><button type="button" class="btn a1">Go live straight</button><button type="button" class="btn pri a2">Use the plan</button></div>';
+      d.querySelector('.note').textContent = 'Plan: ' + plan.name + '. Check the steps, so an old video does not play by mistake.';
+      plan.steps.forEach((x) => { const li = document.createElement('li'); li.textContent = x.type === 'video' ? 'Play a video · ' + (x.name || 'video') : 'Show scene · ' + x.scene; d.querySelector('ol').appendChild(li); });
+      const end = (v) => { w.remove(); ok(v); };
+      w.onclick = (e) => { if (e.target === w) end(null); };
+      d.querySelector('.a1').onclick = () => end(false); d.querySelector('.a2').onclick = () => end(true);
+      document.body.appendChild(w);
+    });
+  }
+  // Update title for all channels (while live)
+  $('#glUpd').onclick = () => {
+    const w = document.createElement('div'); w.className = 'mdl'; const d = document.createElement('div'); d.style.width = 'min(560px, 94vw)'; w.appendChild(d);
+    d.innerHTML = '<h3>Update title for all channels</h3><label>Title<input type="text" maxlength="100" class="u1"></label><label>Description<input type="text" maxlength="5000" class="u2"></label><p class="note">Changes the title on YouTube and Facebook now. Viewers see it in a moment.</p><div class="row"><span class="grow"></span><button type="button" class="btn c">Cancel</button><button type="button" class="btn pri o">Update</button></div>';
+    const a = titleFor('all'); d.querySelector('.u1').value = a.title; d.querySelector('.u2').value = a.description;
+    w.onclick = (e) => { if (e.target === w) w.remove(); }; d.querySelector('.c').onclick = () => w.remove();
+    d.querySelector('.o').onclick = async () => {
+      const title = d.querySelector('.u1').value.trim(), description = d.querySelector('.u2').value.trim(); if (!title) return;
+      const r = await api('/api/golive/title', 'POST', { title, description });
+      if (r && r.error) { alert(r.error); return; }
+      if (tab !== 'all') setTab('all'); $('#glTitle').value = title; $('#glDesc').value = description; titles.all = { t: title, d: description }; saveTitles(); paintTitle(); w.remove();
+    };
+    document.body.appendChild(w); d.querySelector('.u1').focus();
+  };
+
+  // ---------- Add a channel ----------
+  const KEYSRV = { yt: 'rtmp://a.rtmp.youtube.com/live2', fb: 'rtmps://live-api-s.facebook.com:443/rtmp/', tw: 'rtmp://live.twitch.tv/app', ig: '', tt: '', other: '' };
+  function addChannel(pre) {
+    let pick = pre || 'yt';
+    const w = document.createElement('div'); w.className = 'mdl'; const d = document.createElement('div'); w.appendChild(d);
+    const close = () => w.remove(); w.onclick = (e) => { if (e.target === w) close(); };
+    function draw() {
+      d.innerHTML = '<h3>Add a channel</h3><button type="button" class="x" aria-label="Close">×</button><div class="pf-grid"></div><div class="pf-box"></div>';
+      d.querySelector('.x').onclick = close;
+      const g = d.querySelector('.pf-grid');
+      [['yt', 'Sign in'], ['fb', 'Sign in · pick a Page'], ['ig', 'Stream key'], ['tt', 'Stream key'], ['tw', 'Stream key'], ['other', 'Server + key']].forEach(([c, sub]) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = c === pick ? 'on' : ''; b.innerHTML = tileHTML(c) + '<span><b></b><small></small></span>'; b.querySelector('b').textContent = PLAT[c]; b.querySelector('small').textContent = sub; b.onclick = () => { pick = c; draw(); }; g.appendChild(b);
+      });
+      const box = d.querySelector('.pf-box'); const h = document.createElement('b'); h.textContent = PLAT[pick]; box.appendChild(h);
+      const keyForm = (withServer) => {
+        const f = document.createElement('div'); f.style.cssText = 'display:flex;flex-direction:column;gap:12px';
+        f.innerHTML = '<label>Name shown in Multistream<input type="text" class="k0"></label>' + (withServer ? '<label>Server<input type="text" class="k1" placeholder="rtmp:// or rtmps://"></label>' : '') + '<label>Stream key<input type="password" class="k2" placeholder="xxxx-xxxx-xxxx-xxxx" autocomplete="off"></label><div class="row"><span class="grow"></span><button type="button" class="btn pri ok">Add channel</button></div>';
+        f.querySelector('.k0').value = PLAT[pick] === 'Custom RTMP' ? '' : PLAT[pick];
+        if (withServer) f.querySelector('.k1').value = KEYSRV[pick] || '';
+        f.querySelector('.ok').onclick = async () => {
+          const name = f.querySelector('.k0').value.trim() || PLAT[pick], url = withServer ? f.querySelector('.k1').value.trim() : KEYSRV[pick], key = f.querySelector('.k2').value.trim();
+          if (!url) { alert('Type the server address.'); return; }
+          const r = await api('/api/destinations', 'POST', { name, url, key }); if (r && r.error) { alert(r.error); return; }
+          close(); refresh();
+        };
+        return f;
+      };
+      if (pick === 'yt' || pick === 'fb') {
+        const two = document.createElement('div'); two.className = 'pf-two';
+        const a = document.createElement('div'); a.className = 'on'; a.innerHTML = '<b>Easy way: sign in</b><p class="note"></p><div class="row"><button type="button" class="btn pri si"></button></div>';
+        a.querySelector('.si').textContent = 'Sign in with ' + PLAT[pick];
+        a.querySelector('.note').textContent = pick === 'yt' ? 'Multistream makes the live on your channel each time, with your title and thumbnail, and reads the chat.' : 'Pick the Page. Multistream makes the live on it each time, with your title, and reads the comments.';
+        a.querySelector('.si').onclick = () => { close(); openSettings(pick === 'yt' ? 'youtube' : 'facebook'); };
+        const b = document.createElement('div'); const hb = document.createElement('b'); hb.textContent = 'Or paste a stream key'; b.appendChild(hb); b.appendChild(keyForm(pick === 'fb'));
+        two.append(a, b); box.appendChild(two);
+      } else {
+        box.appendChild(keyForm(true));
+        const n = document.createElement('p'); n.className = 'note';
+        n.textContent = pick === 'ig' ? 'In the Instagram app, start a live with "Streaming software". It shows a server and a stream key. Both change each time.' : pick === 'tt' ? 'TikTok LIVE Studio or LIVE Producer shows a server and a stream key.' : pick === 'tw' ? 'Twitch Dashboard, Settings, Stream: copy the Primary Stream key.' : 'Any site that takes RTMP: paste its server and stream key.';
+        box.appendChild(n);
+      }
+    }
+    draw(); document.body.appendChild(w);
+  }
+  $('#addBtn').onclick = () => addChannel();
+
+  // ---------- Edit a channel ----------
+  function editChannel(ch) {
+    const w = document.createElement('div'); w.className = 'mdl'; const d = document.createElement('div'); d.style.width = 'min(680px, 94vw)'; w.appendChild(d);
+    const close = () => w.remove(); w.onclick = (e) => { if (e.target === w) close(); };
+    const st2 = stateOf(ch, st && st.obsLive);
+    d.innerHTML = '<div class="row"><div class="who">' + tileHTML(ch.c) + '<div><b></b><small></small></div></div><span class="grow"></span><button type="button" class="x" aria-label="Close" style="position:static">×</button></div><div class="f" style="display:flex;flex-direction:column;gap:14px"></div><div class="row"><button type="button" class="btn del rm">Remove channel</button><span class="grow"></span><button type="button" class="btn c">Cancel</button><button type="button" class="btn pri o">Save</button></div>';
+    d.querySelector('.who b').textContent = ch.name;
+    d.querySelector('.who small').textContent = ch.kind === 'api' ? 'Signed in' + (ch.sub ? ' · ' + ch.sub : '') : st2.t;
+    d.querySelector('.x').onclick = close; d.querySelector('.c').onclick = close;
+    const f = d.querySelector('.f');
+    if (ch.kind === 'api') {
+      f.innerHTML = '<div class="signin"><span>Sign-in</span><span class="grow" style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div><p class="note"></p>';
+      f.querySelector('.note').textContent = 'When this channel is on, Start streaming makes the live on ' + ch.name + ' with your title' + (ch.site === 'youtube' ? ' and thumbnail' : '') + '. Private test (at the top) makes it visible only to you.';
+      f.querySelector('.sa').onclick = () => { close(); openSettings(ch.site); };
+      d.querySelector('.rm').textContent = 'Sign out';
+      d.querySelector('.rm').onclick = () => { close(); openSettings(ch.site); };
+      d.querySelector('.o').onclick = close;
+    } else {
+      const x = ch.dest;
+      f.innerHTML = '<label>Name shown in Multistream<input type="text" class="e1"></label><label>Server<input type="text" class="e2" placeholder="rtmps://..."></label><label>Stream key<input type="password" class="e3" autocomplete="off"></label><p class="note"></p>';
+      f.querySelector('.e1').value = x.name; f.querySelector('.e2').value = x.url || '';
+      f.querySelector('.e3').placeholder = x.hasKey ? 'Saved, ends in ' + x.keyEnd + ' (leave empty to keep it)' : 'Paste the stream key';
+      f.querySelector('.note').textContent = st2.msg || '';
+      if (x.status && x.status.state === 'error') { const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'btn'; rs.textContent = 'Restart'; rs.onclick = async () => { await api('/api/destinations/' + x.id + '/restart', 'POST'); close(); refresh(); }; d.querySelector('.c').before(rs); }
+      d.querySelector('.rm').onclick = async () => { if (!confirm('Remove ' + x.name + '?')) return; await api('/api/destinations/' + x.id, 'DELETE'); close(); refresh(); };
+      d.querySelector('.o').onclick = async () => {
+        const r = await api('/api/destinations/' + x.id, 'PUT', { name: f.querySelector('.e1').value.trim() || x.name, url: f.querySelector('.e2').value.trim(), key: f.querySelector('.e3').value.trim() });
+        if (r && r.error) { alert(r.error); return; } close(); refresh();
+      };
+    }
+    document.body.appendChild(w);
+  }
+
+  // ---------- chat: the newest comment on the picture, and the full chat in place of the channels ----------
+  let chatOpen = false;
+  const openChat = (on) => { chatOpen = on; $('#chatCard').hidden = !on; $('#chCard').hidden = on; $('#glChatBtn').classList.toggle('on', on); };
+  $('#glChatBtn').onclick = () => openChat(!chatOpen); $('#chatBack').onclick = () => openChat(false);
+  new MutationObserver(() => {
+    const ms = document.querySelectorAll('#chatList .cm'), n = ms.length; $('#glChatN').textContent = n;
+    $('#chatCnt').textContent = n ? n + (n === 1 ? ' message' : ' messages') : '';
+    const m = ms[n - 1]; if (!m) { $('#glpMsg').hidden = true; return; }
+    const who = m.querySelector('b') ? m.querySelector('b').textContent : '', txt = m.querySelector('div') ? m.querySelector('div').textContent.slice(who.length) : '';
+    $('#glpWho').textContent = who; $('#glpTxt').textContent = txt; $('#glpAv').textContent = (who[0] || '?').toUpperCase(); $('#glpMsg').hidden = !(st && st.obsLive);
+    clearTimeout(window.__msgT); window.__msgT = setTimeout(() => { $('#glpMsg').hidden = true; }, 12000);
+  }).observe($('#chatList'), { childList: true });
+
+  // ---------- stream health under the preview (while live) ----------
+  const HS = { live: 'Good', starting: 'Starting', error: 'Trouble', off: 'Off' };
+  setInterval(async () => {
+    if (page !== 'dash' || !(st && st.obsLive)) return;
     let h; try { h = await api('/api/health'); } catch { return; }
-    $('#glHealth').hidden = false;
+    health = h;
     const mb = (k) => (k / 1000).toFixed(1), bad = h.channels.some((c) => c.enabled && c.state === 'error'), drop = h.frames ? (h.drops / h.frames) * 100 : 0;
     const bg = $('#ghBadge'); bg.className = 'hl-badge ' + (bad || !h.ok ? 'bad' : drop > 1 || h.cpu > 85 ? 'ok' : 'good'); bg.textContent = bad || !h.ok ? '● Needs a look' : drop > 1 || h.cpu > 85 ? '● OK' : '● Excellent';
     const hist = h.history || [], avg = hist.length ? hist.reduce((a, b) => a + b, 0) / hist.length : 0, vary = avg ? Math.max(...hist.map((k) => Math.abs(k - avg))) / avg : 0;
-    $('#ghK').textContent = mb(h.kbps); const kn = $('#ghKn'); kn.textContent = vary < 0.35 ? 'Steady' : 'Going up and down'; kn.className = vary < 0.35 ? 'good' : 'bad';
-    $('#ghF').textContent = h.fps ? Math.round(h.fps) : '–'; $('#ghFn').textContent = h.size || '';
+    $('#ghK').textContent = mb(h.kbps); const kn = $('#ghKn'); kn.textContent = vary < 0.35 ? 'Steady' : 'Going up and down'; kn.className = vary < 0.35 ? '' : 'bad';
+    if (hist.length > 1) { const mx = Math.max(...hist, 1); $('#ghSpark').setAttribute('points', hist.map((v, i) => ((i / (hist.length - 1)) * 120).toFixed(1) + ',' + (18 - (v / mx) * 16).toFixed(1)).join(' ')); }
+    $('#ghF').textContent = h.fps ? Math.round(h.fps) : '–'; const fn = $('#ghFn'); fn.textContent = h.fps ? 'Smooth' : ''; fn.className = 'good';
     $('#ghD').textContent = h.drops.toLocaleString(); const dn = $('#ghDn'); dn.textContent = h.frames ? drop.toFixed(1) + '%' + (h.drops ? '' : ' · none lost') : ''; dn.className = drop > 1 ? 'bad' : '';
-    $('#ghC').textContent = h.cpu; const cn = $('#ghCn'); cn.textContent = 'Memory ' + h.memory + '%'; cn.className = h.cpu > 85 ? 'bad' : '';
+    $('#ghC').textContent = h.cpu; const cn = $('#ghCn'); cn.textContent = 'Processor · memory ' + h.memory + '%'; cn.className = h.cpu > 85 ? 'bad' : '';
     const ch = $('#ghCh'); ch.textContent = '';
-    h.channels.filter((c) => c.enabled).forEach((c) => { const r = document.createElement('div'); r.innerHTML = '<span></span><span></span><span></span>'; r.children[0].textContent = c.name; r.children[1].textContent = c.kbps ? mb(c.kbps) + ' Mbit/s' : ''; r.children[2].className = 'hl-st ' + c.state; r.children[2].textContent = '● ' + (STATE[c.state] || c.state); ch.appendChild(r); });
-    // a tall stream (a 9:16 scene collection)
-    const m = /^(\d+)x(\d+)$/.exec(h.size || ''), tall = Boolean(m && Number(m[2]) > Number(m[1]));
-    $('.app').classList.toggle('tall', tall); $('#pvIg').hidden = !tall;
-    if (tall) {
-      const s = Math.floor((Date.now() - h.startedAt) / 1000); $('#igFor').textContent = (s >= 3600 ? Math.floor(s / 3600) + ':' : '') + String(Math.floor(s / 60) % 60).padStart(s >= 3600 ? 2 : 1, '0') + ':' + String(s % 60).padStart(2, '0');
-      try { const st = await api('/api/studio?rev=0'); if (st && st.current) $('#igScene').textContent = st.current; } catch {}
-      if (!collName) { try { collName = (await api('/api/collections')).current || ''; } catch {} } $('#igColl').textContent = collName || '–';
-    } else collName = '';
-  }
-  setInterval(tick, 2000);
+    h.channels.filter((c) => c.enabled).forEach((c) => { const r = document.createElement('div'); r.innerHTML = tileHTML(platform(c.name).c) + '<span></span><span class="r"></span><span></span>'; r.children[1].textContent = c.name; r.children[2].textContent = c.kbps ? mb(c.kbps) + ' Mbit/s' : ''; r.children[3].className = 'hl-st ' + c.state; r.children[3].textContent = '● ' + (HS[c.state] || c.state); ch.appendChild(r); });
+    const m = /^(\d+)x(\d+)$/.exec(h.size || ''); $('.app').classList.toggle('tall', Boolean(m && Number(m[2]) > Number(m[1])));
+  }, 2000);
   $('#ghMore').onclick = () => showPage('health');
-})();
-// Analytics: your own live dashboard website, shown inside the app (the address can be changed)
-(() => {
-  const DEF = 'https://live.fcchq.workers.dev';
-  const get = () => { try { const v = localStorage.getItem('ms_dash_url'); return v == null ? DEF : v; } catch { return DEF; } };
-  const show = () => { const u = get(); $('#anAddr').textContent = u ? 'Live dashboard: ' + u.replace(/^https?:\/\//, '') : 'No dashboard yet'; $('#anNone').hidden = Boolean(u); $('#anFrame').hidden = !u; if (u && $('#anFrame').dataset.src !== u) { $('#anFrame').dataset.src = u; $('#anFrame').src = u; } };
-  $('#anReload').onclick = () => { const f = $('#anFrame'); if (f.dataset.src) f.src = f.dataset.src; };
-  $('#anOpen').onclick = () => { const u = get(); if (u) window.open(u, '_blank'); };
-  $('#anEdit').onclick = () => { const v = prompt('Address of your live dashboard (leave empty to remove it):', get()); if (v == null) return; let u = v.trim(); if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u; if (u && !/^https:\/\//i.test(u)) { alert('The address must start with https://'); return; } try { localStorage.setItem('ms_dash_url', u); } catch {} show(); };
-  XPAGES.stats = { title: 'Analytics', el: 'statsView', open() { show(); }, close() {} };
 })();
 // Help: start here, fixing problems, keys; the search box hides what does not match
 (() => {
@@ -1677,12 +2017,13 @@ const XPAGES = {};
 })();
 function showPage(p) {
   if (p === 'studio') {
-    // the Studio always opens in this window (only the Multiview gets its own window). ms_studio_window is for the automatic test only.
+    // the Studio runs inside this window and keeps running when you look at other pages. ms_studio_window is for the automatic test only.
     let m = 'same'; try { if (localStorage.getItem('ms_studio_window') === '1') m = 'window'; } catch {}
-    if (window.msNative) window.msNative.openStudio(m === 'same'); else window.open('/studio.html', m === 'same' ? '_self' : '_blank');
-    return;
+    if (m === 'window') { if (window.msNative) window.msNative.openStudio(false); else window.open('/studio.html', '_blank'); return; }
   }
   page = XPAGES[p] || p === 'cr' ? p : 'dash';
+  document.documentElement.classList.toggle('on-studio', page === 'studio');
+  $('#glActs').hidden = page !== 'dash';
   $('#pageTitle').textContent = page === 'cr' ? 'Multiview' : XPAGES[page] ? XPAGES[page].title : 'Go Live';
   $('.app').hidden = page !== 'dash';
   $('#crView').hidden = page !== 'cr';

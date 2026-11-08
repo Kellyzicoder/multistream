@@ -378,6 +378,8 @@
 
   /* ---------- side menu (small, icons only), the same pages as on Go Live ---------- */
   body { padding-left:76px; }
+  /* inside the app window (the app's own side menu is shown next to it) */
+  html.embed body { padding-left:0; } html.embed .snv { display:none; }
   .snv { position:fixed; left:0; top:0; bottom:0; width:76px; z-index:20; display:flex; flex-direction:column; align-items:center; gap:6px; padding:18px 0; border-right:1px solid var(--gl-line, var(--line)); background:var(--gl, var(--head)); -webkit-backdrop-filter:var(--gl-blur, none); backdrop-filter:var(--gl-blur, none); }
   .snv-logo svg { width:24px; height:30px; color:var(--sel); margin-bottom:16px; }
   .snv-pages { display:flex; flex-direction:column; gap:6px; }
@@ -403,6 +405,7 @@
 </style>
 </head>
 <body>
+<script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
 <div class="asbar" id="asBar" hidden><span class="as-dot"></span><b>Auto start</b><span id="asStep"></span><span class="as-lbl" id="asLbl"></span><span class="as-left" id="asLeft"></span><span class="sp"></span><button type="button" id="asNext">Next step now</button><button type="button" id="asStop">Stop plan</button></div>
 <div class="alertbar" id="alertBar" role="alert"><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 <aside class="snv" aria-label="Menu">
@@ -2305,6 +2308,16 @@ function askUsePlan(plan) {
     m.appendChild(d); document.body.appendChild(m); d.querySelector('.a2').focus();
   });
 }
+// Go Live (the page around the Studio) starts and stops streaming with these. usePlan: true or false when Go Live
+// already asked about the Auto start plan; left out, the Studio asks itself.
+window.msStart = async (usePlan) => {
+  if (wantSend) return true;
+  if (usePlan === true) { try { const plan = await fetch('/api/autostart').then((r) => r.json()); if (plan && plan.on && (plan.steps || []).length) autoStart(plan); } catch {} }
+  else if (usePlan !== false) { try { await maybeAutoStart(); } catch { return false; } }
+  ensureAudio(); startSend(); return true;
+};
+window.msStop = () => { if (wantSend) stopSend(); if (recWs) endRec(false); };
+window.msState = () => ({ sending: wantSend, recording: Boolean(recWs), scene: studio.current, collection: ($('#pColl b') || {}).textContent || '', shape: SHAPE_OF() });
 async function maybeAutoStart() {
   let plan; try { plan = await fetch('/api/autostart').then((r) => r.json()); } catch { return; }
   if (!plan || !plan.on || !(plan.steps || []).length) return;
