@@ -908,6 +908,8 @@
   /* drop-downs as in the design: one small arrow, not the computer's own up and down arrows */
   select:not([multiple]) { -webkit-appearance:none; appearance:none; padding-right:36px !important; background-image:linear-gradient(45deg,transparent 50%,#a3abc4 50%),linear-gradient(135deg,#a3abc4 50%,transparent 50%) !important; background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50% !important; background-size:5px 5px,5px 5px !important; background-repeat:no-repeat !important; }
   html.t-light select:not([multiple]) { background-image:linear-gradient(45deg,transparent 50%,#5b6377 50%),linear-gradient(135deg,#5b6377 50%,transparent 50%) !important; }
+  /* drop-downs in windows look like the text boxes next to them (as in the design) */
+  .mdl select { padding:11px 36px 11px 14px !important; border-radius:12px !important; font-size:14px !important; font-weight:500; background-color:rgba(5,8,20,.55) !important; border:1px solid var(--gl-line) !important; color:var(--text) !important; opacity:1 !important; width:100%; box-sizing:border-box; height:auto !important; }
 </style>
 </head>
 <body>
@@ -1552,6 +1554,19 @@ let crPrev = '';
 const pageTabs = document.querySelectorAll('#sideNav [data-page]');
 // ---------------- pages in the side menu (other than Go Live and Multiview) ----------------
 const XPAGES = {};
+// a small box to type a name or an address in (the desktop app does not show the browser's own prompt box)
+window.askText = (title, value, hint) => new Promise((ok) => {
+  const w = document.createElement('div'); w.className = 'pop2 ask';
+  w.innerHTML = '<div role="dialog"><div class="ttl"></div><input class="i2" type="text" style="width:100%;flex:none;height:40px;font-size:14px"><div class="sub" hidden></div><div class="ft"><button type="button" class="b2 a1">Cancel</button><button type="button" class="b2 p a2">OK</button></div></div>';
+  w.querySelector('[role=dialog]').setAttribute('aria-label', title); w.querySelector('.ttl').textContent = title;
+  if (hint) { w.querySelector('.sub').hidden = false; w.querySelector('.sub').textContent = hint; }
+  const i = w.querySelector('input'); i.value = value || '';
+  const end = (v) => { w.remove(); ok(v); };
+  w.onclick = (e) => { if (e.target === w) end(null); };
+  w.querySelector('.a1').onclick = () => end(null); w.querySelector('.a2').onclick = () => end(i.value);
+  i.onkeydown = (e) => { if (e.key === 'Enter') end(i.value); if (e.key === 'Escape') end(null); };
+  document.body.appendChild(w); i.focus(); i.select();
+});
 // Auto start: the plan the Studio runs when you press Start streaming (edited here, as in the design), and its progress while it runs
 (() => {
   let plan = null;
@@ -1654,7 +1669,7 @@ const XPAGES = {};
     const close = () => w.remove();
     w.onclick = (e) => { if (e.target === w) close(); }; w.querySelector('.x').onclick = close; w.querySelector('.c').onclick = close;
     const pn = w.querySelector('.pn'); const paintName = () => { pn.textContent = 'Plan: ' + (P.name || 'My plan'); }; paintName();
-    pn.onclick = () => { const v = prompt('Name of the plan', P.name || ''); if (v != null && v.trim()) { P.name = v.trim(); paintName(); } };
+    pn.onclick = async () => { const v = await window.askText('Name of the plan', P.name || ''); if (v != null && v.trim()) { P.name = v.trim(); paintName(); } };
     const tog = (on, set) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'tg' + (on ? ' on' : ''); b.onclick = () => { const v = !b.classList.contains('on'); b.classList.toggle('on', v); set(v); }; return b; };
     const r = (box, label, el) => { const d = document.createElement('div'); d.className = 'r'; const l = document.createElement('span'); l.className = 'l'; l.textContent = label; d.append(l, el); box.appendChild(d); };
     const w1 = w.querySelector('.w1'), w2 = w.querySelector('.w2');
@@ -2063,6 +2078,16 @@ const XPAGES = {};
     $('#glView').textContent = v.toLocaleString(); $('#glLikes').textContent = l.toLocaleString();
   }, 10000);
 })();
+// Analytics: your own live dashboard website, shown inside the app (the address can be changed)
+(() => {
+  const DEF = 'https://live.fcchq.workers.dev';
+  const get = () => { try { const v = localStorage.getItem('ms_dash_url'); return v == null ? DEF : v; } catch { return DEF; } };
+  const show = () => { const u = get(); $('#anAddr').textContent = u ? 'Live dashboard: ' + u.replace(/^https?:\/\//, '') : 'No dashboard yet'; $('#anNone').hidden = Boolean(u); $('#anFrame').hidden = !u; if (u && $('#anFrame').dataset.src !== u) { $('#anFrame').dataset.src = u; $('#anFrame').src = u; } if (!u) { $('#anFrame').removeAttribute('src'); $('#anFrame').dataset.src = ''; } };
+  $('#anReload').onclick = () => { const f = $('#anFrame'); if (f.dataset.src) f.src = f.dataset.src; };
+  $('#anOpen').onclick = () => { const u = get(); if (u) window.open(u, '_blank'); };
+  $('#anEdit').onclick = async () => { const v = await window.askText('Address of your live dashboard', get(), 'Leave it empty to remove it. It must start with https://'); if (v == null) return; let u = v.trim(); if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u; if (u && !/^https:\/\//i.test(u)) { alert('The address must start with https://'); return; } try { localStorage.setItem('ms_dash_url', u); } catch {} show(); };
+  XPAGES.stats = { title: 'Analytics', el: 'statsView', open() { show(); }, close() {} };
+})();
 // Help: start here, fixing problems, keys; the search box hides what does not match
 (() => {
   const items = () => [...document.querySelectorAll('#hpGrid li, #hpGrid dt, #hpGrid tr')];
@@ -2104,8 +2129,8 @@ const XPAGES = {};
       const m2 = document.createElement('div'); m2.className = 'meta2'; m2.textContent = c.scenes + (c.scenes === 1 ? ' scene' : ' scenes') + ' · ' + c.sources + (c.sources === 1 ? ' source' : ' sources') + (c.only && c.only.length ? ' · turns on: ' + c.only.join(', ') + ' only' : ago(c.at) ? ' · ' + ago(c.at) : ''); el.appendChild(m2);
       const bt = document.createElement('div'); bt.className = 'bt';
       const btn = (t, fn, cls) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'mini' + (cls ? ' ' + cls : ''); x.textContent = t; x.onclick = fn; bt.appendChild(x); };
-      btn('Rename', () => { const v = prompt('New name for "' + c.name + '"', c.name); if (v && v.trim() && v.trim() !== c.name) post({ do: 'rename', name: v.trim(), from: c.name }); });
-      btn('Duplicate', () => { const v = prompt('Name for the copy', c.name + ' copy'); if (v && v.trim()) post({ do: 'duplicate', name: v.trim(), from: c.name }); });
+      btn('Rename', async () => { const v = await window.askText('New name for "' + c.name + '"', c.name); if (v && v.trim() && v.trim() !== c.name) post({ do: 'rename', name: v.trim(), from: c.name }); });
+      btn('Duplicate', async () => { const v = await window.askText('Name for the copy', c.name + ' copy'); if (v && v.trim()) post({ do: 'duplicate', name: v.trim(), from: c.name }); });
       btn('Export', () => exportOne(c.name));
       if (!c.current && (r.list || []).length > 1) btn('Remove', () => { if (confirm('Remove "' + c.name + '"? Its scenes are deleted.')) post({ do: 'remove', from: c.name }); }, 'red');
       el.appendChild(bt); g.appendChild(el);
@@ -2138,7 +2163,7 @@ const XPAGES = {};
       return;
     }
     if (!Array.isArray(j.scenes)) { alert('No scenes found in that file.'); return; }
-    const n = prompt('Name for the imported collection', j.name || f.name.replace(/\.json$/i, '')); if (!n || !n.trim()) return;
+    const n = await window.askText('Name for the imported collection', j.name || f.name.replace(/\.json$/i, '')); if (!n || !n.trim()) return;
     post({ do: 'import', name: n.trim(), data: { scenes: j.scenes, audio: j.audio || [], current: j.current || '', shape: j.shape, only: j.only } });
   };
   XPAGES.coll = { title: 'Scene collections', el: 'collView', open() { draw(); }, close() {} };
