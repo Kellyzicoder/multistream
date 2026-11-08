@@ -325,7 +325,7 @@ hub.on('start', () => {
     if (!obsLive) return;
     startMonitor();
     destinations.forEach(startDestination);
-    if (recCfg.auto) recorder.start();
+    // recording is done in the Studio (Start Recording); the old "record when sending starts" is not used, so it can never record twice
   }, 1000);
 });
 hub.on('end', () => {
