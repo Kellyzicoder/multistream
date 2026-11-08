@@ -272,6 +272,18 @@
   .dock h2, .dlg-h { background:var(--head) !important; border-bottom:1px solid var(--line) !important; font-size:11px; font-weight:700; letter-spacing:.04em; padding:6px 9px; }
   .dock .list, .dock .pad { background:var(--card) !important; }
   .dock h2 .pin, button.eye { box-shadow:none !important; }
+  /* ---------- panel title bars like OBS, kept on the glass: a tinted bar with the name, a thin line under it,
+     and a thin outline round every panel, in shades of the main colour so the panels stand apart ---------- */
+  .dock { border:1px solid color-mix(in srgb, var(--sel) 22%, var(--gl-line)) !important; }
+  .dock > h2 { background:color-mix(in srgb, var(--sel) 12%, var(--gl2)) !important; border-bottom:1px solid color-mix(in srgb, var(--sel) 30%, var(--gl-line)) !important; color:var(--text); }
+  html.t-light .dock { border-color:color-mix(in srgb, var(--sel) 30%, rgba(0,0,0,.14)) !important; }
+  html.t-light .dock > h2 { background:color-mix(in srgb, var(--sel) 14%, rgba(255,255,255,.75)) !important; border-bottom-color:color-mix(in srgb, var(--sel) 30%, rgba(0,0,0,.12)) !important; }
+  /* Settings: theme and main colour */
+  .lookbtns { display:flex; gap:6px; } .lookbtns button[aria-pressed="true"] { background:var(--sel); color:var(--onsel); border-color:var(--sel); }
+  .lookcols { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .lookcols .sw { width:24px; height:24px; min-width:0; padding:0; border-radius:50%; border:1px solid rgba(128,128,128,.5); box-shadow:none; }
+  .lookcols .sw[aria-pressed="true"] { box-shadow:0 0 0 2px var(--card), 0 0 0 4px var(--text); }
+  .lookcols .hexin { width:90px; }
 </style>
 </head>
 <body>
@@ -351,13 +363,14 @@
       <div class="spanes">
         <section class="sp" data-sp="general">
           <h3>Studio</h3>
-          <p class="note">This is also on the Stream page under Settings, Appearance. It applies the next time you open the Studio.</p>
+          <div class="f"><label>Theme</label><span class="lookbtns" id="lookTheme"><button type="button" data-v="system">System</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></span></div>
+          <div class="f"><label>Main colour</label><span class="lookcols" id="lookCols"></span></div>
+          <p class="note">Theme and main colour are the same as on the Stream page (Settings, Appearance).</p>
           <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
           <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
           <div class="f"><label>Panels</label><span><button id="resetLayout" type="button">Put the panels back</button> <span class="note">Drag a panel's title to move it. Drag it up to float it, or drop it on the bottom row to dock it again.</span></span></div>
           <h3>Scenes and windows</h3>
           <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes from OBS...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
-          <p class="note">The colours follow the Stream page (Settings, Appearance).</p>
         </section>
         <section class="sp" data-sp="channels">
           <h3>Where your video goes</h3>
@@ -446,10 +459,11 @@
     document.documentElement.classList.toggle('t-light', light);
     document.documentElement.classList.toggle('glass-off', Boolean(a.contrast));
     const r = document.documentElement.style;
-    if (hexOk(a.accent)) { r.setProperty('--sel', a.accent); r.setProperty('--onsel', lum(a.accent) > 0.3 ? '#05130a' : '#ffffff'); }
+    // a white main colour on the light (white) theme would not show: it becomes dark there
+    if (hexOk(a.accent)) { const acc = light && lum(a.accent) > 0.8 ? '#1f2933' : a.accent; r.setProperty('--sel', acc); r.setProperty('--onsel', lum(acc) > 0.3 ? '#05130a' : '#ffffff'); }
     else { r.removeProperty('--sel'); r.removeProperty('--onsel'); }
   }
-  apply();
+  apply(); window.msApplyLook = apply;
   window.addEventListener('storage', (e) => { if (e.key === 'ms_access') apply(); });
   if (dark && dark.addEventListener) dark.addEventListener('change', apply);
 })();
@@ -1539,6 +1553,22 @@ function stopSend() {
   setProgramSize(1280, 720); setFps(30); lockOut();
   $('#sendBtn').textContent = 'Start Streaming'; $('#sendBtn').className = ''; liveT0 = 0;
 }
+// Theme and main colour (the same setting as the Stream page: Settings, Appearance). White is one of the colours.
+(function () {
+  const COLS = ['#22c55e', '#14b8a6', '#3b9eff', '#6366f1', '#a78bfa', '#fb923c', '#eab308', '#ffffff'];
+  const th = document.getElementById('lookTheme'), cols = document.getElementById('lookCols'); if (!th || !cols) return;
+  const get = () => { try { return JSON.parse(localStorage.getItem('ms_access') || '{}') || {}; } catch { return {}; } };
+  const hex = document.createElement('input'); hex.type = 'text'; hex.maxLength = 7; hex.className = 'hexin'; hex.placeholder = '#22c55e'; hex.title = 'Any colour, for example #ff0080';
+  const show = () => {
+    const a = get(); th.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((a.theme || 'system') === b.dataset.v)));
+    const cur = (a.accent || COLS[0]).toLowerCase(); cols.querySelectorAll('.sw').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === cur))); hex.value = cur;
+  };
+  const set = (k, v) => { const a = get(); a[k] = v; try { localStorage.setItem('ms_access', JSON.stringify(a)); } catch {} if (window.msApplyLook) window.msApplyLook(); show(); };
+  th.querySelectorAll('button').forEach((b) => { b.onclick = () => set('theme', b.dataset.v); });
+  COLS.forEach((c) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sw'; b.style.background = c; b.dataset.v = c; b.title = c === '#ffffff' ? 'White' : c; b.setAttribute('aria-label', b.title); b.onclick = () => set('accent', c); cols.appendChild(b); });
+  hex.onchange = () => { let v = hex.value.trim(); if (!v.startsWith('#')) v = '#' + v; if (/^#[0-9a-f]{6}$/i.test(v)) set('accent', v.toLowerCase()); else show(); };
+  cols.appendChild(hex); show();
+})();
 $('#tabStream').onclick = () => { if (!$('#backBtn').hidden) { $('#backBtn').click(); return; } if (window.msNative) window.msNative.openDashboard(); else location.href = '/'; };
 $('#tabCr').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else location.href = '/#control-room'; };
 $('#sendBtn').onclick = () => { if (wantSend) { if (askStop && !confirm('Stop streaming now?')) return; stopSend(); } else startSend(); };
