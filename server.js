@@ -583,8 +583,56 @@ function saveFb() {
 }
 const GRAPH = 'https://graph.facebook.com/v26.0';
 function fbView() {
-  return { pageId: fb.pageId, pageName: fb.pageName, hasToken: Boolean(fb.token), tokenEnd: fb.token ? fb.token.slice(-4) : '' };
+  return { pageId: fb.pageId, pageName: fb.pageName, hasToken: Boolean(fb.token), tokenEnd: fb.token ? fb.token.slice(-4) : '', appId: fb.appId || '', hasClientToken: Boolean(fb.clientToken) };
 }
+// ---- Sign in with Facebook (Facebook Login for Devices) ----
+// Needs only the Meta app ID and its client token (both are meant to be inside apps; no app secret).
+// The sign-in gives a token for about 60 days; the Page tokens taken from it do not run out by themselves.
+let fbLogin = null; // while waiting: { code, until }; after: { pages: [{ id, name, access_token }] }
+const fbApp = () => ({ id: String(fb.appId || process.env.MS_FB_APP_ID || '').trim(), ct: String(fb.clientToken || process.env.MS_FB_CLIENT_TOKEN || '').trim() });
+app.put('/api/facebook/app', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  const appId = String((req.body || {}).appId || '').trim(), ct = String((req.body || {}).clientToken || '').trim();
+  if (!/^\d{5,20}$/.test(appId)) return res.status(400).json({ error: 'The App ID is only numbers' });
+  if (ct && !/^[0-9a-f]{16,64}$/i.test(ct)) return res.status(400).json({ error: 'The client token is letters a-f and numbers (App settings, Advanced)' });
+  fb = { ...fb, appId, clientToken: ct || fb.clientToken || '' }; saveFb();
+  res.json(fbView());
+});
+app.post('/api/facebook/login', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Sign in on the church computer' });
+  const a = fbApp();
+  if (!a.id || !a.ct) return res.status(400).json({ error: 'Add the Meta app ID and client token first (below)' });
+  try {
+    const r = await fetch(`${GRAPH}/device/login`, { method: 'POST', body: new URLSearchParams({ access_token: `${a.id}|${a.ct}`, scope: 'pages_show_list,pages_read_engagement,pages_manage_posts' }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.code) return res.status(502).json({ error: (j.error && (j.error.error_user_msg || j.error.message)) || 'Facebook did not start the sign-in' });
+    fbLogin = { code: j.code, until: Date.now() + (Number(j.expires_in) || 420) * 1000 };
+    res.json({ userCode: j.user_code, uri: j.verification_uri || 'https://www.facebook.com/device', interval: Number(j.interval) || 5 });
+  } catch { res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' }); }
+});
+app.get('/api/facebook/login', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Sign in on the church computer' });
+  if (!fbLogin) return res.json({ idle: true });
+  const pages = () => fbLogin.pages.map((p) => ({ id: p.id, name: p.name }));
+  if (fbLogin.pages) return res.json({ done: true, pages: pages() });
+  if (Date.now() > fbLogin.until) { fbLogin = null; return res.json({ error: 'The code ran out. Press Sign in with Facebook again.' }); }
+  const a = fbApp();
+  try {
+    const r = await fetch(`${GRAPH}/device/login_status`, { method: 'POST', body: new URLSearchParams({ access_token: `${a.id}|${a.ct}`, code: fbLogin.code }) });
+    const j = await r.json().catch(() => ({}));
+    if (!j.access_token) {
+      const e = j.error || {};
+      if ([1349174, 1349172].includes(e.error_subcode)) return res.json({ pending: true }); // still waiting for the person / asking too often
+      fbLogin = null; return res.json({ error: e.error_user_msg || e.message || 'Facebook did not finish the sign-in' });
+    }
+    const pr = await fetch(`${GRAPH}/me/accounts?fields=id,name,access_token&limit=100&access_token=${encodeURIComponent(j.access_token)}`);
+    const pj = await pr.json().catch(() => ({}));
+    if (!pr.ok) { fbLogin = null; return res.json({ error: (pj.error && pj.error.message) || 'Facebook did not list your Pages' }); }
+    fbLogin = { pages: (pj.data || []).filter((p) => p.id && p.access_token) };
+    if (!fbLogin.pages.length) { fbLogin = null; return res.json({ error: 'Signed in, but no Pages were shared. Sign in again and tick the Page when Facebook asks.' }); }
+    res.json({ done: true, pages: pages() });
+  } catch { res.json({ pending: true }); }
+});
 function fbDestination() {
   return destinations.find((d) => /facebook/i.test(d.name));
 }
@@ -605,14 +653,16 @@ app.put('/api/facebook', async (req, res) => {
   const pageId = String((req.body || {}).pageId || '').trim();
   const token = String((req.body || {}).token || '').trim();
   if (!/^\d+$/.test(pageId)) return res.status(400).json({ error: 'The Page ID is only numbers' });
-  const newToken = token || fb.token;
-  if (!newToken) return res.status(400).json({ error: 'Paste the Page access token' });
+  // a Page picked after Sign in with Facebook brings its own token
+  const fromLogin = !token && fbLogin && fbLogin.pages ? fbLogin.pages.find((p) => p.id === pageId) : null;
+  const newToken = token || (fromLogin && fromLogin.access_token) || fb.token;
+  if (!newToken) return res.status(400).json({ error: 'Sign in with Facebook, or paste the Page access token' });
   try {
     const r = await fetch(`${GRAPH}/${pageId}?fields=name&access_token=${encodeURIComponent(newToken)}`);
     const j = await r.json();
     if (!r.ok || !j.id) return res.status(400).json({ error: (j.error && j.error.message) || 'Facebook did not accept this Page ID and token' });
-    fb = { pageId, pageName: j.name || '', token: newToken };
-    saveFb();
+    fb = { ...fb, pageId, pageName: j.name || '', token: newToken };
+    saveFb(); if (fromLogin) fbLogin = null;
     res.json(fbView());
   } catch {
     res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' });
