@@ -188,7 +188,8 @@
   .dock h2 { display:flex; align-items:center; gap:6px; cursor:grab; user-select:none; -webkit-user-select:none; touch-action:none; }
   .dock h2 .pin { margin-left:auto; padding:0 6px; min-width:0; font-size:12px; line-height:18px; background:transparent; border-color:transparent; box-shadow:none; color:var(--muted); backdrop-filter:none; -webkit-backdrop-filter:none; }
   .dock h2 .pin:hover { color:var(--text); background:var(--gl2); }
-  .dock.drag { z-index:50; opacity:.9; cursor:grabbing; box-shadow:0 18px 50px rgba(0,0,0,.5); transition:none; }
+  .dock.drag { z-index:50; opacity:.9; cursor:grabbing; box-shadow:0 18px 50px rgba(0,0,0,.5); transition:none; will-change:transform; }
+  .dock > h2 { touch-action:none; user-select:none; }
   .dock.float { position:fixed; flex:none; z-index:30; resize:both; overflow:auto; min-width:200px; min-height:120px; box-shadow:0 18px 56px rgba(0,0,0,.5), inset 0 1px 0 var(--gl-hi); }
   .dock.float h2 { position:sticky; top:0; z-index:1; }
   .docks.over { outline:2px dashed var(--sel); outline-offset:-3px; border-radius:var(--r); }
@@ -248,9 +249,6 @@
   .ctxi small { display:block; margin-top:1px; font-size:11px; color:var(--muted); }
   .ctxi:hover, .ctxi:focus-visible { background:var(--sel); color:var(--onsel); outline:none; } .ctxi:hover small, .ctxi:focus-visible small { color:inherit; opacity:.8; }
   .ctxs { height:1px; margin:5px 6px; background:var(--gl-line); }
-#vcPrev{margin-top:6px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#000;position:relative}
-#vcPrev canvas{display:block;width:100%;height:auto;aspect-ratio:16/9}
-#vcPrev span{position:absolute;left:6px;bottom:4px;font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(0,0,0,.55);color:#fff}
 .lyr .cog{flex:none;width:28px;height:26px;padding:0;font-size:16px;line-height:1;border-radius:8px;opacity:.9}
 .lyr .cog:hover{opacity:1;background:var(--gl2);border-color:var(--gl-line)}
   .alertbar { display:none; align-items:flex-start; gap:12px; justify-content:space-between; position:fixed; right:16px; bottom:16px; z-index:100; width:min(440px, calc(100vw - 32px)); box-sizing:border-box; background:var(--errbg); border:1px solid var(--errline); color:var(--errsvg); padding:12px 14px; border-radius:16px; box-shadow:0 14px 36px rgba(0,0,0,.22); font-size:13px; font-weight:500; line-height:1.4; }
@@ -309,7 +307,6 @@
         <button id="sendBtn">Start Streaming</button>
         <button id="recBtn">Start Recording</button>
         <button id="vcBtn" hidden>Start Virtual Camera</button>
-        <div id="vcPrev" hidden title="This is what Zoom sees from Multistream Camera"><canvas id="vcPv" width="320" height="180"></canvas><span>Multistream Camera</span></div>
         <button id="modeBtn" type="button" aria-pressed="true" title="On: a Preview and a Program picture, and a Transition button (like OBS Studio Mode). Off: only the live picture, and a click on a scene puts it on air.">Studio Mode</button>
         <button id="setBtn">Settings</button>
       </div>
@@ -1492,16 +1489,10 @@ document.addEventListener('click', () => ensureAudio(), { once: true });
 // Sends the Studio picture to the Windows virtual camera. In Zoom, pick the camera called "Multistream Camera".
 let vcWs = null, vcMr = null;
 fetch('/api/vcam').then((r) => r.json()).then((s) => { if (s.available) $('#vcBtn').hidden = false; }).catch(() => {});
-let vcPvT = null;
-function vcPrevStart() {
-  const c = $('#vcPv'), x = c.getContext('2d'); $('#vcPrev').hidden = false;
-  clearInterval(vcPvT); vcPvT = setInterval(() => { if (!document.hidden) x.drawImage(vcv, 0, 0, c.width, c.height); }, 100);
-}
-function vcPrevStop() { clearInterval(vcPvT); vcPvT = null; $('#vcPrev').hidden = true; }
 function vcOff(msg) {
   try { vcMr && vcMr.state !== 'inactive' && vcMr.stop(); } catch {}
   try { vcWs && vcWs.close(); } catch {}
-  vcWs = vcMr = null; vcOn = false; vcPrevStop(); $('#vcBtn').textContent = 'Start Virtual Camera'; $('#vcBtn').className = '';
+  vcWs = vcMr = null; vcOn = false; $('#vcBtn').textContent = 'Start Virtual Camera'; $('#vcBtn').className = '';
   if (msg) { $('#st').textContent = msg; $('#st').className = 'stat bad'; }
 }
 $('#vcBtn').onclick = async () => {
@@ -1520,7 +1511,7 @@ $('#vcBtn').onclick = async () => {
     vcOn = true;
     vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000 });
     vcMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
-    vcMr.start(100); vcPrevStart();
+    vcMr.start(100);
     $('#vcBtn').textContent = 'Stop Virtual Camera'; $('#vcBtn').className = 'stop';
     $('#st').textContent = 'Virtual camera is on. In Zoom, choose the camera called Multistream Camera.'; $('#st').className = 'stat ok';
   };
@@ -2112,17 +2103,36 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   document.addEventListener('pointerdown', (e) => {
     const h = e.target.closest('.dock > h2'); if (!h || e.button !== 0 || e.target.closest('button')) return;
     const d = h.parentElement, r0 = d.getBoundingClientRect(), sx = e.clientX, sy = e.clientY, ox = sx - r0.left, oy = sy - r0.top, wasFloat = d.classList.contains('float');
-    const rowTop = () => row.getBoundingClientRect().top; let moving = false;
-    const zoneOf = (ev) => (ev.clientY < rowTop() ? (ev.clientX < 110 ? 'left' : ev.clientX > innerWidth - 110 ? 'right' : '') : '');
-    const showZones = (on, ev) => { const bot = (innerHeight - rowTop() + 8) + 'px'; ['left', 'right'].forEach((k) => { dz[k].style.bottom = bot; dz[k].classList.toggle('show', on); dz[k].classList.toggle('hot', on && zoneOf(ev) === k); }); };
+    e.preventDefault(); try { h.setPointerCapture(e.pointerId); } catch {}
+    const rowTop = () => row.getBoundingClientRect().top; let moving = false, frame = 0, last = null;
+    const colRect = (k) => { const r = side[k].childElementCount ? side[k].getBoundingClientRect() : null; return r && r.width > 20 ? r : null; };
+    const zoneOf = (ev) => {
+      if (ev.clientY >= rowTop()) return '';
+      for (const k of ['left', 'right']) { const r = colRect(k); if (r && ev.clientX >= r.left && ev.clientX <= r.right) return k; }
+      return ev.clientX < 110 ? 'left' : ev.clientX > innerWidth - 110 ? 'right' : '';
+    };
+    const showZones = (on, ev) => {
+      const bot = (innerHeight - rowTop() + 8) + 'px';
+      ['left', 'right'].forEach((k) => {
+        const z = dz[k], r = colRect(k);
+        if (r) { z.style.left = r.left + 'px'; z.style.right = 'auto'; z.style.width = r.width + 'px'; z.style.top = r.top + 'px'; }
+        else { z.style.width = ''; z.style.top = ''; z.style.left = k === 'left' ? '8px' : 'auto'; z.style.right = k === 'right' ? '8px' : 'auto'; }
+        z.style.bottom = bot; z.classList.toggle('show', on); z.classList.toggle('hot', on && zoneOf(ev) === k);
+      });
+    };
     const move = (ev) => {
-      if (!moving) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return; moving = true; d.classList.add('drag'); showZones(true, ev); try { h.setPointerCapture(e.pointerId); } catch {} }
+      if (!moving) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return; moving = true; d.classList.add('drag'); }
+      // draw at most once per screen refresh (smooth, no jumping)
+      last = ev; if (frame) return; frame = requestAnimationFrame(() => { frame = 0; place(last); });
+    };
+    const place = (ev) => {
       if (wasFloat) { d.style.left = Math.max(0, Math.min(ev.clientX - ox, innerWidth - 120)) + 'px'; d.style.top = Math.max(0, Math.min(ev.clientY - oy, innerHeight - 60)) + 'px'; }
       else d.style.transform = `translate(${ev.clientX - sx}px, ${ev.clientY - sy}px)`;
-      row.classList.toggle('over', wasFloat && ev.clientY > rowTop()); showZones(true, ev);
+      row.classList.toggle('over', ev.clientY > rowTop()); showZones(true, ev);
     };
     const up = (ev) => {
       h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up);
+      if (frame) { cancelAnimationFrame(frame); frame = 0; }
       try { h.releasePointerCapture(e.pointerId); } catch {}
       row.classList.remove('over'); showZones(false, ev); if (!moving) return;
       d.classList.remove('drag'); d.style.transform = '';
