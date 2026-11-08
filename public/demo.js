@@ -39,6 +39,7 @@ window.demoApi = function (url, method) {
     { name: 'Studio 2026-11-05 19-00-10.mkv', size: 4.3e9, at: Date.now() - 3 * 86400e3, secs: 3933, hasMp4: false, job: null, youtube: { id: 'demo', privacy: 'unlisted' }, queued: false },
     { name: 'Studio 2026-11-02 10-00-00.mkv', size: 7.1e9, at: Date.now() - 8 * 86400e3, secs: 6662, hasMp4: false, job: null, youtube: null, queued: false },
     { name: 'Prayer night 2026-10-31.mp4', size: 3.0e9, at: Date.now() - 9 * 86400e3, secs: 2900, hasMp4: false, job: null, youtube: null, queued: false }] };
+  else if (p === '/api/collections') out = { current: 'Sunday Services', list: [{ name: 'Sunday Services', current: true, shape: 'landscape', only: [], scenes: 8, sources: 14, at: Date.now() - 3600e3 }, { name: 'Youth (Instagram)', current: false, shape: 'portrait', only: ['Instagram'], scenes: 3, sources: 4, at: Date.now() - 4 * 86400e3 }] };
   else if (p === '/api/remote') out = { enabled: false, hasPassword: false, urls: [] };
   else out = {};
   return Promise.resolve(out);

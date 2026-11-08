@@ -1118,7 +1118,21 @@ const collNames = () => {
   if (!n.includes(coll.current)) n.push(coll.current);
   return n.sort((a, b) => a.localeCompare(b));
 };
-const collOf = (st) => ({ scenes: st.scenes || [], audio: st.audio || [], current: st.current || '' });
+const SHAPES = ['landscape', 'portrait', 'square'];
+// a collection: its scenes and sound inputs, its shape (16:9, 9:16 or 1:1) and which channels to turn on when switching to it
+const collOf = (st) => ({ scenes: st.scenes || [], audio: st.audio || [], current: st.current || '', shape: SHAPES.includes(st.shape) ? st.shape : 'landscape', only: Array.isArray(st.only) ? st.only.map(String).slice(0, 20) : [] });
+// "turn on only": channels whose name matches are switched on, the others off
+function applyOnly(only) {
+  if (!only || !only.length) return;
+  const want = only.map((x) => x.toLowerCase());
+  destinations.forEach((d) => {
+    const on = want.some((w) => d.name.toLowerCase().includes(w));
+    if (d.enabled === on) return;
+    d.enabled = on;
+    if (!on) stopDestination(d.id); else if (obsLive) startDestination(d);
+  });
+  save();
+}
 const allCollections = () => { const out = [collOf(studio)]; for (const n of collNames()) { if (n === coll.current) continue; try { out.push(JSON.parse(fs.readFileSync(collPath(n), 'utf8'))); } catch {} } return out; };
 let collHook = () => {};
 try {
@@ -1138,7 +1152,22 @@ app.get('/api/studio', (req, res) => {
   res.json({ ...studio, rev: studioRev });
 });
 // Scene collections: list, and New / Duplicate / Rename / Remove / Switch / Import (the Studio asks for names)
-app.get('/api/collections', (req, res) => res.json({ current: coll.current, names: collNames() }));
+app.get('/api/collections', (req, res) => {
+  if (!req.query.details) return res.json({ current: coll.current, names: collNames() });
+  const list = collNames().map((n) => {
+    let d = null, at = 0;
+    if (n === coll.current) d = collOf(studio);
+    else { try { d = collOf(JSON.parse(fs.readFileSync(collPath(n), 'utf8'))); } catch { d = collOf({}); } }
+    try { at = fs.statSync(n === coll.current ? STUDIO_FILE : collPath(n)).mtimeMs; } catch {}
+    return { name: n, current: n === coll.current, shape: d.shape, only: d.only, scenes: d.scenes.length, sources: d.scenes.reduce((a, s) => a + (s.layers || []).length, 0), at };
+  });
+  res.json({ current: coll.current, list });
+});
+app.get('/api/collections/file', (req, res) => {
+  const n = String(req.query.name || '');
+  if (n === coll.current) return res.json({ multistream: 'scene collection', name: n, ...collOf(studio) });
+  try { res.json({ multistream: 'scene collection', name: n, ...collOf(JSON.parse(fs.readFileSync(collPath(n), 'utf8'))) }); } catch { res.status(404).json({ error: 'Not found' }); }
+});
 app.post('/api/collections', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change scene collections on the church PC' });
   const b = req.body || {}, act = String(b.do || ''), name = String(b.name || '').trim().slice(0, 60);
@@ -1154,13 +1183,24 @@ app.post('/api/collections', (req, res) => {
   try {
     if (['new', 'duplicate', 'rename', 'import'].includes(act)) {
       if (!name) return res.status(400).json({ error: 'Type a name' });
-      if (names.includes(name) && !(act === 'rename' && name === coll.current)) return res.status(400).json({ error: 'There is already a scene collection called ' + name });
+      if (names.includes(name) && !(act === 'rename' && name === (b.from || coll.current))) return res.status(400).json({ error: 'There is already a scene collection called ' + name });
     }
-    if (act === 'new') { stash(); use(name, {}); }
+    const from = b.from ? String(b.from) : '';
+    const other = from && from !== coll.current && names.includes(from); // acting on a collection that is not in use
+    if (act === 'new') { stash(); use(name, { shape: b.shape, only: b.only }); applyOnly(collOf({ only: b.only }).only); }
+    else if (act === 'duplicate' && other) { fs.mkdirSync(COLL_DIR, { recursive: true }); fs.writeFileSync(collPath(name), JSON.stringify(collOf(read(from) || {}))); }
     else if (act === 'duplicate') { stash(); use(name, JSON.parse(JSON.stringify(collOf(studio)))); }
-    else if (act === 'import') { const d = b.data || {}; if (!Array.isArray(d.scenes)) return res.status(400).json({ error: 'That file has no scenes' }); stash(); use(name, { scenes: d.scenes.slice(0, 60), audio: Array.isArray(d.audio) ? d.audio.slice(0, 40) : [], current: String(d.current || '') }); }
+    else if (act === 'import') { const d = b.data || {}; if (!Array.isArray(d.scenes)) return res.status(400).json({ error: 'That file has no scenes' }); stash(); use(name, { scenes: d.scenes.slice(0, 60), audio: Array.isArray(d.audio) ? d.audio.slice(0, 40) : [], current: String(d.current || ''), shape: d.shape, only: d.only }); }
+    else if (act === 'rename' && other) { fs.writeFileSync(collPath(name), JSON.stringify(collOf(read(from) || {}))); try { fs.unlinkSync(collPath(from)); } catch {} }
     else if (act === 'rename') { const old = coll.current; stash(); use(name, collOf(studio)); if (old !== name) { try { fs.unlinkSync(collPath(old)); } catch {} } }
-    else if (act === 'switch') { if (!names.includes(name)) return res.status(400).json({ error: 'No scene collection called ' + name }); if (name !== coll.current) { stash(); use(name, read(name) || {}); } }
+    else if (act === 'switch') { if (!names.includes(name)) return res.status(400).json({ error: 'No scene collection called ' + name }); if (name !== coll.current) { stash(); use(name, read(name) || {}); applyOnly(studio.only); } }
+    else if (act === 'settings') {
+      // shape and "turn on only" of a collection (the one in use, or another)
+      const apply = (d) => { if (SHAPES.includes(b.shape)) d.shape = b.shape; if (Array.isArray(b.only)) d.only = b.only.map(String).slice(0, 20); return d; };
+      if (other) fs.writeFileSync(collPath(from), JSON.stringify(apply(collOf(read(from) || {}))));
+      else { apply(studio); saveStudio(); stash(); collHook(); }
+    }
+    else if (act === 'remove' && other) { try { fs.unlinkSync(collPath(from)); } catch {} }
     else if (act === 'remove') {
       if (names.length < 2) return res.status(400).json({ error: 'This is the only scene collection' });
       const old = coll.current, next = names.find((n) => n !== old);
@@ -1273,7 +1313,7 @@ studioRecWss.on('connection', (w, req) => {
   const d = new Date(), two = (n) => String(n).padStart(2, '0');
   const name = `Studio ${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}.mkv`;
   const copy = q.get('copy') === '1'; // the browser already made H.264 at the right size (encode once)
-  const args = outargs.recordArgs(studioEncoder.key, { h: q.get('h'), mbit: q.get('mbit'), fps: q.get('fps') }, path.join(REC_DIR, name), copy);
+  const args = outargs.recordArgs(studioEncoder.key, { h: q.get('h'), mbit: q.get('mbit'), fps: q.get('fps'), shape: q.get('shape') }, path.join(REC_DIR, name), copy);
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
   let last = '';
   ff.stderr.on('data', (c) => { last = String(c).trim().split('\n').pop().slice(0, 200); });
