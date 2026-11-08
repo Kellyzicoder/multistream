@@ -838,6 +838,68 @@
   .mv2 .mv-grid { flex:none; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; } .mv2.tall .mv-grid { flex:1; align-content:center; }
   .mv-chip { display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#cdd3e4; font-size:13px; font-weight:600; margin-left:4px; }
   .mv-chip b { padding:1px 7px; border-radius:6px; background:rgba(255,255,255,.12); font-size:11px; }
+  /* ---------- Settings (as in the design) ---------- */
+  #setOverlay { background:rgba(5,7,16,.72); -webkit-backdrop-filter:none; backdrop-filter:none; padding:20px 20px 20px calc(var(--navw) + 20px); }
+  #setOverlay .set2 { width:min(1040px,100%); height:min(700px,calc(100vh - 40px)); flex-direction:row; border-radius:26px; background:rgba(20,26,54,.97); -webkit-backdrop-filter:blur(24px) saturate(140%); backdrop-filter:blur(24px) saturate(140%); border:1px solid rgba(255,255,255,.14); box-shadow:0 30px 80px rgba(0,0,0,.5); color:#eef1f8; animation:msPop2 .4s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes msPop2 { from { opacity:0; transform:scale(.96) translateY(10px); } to { opacity:1; transform:none; } }
+  html.t-light #setOverlay .set2 { background:var(--card); color:var(--text); border-color:var(--line); }
+  #setOverlay .snav { width:220px; flex:none; padding:22px 14px; border-right:1px solid rgba(255,255,255,.1); gap:2px; background:transparent; overflow:auto; }
+  #setOverlay .s2t { font-size:18px; font-weight:700; padding:0 12px 16px; }
+  #setOverlay .snav button { gap:11px; padding:10px 12px; border-radius:10px; color:#a3abc4; font-size:14px; font-weight:500; box-shadow:none; }
+  #setOverlay .snav button svg { width:18px; height:18px; }
+  #setOverlay .snav button:hover { background:rgba(255,255,255,.05); color:#eef1f8; }
+  #setOverlay .snav button[aria-selected="true"] { background:rgba(59,108,255,.18); background:color-mix(in srgb, var(--blue) 18%, transparent); color:#eef1f8; font-weight:500; box-shadow:none; }
+  #setOverlay .snav button[aria-selected="true"] svg { color:var(--blue); }
+  html.t-light #setOverlay .snav button[aria-selected="true"], html.t-light #setOverlay .snav button:hover { color:var(--text); }
+  #setOverlay .s2r { flex:1; display:flex; flex-direction:column; min-width:0; }
+  #setOverlay .smain { flex:1; padding:26px 30px 10px; overflow:auto; }
+  #setOverlay .pane.on { display:flex; flex-direction:column; gap:24px; }
+  #setOverlay .s2h { display:flex; align-items:center; gap:12px; } #setOverlay .s2h h2 { margin:0; font-size:22px; flex:1; }
+  #setOverlay .g2 { display:flex; flex-direction:column; gap:12px; } #setOverlay .g2 > h3 { margin:0; font-size:13px; color:#a3abc4; font-weight:600; }
+  #setOverlay .c2 { border-radius:16px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07); padding:2px 16px; }
+  #setOverlay .r2 { display:flex; align-items:center; gap:14px; min-height:52px; border-top:1px solid rgba(255,255,255,.06); } #setOverlay .r2:first-child { border-top:0; }
+  #setOverlay .r2 .l { flex:1; font-size:14px; min-width:0; } #setOverlay .r2 .v2 { font-size:13px; color:#a3abc4; text-align:right; max-width:60%; }
+  #setOverlay .n2 { margin:0; font-size:12.5px; color:#8a93ad; line-height:1.5; }
+  #setOverlay .i3 { height:36px; padding:0 12px; border-radius:10px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.12); color:#eef1f8; font-size:13px; min-width:220px; }
+  #setOverlay input.i3 { width:140px; min-width:0; }
+  #setOverlay .pth { font-size:12px; color:#a3abc4; max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #setOverlay .b3 { padding:8px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#eef1f8; font-size:13px; font-weight:600; }
+  #setOverlay .b3:disabled, #setOverlay .tg2:disabled, #setOverlay .i3:disabled { opacity:.45; }
+  #setOverlay .tg2 { width:34px; height:20px; border-radius:10px; background:#2a3150; position:relative; flex:none; border:0; padding:0; }
+  #setOverlay .tg2::after { content:""; position:absolute; left:3px; top:3px; width:14px; height:14px; border-radius:50%; background:#8a93ad; transition:left .25s; } #setOverlay .tg2.on { background:var(--blue); } #setOverlay .tg2.on::after { left:17px; background:#fff; }
+  #setOverlay .ps2 { display:flex; gap:14px; }
+  #setOverlay .opt2 { flex:1; display:flex; flex-direction:column; gap:10px; padding:10px; border-radius:18px; border:2px solid transparent; background:rgba(255,255,255,.04); color:#eef1f8; font-size:14px; font-weight:600; text-align:left; min-width:0; }
+  #setOverlay .opt2[aria-pressed="true"] { border-color:var(--blue); background:color-mix(in srgb, var(--blue) 10%, transparent); }
+  #setOverlay .opt2 small { font-weight:500; color:#a3abc4; } #setOverlay .opt2 small.iu { display:none; color:#9db6ff; font-weight:600; } #setOverlay .opt2.used small.iu { display:inline; } #setOverlay .opt2.used small.fs { display:none; }
+  #setOverlay .pv2 { height:120px; border-radius:12px; position:relative; overflow:hidden; background:radial-gradient(120px 90px at 30% 30%,#3b6cff,transparent 70%),radial-gradient(120px 90px at 75% 75%,#a855f7,transparent 70%),radial-gradient(90px 70px at 85% 20%,#14b8a6,transparent 70%),#0a0e1f; }
+  #setOverlay .cd2 { position:absolute; inset:22px 26px; border-radius:12px; display:grid; place-items:center; font-size:18px; font-weight:700; color:#eef1f8; }
+  #setOverlay .seg2 { display:flex; padding:3px; border-radius:999px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.12); width:max-content; }
+  #setOverlay .seg2 button { white-space:nowrap; padding:8px 18px; border-radius:999px; border:0; background:transparent; color:#a3abc4; font-size:13px; font-weight:600; } #setOverlay .seg2 button[aria-pressed="true"] { background:var(--blue); color:var(--onblue, #fff); }
+  #setOverlay .sws2 { display:flex; gap:12px; align-items:center; }
+  #setOverlay .sws2 button { width:36px; height:36px; border-radius:50%; border:3px solid transparent; padding:0; box-shadow:none; } #setOverlay .sws2 button[aria-pressed="true"] { border-color:#fff; } html.t-light #setOverlay .sws2 button[aria-pressed="true"] { border-color:#0a0e1f; }
+  #setOverlay .acc2 .grp { margin:0; background:none; border:0; padding:0; box-shadow:none; border-radius:0; } #setOverlay .acc2 h4 { display:none; } #setOverlay .acc2 .srow { grid-template-columns:minmax(0,1fr) auto; padding:8px 0; border-top:1px solid rgba(255,255,255,.06); } #setOverlay .acc2 .grp:first-child .srow:first-of-type { border-top:0; }
+  #setOverlay .acc2 .srow > .lb { text-align:left; font-size:14px; color:inherit; } #setOverlay .acc2 .srow:last-child .lb:empty { display:none; }
+  #setOverlay .old2 h4 { margin:0 0 4px; font-size:13px; color:#a3abc4; font-weight:600; text-transform:none; letter-spacing:0; } #setOverlay .old2 .grp { margin:0 0 18px; } #setOverlay .old2 .srow { grid-template-columns:170px minmax(0,1fr); } #setOverlay .old2 p { font-size:12.5px; color:#8a93ad; }
+  #setOverlay .hks { display:flex; align-items:center; gap:8px; padding:9px 14px; border-radius:999px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.12); color:#a3abc4; font-size:13px; width:220px; } #setOverlay .hks svg { width:14px; height:14px; flex:none; }
+  #setOverlay .hks input { border:0; background:transparent; color:#eef1f8; font-size:13px; font-weight:500; outline:none; width:100%; padding:0; box-shadow:none; }
+  #setOverlay .pane[data-pane="hotkeys"].on { gap:12px; } #setOverlay .hkl { display:flex; flex-direction:column; gap:6px; }
+  #setOverlay .hkg { font-size:11px; letter-spacing:1.2px; color:#a3abc4; font-weight:700; padding:10px 4px 4px; }
+  #setOverlay .hk { display:flex; align-items:center; gap:12px; padding:8px 12px; border-radius:12px; background:rgba(255,255,255,.04); font-size:14px; } #setOverlay .hk .hl { flex:1; }
+  #setOverlay .hk.wait { outline:2px solid var(--blue); background:color-mix(in srgb, var(--blue) 10%, transparent); } #setOverlay .hk.dup { background:rgba(255,77,90,.1); }
+  #setOverlay .hk .key { min-width:150px; display:flex; gap:6px; align-items:center; padding:6px 8px; border-radius:10px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.12); font-size:12px; color:#a3abc4; text-align:left; }
+  #setOverlay .hk.wait .key { border-color:var(--blue); color:#9db6ff; } #setOverlay .hk.dup .key { border-color:rgba(255,77,90,.6); }
+  #setOverlay .hk kbd { padding:3px 8px; border-radius:6px; background:rgba(255,255,255,.12); color:#eef1f8; font:600 12px Inter,sans-serif; border:0; box-shadow:none; }
+  #setOverlay .hk .x { width:28px; height:28px; border-radius:8px; border:0; background:transparent; color:#a3abc4; padding:0; display:grid; place-items:center; font-size:15px; } #setOverlay .hk .dupm { flex:none; color:#ff8a92; font-size:12px; }
+  #setOverlay .swin-f { padding:14px 30px 22px; border-top:0; gap:10px; align-items:center; } #setOverlay .sp2 { flex:1; }
+  #setOverlay .swin-f .b2 { min-width:0; padding:10px 22px; border-radius:999px; border:0; font-size:14px; font-weight:600; color:#eef1f8; background:rgba(255,255,255,.08); box-shadow:none; }
+  #setOverlay .swin-f .b2.pri { background:var(--blue); color:var(--onblue, #fff); } #setOverlay .swin-f .b2.ghost3 { background:transparent; }
+  #setOverlay .pane[data-pane="hotkeys"].on ~ * {} #setOverlay .s2r:has(.pane[data-pane="hotkeys"].on) .swin-f { border-top:1px solid rgba(255,255,255,.1); margin:0 28px; padding:14px 0 20px; }
+  #setOverlay .set2:has(.pane[data-pane="hotkeys"].on) { height:min(760px,calc(100vh - 40px)); }
+  /* panel styles (Settings, Appearance) */
+  html.ps-clear { --gl:rgba(255,255,255,.03); --gl2:rgba(255,255,255,.04); --gl-line:rgba(255,255,255,.3); --gl-hi:rgba(255,255,255,.4); --gl-blur:none; }
+  html.ps-blur { --gl:rgba(40,30,60,.55); --gl2:rgba(40,30,60,.45); --gl-blur:blur(30px); }
+  html.ps-solid { --gl:#121833; --gl2:#1a2148; --gl-hi:transparent; --gl-blur:none; }
+  html.t-light.ps-solid { --gl:#ffffff; --gl2:#f3f5fa; }
 </style>
 </head>
 <body>
@@ -1127,33 +1189,17 @@
   </div>
 </div>
 <div class="overlay" id="setOverlay">
-  <div class="swin" role="dialog" aria-modal="true" aria-labelledby="setTitle">
-    <div class="swin-h"><span id="setTitle">Settings</span><button class="swin-x" id="setX" type="button" aria-label="Close without saving">×</button></div>
-    <div class="swin-b">
-      <nav class="snav" id="setNav" role="tablist" aria-orientation="vertical" aria-label="Settings sections">
-        <button type="button" role="tab" data-pane="appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18" /><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg> Appearance</button>
-        <button type="button" role="tab" data-pane="access"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v5M12 15l-3.5 5.5M12 15l3.5 5.5"/></svg> Accessibility</button>
-        <button type="button" role="tab" data-pane="youtube"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="4"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg> YouTube</button>
-        <button type="button" role="tab" data-pane="facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 8.5h2.5V5H14a3.5 3.5 0 0 0-3.5 3.5V11H8v3.5h2.5V21H14v-6.5h2.5L17 11h-3V8.5z"/></svg> Facebook</button>
-      </nav>
-      <div class="smain">
-
-        <section class="pane" data-pane="appearance" role="tabpanel" aria-label="Appearance">
-          <div class="grp"><h4>Look</h4>
-            <p>Changes show straight away. They are saved on this computer.</p>
-            <div class="srow"><p class="lb" id="l-th">Theme</p>
-              <div class="themes" id="themes" role="group" aria-labelledby="l-th">
-                <button type="button" data-v="system"><span class="tp sy"><i class="a"></i><i class="b"></i></span>System</button>
-                <button type="button" data-v="light"><span class="tp l"><i class="s"></i><i class="a"></i><i class="b"></i></span>Light</button>
-                <button type="button" data-v="dark"><span class="tp d"><i class="s"></i><i class="a"></i><i class="b"></i></span>Dark</button>
-              </div></div>
-            <div class="srow"><p class="lb" id="l-col">Main colour</p>
-              <div class="ctl"><div class="sws" id="sws" role="group" aria-labelledby="l-col"></div>
-                <div class="cust"><span>Custom:</span><span class="hx">#<input id="accHex" maxlength="6" placeholder="22C55E" aria-label="Custom colour, 6 letters or numbers"></span><input type="color" id="accPick" aria-label="Pick a colour"></div></div></div>
-          </div>
-        </section>
-
-        <section class="pane" data-pane="access" role="tabpanel" aria-label="Accessibility">
+  <div class="swin set2" role="dialog" aria-modal="true" aria-label="Settings">
+    <nav class="snav" id="setNav" role="tablist" aria-orientation="vertical" aria-label="Settings sections"><div class="s2t">Settings</div><button type="button" role="tab" data-pane="general"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>General</button><button type="button" role="tab" data-pane="appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg>Appearance</button><button type="button" role="tab" data-pane="stream"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8"/></svg>Stream</button><button type="button" role="tab" data-pane="recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>Recording</button><button type="button" role="tab" data-pane="audio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/></svg>Audio</button><button type="button" role="tab" data-pane="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/></svg>Video</button><button type="button" role="tab" data-pane="hotkeys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6"/></svg>Hotkeys</button><button type="button" role="tab" data-pane="advanced"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/></svg>Advanced</button><button type="button" role="tab" data-pane="system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="4" width="16" height="12" rx="1.5"/><path d="M9 20h6M12 16v4"/></svg>System</button></nav>
+    <div class="s2r">
+      <div class="smain"><section class="pane" data-pane="general" role="tabpanel" aria-label="General"><div class="s2h"><h2>General</h2></div><div class="g2"><h3>Studio</h3><div class="c2">
+  <div class="r2"><span class="l">Snap items to the edges, the middle and other items</span><button type="button" class="tg2" data-mirror="#optSnap" aria-label="Snap items"></button></div>
+  <div class="r2"><span class="l">Ask "Are you sure?" before stopping the stream</span><button type="button" class="tg2" data-mirror="#optConfirm" aria-label="Ask before stopping"></button></div>
+  <div class="r2"><span class="l">Panels in the Studio</span><button type="button" class="b3" data-click="#resetLayout">Put the panels back</button></div>
+  <div class="r2"><span class="l">Scenes from OBS</span><button type="button" class="b3" data-click="#impBtn">Import scenes from OBS...</button></div>
+  <div class="r2"><span class="l">The Program picture in its own window</span><button type="button" class="b3" data-click="#projBtn">Preview window</button></div>
+</div><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div>
+<div class="g2"><h3>Reading and using</h3><div class="c2 acc2">
           <div class="grp"><h4>Reading</h4>
             <div class="srow"><p class="lb" id="l-size">Text size</p>
               <div class="opt" data-key="size" role="group" aria-labelledby="l-size">
@@ -1170,9 +1216,14 @@
               <div class="ctl"><label class="sw"><input type="checkbox" data-key="nomotion" aria-label="Stop animations"><span></span></label></div></div>
             <div class="srow"><p class="lb"></p><div class="ctl"><button class="b2" id="accReset" type="button">Reset all</button></div></div>
           </div>
-        </section>
-
-        <section class="pane" data-pane="youtube" role="tabpanel" aria-label="YouTube">
+        </div></div></section><section class="pane" data-pane="appearance" role="tabpanel" aria-label="Appearance"><div class="s2h"><h2>Appearance</h2></div><div class="g2"><h3>Panel style</h3><div class="ps2" id="ps2">
+  <button type="button" class="opt2" data-v=""><div class="pv2"><div class="cd2" style="background:rgba(255,255,255,.1);-webkit-backdrop-filter:blur(18px) saturate(140%);backdrop-filter:blur(18px) saturate(140%);border:1px solid rgba(255,255,255,.18)">Frosted</div></div><span>Frosted <small class="iu">· in use</small></span></button>
+  <button type="button" class="opt2" data-v="clear"><div class="pv2"><div class="cd2" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.4)">Clear</div></div><span>Clear <small class="iu">· in use</small></span></button>
+  <button type="button" class="opt2" data-v="blur"><div class="pv2"><div class="cd2" style="background:rgba(40,30,60,.55);-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px)">Blur</div></div><span>Blur <small class="iu">· in use</small></span></button>
+  <button type="button" class="opt2" data-v="solid"><div class="pv2"><div class="cd2" style="background:#121833">Solid</div></div><span>Solid <small class="fs">· fastest</small><small class="iu">· in use</small></span></button>
+</div></div>
+<div class="g2"><h3>Theme</h3><div class="seg2" id="themes"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button><button type="button" data-v="system">Match computer</button></div></div>
+<div class="g2"><h3>Colour</h3><div class="sws2" id="sws"></div></div></section><section class="pane" data-pane="stream" role="tabpanel" aria-label="Stream"><div class="s2h"><h2>Stream</h2></div><div class="g2 old2">
           <div class="grp"><h4>YouTube account</h4>
             <p>Choose the file you downloaded from Google, then sign in with the church YouTube account. The file and the login are saved only on this computer.</p>
             <div class="srow"><label class="lb" for="yt-file">1. File from Google</label>
@@ -1182,9 +1233,7 @@
             <div class="srow"><p class="lb">Status</p>
               <div class="ctl"><p class="note" id="yt-status"></p><p class="note" id="yt-msg"></p></div></div>
           </div>
-        </section>
-
-        <section class="pane" data-pane="facebook" role="tabpanel" aria-label="Facebook">
+        </div><div class="g2 old2">
           <div class="grp"><h4>Sign in with Facebook</h4>
             <p>Sign in, then pick the Page. Nothing to copy. If Facebook shows an error later, sign in again here and it picks the Page up again.</p>
             <div class="srow"><p class="lb">Facebook</p>
@@ -1208,20 +1257,26 @@
             <div class="srow"><p class="lb">Status</p>
               <div class="ctl"><p class="note" id="fb-saved"></p><p class="note" id="fb-msg"></p></div></div>
           </div>
-        </section>
-
-
-
-
-        
-
-
-      </div>
-    </div>
-    <div class="swin-f">
-      <button class="b2 pri" id="setOk" type="button">OK</button>
-      <button class="b2" id="setCancel" type="button">Cancel</button>
-      <button class="b2" id="setApply" type="button" disabled>Apply</button>
+        </div></section><section class="pane" data-pane="recording" role="tabpanel" aria-label="Recording"><div class="s2h"><h2>Recording</h2></div><div class="g2"><div class="c2">
+  <div class="r2"><span class="l">Quality</span><select class="i3" data-mirror="#recQ"></select></div>
+  <div class="r2"><span class="l">Also save the stream as soon as it starts</span><button type="button" class="tg2" data-mirror="#recAuto2" aria-label="Record automatically"></button></div>
+  <div class="r2"><span class="l">Saved in</span><code class="pth" id="s2RecDir"></code><button type="button" class="b3" id="s2RecOpen">Open folder</button></div>
+</div><p class="n2">Recordings are .mkv files, so they still play if the power goes out. VLC plays them. Recordings, Remux to MP4 makes MP4 copies.</p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="audio" role="tabpanel" aria-label="Audio"><div class="s2h"><h2>Audio</h2></div><div class="g2"><h3>Monitoring</h3><div class="c2">
+  <div class="r2"><span class="l">Monitoring output (your headphones)</span><select class="i3" data-mirror="#monDev"></select></div>
+</div><p class="n2">Monitoring lets you hear an input in your headphones. Use headphones, or the microphone will pick up the speakers. Turn it on for each input in the Studio's mixer (Listen).</p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="video" role="tabpanel" aria-label="Video"><div class="s2h"><h2>Video</h2></div><div class="g2"><h3>What viewers get</h3><div class="c2">
+  <div class="r2"><span class="l">Quality</span><select class="i3" data-mirror="#outQ"></select></div>
+  <div class="r2"><span class="l">Bitrate (kbps)</span><input class="i3" type="number" min="1000" max="60000" step="500" data-mirror="#outKbps"></div>
+  <div class="r2"><span class="l">Encoder</span><span class="v2" id="s2Enc">...</span></div>
+  <div class="r2"><span class="l">Keyframes</span><span class="v2">Every 2 seconds (what YouTube and Facebook ask for)</span></div>
+</div><p class="n2" id="s2OutNote"></p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="hotkeys" role="tabpanel" aria-label="Hotkeys"><div class="s2h"><h2>Hotkeys</h2><label class="hks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="hkQ" placeholder="Search hotkeys" aria-label="Search hotkeys"></label></div><div class="hkl" id="hkList"></div></section><section class="pane" data-pane="advanced" role="tabpanel" aria-label="Advanced"><div class="s2h"><h2>Advanced</h2></div><div class="g2"><div class="c2">
+  <div class="r2"><span class="l">A channel that drops</span><span class="v2">Started again after 3, 6, 9 ... up to 30 seconds, 10 tries, then it says so.</span></div>
+  <div class="r2"><span class="l">Reset the Studio settings</span><button type="button" class="b3" data-click="#resetStudio">Reset</button></div>
+</div><p class="n2">Reset puts the video size, recording quality, transition, monitoring output and the Studio options back to how they started. Your scenes, sources and channels are kept.</p></div></section><section class="pane" data-pane="system" role="tabpanel" aria-label="System"><div class="s2h"><h2>System</h2></div><div class="g2"><div class="c2">
+  <div class="r2"><span class="l">Version</span><span class="v2" id="s2Ver">...</span></div>
+  <div class="r2"><span class="l">Updates</span><span class="v2">The app looks for a new version by itself and tells you when one is ready.</span></div>
+  <div class="r2"><span class="l">This computer</span><span class="v2" id="s2Sys">...</span></div>
+</div></div></section></div>
+      <div class="swin-f"><button class="b2 ghost3" id="hkReset" type="button" hidden>Reset to default</button><span class="sp2"></span><button class="b2" id="setCancel" type="button">Cancel</button><button class="b2" id="setApply" type="button" disabled>Apply</button><button class="b2 pri" id="setOk" type="button">OK</button><button class="swin-x" id="setX" type="button" aria-label="Close without saving" hidden>×</button></div>
     </div>
   </div>
 </div>
@@ -1657,6 +1712,8 @@ const XPAGES = {};
     $('#studioView').appendChild(f); studioFrame = f; return f;
   }
   const sw = () => { try { return studioFrame && studioFrame.contentWindow; } catch { return null; } };
+  window.msStudioWin = () => { if (!isMv) studio(); return sw(); };
+  window.msHotkeyStream = () => { const b = $('#sbBtn'); if (b) b.click(); };
   const studioReady = () => { const w = sw(); return Boolean(w && typeof w.msStart === 'function'); };
   async function waitStudio(ms) { const t0 = Date.now(); studio(); while (!studioReady() && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 200)); return studioReady(); }
   // start the Studio a moment after the app opens, so its picture shows here before going live
@@ -2247,10 +2304,6 @@ async function crSetScene(name) {
   renderCr(); refresh();
 }
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
-document.addEventListener('keydown', (e) => {
-  if (page !== 'cr' || e.ctrlKey || e.metaKey || e.altKey || /input|select|textarea/i.test((document.activeElement || {}).tagName || '')) return;
-  const k = KEYS.indexOf(e.key); if (k < 0) return; const n = crData().scenes[k]; if (n) { e.preventDefault(); crSetScene(n); }
-});
 // the boxes keep their shape (16:9, or 9:16 for a portrait collection) and fill the page
 function fitCrTiles() {
   const cr = $('#crView'); if (!cr || cr.hidden || !cr.clientWidth) return; cr.style.height = Math.max(300, innerHeight - cr.getBoundingClientRect().top - 22) + 'px';
@@ -2324,7 +2377,8 @@ window.addEventListener('hashchange', () => showPage(location.hash === '#control
 if (XPAGES[location.hash.slice(1)]) setTimeout(() => showPage(location.hash.slice(1)), 0);
 
 // Appearance and accessibility: saved in this browser only
-const SWATCHES = ['#3b6cff', '#22c55e', '#14b8a6', '#6366f1', '#a78bfa', '#fb923c', '#eab308', '#ffffff'];
+const SWATCHES = ['#3b6cff', '#22c55e', '#a855f7', '#f97316', '#f5f5f5'];
+const SW_NAMES = ['Blue', 'Green', 'Purple', 'Orange', 'White'];
 const OLD_ACCENT = { blue: '#3b9eff', purple: '#a78bfa', orange: '#fb923c' };
 const root = document.documentElement;
 let acc = {};
@@ -2343,7 +2397,8 @@ const validHex = (s) => /^#[0-9a-fA-F]{6}$/.test(s);
 const darkQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 function applyAcc(a) {
   const cl = root.classList;
-  [...cl].filter((c) => c.startsWith('a-') || c === 't-light').forEach((c) => cl.remove(c));
+  [...cl].filter((c) => c.startsWith('a-') || c.startsWith('ps-') || c === 't-light').forEach((c) => cl.remove(c));
+  if (a.panel) cl.add('ps-' + a.panel);
   const theme = a.theme || 'dark';
   const light = theme === 'light' || (theme === 'system' && darkQuery && !darkQuery.matches);
   if (light) cl.add('t-light');
@@ -2367,21 +2422,19 @@ function syncAcc() {
   document.querySelectorAll('#setOverlay input[type=checkbox][data-key]').forEach((i) => { i.checked = Boolean(d[i.dataset.key]); });
   const cur = (d.accent || '').toLowerCase();
   document.querySelectorAll('#sws button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === (cur || SWATCHES[0]))));
-  $('#accHex').value = (d.accent || SWATCHES[0]).slice(1).toUpperCase();
-  $('#accPick').value = validHex(d.accent || '') ? d.accent : SWATCHES[0];
+  document.querySelectorAll('#ps2 button').forEach((b) => { b.setAttribute('aria-pressed', String((d.panel || '') === b.dataset.v)); b.classList.toggle('used', (acc.panel || '') === b.dataset.v); });
 }
 function changeAcc(k, v) { draft[k] = v; applyAcc(draft); syncAcc(); if (window.setDirty) setDirty('appearance'); }
 SWATCHES.forEach((c) => {
   const b = document.createElement('button');
-  b.type = 'button'; b.dataset.v = c; b.style.background = c; b.setAttribute('aria-label', 'Colour ' + c);
+  b.type = 'button'; b.dataset.v = c; b.style.background = c; b.setAttribute('aria-label', SW_NAMES[SWATCHES.indexOf(c)]);
   b.onclick = () => changeAcc('accent', c === SWATCHES[0] ? '' : c);
   $('#sws').appendChild(b);
 });
 document.querySelectorAll('#themes button').forEach((b) => { b.onclick = () => changeAcc('theme', b.dataset.v); });
 document.querySelectorAll('#setOverlay .opt button').forEach((b) => { b.onclick = () => changeAcc(b.parentElement.dataset.key, b.dataset.v); });
 document.querySelectorAll('#setOverlay input[type=checkbox][data-key]').forEach((i) => { i.onchange = () => changeAcc(i.dataset.key, i.checked ? 'on' : ''); });
-$('#accHex').oninput = (e) => { const v = '#' + e.target.value.replace(/[^0-9a-fA-F]/g, '').slice(0, 6); if (validHex(v)) { draft.accent = v.toLowerCase(); applyAcc(draft); const old = e.target.value; syncAcc(); e.target.value = old; if (window.setDirty) setDirty('appearance'); } };
-$('#accPick').oninput = (e) => changeAcc('accent', e.target.value);
+document.querySelectorAll('#ps2 button').forEach((b) => { b.onclick = () => changeAcc('panel', b.dataset.v); });
 $('#accReset').onclick = () => { draft = {}; applyAcc(draft); syncAcc(); if (window.setDirty) setDirty('appearance'); };
 function saveAcc() { acc = { ...draft }; try { localStorage.setItem('ms_access', JSON.stringify(acc)); } catch {} }
 function undoAcc() { draft = { ...acc }; applyAcc(acc); }
@@ -2572,9 +2625,94 @@ $('#ytLive').onclick = async () => {
 
 // Settings window: sidebar of sections, OK / Cancel / Apply at the bottom
 const setOverlay = $('#setOverlay');
-const paneLoaders = { youtube: loadYt, facebook: loadFb };
-const paneSavers = { appearance: async () => { saveAcc(); return true; }, facebook: saveFb };
-const paneOrder = ['appearance', 'facebook'];
+const paneLoaders = { stream: () => { loadYt(); loadFb(); }, system: loadSys, hotkeys: () => hkLoad() };
+['general', 'recording', 'audio', 'video', 'advanced'].forEach((k) => { paneLoaders[k] = () => mirrorLoad(k); });
+const paneSavers = { appearance: async () => { saveAcc(); syncAcc(); return true; }, stream: saveFb, studio: mirrorSave, hotkeys: hkSave };
+const paneOrder = ['appearance', 'stream', 'studio', 'hotkeys'];
+// Studio settings (General, Recording, Audio, Video, Advanced): the boxes here work the same boxes in the Studio running in this window
+const stuWin = () => { try { const w = window.msStudioWin && window.msStudioWin(); return w && w.document && w.document.getElementById('outQ') ? w : null; } catch { return null; } };
+let mirrorPend = new Map();
+function mirrorLoad(k) {
+  const w = stuWin(); const pane = document.querySelector('.smain .pane[data-pane="' + k + '"]');
+  pane.querySelectorAll('.s2-nostudio').forEach((n) => { n.hidden = Boolean(w); });
+  pane.querySelectorAll('[data-mirror],[data-click]').forEach((el) => { el.disabled = !w; });
+  if (!w) return;
+  try { if (k === 'audio') w.fillMon(); if (k === 'video') { w.lockOut(); w.loadEnc(); } if (k === 'recording') w.loadRec(); } catch {}
+  try { w.document.getElementById('optSnap').checked = localStorage.getItem('ms_snap') !== '0'; w.document.getElementById('optConfirm').checked = localStorage.getItem('ms_askstop') === '1'; } catch {}
+  setTimeout(() => {
+    pane.querySelectorAll('[data-mirror]').forEach((el) => {
+      const src = w.document.querySelector(el.dataset.mirror); if (!src) return;
+      if (mirrorPend.has(el.dataset.mirror)) return;
+      if (el.tagName === 'SELECT') { el.textContent = ''; [...src.options].forEach((o) => el.add(new Option(o.text, o.value))); el.value = src.value; el.disabled = src.disabled; }
+      else if (el.classList.contains('tg2')) el.classList.toggle('on', src.checked);
+      else { el.value = src.value; el.disabled = src.disabled; }
+    });
+    const e = w.document.getElementById('encName'); if (e) $('#s2Enc').textContent = e.textContent;
+    const nt = w.document.getElementById('outNote'); if (nt) $('#s2OutNote').textContent = nt.textContent;
+    const rd = w.document.getElementById('recDir2'); if (rd) $('#s2RecDir').textContent = rd.textContent;
+  }, 300);
+}
+document.querySelectorAll('#setOverlay [data-mirror]').forEach((el) => {
+  const set = (v) => { mirrorPend.set(el.dataset.mirror, v); setDirty('studio'); };
+  if (el.classList.contains('tg2')) el.onclick = () => { el.classList.toggle('on'); set(el.classList.contains('on')); };
+  else el.onchange = () => set(el.value);
+});
+document.querySelectorAll('#setOverlay [data-click]').forEach((el) => { el.onclick = () => { const w = stuWin(); const b = w && w.document.querySelector(el.dataset.click); if (b) b.click(); }; });
+async function mirrorSave() {
+  const w = stuWin(); if (!w) { mirrorPend.clear(); return true; }
+  mirrorPend.forEach((v, sel) => { const src = w.document.querySelector(sel); if (!src) return; if (typeof v === 'boolean') src.checked = v; else src.value = v; src.dispatchEvent(new Event('change')); });
+  mirrorPend.clear(); return true;
+}
+$('#s2RecOpen').onclick = async () => { const r = await api('/api/recording/open', 'POST', {}); if (r && r.error) alert(r.error); };
+function loadSys() {
+  $('#s2Ver').textContent = '3.0.0';
+  try { if (window.msNative && window.msNative.appVersion) window.msNative.appVersion().then((v) => { if (v) $('#s2Ver').textContent = v; }); } catch {}
+  const pf = (window.msNative && window.msNative.platform) || navigator.platform || '';
+  $('#s2Sys').textContent = (/win/i.test(pf) ? 'Windows' : /mac|darwin/i.test(pf) ? 'Mac' : /linux/i.test(pf) ? 'Linux' : pf) + (navigator.hardwareConcurrency ? ' \u00B7 ' + navigator.hardwareConcurrency + ' processor threads' : '');
+}
+// Hotkeys: the list comes from the Studio (its scenes and sound inputs). Changes are kept here until Apply or OK.
+let hkRows = [], hkWait = '';
+function hkLoad() {
+  const w = stuWin(); hkWait = '';
+  hkRows = w && w.msHotkeyList ? w.msHotkeyList() : [];
+  hkDraw();
+}
+function hkDraw() {
+  const box = $('#hkList'); box.textContent = '';
+  if (!hkRows.length) { const p = document.createElement('p'); p.className = 'n2'; p.textContent = 'Open the Studio once to see and change the hotkeys.'; box.appendChild(p); return; }
+  const q = $('#hkQ').value.trim().toLowerCase(); let grp = '';
+  hkRows.forEach((h) => {
+    if (q && !h.label.toLowerCase().includes(q) && !(h.key || '').toLowerCase().includes(q)) return;
+    if (h.group !== grp) { grp = h.group; const g = document.createElement('div'); g.className = 'hkg'; g.textContent = grp; box.appendChild(g); }
+    const r = document.createElement('div'); r.className = 'hk'; const dup = h.key && hkRows.find((x) => x !== h && x.key === h.key && hkRows.indexOf(x) < hkRows.indexOf(h));
+    if (hkWait === h.id) r.classList.add('wait'); if (dup) r.classList.add('dup');
+    const l = document.createElement('span'); l.className = 'hl'; l.textContent = h.label;
+    const k = document.createElement('button'); k.type = 'button'; k.className = 'key'; k.title = 'Click, then press the keys';
+    if (hkWait === h.id) k.textContent = 'Press the keys now\u2026'; else if (h.key) h.key.split('+').forEach((p) => { const kb = document.createElement('kbd'); kb.textContent = p; k.appendChild(kb); }); else k.textContent = 'Not set';
+    k.onclick = () => { hkWait = hkWait === h.id ? '' : h.id; hkDraw(); };
+    r.append(l, k);
+    if (dup) { const m = document.createElement('span'); m.className = 'dupm'; m.textContent = 'Already used by ' + dup.label.replace(/^Go to scene: |^Mute \/ unmute /, ''); r.appendChild(m); }
+    else { const x = document.createElement('button'); x.type = 'button'; x.className = 'x'; x.setAttribute('aria-label', 'Clear'); x.textContent = '\u00D7'; x.onclick = () => { h.key = ''; hkWait = ''; setDirty('hotkeys'); hkDraw(); }; r.appendChild(x); }
+    box.appendChild(r);
+  });
+}
+$('#hkQ').oninput = hkDraw;
+document.addEventListener('keydown', (e) => {
+  if (!hkWait || !setOverlay.classList.contains('open')) return;
+  if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  if (e.key === 'Escape') { hkWait = ''; hkDraw(); return; }
+  const w = stuWin(); const c = w && w.msHotkeyCombo ? w.msHotkeyCombo(e) : '';
+  const h = hkRows.find((x) => x.id === hkWait); if (h && c) { h.key = c; setDirty('hotkeys'); }
+  hkWait = ''; hkDraw();
+}, true);
+$('#hkReset').onclick = () => { hkRows.forEach((h) => { h.key = h.def; }); hkWait = ''; setDirty('hotkeys'); hkDraw(); };
+async function hkSave() {
+  if (!hkRows.length) return true;
+  const out = {}; hkRows.forEach((h) => { if (h.key !== h.def) out[h.id] = h.key; });
+  try { localStorage.setItem('ms_hotkeys', JSON.stringify(out)); } catch {}
+  return true;
+}
 let dirty = {};
 let loaded = {};
 let curPane = '';
@@ -2586,18 +2724,18 @@ function showPane(name) {
   document.querySelectorAll('.smain .pane').forEach((p) => p.classList.toggle('on', p.dataset.pane === name));
   $('.smain').scrollTop = 0;
   if (paneLoaders[name] && !loaded[name]) { loaded[name] = true; Promise.resolve(paneLoaders[name]()).catch(() => {}); }
+  $('#hkReset').hidden = name !== 'hotkeys';
 }
 function openSettings(name) {
-  dirty = {}; loaded = {};
+  dirty = {}; loaded = {}; mirrorPend.clear(); hkWait = '';
   $('#setApply').disabled = true;
   draft = { ...acc }; syncAcc();
   setOverlay.classList.add('open');
   showPane(name || 'appearance');
-  const first = document.querySelector('#setNav button[aria-selected="true"]');
-  if (first) first.focus();
+  const dl = $('#setOverlay .set2'); dl.tabIndex = -1; dl.style.outline = 'none'; dl.focus();
 }
 function closeSettings(keep) {
-  if (!keep) undoAcc();
+  if (!keep) { undoAcc(); mirrorPend.clear(); }
   setOverlay.classList.remove('open');
 }
 async function applySettings() {
@@ -2612,13 +2750,21 @@ async function applySettings() {
 }
 $('#setNav').addEventListener('click', (e) => { const b = e.target.closest('button[data-pane]'); if (b) showPane(b.dataset.pane); });
 $('#setBtn').onclick = () => openSettings('appearance');
-$('#ytBtn').onclick = () => openSettings('youtube');
-$('#fbBtn').onclick = () => openSettings('facebook');
+$('#ytBtn').onclick = () => openSettings('stream');
+$('#fbBtn').onclick = () => openSettings('stream');
+window.msOpenSettings = (n) => openSettings(n);
 $('#setApply').onclick = async () => { const b = $('#setApply'); b.disabled = true; if (!(await applySettings())) b.disabled = false; };
 $('#setOk').onclick = async () => { if (await applySettings()) closeSettings(true); };
 $('#setCancel').onclick = () => closeSettings(false);
 $('#setX').onclick = () => closeSettings(false);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && setOverlay.classList.contains('open')) closeSettings(false); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && setOverlay.classList.contains('open') && !hkWait) closeSettings(false); });
+// the hotkeys work on every page: keys pressed here are passed to the Studio
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  if (e.defaultPrevented || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+  if (setOverlay.classList.contains('open') || document.querySelector('.pop2, .overlay.open, .wl.open')) return;
+  const w = stuWin(); if (w && w.msHotkey && w.msHotkey(e)) { e.preventDefault(); }
+});
 [['#fb-page', 'facebook'], ['#fb-token', 'facebook']].forEach(([id, k]) => {
   $(id).addEventListener('input', () => setDirty(k));
   $(id).addEventListener('change', () => setDirty(k));

@@ -140,6 +140,9 @@
   /* ---------- Liquid Glass: rounded, frosted, translucent (turned off by Settings > Appearance > High contrast or reduced transparency) ---------- */
   :root { --gl:rgba(18,24,52,.52); --gl2:rgba(32,40,78,.44); --gl-line:rgba(255,255,255,.14); --gl-hi:rgba(255,255,255,.22); --gl-sh:0 10px 34px rgba(0,0,0,.38); --gl-blur:blur(26px) saturate(180%); --r:18px; }
   html.t-light { --gl:rgba(255,255,255,.58); --gl2:rgba(255,255,255,.5); --gl-line:rgba(255,255,255,.75); --gl-hi:rgba(255,255,255,.95); --gl-sh:0 10px 30px rgba(40,70,60,.16); }
+  html.ps-clear { --gl:rgba(255,255,255,.03); --gl2:rgba(255,255,255,.04); --gl-line:rgba(255,255,255,.3); --gl-hi:rgba(255,255,255,.4); --gl-blur:none; }
+  html.ps-blur { --gl:rgba(40,30,60,.55); --gl2:rgba(40,30,60,.45); --gl-blur:blur(30px); }
+  html.ps-solid { --gl:#121833; --gl2:#1a2148; --gl-hi:transparent; --gl-blur:none; } html.t-light.ps-solid { --gl:#ffffff; --gl2:#f3f5fa; }
   body { background:
     radial-gradient(900px 520px at 90% -10%, color-mix(in srgb, var(--sel) 26%, transparent), transparent 62%),
     radial-gradient(760px 480px at -8% 108%, color-mix(in srgb, var(--sel) 18%, transparent), transparent 62%),
@@ -591,6 +594,7 @@
     const light = t === 'light' || (t === 'system' && dark && !dark.matches);
     document.documentElement.classList.toggle('t-light', light);
     document.documentElement.classList.toggle('glass-off', Boolean(a.contrast));
+    ['clear', 'blur', 'solid'].forEach((k) => document.documentElement.classList.toggle('ps-' + k, a.panel === k));
     const r = document.documentElement.style;
     // a white main colour on the light (white) theme would not show: it becomes dark there
     if (hexOk(a.accent)) { const acc = light && lum(a.accent) > 0.8 ? '#1f2933' : a.accent; r.setProperty('--sel', acc); r.setProperty('--onsel', lum(acc) > 0.3 ? '#05130a' : '#ffffff'); }
@@ -2723,7 +2727,9 @@ function openSettings(pane) {
   $('#setBox').hidden = false; showPane(typeof pane === 'string' ? pane : spane);
 }
 function closeSettings() { $('#setBox').hidden = true; clearInterval(chanT); chanT = 0; }
-$('#setBtn').onclick = () => openSettings(); $('#navSet').onclick = () => openSettings(); $('#setClose').onclick = closeSettings; $('#setOk').onclick = closeSettings;
+const SP_MAP = { general: 'general', channels: 'stream', video: 'video', output: 'recording', audio: 'audio', hotkeys: 'hotkeys', advanced: 'advanced' };
+const openSettingsAny = (pane) => { try { if (parent !== window && parent.msOpenSettings) { parent.msOpenSettings(SP_MAP[pane] || 'general'); return; } } catch {} openSettings(pane); };
+$('#setBtn').onclick = () => openSettingsAny(); $('#navSet').onclick = () => openSettingsAny(); $('#setClose').onclick = closeSettings; $('#setOk').onclick = closeSettings;
 $('#setBox').addEventListener('mousedown', (e) => { if (e.target === $('#setBox')) closeSettings(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#setBox').hidden) closeSettings(); });
 // ----- options (saved on this computer) -----
@@ -2832,7 +2838,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'F11') { e.preventDefault(); if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); return; }
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
   const ctrl = e.ctrlKey || e.metaKey, cl = curLayer(), sc = byName(editing), k = e.key.toLowerCase();
-  if (ctrl && !e.altKey && e.key === ',') { e.preventDefault(); openSettings(); return; }
+  if (ctrl && !e.altKey && e.key === ',') { e.preventDefault(); openSettingsAny(); return; }
   if (!$('#setBox').hidden || document.querySelector('.modal:not([hidden]):not(#setBox)')) return;
   if (ctrl && !e.altKey && (k === 'z' || k === 'y')) { e.preventDefault(); histGo(k === 'y' || e.shiftKey ? 1 : -1); return; }
   if (e.key === 'F2' && cl) { e.preventDefault(); const n = document.querySelector('#layers .lyr.on .n'); if (n) renameInPlace(n, cl.name || ICON[cl.type] || cl.type, (v) => { if (v) { cl.name = v; save(); } renderLayers(); }); return; }
@@ -2872,24 +2878,57 @@ document.addEventListener('keydown', (e) => {
       e.preventDefault(); return;
     }
   }
-  const d = /^Digit([1-9])$/.exec(e.code);
-  if (d && !e.shiftKey) {
-    const n = Number(d[1]) - 1;
-    if (e.altKey) { const a = studio.audio[n]; if (a) { a.muted = !a.muted; save(); syncAudio(); renderAudio(); e.preventDefault(); } }
-    else { const s = studio.scenes[n]; if (s && s.name !== studio.current) { setCurrent(s.name); e.preventDefault(); } }
-    return;
-  }
-  if (e.altKey) return;
-  if (e.code === 'KeyR' && !e.shiftKey) { const rb = $('#recBtn'); if (rb) { rb.click(); e.preventDefault(); } }
-  else if (e.code === 'KeyG' && e.shiftKey) {
-    if (!wantSend || confirm('Stop sending now?')) $('#sendBtn').click();
-    e.preventDefault();
-  } else if (e.code === 'KeyF' && !e.shiftKey) {
+  if (e.altKey || e.shiftKey) return;
+  if (e.code === 'KeyF') {
     const s = $('#trType'); s.selectedIndex = (s.selectedIndex + 1) % s.options.length; saveTr();
     $('#st').textContent = 'Transition: ' + s.options[s.selectedIndex].text; e.preventDefault();
   }
 });
 $('#keysBtn').onclick = () => { $('#keysBox').hidden = !$('#keysBox').hidden; };
+// ---------------- hotkeys you can change (Settings, Hotkeys). Saved on this computer as ms_hotkeys ----------------
+// A key is written like "Ctrl+Shift+S". The Go Live page sends its keys here too, so they work on every page.
+const HK_DIG = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
+function hkDefault(id) {
+  if (id === 'stream') return 'Ctrl+Shift+S'; if (id === 'record') return 'Ctrl+Shift+R'; if (id === 'trans') return 'Space';
+  const sc = /^scene:(.*)$/.exec(id); if (sc) { const i = studio.scenes.findIndex((x) => x.name === sc[1]); return i >= 0 && i < 10 ? HK_DIG[i] : ''; }
+  const mu = /^mute:(.*)$/.exec(id); if (mu) { const i = studio.audio.findIndex((x) => x.id === mu[1]); return i >= 0 && i < 9 ? 'Alt+' + HK_DIG[i] : ''; }
+  return '';
+}
+function hkList() {
+  let saved = {}; try { saved = JSON.parse(localStorage.getItem('ms_hotkeys') || '{}') || {}; } catch {}
+  const out = [['stream', 'Start / stop streaming', 'STREAMING AND RECORDING'], ['record', 'Start / stop recording', 'STREAMING AND RECORDING'], ['vcam', 'Start / stop virtual camera', 'STREAMING AND RECORDING'], ['trans', 'Transition (send Preview live)', 'SCENES']]
+    .concat(studio.scenes.map((x) => ['scene:' + x.name, 'Go to scene: ' + x.name, 'SCENES']))
+    .concat(studio.audio.map((a) => ['mute:' + a.id, 'Mute / unmute ' + (a.name || 'sound'), 'SOUND']));
+  return out.map(([id, label, group]) => ({ id, label, group, def: hkDefault(id), key: saved[id] != null ? saved[id] : hkDefault(id) }));
+}
+window.msHotkeyList = hkList;
+function hkCombo(e) {
+  const k = e.code; let n = '';
+  if (/^Key[A-Z]$/.test(k)) n = k.slice(3); else if (/^Digit\d$/.test(k)) n = k.slice(5); else if (/^Numpad\d$/.test(k)) n = 'Num ' + k.slice(6); else if (/^F\d{1,2}$/.test(k)) n = k;
+  else n = { Space: 'Space', Enter: 'Enter', Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Backslash: '\\', PageUp: 'Page Up', PageDown: 'Page Down', Insert: 'Insert', Pause: 'Pause' }[k] || '';
+  if (!n) return '';
+  return (e.ctrlKey || e.metaKey ? 'Ctrl+' : '') + (e.altKey ? 'Alt+' : '') + (e.shiftKey ? 'Shift+' : '') + n;
+}
+window.msHotkeyCombo = hkCombo;
+// runs the job for a key; true when the key belongs to one
+window.msHotkey = (e) => {
+  const c = hkCombo(e); if (!c) return false;
+  const h = hkList().find((x) => x.key === c); if (!h) return false;
+  const id = h.id;
+  if (id === 'stream') { if (parent !== window && parent.msHotkeyStream) parent.msHotkeyStream(); else if (!wantSend || !askStop || confirm('Stop streaming now?')) $('#sendBtn').click(); }
+  else if (id === 'record') $('#recBtn').click();
+  else if (id === 'vcam') { if (!$('#vcBtn').hidden) $('#vcBtn').click(); }
+  else if (id === 'trans') $('#transBtn').click();
+  else if (id.startsWith('scene:')) { const n = id.slice(6); if (byName(n) && n !== studio.current) setCurrent(n); }
+  else if (id.startsWith('mute:')) { const a = studio.audio.find((x) => x.id === id.slice(5)); if (a) { a.muted = !a.muted; save(); syncAudio(); renderAudio(); } }
+  return true;
+};
+document.addEventListener('keydown', (e) => {
+  const t = e.target, tag = t && t.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+  if (!$('#setBox').hidden || document.querySelector('.modal:not([hidden])') || document.documentElement.classList.contains('hk-off')) return;
+  if (window.msHotkey(e)) { e.preventDefault(); e.stopImmediatePropagation(); }
+}, true);
 let projWin = null;
 $('#projBtn').onclick = () => {
   if (projWin && !projWin.closed) { projWin.focus(); return; }
