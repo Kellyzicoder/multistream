@@ -744,6 +744,24 @@ function goLiveDescription(req) {
   if (d !== gl.description) { gl.description = d; try { fs.writeFileSync(GL_FILE, JSON.stringify(gl, null, 2)); } catch {} }
   return d;
 }
+// While live: how many are watching, likes (YouTube and Facebook say this about every 30 seconds)
+let liveStats = { at: 0, youtube: null, facebook: null };
+app.get('/api/live/stats', async (req, res) => {
+  if (Date.now() - liveStats.at > 25000) {
+    liveStats.at = Date.now();
+    const out = { youtube: null, facebook: null };
+    if (session.youtube && yt.refreshToken) {
+      try { const v = ((await ytApi('GET', 'videos', { part: 'liveStreamingDetails,statistics', id: session.youtube })).items || [])[0];
+        if (v) out.youtube = { viewers: Number((v.liveStreamingDetails || {}).concurrentViewers) || 0, likes: Number((v.statistics || {}).likeCount) || 0, views: Number((v.statistics || {}).viewCount) || 0 }; } catch {}
+    }
+    if (session.facebook && fb.token) {
+      try { const j = await fetch(`${GRAPH}/${session.facebook}?${new URLSearchParams({ fields: 'live_views,video{reactions.summary(total_count)}', access_token: fb.token })}`).then((x) => x.json());
+        if (!j.error) out.facebook = { viewers: Number(j.live_views) || 0, likes: Number((((j.video || {}).reactions || {}).summary || {}).total_count) || 0 }; } catch {}
+    }
+    liveStats = { ...out, at: liveStats.at };
+  }
+  res.json(liveStats);
+});
 // "Update title for all channels" while live: the YouTube broadcast and the Facebook live video get the new title
 app.post('/api/golive/title', async (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
@@ -901,7 +919,7 @@ app.post('/api/facebook/live', async (req, res) => {
     const r = await fetch(`${GRAPH}/${fb.pageId}/live_videos`, {
       method: 'POST',
       // Test mode: Facebook takes the stream but the video is not published on the Page.
-      body: new URLSearchParams({ access_token: fb.token, status: (req.body || {}).test ? 'UNPUBLISHED' : 'LIVE_NOW', title, ...(description ? { description } : {}) }),
+      body: new URLSearchParams({ access_token: fb.token, status: (req.body || {}).test || (req.body || {}).privacy === 'self' ? 'UNPUBLISHED' : 'LIVE_NOW', title, ...(description ? { description } : {}) }),
     });
     const j = await r.json();
     const streamUrl = j.secure_stream_url || j.stream_url;
@@ -1066,7 +1084,7 @@ app.post('/api/youtube/live', async (req, res) => {
     // 2. the broadcast (test mode makes it private). Auto start/stop: it goes live when video arrives and ends when it stops.
     const b = await ytApi('POST', 'liveBroadcasts', { part: 'snippet,status,contentDetails' }, {
       snippet: { title, description, scheduledStartTime: new Date().toISOString() },
-      status: { privacyStatus: test ? 'private' : 'public', selfDeclaredMadeForKids: false },
+      status: { privacyStatus: test ? 'private' : ['public', 'unlisted', 'private'].includes((req.body || {}).privacy) ? req.body.privacy : 'public', selfDeclaredMadeForKids: false },
       contentDetails: { enableAutoStart: true, enableAutoStop: true },
     });
     // 3. join the broadcast to the stream

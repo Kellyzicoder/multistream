@@ -2317,7 +2317,7 @@ window.msStart = async (usePlan) => {
   ensureAudio(); startSend(); return true;
 };
 window.msStop = () => { if (wantSend) stopSend(); if (recWs) endRec(false); };
-window.msState = () => ({ sending: wantSend, recording: Boolean(recWs), scene: studio.current, collection: ($('#pColl b') || {}).textContent || '', shape: SHAPE_OF() });
+window.msState = () => ({ sending: wantSend, recording: Boolean(recWs), scene: studio.current, collection: ($('#pColl b') || {}).textContent || '', shape: SHAPE_OF(), quality: OUT.h + 'p', fps: OUT.fps });
 async function maybeAutoStart() {
   let plan; try { plan = await fetch('/api/autostart').then((r) => r.json()); } catch { return; }
   if (!plan || !plan.on || !(plan.steps || []).length) return;

@@ -695,9 +695,9 @@
   .glp-tr .ov { padding:7px 13px; border-radius:999px; font-weight:700; font-size:12.5px; letter-spacing:.5px; background:rgba(255,255,255,.16); color:#fff; }
   .glp-tr .ov.dark { background:rgba(10,14,31,.65); font-weight:600; letter-spacing:0; font-variant-numeric:tabular-nums; } .glp-tr .ov[hidden] { display:none; }
   .glp-tr .ov.live { background:#ff4d5a; } .glp-tr .ov.live::before { content:""; display:inline-block; width:8px; height:8px; border-radius:50%; background:#fff; margin-right:6px; vertical-align:1px; }
-  .glp-side { position:absolute; right:16px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; align-items:center; gap:6px; font-size:13px; font-weight:700; }
+  .glp-side { position:absolute; right:16px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; align-items:center; gap:6px; font-size:13px; font-weight:700; } .glp-side b { margin-bottom:12px; } .glp-side b:last-child { margin-bottom:0; }
   .glp-side[hidden] { display:none; }
-  .glp-r { width:40px; height:40px; border-radius:50%; border:0; display:grid; place-items:center; background:rgba(10,14,31,.6); color:#fff; padding:0; } .glp-r svg { width:18px; height:18px; } .glp-r.on { background:var(--blue); }
+  .glp-r { width:40px; height:40px; border-radius:50%; border:0; display:grid; place-items:center; background:rgba(10,14,31,.6); color:#fff; padding:0; } .glp-r svg { width:18px; height:18px; } .glp-r.on, #glChatBtn { background:var(--blue); } #glChatBtn:not(.on) { background:var(--blue); box-shadow:none; } .glp-r.lk svg { width:18px; height:18px; }
   .glp-msg { position:absolute; left:18px; bottom:16px; display:flex; align-items:center; gap:10px; max-width:70%; padding:8px 16px 8px 8px; border-radius:999px; background:rgba(10,14,31,.75); font-size:13.5px; animation:xpIn .3s ease-out; }
   .glp-msg[hidden] { display:none; } .glp-msg .av { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; background:#7c3aed; font-size:11px; font-weight:700; flex:none; } .glp-msg span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .glp-bar { display:flex; align-items:center; gap:14px; min-height:74px; padding:0 18px; background:rgba(18,24,51,.85); }
@@ -779,6 +779,8 @@
   .mdl .note { margin:0; font-size:12.5px; color:var(--muted); line-height:1.5; }
   .mdl .who { display:flex; align-items:center; gap:14px; } .mdl .who .tile { width:42px; height:42px; border-radius:12px; } .mdl .who b { display:block; font-size:17px; } .mdl .who small { color:var(--muted); font-size:13px; }
   .mdl .signin { display:flex; align-items:center; gap:12px; padding:16px; border-radius:14px; background:rgba(255,255,255,.06); }
+  .mdl .seg3 { display:grid; grid-template-columns:repeat(3,1fr); padding:3px; border-radius:999px; border:1px solid var(--gl-line); background:rgba(5,8,20,.45); }
+  .mdl .seg3 button { padding:9px 10px; border:0; border-radius:999px; background:transparent; color:var(--soft); font-size:13px; font-weight:600; } .mdl .seg3 button.on { background:var(--blue); color:var(--onblue); } .mdl .seg3 button:disabled { opacity:.45; }
 </style>
 </head>
 <body>
@@ -830,7 +832,7 @@
       </div>
       <div class="pv-msg" id="pvMsg" hidden></div>
       <div class="glp-tr"><span class="ov dark" id="ovPrev">Preview from the Studio</span><span class="ov dark" id="ovTime" hidden>00:00:00</span><span class="ov" id="ovState">OFFLINE</span></div>
-      <div class="glp-side" id="glpSide" hidden><button type="button" class="glp-r" id="glChatBtn" title="Open the live chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></button><b id="glChatN">0</b></div>
+      <div class="glp-side" id="glpSide" hidden><span class="glp-r lk" title="Likes"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff4d5a" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 5.3 3.2 1.7-2 3.2-3.2 5.3-3.2 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg></span><b id="glLikes">0</b><button type="button" class="glp-r" id="glChatBtn" title="Open the live chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></button><b id="glChatN">0</b><span class="glp-r" title="Watching now"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span><b id="glView">0</b></div>
       <div class="glp-msg" id="glpMsg" hidden><span class="av" id="glpAv"></span><b id="glpWho"></b><span id="glpTxt"></span></div>
     </div>
     <div class="glp-bar">
@@ -1503,6 +1505,9 @@ const XPAGES = {};
   const prefs = (() => { try { return JSON.parse(localStorage.getItem('ms_api_on') || '{}') || {}; } catch { return {}; } })();
   const savePrefs = () => { try { localStorage.setItem('ms_api_on', JSON.stringify(prefs)); } catch {} };
   const apiOn = (site) => prefs[site] !== false;
+  const names = (() => { try { return JSON.parse(localStorage.getItem('ms_names') || '{}') || {}; } catch { return {}; } })();
+  const who = (() => { try { return JSON.parse(localStorage.getItem('ms_who') || '{}') || {}; } catch { return {}; } })();
+  let stats = null;
   const fmtClock = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return String(Math.floor(s / 3600)).padStart(2, '0') + ':' + String(Math.floor(s / 60) % 60).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
 
   // ---------- the Studio inside this window ----------
@@ -1553,15 +1558,15 @@ const XPAGES = {};
     const out = [], hid = new Set();
     const yt = s.youtube || {}, fbs = s.facebook || {};
     const keyOf = (re) => s.destinations.find((d) => re.test(d.name));
-    if (yt.connected) { const d = keyOf(/youtube/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'youtube', c: 'yt', name: 'YouTube', on: apiOn('youtube'), dest: d, session: Boolean(s.session && s.session.youtube), sub: yt.channelTitle || '' }); }
-    if (fbs.hasToken && fbs.pageId) { const d = keyOf(/facebook/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'facebook', c: 'fb', name: 'Facebook', on: apiOn('facebook'), dest: d, session: Boolean(s.session && s.session.facebook), sub: fbs.pageName || '' }); }
+    if (yt.connected) { const d = keyOf(/youtube/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'youtube', c: 'yt', name: names.youtube || 'YouTube', on: apiOn('youtube'), dest: d, session: Boolean(s.session && s.session.youtube), sub: yt.channelTitle || '' }); }
+    if (fbs.hasToken && fbs.pageId) { const d = keyOf(/facebook/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'facebook', c: 'fb', name: names.facebook || 'Facebook', on: apiOn('facebook'), dest: d, session: Boolean(s.session && s.session.facebook), sub: fbs.pageName || '' }); }
     s.destinations.forEach((d) => { if (!hid.has(d.id)) out.push({ kind: 'key', c: platform(d.name).c, name: d.name, on: d.enabled, dest: d }); });
     return out;
   }
   function stateOf(ch, live) {
     const d = ch.dest, ds = d && d.status ? d.status.state : 'off';
     if (!ch.on) return { t: 'Off', cls: '' };
-    if (live && d && d.enabled && ds === 'live') return { t: 'Live' + (d.stats && d.stats.kbps ? ' · ' + (d.stats.kbps / 1000).toFixed(1) + ' Mbit/s' : ''), cls: 'live' };
+    if (live && d && d.enabled && ds === 'live') { const v = ch.site && stats && stats[ch.site]; return { t: 'Live' + (v ? ' · ' + v.viewers.toLocaleString() + ' watching' : ''), cls: 'live' }; }
     if (live && d && d.enabled && ds === 'error') return { t: 'Problem', cls: 'bad', msg: d.status.message };
     if (live && d && d.enabled && ds === 'starting') return { t: 'Starting', cls: '' };
     if (ch.kind === 'key' && !d.hasKey) return { t: 'Needs a stream key', cls: 'bad' };
@@ -1608,8 +1613,8 @@ const XPAGES = {};
     $('#glpSide').hidden = !live;
     const onList = chs.filter((c) => c.on);
     const sites = onList.map((c) => c.name).join(' + ') || 'no channels yet';
-    const out = (s.studio && s.studio.out) || '';
-    $('#glpSub').textContent = (live ? sites : 'Will go to ' + sites) + (out ? ' · ' + out.replace(/, [\d.]+ Mbit.*$/, '').replace(/ (\d+) fps/, ' · $1 fps') : '') + (live && studioRec() ? ' · recording in the Studio' : '');
+    let q = ''; try { const m = sw() && sw().msState && sw().msState(); if (m) q = ' · ' + m.quality + ' · ' + m.fps + ' fps'; } catch {}
+    $('#glpSub').textContent = (live ? sites : 'Will go to ' + sites) + q + (live && studioRec() ? ' · recording in the Studio' : '');
     paintTitle();
     // channels
     const L = $('#chList'), O = $('#chOff'); L.textContent = ''; O.textContent = '';
@@ -1662,7 +1667,7 @@ const XPAGES = {};
   // ---------- Start / Stop streaming ----------
   async function goLiveOn(site) {
     const t = titleFor(site === 'youtube' ? 'yt' : 'fb');
-    const r = await api('/api/' + site + '/live', 'POST', { test: $('#fbTest').checked, title: t.title, description: t.description });
+    const r = await api('/api/' + site + '/live', 'POST', { test: $('#fbTest').checked, privacy: who[site] || 'public', title: t.title, description: t.description });
     if (r && r.error) alert((site === 'youtube' ? 'YouTube' : 'Facebook') + ': ' + r.error);
     else if (r && r.thumbnailError) alert('You are live on YouTube, but YouTube did not take the thumbnail: ' + r.thumbnailError);
   }
@@ -1776,12 +1781,18 @@ const XPAGES = {};
     d.querySelector('.x').onclick = close; d.querySelector('.c').onclick = close;
     const f = d.querySelector('.f');
     if (ch.kind === 'api') {
-      f.innerHTML = '<div class="signin"><span>Sign-in</span><span class="grow" style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div><p class="note"></p>';
-      f.querySelector('.note').textContent = 'When this channel is on, Start streaming makes the live on ' + ch.name + ' with your title' + (ch.site === 'youtube' ? ' and thumbnail' : '') + '. Private test (at the top) makes it visible only to you.';
+      const fbk = ch.site === 'facebook';
+      f.innerHTML = '<label>Name shown in Multistream<input type="text" class="e1"></label>' + (fbk ? '<label>Page<select class="e4" disabled></select></label>' : '') + '<div><div style="font-size:12.5px;color:var(--muted);margin-bottom:6px">Who can watch</div><div class="seg3"></div></div><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
+      f.querySelector('.e1').value = ch.name;
+      if (fbk) { const o = new Option(ch.sub || 'Your Page', ''); f.querySelector('.e4').add(o); f.querySelector('.e4').title = 'To use another Page, press Sign in again.'; }
+      let pick = who[ch.site] || 'public';
+      const opts = fbk ? [['public', 'Public'], ['friends', 'Friends'], ['self', 'Only me (test)']] : [['public', 'Public'], ['unlisted', 'Unlisted'], ['private', 'Private (test)']];
+      const sg = f.querySelector('.seg3');
+      const drawSeg = () => { sg.textContent = ''; opts.forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.className = v === pick ? 'on' : ''; if (fbk && v === 'friends') { b.disabled = true; b.title = 'A Facebook Page live is for everyone who can see the Page; Friends is only for a personal profile.'; } b.onclick = () => { pick = v; drawSeg(); }; sg.appendChild(b); }); };
+      drawSeg();
       f.querySelector('.sa').onclick = () => { close(); openSettings(ch.site); };
-      d.querySelector('.rm').textContent = 'Sign out';
-      d.querySelector('.rm').onclick = () => { close(); openSettings(ch.site); };
-      d.querySelector('.o').onclick = close;
+      d.querySelector('.rm').onclick = () => { if (confirm('Remove ' + ch.name + '? You can sign in again later.')) { prefs[ch.site] = false; savePrefs(); close(); openSettings(ch.site); refresh(); } };
+      d.querySelector('.o').onclick = () => { const n = f.querySelector('.e1').value.trim(); if (n && n !== (ch.site === 'youtube' ? 'YouTube' : 'Facebook')) names[ch.site] = n; else delete names[ch.site]; who[ch.site] = pick; try { localStorage.setItem('ms_names', JSON.stringify(names)); localStorage.setItem('ms_who', JSON.stringify(who)); } catch {} close(); refresh(); };
     } else {
       const x = ch.dest;
       f.innerHTML = '<label>Name shown in Multistream<input type="text" class="e1"></label><label>Server<input type="text" class="e2" placeholder="rtmps://..."></label><label>Stream key<input type="password" class="e3" autocomplete="off"></label><p class="note"></p>';
@@ -1830,6 +1841,12 @@ const XPAGES = {};
     const m = /^(\d+)x(\d+)$/.exec(h.size || ''); $('.app').classList.toggle('tall', Boolean(m && Number(m[2]) > Number(m[1])));
   }, 2000);
   $('#ghMore').onclick = () => showPage('health');
+  setInterval(async () => {
+    if (!(st && st.obsLive && st.session && (st.session.youtube || st.session.facebook))) { stats = null; return; }
+    try { stats = await api('/api/live/stats'); } catch { return; }
+    const v = (stats.youtube ? stats.youtube.viewers : 0) + (stats.facebook ? stats.facebook.viewers : 0), l = (stats.youtube ? stats.youtube.likes : 0) + (stats.facebook ? stats.facebook.likes : 0);
+    $('#glView').textContent = v.toLocaleString(); $('#glLikes').textContent = l.toLocaleString();
+  }, 10000);
 })();
 // Help: start here, fixing problems, keys; the search box hides what does not match
 (() => {
