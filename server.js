@@ -529,7 +529,7 @@ app.post('/api/recording/open', (req, res) => {
 // ---- Title and thumbnail for Go live ----
 // The title the person typed is remembered. The thumbnail picture is kept in this computer's data folder.
 const GL_FILE = path.join(DATA_DIR, 'golive.json');
-let gl = { title: '' };
+let gl = { title: '', description: '' };
 try { gl = { ...gl, ...JSON.parse(fs.readFileSync(GL_FILE, 'utf8')) }; } catch {}
 const THUMBS = { 'image/png': path.join(DATA_DIR, 'thumbnail.png'), 'image/jpeg': path.join(DATA_DIR, 'thumbnail.jpg') };
 function thumbFile() {
@@ -543,9 +543,17 @@ function goLiveTitle(req) {
     gl.title = t;
     try { fs.writeFileSync(GL_FILE, JSON.stringify(gl, null, 2)); } catch {}
   }
-  return t || `Live from FCCHQ ${new Date().toLocaleDateString('en-NZ')}`;
+  return t || `Live ${new Date().toLocaleDateString('en-NZ')}`;
 }
-app.get('/api/golive', (req, res) => res.json({ title: gl.title, hasThumbnail: Boolean(thumbFile()) }));
+// the description is optional; it is remembered like the title
+function goLiveDescription(req) {
+  const body = req.body || {};
+  if (typeof body.description !== 'string') return gl.description || '';
+  const d = body.description.trim().slice(0, 5000); // YouTube allows 5000 characters
+  if (d !== gl.description) { gl.description = d; try { fs.writeFileSync(GL_FILE, JSON.stringify(gl, null, 2)); } catch {} }
+  return d;
+}
+app.get('/api/golive', (req, res) => res.json({ title: gl.title, description: gl.description || '', hasThumbnail: Boolean(thumbFile()) }));
 app.put('/api/golive/thumbnail', express.raw({ type: '*/*', limit: '10mb' }), (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
   const b = req.body;
@@ -674,11 +682,12 @@ app.post('/api/facebook/live', async (req, res) => {
   if (!fb.token || !fb.pageId) return res.status(400).json({ error: 'Add the Facebook Page first' });
   const d = fbDestination() || addDestination('Facebook');
   const title = goLiveTitle(req);
+  const description = goLiveDescription(req);
   try {
     const r = await fetch(`${GRAPH}/${fb.pageId}/live_videos`, {
       method: 'POST',
       // Test mode: Facebook takes the stream but the video is not published on the Page.
-      body: new URLSearchParams({ access_token: fb.token, status: (req.body || {}).test ? 'UNPUBLISHED' : 'LIVE_NOW', title }),
+      body: new URLSearchParams({ access_token: fb.token, status: (req.body || {}).test ? 'UNPUBLISHED' : 'LIVE_NOW', title, ...(description ? { description } : {}) }),
     });
     const j = await r.json();
     const streamUrl = j.secure_stream_url || j.stream_url;
@@ -828,6 +837,7 @@ app.post('/api/youtube/live', async (req, res) => {
   const d = ytDestination() || addDestination('YouTube');
   const test = Boolean((req.body || {}).test);
   const title = goLiveTitle(req);
+  const description = goLiveDescription(req);
   try {
     // 1. the stream (the key) that the video is sent to
     const list = await ytApi('GET', 'liveStreams', { part: 'id,cdn', mine: 'true', maxResults: '50' });
@@ -841,7 +851,7 @@ app.post('/api/youtube/live', async (req, res) => {
     }
     // 2. the broadcast (test mode makes it private). Auto start/stop: it goes live when video arrives and ends when it stops.
     const b = await ytApi('POST', 'liveBroadcasts', { part: 'snippet,status,contentDetails' }, {
-      snippet: { title, scheduledStartTime: new Date().toISOString() },
+      snippet: { title, description, scheduledStartTime: new Date().toISOString() },
       status: { privacyStatus: test ? 'private' : 'public', selfDeclaredMadeForKids: false },
       contentDetails: { enableAutoStart: true, enableAutoStop: true },
     });
