@@ -68,9 +68,14 @@
   html, body { height:100%; }
   body { display:flex; flex-direction:column; overflow:hidden; font-size:13px; }
   .obs { display:flex; flex-direction:column; height:100vh; }
-  .pagetabs { display:flex; gap:6px; padding:2px 0 0; flex:none; }
-  .pagetabs button { padding:4px 14px; border-radius:999px; background:var(--btn); font-size:12px; }
-  .pagetabs button[aria-pressed="true"] { background:var(--sel); color:var(--onsel); }
+  /* the top bar: the same as the Go Live page (logo, then Go Live / Studio / Multiview in one rounded group) */
+  .ptop { display:flex; align-items:center; gap:14px; height:48px; flex:none; padding:0 16px; border-radius:999px; border:1px solid var(--gl-line); background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
+  .ptop .brand { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; letter-spacing:.3px; }
+  .ptop .brand svg { width:22px; height:28px; color:var(--sel); }
+  .pagetabs { display:inline-flex; padding:3px; border:1px solid var(--gl-line); border-radius:999px; background:var(--gl2); box-shadow:inset 0 1px 0 var(--gl-hi); }
+  .pagetabs button { white-space:nowrap; border:0; background:transparent; color:var(--muted); padding:6px 16px; border-radius:999px; font-size:12px; font-weight:500; box-shadow:none; }
+  .pagetabs button:hover { color:var(--text); background:transparent; }
+  .pagetabs button[aria-pressed="true"] { background:var(--gl-hi); color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.18); }
   .stage { flex:1; min-height:0; display:flex; align-items:center; gap:10px; padding:10px; }
   .screen { flex:1; min-width:0; display:flex; flex-direction:column; height:100%; justify-content:center; }
   .screen .cap { text-align:center; font-size:12px; color:var(--muted); margin-bottom:4px; }
@@ -289,7 +294,8 @@
 <body>
 <div class="alertbar" id="alertBar" role="alert"><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 <div class="obs">
-  <nav class="pagetabs" aria-label="Pages"><button type="button" id="tabStream" title="Go to the Stream page">Stream</button><button type="button" aria-pressed="true" title="You are here">Studio</button><button type="button" id="tabCr" title="Open the Multiview">Multiview</button></nav>
+  <header class="ptop"><div class="brand"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="var(--red)"/></svg><span>Multistream</span></div>
+  <nav class="pagetabs" aria-label="Pages"><button type="button" id="tabStream" title="Go to the Go Live page">Go Live</button><button type="button" aria-pressed="true" title="You are here">Studio</button><button type="button" id="tabCr" title="Open the Multiview">Multiview</button></nav></header>
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
   <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside><div class="split v" id="splitL" title="Drag to make the left panels wider or narrower" hidden></div>
   <div class="stage">
@@ -338,7 +344,7 @@
   </div>
 
   <!-- status bar, like OBS -->
-  <footer class="status"><button id="backBtn" hidden title="Go back to the Stream page">&larr; Stream</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
+  <footer class="status"><button id="backBtn" hidden title="Go back to the Go Live page">&larr; Go Live</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
 </div>
 
 <!-- Properties window, like OBS -->
@@ -365,7 +371,7 @@
           <h3>Studio</h3>
           <div class="f"><label>Theme</label><span class="lookbtns" id="lookTheme"><button type="button" data-v="system">System</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></span></div>
           <div class="f"><label>Main colour</label><span class="lookcols" id="lookCols"></span></div>
-          <p class="note">Theme and main colour are the same as on the Stream page (Settings, Appearance).</p>
+          <p class="note">Theme and main colour are the same as on the Go Live page (Settings, Appearance).</p>
           <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
           <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
           <div class="f"><label>Panels</label><span><button id="resetLayout" type="button">Put the panels back</button> <span class="note">Drag a panel's title to move it. Drag it up to float it, or drop it on the bottom row to dock it again.</span></span></div>
@@ -374,7 +380,7 @@
         </section>
         <section class="sp" data-sp="channels">
           <h3>Where your video goes</h3>
-          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the Stream page under Settings.</p>
+          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the Go Live page under Settings.</p>
           <div id="chanList"></div>
           <h3>Add a channel</h3>
           <div class="f"><label>Site</label><select id="chType"><option value="youtube">YouTube</option><option value="facebook">Facebook</option><option value="other">Instagram or another site</option></select></div>
@@ -395,7 +401,7 @@
         </section>
         <section class="sp" data-sp="output">
           <h3>Recording</h3>
-          <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal</option><option value="720-6">720p normal</option><option value="720-3">720p small file</option></select></div>
+          <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal (about 3.6 GB an hour)</option><option value="1080-4">1080p small file (about 1.8 GB an hour)</option><option value="720-6">720p normal (about 2.7 GB an hour)</option><option value="720-3">720p small file (about 1.4 GB an hour)</option></select></div>
           <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Also save the stream as soon as it starts</label></div>
           <div class="f"><label>Saved in</label><span><code id="recDir2"></code></span></div>
           <div class="row"><button id="recOpen2">Open folder</button><span class="note" id="recMsg2"></span></div>
@@ -1499,7 +1505,7 @@ function openPipe(p) {
 if (/[?&]same=1/.test(location.search) && window.msNative) {
   $('#backBtn').hidden = false;
   $('#backBtn').onclick = () => {
-    if ((wantSend || recWs) && !confirm('Going back to the Stream page stops streaming and recording. Go back?')) return;
+    if ((wantSend || recWs) && !confirm('Going back to the Go Live page stops streaming and recording. Go back?')) return;
     window.msNative.openDashboard();
   };
 }
@@ -1602,7 +1608,8 @@ async function startRec() {
   const ws = recWs = openPipe(`/studio-record?h=${rcv.height}&mbit=${mb}&fps=${rfps}${fast ? '&copy=1' : ''}`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
-    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: Math.min(80, Math.max(mb, 6)) * 1000000, audioBitsPerSecond: 160000 });
+    // fast (encode once): the file is exactly what the browser makes, so use the chosen size. Normal way: give ffmpeg a bit more to work from.
+    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: (fast ? mb : Math.min(80, Math.max(mb, 6))) * 1000000, audioBitsPerSecond: 160000 });
     recMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     recMr.start(500);
     recT0 = Date.now(); $('#recBtn').textContent = 'Stop Recording'; $('#recBtn').className = 'stop';
@@ -1635,12 +1642,12 @@ function vcOff(msg) {
 }
 $('#vcBtn').onclick = async () => {
   if (vcWs) { vcOff(); $('#st').textContent = 'Virtual camera is off.'; $('#st').className = 'stat'; return; }
-  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok3') === '1'; } catch {}
+  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok4') === '1'; } catch {}
   if (!ok) {
-    if (!confirm('Windows will ask for permission one time, to add the camera called Multistream Camera (it replaces the old DirectShow Softcam name). Continue?')) return;
+    if (!confirm('Windows will ask for permission one time, to add the camera called Multistream Camera (it replaces the old DirectShow Softcam name). Quit Zoom fully first (also from the icons next to the clock). Continue?')) return;
     const r = await fetch('/api/vcam/install', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then((x) => x.json()).catch(() => ({ error: 'Could not reach the app' }));
     if (r.error) { $('#st').textContent = 'Virtual camera setup: ' + r.error; $('#st').className = 'stat bad'; return; }
-    try { localStorage.setItem('ms_vcam_ok3', '1'); } catch {}
+    try { localStorage.setItem('ms_vcam_ok4', '1'); } catch {}
   }
   const ws = vcWs = openPipe('/studio-vcam');
   ws.binaryType = 'arraybuffer';
@@ -2093,9 +2100,10 @@ async function poll() {
     }
   } catch {}
 }
-const small = document.createElement('canvas'); small.width = 480; small.height = 270;
+// Multiview pictures: Preview and Program at 960x540 (sharp on a big screen), scene pictures at 480x270
+const small = document.createElement('canvas'); small.width = 960; small.height = 540;
 const sctx = small.getContext('2d');
-const tiny = document.createElement('canvas'); tiny.width = 320; tiny.height = 180; const tctx = tiny.getContext('2d');
+const tiny = document.createElement('canvas'); tiny.width = 480; tiny.height = 270; const tctx = tiny.getContext('2d');
 let thumbs = {}, thumbAt = 0, shotBusy = false, watching = true, pingAt = 0;
 async function shots() {
   if (shotBusy) return; shotBusy = true;
@@ -2106,14 +2114,14 @@ async function shots() {
       pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;
     }
     // the Program picture is a small copy of what is on air (one quick copy, not drawing the scene again)
-    if (cv.width >= 480) sctx.drawImage(cv, 0, 0, 480, 270); else drawScene(sctx, byName(studio.current), 480 / SW, true);
-    const prog = small.toDataURL('image/jpeg', 0.5);
-    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 480 / SW, false); pv = small.toDataURL('image/jpeg', 0.5); }
+    if (cv.width >= 960) sctx.drawImage(cv, 0, 0, 960, 540); else drawScene(sctx, byName(studio.current), 960 / SW, true);
+    const prog = small.toDataURL('image/jpeg', 0.8);
+    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 960 / SW, false); pv = small.toDataURL('image/jpeg', 0.8); }
     const body = { prog, pv };
     // the small scene pictures are sent only when one of them changed (a scene with a camera changes each time)
-    if (Date.now() - thumbAt > 4000 || !Object.keys(thumbs).length) {
+    if (Date.now() - thumbAt > 1500 || !Object.keys(thumbs).length) {
       thumbAt = Date.now(); const next = {};
-      studio.scenes.forEach((s) => { drawScene(tctx, s, 320 / SW, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.5); });
+      studio.scenes.forEach((s) => { drawScene(tctx, s, 480 / SW, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.75); });
       const names = Object.keys(next), changed = names.length !== Object.keys(thumbs).length || names.some((n) => next[n] !== thumbs[n]);
       thumbs = next;
       if (changed) body.thumbs = thumbs;
@@ -2133,7 +2141,7 @@ async function shots() {
   if (!byName(studio.current)) { studio.current = studio.scenes[0].name; dirtyCurrent = true; }
   editing = studio.current;
   renderAll(); await loadDevices(); ensureAudio();
-  setInterval(poll, 700); setInterval(shots, 400);
+  setInterval(poll, 700); setInterval(shots, 200); // Multiview pictures 5 times a second (only while a Multiview is open)
 })();
 </script>
 <div id="keysBox" hidden style="position:fixed;right:12px;top:52px;z-index:50;background:var(--card,#101814);border:1px solid var(--line);border-radius:10px;padding:12px 14px;max-width:300px;font-size:13px;line-height:1.7;box-shadow:0 8px 30px #0008">
@@ -2285,7 +2293,7 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   layout();
 })();
 // Studio alerts (no video arriving, video stopped) and Stream alerts (a channel stopped) both show here,
-// because the Stream is the most important. Dismiss here clears both; Dismiss on the Stream page clears its own.
+// because the Stream is the most important. Dismiss here clears both; Dismiss on the Go Live page clears its own.
 (function () {
   // Alerts are pushed by the app as they happen (no polling). In the app they come through a pipe;
   // in a browser on the church Wi-Fi they come through an event stream. If the link drops it comes back.

@@ -6,8 +6,8 @@ Version 3 is a separate app. Version 1 (`main`) and Version 2 (`v2`) are not cha
 
 ## How it is kept apart
 - Own branch: `v3`.
-- Own app name ("Multistream 3"), own app id, own saved settings. You type your keys in again once.
-- Own installers: `Multistream3-Setup.exe`, `Multistream3-Mac-*.dmg`, `Multistream3-Linux.AppImage`.
+- Own app name ("Multistream", it was "Multistream 3"), own app id, own saved settings.
+- Own installers: `Multistream-Setup.exe`, `Multistream-Mac-*.dmg`, `Multistream-Linux.AppImage`.
 - Own release: **v3-latest** (version numbers 3.0.N).
 
 ## What "no localhost" means
@@ -75,7 +75,7 @@ The Studio only draws the Multiview pictures while a Multiview is open (it used 
 
 ## Stream errors are shown everywhere
 - The first page is now called **Stream** (it was "Dashboard").
-- There is no split screen. Instead, a red card floats in the bottom-right corner when something goes wrong. Stream problems (a channel stopping, or the video stopping while the live is open) show on the **Stream** page, the **Multiview** and the **Studio** (the stream matters most). Studio problems (no video arriving) show in the **Studio** only. Each alert names where it came from and the time, keeps one line per source (a retry updates its line), and shows a tick with "back on air" when it fixes itself. **Dismiss** in the Studio clears both kinds; Dismiss on the Stream page clears the Stream ones.
+- There is no split screen. Instead, a red card floats in the bottom-right corner when something goes wrong. Stream problems (a channel stopping, or the video stopping while the live is open) show on the **Stream** page, the **Multiview** and the **Studio** (the stream matters most). Studio problems (no video arriving) show in the **Studio** only. Each alert names where it came from and the time, keeps one line per source (a retry updates its line), and shows a tick with "back on air" when it fixes itself. **Dismiss** in the Studio clears both kinds; Dismiss on the Go Live page clears the Stream ones.
 - The alerts are pushed by the app as they happen, so the pages do not keep asking for news. A page that opens later still shows alerts not dismissed yet.
 - Tested in a browser test. Not tried in the real app yet.
 

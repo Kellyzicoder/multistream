@@ -1,4 +1,4 @@
-// Starts the real Multistream 3 desktop app and checks it end to end. Run: npm run test:app
+// Starts the real Multistream desktop app and checks it end to end. Run: npm run test:app
 // (On Linux with no screen: xvfb-run -a npm run test:app)
 // A fake "YouTube" runs on this computer, so nothing goes to the real internet.
 const { _electron: electron } = require('playwright-core');
