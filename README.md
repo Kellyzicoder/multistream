@@ -74,7 +74,7 @@ Menu next to the title, then Studio (on the church PC only). It opens in its own
 - **Sources:** camera and capture cards, pictures, video files (with sound), screen capture, web pages (like the lyrics page), phone camera over Wi-Fi (DroidCam), text and colours.
 - **Sound:** every input has a volume, mute and level meter. Tick which scenes each input is heard in.
 - **Send:** "Start sending" sends the ON AIR picture and the sound into the relay, the same place OBS sent to.
-- **Control Room:** the Engine box picks Studio or OBS. Automatic uses the Studio when it is open, otherwise OBS. In Studio mode you can also switch items such as lowerthirds on and off from the Control Room (works on the phone too).
+- **Multiview:** the Engine box picks Studio or OBS. Automatic uses the Studio when it is open, otherwise OBS. In Studio mode you can also switch items such as lowerthirds on and off from the Multiview (works on the phone too).
 - OBS is untouched and stays as the backup.
 
 ## Mac install

@@ -347,7 +347,7 @@
   .opt button[aria-pressed="true"] { background:var(--blue); color:var(--onblue); border-color:var(--blue); font-weight:600; }
   .viewbox .opt button { padding:5px 10px; font-size:11px; }
 
-  /* ---------- Control Room ---------- */
+  /* ---------- Multiview ---------- */
   .cr { padding:6px 22px 22px; max-width:1500px; margin:0 auto; }
   .cr-bar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
   .cr-bar h1 { margin:0; font-size:10.5px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
@@ -419,7 +419,7 @@
   html.a-contrast { --gl:var(--card); --gl2:var(--card2); --gl-line:var(--line); --gl-hi:transparent; --gl-sh:none; --gl-blur:none; }
   html.a-contrast body { background:var(--bg); }
   @media (prefers-reduced-transparency: reduce) { :root { --gl:var(--card); --gl2:var(--card2); --gl-line:var(--line); --gl-hi:transparent; --gl-blur:none; } }
-  /* ---------- Control Room fills the whole window (no side margins, no black bars) ---------- */
+  /* ---------- Multiview fills the whole window (no side margins, no black bars) ---------- */
   .cr:not([hidden]) { max-width:none; margin:0; padding:10px 14px 14px; height:calc(100vh - 66px); display:flex; flex-direction:column; gap:10px; overflow:hidden; }
   .cr .cr-bar { margin:0; flex:none; }
   .cr .cr-top { flex:none; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:stretch; }
@@ -432,7 +432,7 @@
   .cr .cr-grid .tile .im { flex:none; width:100%; height:auto; aspect-ratio:16/9; object-fit:cover; }
   .cr .cr-aud { margin:0; flex:none; }
   @media (max-width:800px) { .cr:not([hidden]) { height:auto; overflow:visible; } }
-  /* ---------- Control Room = OBS Multiview: Preview and Program on top, every scene below, 4 across; square boxes,
+  /* ---------- Multiview = OBS Multiview: Preview and Program on top, every scene below, 4 across; square boxes,
      thin lines, the name at the bottom; red = on air, green = preview ---------- */
   .cr:not([hidden]) { background:#000; padding:0; gap:0; align-items:center; justify-content:center; }
   .cr .cr-bar, .cr .cr-aud { display:none; }
@@ -451,7 +451,7 @@
   .cr .cr-mv .cr-grid .tile:hover { border-color:#8a8a8a; }
   .cr .cr-mv .tile .nm::before, .cr .cr-mv .tile .nm::after { content:none !important; }
   .cr .cr-mv img:not([src]), .cr .cr-mv img[src=""] { visibility:hidden; } /* no picture yet: plain black, not a broken-picture sign */
-  /* ---------- where to show the Control Room ---------- */
+  /* ---------- where to show the Multiview ---------- */
   .cr-menu { position:fixed; z-index:80; min-width:300px; padding:8px; border-radius:16px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); display:flex; flex-direction:column; gap:4px; }
   .cr-menu button { text-align:left; border:0; background:transparent; color:var(--text); border-radius:10px; padding:10px 12px; font-size:13px; font-weight:600; cursor:pointer; }
   .cr-menu button:hover, .cr-menu button:focus { background:var(--gl2); outline:none; }
@@ -471,7 +471,7 @@
   <nav class="seg" id="pageTabs" aria-label="Pages">
     <button type="button" data-page="dash" aria-current="page">Stream</button>
     <button type="button" data-page="studio" title="The built-in studio: scenes, cameras, sound, recording">Studio</button>
-    <button type="button" data-page="cr">Control Room</button>
+    <button type="button" data-page="cr">Multiview</button>
   </nav>
   <span class="sp"></span>
   <span class="chip" id="chip">OFFLINE</span>
@@ -594,10 +594,10 @@
   </aside>
 </div>
 
-<!-- control room -->
+<!-- multiview -->
 <div class="cr" id="crView" hidden>
   <div class="cr-bar">
-    <h1>Control Room</h1>
+    <h1>Multiview</h1>
   </div>
   <div class="cr-mv" id="crMv">
   <div class="cr-top">
@@ -655,10 +655,6 @@
             <div class="srow"><p class="lb" id="l-col">Main colour</p>
               <div class="ctl"><div class="sws" id="sws" role="group" aria-labelledby="l-col"></div>
                 <div class="cust"><span>Custom:</span><span class="hx">#<input id="accHex" maxlength="6" placeholder="22C55E" aria-label="Custom colour, 6 letters or numbers"></span><input type="color" id="accPick" aria-label="Pick a colour"></div></div></div>
-          </div>
-                  <div class="grp"><h4>Studio</h4>
-            <div class="srow"><label class="lb" for="studioOpenSel">Open the Studio in<small>A new window keeps the Stream page in view. This window replaces the Stream page; a button in the Studio comes back.</small></label>
-              <div class="ctl"><select class="t" id="studioOpenSel"><option value="window">A new window</option><option value="same">This window</option></select></div></div>
           </div>
         </section>
 
@@ -882,7 +878,7 @@ function stopPreview(keepMessage) {
   if (!keepMessage) setPreviewMsg($('#pvSwitch').checked ? '' : 'Preview is off');
 }
 
-// The preview only plays while the Stream page is on screen (not on the Control Room, and not while the
+// The preview only plays while the Stream page is on screen (not on the Multiview, and not while the
 // window is minimised or hidden), so the computer does not decode video nobody is looking at.
 function syncPreview() {
   let onStream = true; try { onStream = page === 'dash'; } catch {} // (page is set further down)
@@ -1021,22 +1017,18 @@ document.querySelectorAll('[data-copy]').forEach((b) => {
 });
 
 $('#openStudioBtn').onclick = () => showPage('studio');
-(function () {
-  const sel = $('#studioOpenSel'); if (!sel) return;
-  try { sel.value = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
-  sel.onchange = () => { try { localStorage.setItem('ms_studio_open', sel.value); } catch {} };
-})();
 // Version 3 has no OBS connection. These stay as empty helpers so older code paths are harmless.
 function renderScn() {}
 function pollThumbs() {}
 
-// Control Room (multiview) and the page switcher
+// Multiview and the page switcher
 let page = 'dash';
 let crPrev = '';
 const pageTabs = document.querySelectorAll('#pageTabs button');
 function showPage(p) {
   if (p === 'studio') {
-    let m = 'window'; try { m = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+    // the Studio always opens in this window (only the Multiview gets its own window). ms_studio_window is for the automatic test only.
+    let m = 'same'; try { if (localStorage.getItem('ms_studio_window') === '1') m = 'window'; } catch {}
     if (window.msNative) window.msNative.openStudio(m === 'same'); else window.open('/studio.html', m === 'same' ? '_self' : '_blank');
     return;
   }
@@ -1050,7 +1042,7 @@ function showPage(p) {
   syncPreview();
 }
 pageTabs.forEach((b) => { b.onclick = () => { if (b.dataset.page === 'cr') openCrMenu(b); else showPage(b.dataset.page); }; });
-// Control Room tab: a drop-down with New window and each display (like OBS projectors)
+// Multiview tab: a drop-down with New window and each display (like OBS projectors)
 let crMenu = null;
 function closeCrMenu() { if (crMenu) { crMenu.remove(); crMenu = null; document.removeEventListener('keydown', crMenuEsc); document.removeEventListener('pointerdown', crMenuOut, true); } }
 function crMenuEsc(e) { if (e.key === 'Escape') closeCrMenu(); }
@@ -1061,13 +1053,13 @@ async function openCrMenu(anchor) {
   const m = crMenu = document.createElement('div'); m.className = 'cr-menu'; m.setAttribute('role', 'menu');
   const r = anchor.getBoundingClientRect(); m.style.left = Math.max(8, r.left) + 'px'; m.style.top = (r.bottom + 8) + 'px';
   const add = (title, sub, run) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.innerHTML = '<span></span><small></small>'; b.firstChild.textContent = title; b.lastChild.textContent = sub; b.onclick = () => { closeCrMenu(); run(); }; m.appendChild(b); };
-  add('New window', 'Opens the Control Room in its own window', () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); });
+  add('New window', 'Opens the Multiview in its own window', () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); });
   ds.forEach((d) => add('Display ' + d.n + (d.main ? ' (main)' : ''), 'Full screen on this display. ' + d.w + ' x ' + d.h + '. Press Esc to leave full screen.', () => window.msNative.openControlRoom(d.id)));
   document.body.appendChild(m);
   document.addEventListener('keydown', crMenuEsc); document.addEventListener('pointerdown', crMenuOut, true);
   const f = m.querySelector('button'); if (f) f.focus();
 }
-// The Control Room drives the Studio.
+// The Multiview drives the Studio.
 const crEng = 'studio';
 let stu = { alive: false, scenes: [], current: '', shots: {}, tv: 0, rev: null };
 function engine() { return 'studio'; }
@@ -1462,7 +1454,7 @@ $('#pfBtn').onclick = async () => {
 
 // Alerts: a red bar when something stops
 // Each alert names its source (a channel or the Studio) and the time, so it is easy to trace.
-// Alerts kept until Dismiss. Stream problems show here (Stream and Control Room); Studio problems show in the Studio.
+// Alerts kept until Dismiss. Stream problems show here (Stream and Multiview); Studio problems show in the Studio.
 // Alerts are pushed by the app as they happen (no polling). In the app they come through a pipe;
 // in a browser on the church Wi-Fi they come through an event stream. If the link drops it comes back.
 function listenAlerts(group, onMsg) {

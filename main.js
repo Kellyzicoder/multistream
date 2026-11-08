@@ -124,12 +124,14 @@ handleIpc('ms-open-studio', (e, same) => {
 });
 handleIpc('ms-open-dashboard', () => {
   if (!win || win.isDestroyed()) return;
+  // the Studio has its own window: only bring the Stream page to the front (reloading would close the Studio's web pages)
+  if (studioWin && !studioWin.isDestroyed()) { win.show(); win.focus(); return; }
   browsers.forEach((b) => b.destroy()); browsers.clear();
   win.webContents.setBackgroundThrottling(true);
   win.loadURL(HOME + '/');
   win.show(); win.focus(); // bring the Stream page to the front
 });
-// the screens that are connected (for showing the Control Room or a Preview/Program picture full screen on one of them)
+// the screens that are connected (for showing the Multiview or a Preview/Program picture full screen on one of them)
 const displayList = () => { const main = screen.getPrimaryDisplay().id; return screen.getAllDisplays().map((d, i) => ({ id: d.id, n: i + 1, label: d.label || '', w: d.size.width, h: d.size.height, main: d.id === main })); };
 handleIpc('ms-displays', () => { try { return displayList(); } catch { return []; } });
 const displayById = (id) => (id == null || id === '' ? null : screen.getAllDisplays().find((d) => String(d.id) === String(id)) || null);
@@ -146,7 +148,7 @@ let crWin = null;
 handleIpc('ms-open-cr', (e, displayId) => {
   const d = displayById(displayId);
   if (crWin && !crWin.isDestroyed()) crWin.close();
-  const o = { width: 1280, height: 800, title: 'Multistream Control Room', autoHideMenuBar: true, backgroundColor: '#07090b', show: !d,
+  const o = { width: 1280, height: 800, title: 'Multistream Multiview', autoHideMenuBar: true, backgroundColor: '#07090b', show: !d,
     webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(__dirname, 'preload.js') } };
   if (d) Object.assign(o, { x: d.bounds.x, y: d.bounds.y, width: d.bounds.width, height: d.bounds.height });
   const w = crWin = new BrowserWindow(o);

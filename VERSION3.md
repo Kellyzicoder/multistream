@@ -56,16 +56,16 @@ Rounded corners, frosted translucent panels with blur, light edges and a soft ac
 In the Studio, drag a panel's title (Scenes, Sources, Audio Mixer, Scene Transitions, Controls) to put it in a new place on the bottom row. Drag it up, or press the arrow button on its title, to float it as its own window that you can move and resize. Drag it to the far left or right edge to dock it beside the pictures. The audio mixer has vertical faders and meters like OBS; the per-input tools (input, headphones, delay, low cut, bass/treble, gate, compressor, limiter) open from each strip's Tools button. Drop it on the bottom row, or press the arrow again, to dock it. The layout is saved on this device. Settings, General, Put the panels back resets it.
 
 ## Studio Mode and panel sizes
-Controls, Studio Mode (like OBS): on shows Preview and Program with a Transition button; off shows only the live picture, and clicking a scene puts it on air straight away. Panels can be resized with limits: drag the line above the bottom row, the lines between panels, or the line beside a left or right column (double-click a line to reset it). Settings, General, Put the panels back resets everything. The Control Room page fills the whole window.
+Controls, Studio Mode (like OBS): on shows Preview and Program with a Transition button; off shows only the live picture, and clicking a scene puts it on air straight away. Panels can be resized with limits: drag the line above the bottom row, the lines between panels, or the line beside a left or right column (double-click a line to reset it). Settings, General, Put the panels back resets everything. The Multiview page fills the whole window.
 
-## Control Room on a display, and projectors
-Pressing Control Room at the top asks where to show it: in this window, in a new window, or full screen on one of the connected displays (Esc leaves full screen). In the Studio, right-click the Preview or Program picture to show it full screen on a display, or in its own window (Esc closes it, double-click toggles full screen), to put the Preview scene on air, or to turn Studio Mode on or off. The display choices need the desktop app and more than one screen to be useful; I have only tried them with pretend screens, not on real ones.
+## Multiview on a display, and projectors
+Pressing Multiview at the top asks where to show it: in this window, in a new window, or full screen on one of the connected displays (Esc leaves full screen). In the Studio, right-click the Preview or Program picture to show it full screen on a display, or in its own window (Esc closes it, double-click toggles full screen), to put the Preview scene on air, or to turn Studio Mode on or off. The display choices need the desktop app and more than one screen to be useful; I have only tried them with pretend screens, not on real ones.
 
 ## OBS keyboard shortcuts
 With an item selected: Ctrl+F fit to screen, Ctrl+S stretch to screen, Ctrl+D centre, Ctrl+R reset transform, Ctrl+E edit (properties), Ctrl+C / Ctrl+V copy and paste, Ctrl+Up / Down / Home / End move in front or behind, F2 rename, Esc select nothing. Anywhere: Ctrl+Z undo and Ctrl+Shift+Z (or Ctrl+Y) redo for changes to scenes and items (up to 60 steps; not for sound settings), F11 full screen, Ctrl+, Settings. The full list is in Settings, Hotkeys. Streaming and recording hotkeys are not set in OBS by default, so the Studio keeps its own (R, Shift+G, 1-9). They still cannot be changed. Rotate is not in the Studio, so there is no rotate key.
 
-## Control Room and Studio load
-The Studio only draws the Control Room pictures while a Control Room is open (it used to draw them all the time, about 2.5 times a second). The pictures are smaller, the small scene pictures are sent only when they change, and the Control Room asks for the scene list only when it changed. While recording, and while the virtual camera is on, the Studio now copies the finished Program picture when it is the same size or bigger, instead of drawing every scene again. This should make the Control Room and the Studio lighter when it sends, records and runs the virtual camera together. It has not been measured on the church PC.
+## Multiview and Studio load
+The Studio only draws the Multiview pictures while a Multiview is open (it used to draw them all the time, about 2.5 times a second). The pictures are smaller, the small scene pictures are sent only when they change, and the Multiview asks for the scene list only when it changed. While recording, and while the virtual camera is on, the Studio now copies the finished Program picture when it is the same size or bigger, instead of drawing every scene again. This should make the Multiview and the Studio lighter when it sends, records and runs the virtual camera together. It has not been measured on the church PC.
 
 ## Virtual camera: name, stopping and preview
 - The camera is now called **Multistream Camera** (it was "DirectShow Softcam"). Windows keeps the old name until the camera is added again, so the first time you press **Start Virtual Camera** after updating, Windows asks for permission once more.
@@ -75,18 +75,18 @@ The Studio only draws the Control Room pictures while a Control Room is open (it
 
 ## Stream errors are shown everywhere
 - The first page is now called **Stream** (it was "Dashboard").
-- There is no split screen. Instead, a red card floats in the bottom-right corner when something goes wrong. Stream problems (a channel stopping, or the video stopping while the live is open) show on the **Stream** page, the **Control Room** and the **Studio** (the stream matters most). Studio problems (no video arriving) show in the **Studio** only. Each alert names where it came from and the time, keeps one line per source (a retry updates its line), and shows a tick with "back on air" when it fixes itself. **Dismiss** in the Studio clears both kinds; Dismiss on the Stream page clears the Stream ones.
+- There is no split screen. Instead, a red card floats in the bottom-right corner when something goes wrong. Stream problems (a channel stopping, or the video stopping while the live is open) show on the **Stream** page, the **Multiview** and the **Studio** (the stream matters most). Studio problems (no video arriving) show in the **Studio** only. Each alert names where it came from and the time, keeps one line per source (a retry updates its line), and shows a tick with "back on air" when it fixes itself. **Dismiss** in the Studio clears both kinds; Dismiss on the Stream page clears the Stream ones.
 - The alerts are pushed by the app as they happen, so the pages do not keep asking for news. A page that opens later still shows alerts not dismissed yet.
 - Tested in a browser test. Not tried in the real app yet.
 
-## Control Room fills the area
-- The Preview and Program row fills the top of the Control Room. The scene boxes fill the width in an even grid of up to 4 across, each in the TV shape (16:9), like the OBS and AirLive multiviews. Preview and Program sit above them in the TV shape too. They change when you resize the window. The scene boxes have no names under them now: a red outline is the scene on air and a green outline is the one in Preview. The "Showing" item buttons under the boxes are gone from the Control Room.
+## Multiview fills the area
+- The Preview and Program row fills the top of the Multiview. The scene boxes fill the width in an even grid of up to 4 across, each in the TV shape (16:9), like the OBS and AirLive multiviews. Preview and Program sit above them in the TV shape too. They change when you resize the window. The scene boxes have no names under them now: a red outline is the scene on air and a green outline is the one in Preview. The "Showing" item buttons under the boxes are gone from the Multiview.
 - The TAKE button between Preview and Program is gone, like OBS. In "Preview, then Take" mode, click a scene to put it in the Preview, then click the Program picture to put it on air (it says "click to take ..." and gets a red outline). "Direct" mode still puts a scene on air with one click.
 
-## Control Room tidy-up
+## Multiview tidy-up
 - The status line ("Studio is running") is gone. The Studio is always open, so it was not needed.
 - The Preview/Take/Direct switch and the "Open in its own window" button are gone, like OBS. Click a scene to put it in the Preview, then click the Program picture to put it on air.
-- Clicking the **Control Room** tab opens a small menu: **New window**, then each display (full screen on that display). It is like OBS projectors.
+- Clicking the **Multiview** tab opens a small menu: **New window**, then each display (full screen on that display). It is like OBS projectors.
 - If Zoom still shows DirectShow Softcam after updating, press **Start Virtual Camera** once more. Windows asks for permission one time, and then the camera is added again under the name Multistream Camera. Restart Zoom after that.
 
 ## Safety
