@@ -101,6 +101,8 @@ async function until(fn, ms, what) {
 
   // 4b. the Studio opens in the same window (it replaces the dashboard), and a button comes back
   await dash.evaluate(() => localStorage.removeItem('ms_studio_window'));
+  // close the Welcome screen that a new start shows, so the side menu can be clicked
+  await dash.evaluate(() => { try { sessionStorage.setItem('ms_welcomed', '1'); } catch {} const w = document.getElementById('welcome'); if (w) w.classList.remove('open'); });
   await dash.click('#pageTabs [data-page=studio]');
   await until(() => dash.url().includes('studio.html?same=1'), 20000, 'the Studio in the same window');
   await dash.waitForLoadState('domcontentloaded'); await sleep(1500);

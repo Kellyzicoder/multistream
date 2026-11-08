@@ -84,16 +84,19 @@ jobs:
           Copy-Item softcam-src/LICENSE vcam/win/softcam-LICENSE.txt
           cl /nologo /O2 /EHsc /Isoftcam-src\dist\include vcam\vcam.cpp /Fe:vcam\win\vcam.exe /link softcam-src\dist\lib\x64\softcam.lib user32.lib
           Get-ChildItem vcam/win
+      # GitHub downloads sometimes fail (504), so Electron and ffmpeg get retries and a backup copy (npmmirror)
       - name: Install
-        run: npm install
-      - name: Use the Intel ffmpeg for the Intel Mac
-        if: matrix.name == 'Mac Intel'
+        shell: bash
         run: |
-          rm -f node_modules/ffmpeg-static/ffmpeg
-          npm_config_arch=x64 node node_modules/ffmpeg-static/install.js
-          file node_modules/ffmpeg-static/ffmpeg | tee /dev/stderr | grep -q x86_64
+          npm install --ignore-scripts
+          node node_modules/electron/install.js || node node_modules/electron/install.js || ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ node node_modules/electron/install.js
+      - name: Get ffmpeg
+        shell: bash
+        run: bash scripts/get-ffmpeg.sh ${{ matrix.name == 'Mac Intel' && 'x64' || '' }}
+      # if GitHub's downloads fail, try again with the npmmirror copies of Electron and its build tools
       - name: Build
-        run: npx electron-builder ${{ matrix.args }} --publish never
+        shell: bash
+        run: npx electron-builder ${{ matrix.args }} --publish never || ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ ELECTRON_BUILDER_BINARIES_MIRROR=https://npmmirror.com/mirrors/electron-builder-binaries/ npx electron-builder ${{ matrix.args }} --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
       - name: Keep the installer from this run
@@ -111,7 +114,10 @@ jobs:
         with:
           node-version: 22
       - name: Install
-        run: npm install
+        run: |
+          npm install --ignore-scripts
+          node node_modules/electron/install.js || node node_modules/electron/install.js || ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ node node_modules/electron/install.js
+          bash scripts/get-ffmpeg.sh
       - name: Unit tests (video hub and in-app requests)
         run: npm test
       - name: App test (real app, fake YouTube)
