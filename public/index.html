@@ -690,7 +690,21 @@
         </section>
 
         <section class="pane" data-pane="facebook" role="tabpanel" aria-label="Facebook">
-          <div class="grp"><h4>Facebook Page</h4>
+          <div class="grp"><h4>Sign in with Facebook</h4>
+            <p>Sign in, then pick the Page. Nothing to copy. If Facebook shows an error later, sign in again here and it picks the Page up again.</p>
+            <div class="srow"><p class="lb">Facebook</p>
+              <div class="ctl"><button class="b2 pri" id="fbSignIn" type="button">Sign in with Facebook</button><p class="note" id="fbCode" hidden></p></div></div>
+            <div class="srow" id="fbPickRow" hidden><label class="lb" for="fbPick">Page</label>
+              <div class="ctl"><select class="t" id="fbPick"></select><button class="b2 pri" id="fbUse" type="button">Use this Page</button></div></div>
+          </div>
+          <div class="grp"><h4>Meta app (set once)</h4>
+            <p>On developers.facebook.com, open your app. App ID: App settings, Basic. Client token: App settings, Advanced. Also turn on <b>Login from devices</b> in Facebook Login, Settings.</p>
+            <div class="srow"><label class="lb" for="fb-appid">App ID</label>
+              <div class="ctl"><input class="t" id="fb-appid" type="text" placeholder="Numbers only"></div></div>
+            <div class="srow"><label class="lb" for="fb-ct">Client token</label>
+              <div class="ctl"><input class="t" id="fb-ct" type="password" placeholder="Paste the client token" autocomplete="off"><button class="b2" id="fbAppSave" type="button">Save app</button><p class="note" id="fb-appmsg"></p></div></div>
+          </div>
+          <div class="grp"><h4>Or paste a Page token</h4>
             <p>Paste the Page ID and the Page access token from the Graph API Explorer. The token is saved only on this computer.</p>
             <div class="srow"><label class="lb" for="fb-page">Page ID</label>
               <div class="ctl"><input class="t" id="fb-page" type="text" placeholder="Numbers only"></div></div>
@@ -1265,6 +1279,7 @@ function renderFb(fbState, live, inSession) {
 }
 async function loadFb() {
   const s = await api('/api/facebook');
+  $('#fb-appid').value = s.appId || ''; $('#fb-ct').value = ''; $('#fb-ct').placeholder = s.hasClientToken ? 'Saved (paste a new one to change it)' : 'Paste the client token';
   $('#fb-page').value = s.pageId || '';
   $('#fb-token').value = '';
   fbNoteSet('#fb-saved', s.hasToken ? `Saved: ${s.pageName || 'Page ' + s.pageId} (token ends ${s.tokenEnd})` : 'No Page saved yet.', false);
@@ -1280,6 +1295,37 @@ async function saveFb() {
   refresh();
   return true;
 }
+// Sign in with Facebook: show the code, open facebook.com/device, wait, then pick the Page
+let fbPollT = 0;
+$('#fbAppSave').onclick = async () => {
+  const r = await api('/api/facebook/app', 'PUT', { appId: $('#fb-appid').value.trim(), clientToken: $('#fb-ct').value.trim() });
+  fbNoteSet('#fb-appmsg', r.error || 'Saved.', Boolean(r.error)); if (!r.error) loadFb();
+};
+$('#fbSignIn').onclick = async () => {
+  clearTimeout(fbPollT); $('#fbPickRow').hidden = true;
+  fbNoteSet('#fbCode', 'Asking Facebook...', false);
+  const r = await api('/api/facebook/login', 'POST', {});
+  if (r.error) { fbNoteSet('#fbCode', r.error, true); return; }
+  fbNoteSet('#fbCode', 'Your browser opens facebook.com/device. Type this code there: ' + r.userCode + '. Then choose the Page and press Continue. Waiting...', false);
+  window.open(r.uri, '_blank');
+  const poll = async () => {
+    const s = await api('/api/facebook/login');
+    if (s.pending) { fbPollT = setTimeout(poll, (r.interval || 5) * 1000); return; }
+    if (s.error) { fbNoteSet('#fbCode', s.error, true); return; }
+    if (s.done) {
+      const sel = $('#fbPick'); sel.textContent = '';
+      s.pages.forEach((p) => sel.add(new Option(p.name, p.id)));
+      const cur = (await api('/api/facebook')).pageId; if (cur && s.pages.some((p) => p.id === cur)) sel.value = cur;
+      $('#fbPickRow').hidden = false; fbNoteSet('#fbCode', 'Signed in. Pick the Page and press Use this Page.', false);
+    }
+  };
+  fbPollT = setTimeout(poll, (r.interval || 5) * 1000);
+};
+$('#fbUse').onclick = async () => {
+  const r = await api('/api/facebook', 'PUT', { pageId: $('#fbPick').value });
+  if (r.error) { fbNoteSet('#fbCode', r.error, true); return; }
+  $('#fbPickRow').hidden = true; fbNoteSet('#fbCode', 'Using ' + (r.pageName || 'the Page') + '.', false); loadFb(); refresh();
+};
 $('#fbLive').onclick = async () => {
   const btn = $('#fbLive');
   if (btn.dataset.end) return endLive('facebook', 'Facebook');
