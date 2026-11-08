@@ -489,6 +489,73 @@
   .pfit2 .pf-ft button { padding:10px 18px; border-radius:999px; border:0; font-size:13px; font-weight:600; background:rgba(255,255,255,.08); color:var(--text); box-shadow:none; } .pfit2 .pf-ft .pf-ok { background:var(--sel); color:var(--onsel); }
   html.t-light .dlg.pfit2 { background:var(--card); border-color:var(--line); }
   .pfit2 .pf-card, .pfit2 .pf-card.on { font-weight:400 !important; } .pfit2 .pf-card b { font-weight:700; }
+  /* ---------- Add a source, as in the design ---------- */
+  .dlg.addsrc2 { width:min(1060px, 96vw) !important; height:min(720px, 94vh) !important; max-height:none; display:flex; flex-direction:row; padding:0; border-radius:26px; overflow:hidden; background:rgba(20,26,54,.97); border:1px solid rgba(255,255,255,.14); box-shadow:0 30px 80px rgba(0,0,0,.5); }
+  .addsrc2 .as-l { width:314px; flex:none; display:flex; flex-direction:column; padding:22px 12px 16px; border-right:1px solid rgba(255,255,255,.1); min-height:0; }
+  .addsrc2 .as-l h2 { margin:0 12px 10px; font-size:18px; font-weight:700; text-transform:none; letter-spacing:0; }
+  .addsrc2 .as-list { width:auto; border:0; padding:0; max-height:none; overflow:auto; flex:1; gap:1px; }
+  .addsrc2 .as-g { padding:12px 12px 6px; font-size:10.5px; letter-spacing:1.2px; color:#a3abc4; } .addsrc2 .as-g:first-child { padding-top:4px; }
+  .addsrc2 .as-list button { padding:6px 12px; gap:12px; border-radius:8px; font-size:14px; font-weight:500; color:var(--text); }
+  .addsrc2 .as-list button svg { width:17px; height:17px; color:var(--sel); } .addsrc2 .as-list button[aria-selected="true"] svg { color:var(--onsel); }
+  .addsrc2 .as-r2 { flex:1; display:flex; flex-direction:column; min-width:0; padding:22px 22px 18px; gap:14px; }
+  .addsrc2 .as-hd { display:flex; align-items:center; gap:12px; } .addsrc2 .as-hd b { flex:1; font-size:15px; }
+  .addsrc2 .as-ic { width:32px; height:32px; border-radius:9px; display:grid; place-items:center; background:color-mix(in srgb, var(--sel) 18%, transparent); color:var(--sel); } .addsrc2 .as-ic svg { width:16px; height:16px; }
+  .addsrc2 .as-x { width:30px; height:30px; min-width:0; border-radius:9px; border:0; background:rgba(255,255,255,.08); color:#cdd3e4; padding:0; font-size:16px; box-shadow:none; }
+  .addsrc2 .as-main { flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; gap:12px; }
+  .addsrc2 .as-mode { display:flex; padding:2px; border-radius:8px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.1); width:50%; }
+  .addsrc2 .as-mode button { padding:5px 10px; border-radius:6px; border:0; background:transparent; color:#cdd3e4; font-size:11.5px; font-weight:600; box-shadow:none; min-width:0; } .addsrc2 .as-mode button.on { background:var(--sel); color:var(--onsel); }
+  .addsrc2 .as-cols { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; align-items:start; }
+  .addsrc2 .as-cl { display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .addsrc2 .as-pvw { position:relative; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.12); background:#05070f; }
+  .addsrc2 .as-pv { display:block; width:100%; height:auto; aspect-ratio:16/9; border:0; border-radius:0; }
+  .addsrc2 .as-tag { position:absolute; left:14px; top:14px; z-index:1; padding:4px 9px; border-radius:999px; background:rgba(10,14,31,.6); font-size:10.5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:#fff; }
+  .addsrc2 .as-st { margin:0; font-size:12.5px; font-weight:600; color:#8a93ad; display:flex; align-items:center; gap:7px; } .addsrc2 .as-st::before { content:""; width:8px; height:8px; border-radius:50%; background:#8a93ad; flex:none; }
+  .addsrc2 .as-st.ok { color:#4ade80; } .addsrc2 .as-st.ok::before { background:#4ade80; } .addsrc2 .as-st.wait { color:#cdd3e4; } .addsrc2 .as-st.wait::before { background:#facc15; }
+  .addsrc2 .as-card { border-radius:14px; background:rgba(255,255,255,.035); border:1px solid rgba(255,255,255,.08); padding:4px 14px; display:flex; flex-direction:column; min-width:0; }
+  .addsrc2 .as-card .f, .addsrc2 .as-set .f { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0; min-height:40px; padding:4px 0; border-top:1px solid rgba(255,255,255,.06); }
+  .addsrc2 .as-card > .f:first-child { border-top:0; } .addsrc2 .as-card .f.col { flex-direction:column; align-items:stretch; padding:8px 0; }
+  .addsrc2 .as-card .f > label { font-size:12.5px; color:#cdd3e4; font-weight:500; flex:none; max-width:45%; }
+  .addsrc2 .as-card .f > input:not([type=checkbox]):not([type=range]):not([type=color]), .addsrc2 .as-card .f > select { width:190px; flex:0 1 190px; min-width:0; height:32px; padding:0 10px; border-radius:8px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.1); color:var(--text); font-size:12.5px; }
+  .addsrc2 .as-card input[type=checkbox] { -webkit-appearance:none; appearance:none; width:34px; height:20px; border-radius:10px; background:#2a3150; position:relative; margin:0; flex:none; cursor:pointer; border:0; box-shadow:none; }
+  .addsrc2 .as-card input[type=checkbox]::after { content:""; position:absolute; left:3px; top:3px; width:14px; height:14px; border-radius:50%; background:#8a93ad; transition:left .2s; } .addsrc2 .as-card input[type=checkbox]:checked { background:var(--sel); } .addsrc2 .as-card input[type=checkbox]:checked::after { left:17px; background:#fff; }
+  .addsrc2 .tgl { width:34px; height:20px; min-width:0; border-radius:10px; background:#2a3150; position:relative; border:0; padding:0; box-shadow:none; flex:none; } .addsrc2 .tgl::after { content:""; position:absolute; left:3px; top:3px; width:14px; height:14px; border-radius:50%; background:#8a93ad; transition:left .2s; } .addsrc2 .tgl.on { background:var(--sel); } .addsrc2 .tgl.on::after { left:17px; background:#fff; }
+  .addsrc2 .as-set { display:contents; } .addsrc2 .as-card .segc { flex:none; }
+  .addsrc2 .as-cl .note { margin:0; font-size:12px; color:#8a93ad; line-height:1.5; } .addsrc2 .as-cl details { font-size:12.5px; color:#cdd3e4; }
+  .addsrc2 .as-phone { position:relative; border-radius:14px; border:1px solid rgba(255,255,255,.12); background:linear-gradient(135deg,#262a63,#1d2a5e); padding:46px 18px 16px; display:flex; flex-direction:column; gap:8px; } .addsrc2 .as-phone b { font-size:14px; } .addsrc2 .as-phone ol { margin:0; padding-left:18px; font-size:12.5px; color:#cdd3e4; line-height:1.6; }
+  .addsrc2 .as-mic { position:relative; border-radius:14px; border:1px solid rgba(255,255,255,.12); background:linear-gradient(135deg,#1d2a5e,#0e1430); padding:44px 16px 14px; display:flex; flex-direction:column; gap:8px; }
+  .addsrc2 .as-sc { display:flex; justify-content:space-between; font-size:9.5px; color:#8a93ad; } .addsrc2 .as-bars { display:flex; flex-direction:column; gap:6px; } .addsrc2 .as-bars i { display:block; height:5px; border-radius:3px; width:0; background:linear-gradient(90deg,#34d399,#4ade80 45%,#a3e635 60%,#facc15 80%,#f87171); background-size:400px 100%; }
+  .addsrc2 .as-hear { align-self:flex-start; padding:7px 14px; border-radius:999px; border:0; background:rgba(255,255,255,.08); color:var(--text); font-size:12px; font-weight:600; box-shadow:none; } .addsrc2 .as-hear.on { background:var(--sel); color:var(--onsel); }
+  .addsrc2 .as-vol { display:flex; align-items:center; gap:8px; font-size:12px; } .addsrc2 .as-vol input { flex:1; accent-color:var(--sel); } .addsrc2 .as-vol b { width:38px; text-align:right; }
+  .addsrc2 .as-grid { grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); max-height:none; } .addsrc2 .as-grid button { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); } .addsrc2 .as-grid small { font-size:11px; color:#8a93ad; }
+  .addsrc2 .as-ft { display:flex; align-items:center; gap:10px; }
+  .addsrc2 .as-ft button { padding:9px 18px; border-radius:999px; border:0; background:rgba(255,255,255,.08); color:var(--text); font-size:13px; font-weight:600; box-shadow:none; height:auto; } .addsrc2 .as-ft .pri { background:var(--sel); color:var(--onsel); } .addsrc2 .as-ft .as-rs { background:transparent; color:#cdd3e4; }
+  .addsrc2 .as-ft .pri:disabled { opacity:.45; }
+  html.t-light .dlg.addsrc2 { background:var(--card); border-color:var(--line); }
+  .addsrc2 .as-card input[type=color] { width:44px !important; flex:none !important; height:26px !important; padding:2px !important; border-radius:8px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.12); }
+  /* Source settings, Filters, Advanced audio, Speaker + screen layout (as in the design) */
+  .srcset .ss-sc { margin:-6px 12px 10px; font-size:12px; color:#a3abc4; } .srcset .ss-t { flex:1; display:flex; flex-direction:column; } .srcset .ss-t small { font-size:12px; color:#a3abc4; }
+  .srcset .as-card details.fx { display:none; } .srcset .as-card > .f:first-child { border-top:0; }
+  #propsBox .dlg.srcset { height:min(680px, 94vh) !important; }
+  .fltw { height:min(640px, 94vh) !important; } .fltw .as-l { width:260px; } .fltw .as-main { gap:14px; } .fltw .as-pvw { max-width:100%; }
+  .fl-i { display:flex; align-items:center; gap:10px; padding:7px 12px; border-radius:8px; font-size:13.5px; cursor:pointer; } .fl-i.on { background:color-mix(in srgb, var(--sel) 22%, transparent); }
+  .fl-i input { accent-color:var(--sel); width:15px; height:15px; margin:0; }
+  .fl-tb { display:flex; gap:6px; padding:10px 6px 0; position:relative; } .fl-tb button { padding:8px 14px; border-radius:999px; border:0; background:rgba(255,255,255,.08); color:var(--text); font-size:12.5px; font-weight:600; box-shadow:none; min-width:0; } .fl-tb .fl-add { background:var(--sel); color:var(--onsel); }
+  .fl-tb .addm { position:relative; } .fl-tb .menu2 { position:absolute; left:0; bottom:calc(100% + 6px); min-width:260px; padding:6px; border-radius:14px; background:#1a2148; border:1px solid rgba(255,255,255,.14); box-shadow:0 14px 34px rgba(0,0,0,.45); display:flex; flex-direction:column; z-index:5; }
+  .fl-tb .menu2 button { background:transparent; text-align:left; border-radius:8px; font-weight:500; } .fl-tb .menu2 button:hover:not(:disabled) { background:var(--sel); color:var(--onsel); } .fl-tb .menu2 button:disabled { opacity:.4; }
+  .fl-sl { display:flex; align-items:center; gap:10px; flex:1; max-width:340px; } .fl-sl input { flex:1; accent-color:var(--sel); } .fl-sl b { width:52px; text-align:center; padding:4px 0; border-radius:6px; background:rgba(10,14,31,.6); font-size:12px; font-weight:600; }
+  .dlg.aap2 { width:min(980px, 96vw) !important; height:auto !important; padding:22px 24px 20px; border-radius:24px; background:rgba(20,26,54,.97); border:1px solid rgba(255,255,255,.14); box-shadow:0 30px 80px rgba(0,0,0,.5); display:flex; flex-direction:column; gap:14px; }
+  .aap2 .aa-hd { display:flex; align-items:center; } .aap2 .aa-hd h2 { margin:0; flex:1; font-size:17px; font-weight:700; text-transform:none; letter-spacing:0; } .aap2 .aa-hid { display:flex; align-items:center; gap:8px; font-size:12.5px; color:#cdd3e4; }
+  .aap2 .aa-r { display:grid; grid-template-columns:minmax(0,1.3fr) 110px 56px minmax(0,1.1fr) 100px minmax(0,1.1fr); gap:14px; align-items:center; padding:10px 14px; border-radius:12px; background:rgba(255,255,255,.04); margin-top:6px; font-size:13px; }
+  .aap2 .aa-h { background:none; margin:0; padding:0 14px; font-size:10.5px; font-weight:700; letter-spacing:1px; color:#a3abc4; text-transform:uppercase; }
+  .aap2 .aa-n b { display:flex; gap:8px; align-items:center; font-weight:600; } .aap2 .aa-n em { font-style:normal; font-size:11px; color:#ff8a92; } .aap2 .aa-n i { display:block; height:3px; margin-top:6px; border-radius:2px; background:rgba(255,255,255,.08); overflow:hidden; } .aap2 .aa-n s { display:block; height:100%; width:0; background:linear-gradient(90deg,#34d399,#4ade80 60%,#facc15 85%,#f87171); }
+  .aap2 .aa-v { display:flex; align-items:center; gap:6px; color:#a3abc4; font-size:12px; } .aap2 .aa-v input, .aap2 select { width:100%; min-width:0; height:30px; padding:0 8px; border-radius:8px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.1); color:var(--text); font-size:12.5px; }
+  .aap2 .aa-bal { display:flex; align-items:center; gap:6px; font-size:11px; color:#a3abc4; } .aap2 .aa-bal input { flex:1; accent-color:var(--sel); } .aap2 input[type=checkbox] { accent-color:var(--sel); width:16px; height:16px; }
+  .aap2 .aa-ft { display:flex; justify-content:flex-end; gap:10px; } .aap2 .aa-ft button { padding:9px 18px; border-radius:999px; border:0; background:rgba(255,255,255,.08); color:var(--text); font-size:13px; font-weight:600; box-shadow:none; } .aap2 .aa-ft .pri { background:var(--sel); color:var(--onsel); }
+  html.t-light .dlg.aap2 { background:var(--card); }
+  .as-capl { font-size:12px; color:#a3abc4; font-weight:600; margin-top:4px; } .duo-ly { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .duo-ly .dl { display:flex; flex-direction:column; align-items:center; gap:6px; padding:6px; border-radius:12px; border:2px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); color:var(--text); box-shadow:none; height:auto; } .duo-ly .dl.on { border-color:var(--sel); background:color-mix(in srgb, var(--sel) 12%, transparent); } .duo-ly .dl b { font-size:11.5px; font-weight:600; }
+  .dlp { width:100%; aspect-ratio:16/9; border-radius:8px; background:linear-gradient(135deg,#1d2a5e,#3a1f5e); position:relative; overflow:hidden; } .dlp i { position:absolute; top:28%; height:44%; border-radius:4px; } .dlp i:first-child { left:7%; width:46%; background:#eef1f8; } .dlp i:last-child { right:7%; width:34%; background:linear-gradient(135deg,#6b4fbf,#3a1f5e); }
+  .dlp.big i:first-child { top:12%; height:76%; width:62%; left:5%; } .dlp.big i:last-child { width:26%; top:30%; height:40%; right:4%; }
 </style>
 </head>
 <body>
@@ -560,9 +627,10 @@
 
 <!-- Properties window, like OBS -->
 <div class="modal" id="propsBox" hidden>
-  <div class="dlg"><div class="dlg-h"><b id="propsTitle">Properties</b><button id="propsClose" title="Close">&times;</button></div>
-    <div class="dlg-b" id="props"></div>
-    <div class="dlg-f"><button id="propsOk">OK</button></div></div>
+  <div class="dlg addsrc2 srcset" role="dialog" aria-label="Source settings"><div class="as-l"><h2>Source settings</h2><small class="ss-sc" id="ssScene"></small><div class="as-list" id="ssList"></div></div>
+    <div class="as-r2"><div class="as-hd"><span class="as-ic" id="ssIc"></span><div class="ss-t"><b id="propsTitle">Properties</b><small id="ssKind"></small></div><button id="propsClose" class="as-x" title="Close" hidden>&times;</button></div>
+      <div class="as-main"><div class="as-cols"><div class="as-cl"><div class="as-pvw"><span class="as-tag">Preview</span><canvas class="as-pv" id="ssPv" width="640" height="360"></canvas></div><p class="as-st" id="ssSt" hidden></p></div><div class="as-card" id="props"></div></div></div>
+      <div class="as-ft"><button type="button" class="as-rs" id="ssReset">Reset</button><span style="flex:1"></span><button type="button" id="ssCancel">Cancel</button><button type="button" class="pri" id="propsOk">OK</button></div></div></div>
 </div>
 <!-- Settings window, like OBS (left list) with Restream's channels -->
 <div class="modal" id="setBox" hidden>
@@ -1396,45 +1464,35 @@ function openTools(a, fx) {
 }
 // Advanced Audio Properties (like OBS): every sound input in one table
 function openAdvancedAudio() {
+  const before = JSON.stringify(studio.audio);
   const m = document.createElement('div'); m.className = 'modal';
-  const dlg = document.createElement('div'); dlg.className = 'dlg big'; dlg.style.height = 'auto'; // only as tall as the list
-  dlg.innerHTML = '<div class="dlg-h"><b>Advanced Audio Properties</b><button type="button" aria-label="Close">×</button></div>';
-  const body = document.createElement('div'); body.className = 'dlg-b';
-  const t = document.createElement('table'); t.className = 'aap';
-  t.innerHTML = '<thead><tr><th>Name</th><th>Status</th><th>Volume %</th><th>Mono</th><th>Balance</th><th>Sync offset (ms)</th><th>Audio monitoring</th></tr></thead>';
-  const tb = document.createElement('tbody'); t.appendChild(tb);
-  const cur = byName(studio.current), live = new Set((cur && cur.audio) || []);
-  studio.audio.forEach((a) => {
-    const tr = document.createElement('tr'), F = fxOf(a);
-    const td = (el) => { const c = document.createElement('td'); if (typeof el === 'string') c.textContent = el; else c.appendChild(el); tr.appendChild(c); return c; };
-    td(a.name);
-    const on = live.has(a.id) && !a.muted;
-    td(on ? 'Active' : a.muted ? 'Muted' : 'Not on air').className = on ? 'act' : 'idle';
-    const vol = document.createElement('input'); vol.type = 'number'; vol.min = '0'; vol.max = '400'; vol.step = '1'; vol.value = String(Math.round((a.vol == null ? 1 : a.vol) * 100));
-    vol.onchange = () => { const v = Math.max(0, Math.min(400, Number(vol.value) || 0)); vol.value = String(v); a.vol = v / 100; save(); syncAudio(); renderAudio(); };
-    td(vol);
-    const mono = document.createElement('input'); mono.type = 'checkbox'; mono.checked = Boolean(a.mono); mono.title = 'Both sides play the same sound';
-    mono.onchange = () => { a.mono = mono.checked; save(); syncAudio(); };
-    td(mono);
-    const bw = document.createElement('span'); bw.className = 'bal';
-    const bal = document.createElement('input'); bal.type = 'range'; bal.min = '-100'; bal.max = '100'; bal.step = '1'; bal.value = String(Math.round((a.bal || 0) * 100)); bal.title = 'Double-click for the middle';
-    bal.oninput = () => { let v = Number(bal.value); if (Math.abs(v) < 4) v = 0; a.bal = v / 100; syncAudio(); };
-    bal.onchange = () => save();
-    bal.ondblclick = () => { bal.value = '0'; a.bal = 0; save(); syncAudio(); };
-    bw.append('L', bal, 'R'); td(bw);
-    const off = document.createElement('input'); off.type = 'number'; off.min = '0'; off.max = '1000'; off.step = '10'; off.value = String(F.delay || 0); off.title = 'Raise it if the sound arrives before the picture';
-    off.onchange = () => { const v = Math.max(0, Math.min(1000, Number(off.value) || 0)); off.value = String(v); F.delay = v; save(); syncAudio(); };
-    td(off);
-    const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only'], ['both', 'Monitor and output']].forEach(([v, x]) => mon.add(new Option(x, v)));
-    mon.value = a.monitor || 'off'; mon.onchange = () => { a.monitor = mon.value; save(); syncAudio(); gateAudio(); };
-    td(mon);
-    tb.appendChild(tr);
-  });
-  if (!studio.audio.length) { const p = document.createElement('p'); p.className = 'note'; p.textContent = 'No sound inputs yet.'; body.appendChild(p); } else body.appendChild(t);
-  const f = document.createElement('div'); f.className = 'dlg-f'; const ok = document.createElement('button'); ok.type = 'button'; ok.textContent = 'Close'; f.appendChild(ok);
-  dlg.append(body, f); m.appendChild(dlg);
-  const close = () => { m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
-  dlg.querySelector('.dlg-h button').onclick = close; ok.onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
+  const dlg = document.createElement('div'); dlg.className = 'dlg aap2'; dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-label', 'Advanced audio');
+  dlg.innerHTML = '<div class="aa-hd"><h2>Advanced audio</h2><label class="aa-hid"><input type="checkbox"> Show hidden sources</label></div><div class="aa-t"><div class="aa-r aa-h"><span>Source</span><span>Volume</span><span>Mono</span><span>Balance</span><span>Sync delay</span><span>Listen on this computer</span></div><div class="aa-b"></div></div><div class="aa-ft"><button type="button" class="aa-c">Cancel</button><button type="button" class="pri aa-ok">OK</button></div>';
+  m.appendChild(dlg);
+  const body = dlg.querySelector('.aa-b'), hid = dlg.querySelector('.aa-hid input');
+  function draw() {
+    body.textContent = '';
+    const cur = byName(editing), inScene = new Set((cur && cur.audio) || []);
+    const list = studio.audio.filter((a) => hid.checked || inScene.has(a.id));
+    if (!list.length) { const p = document.createElement('p'); p.className = 'note'; p.textContent = studio.audio.length ? 'No sound in this scene. Tick Show hidden sources to see the rest.' : 'No sound inputs yet. Add a Microphone with Add a source.'; body.appendChild(p); return; }
+    list.forEach((a) => {
+      const r = document.createElement('div'); r.className = 'aa-r'; const F = fxOf(a);
+      const nm = document.createElement('div'); nm.className = 'aa-n'; nm.innerHTML = '<b></b><i><s></s></i>'; nm.querySelector('b').textContent = a.name; if (a.muted) { const t = document.createElement('em'); t.textContent = 'Muted'; nm.querySelector('b').appendChild(t); }
+      const vol = document.createElement('span'); vol.className = 'aa-v'; const vi = document.createElement('input'); vi.type = 'number'; vi.step = '0.5'; vi.min = '-60'; vi.max = '12'; const db0 = a.vol > 0 ? 20 * Math.log10(a.vol) : -60; vi.value = (Math.round(db0 * 10) / 10).toFixed(1); vi.onchange = () => { const v = Math.max(-60, Math.min(12, Number(vi.value) || 0)); vi.value = v.toFixed(1); a.vol = v <= -60 ? 0 : Math.pow(10, v / 20); syncAudio(); renderAudio(); }; vol.append(vi, 'dB');
+      const mono = document.createElement('input'); mono.type = 'checkbox'; mono.checked = Boolean(a.mono); mono.onchange = () => { a.mono = mono.checked; syncAudio(); };
+      const bw = document.createElement('span'); bw.className = 'aa-bal'; const bal = document.createElement('input'); bal.type = 'range'; bal.min = '-100'; bal.max = '100'; bal.value = String(Math.round((a.bal || 0) * 100)); bal.title = 'Double-click for the middle'; bal.oninput = () => { let v = Number(bal.value); if (Math.abs(v) < 4) v = 0; a.bal = v / 100; syncAudio(); }; bal.ondblclick = () => { bal.value = '0'; a.bal = 0; syncAudio(); }; bw.append('L', bal, 'R');
+      const dl = document.createElement('span'); dl.className = 'aa-v'; const di = document.createElement('input'); di.type = 'number'; di.min = '0'; di.max = '1000'; di.step = '10'; di.value = String(F.delay || 0); di.title = 'Raise it if the sound arrives before the picture'; di.onchange = () => { const v = Math.max(0, Math.min(1000, Number(di.value) || 0)); di.value = String(v); F.delay = v; syncAudio(); }; dl.append(di, 'ms');
+      const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Only me (not the stream)'], ['both', 'Me and the stream']].forEach(([v, x]) => mon.add(new Option(x, v))); mon.value = a.monitor || 'off'; mon.onchange = () => { a.monitor = mon.value; syncAudio(); gateAudio(); };
+      r.append(nm, vol, mono, bw, dl, mon); r.dataset.id = a.id; body.appendChild(r);
+    });
+  }
+  hid.onchange = draw; draw();
+  let alive = true; const buf = new Float32Array(2048);
+  const tick = () => { if (!alive) return; body.querySelectorAll('.aa-r').forEach((r) => { const n = asrc.get(r.dataset.id); const v = n && n.anL ? peakOf(n.anL, buf) : -60; const s2 = r.querySelector('.aa-n s'); if (s2) s2.style.width = meterPct(v) + '%'; }); requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  const close = () => { alive = false; m.remove(); document.removeEventListener('keydown', esc); renderAudio(); }; const esc = (e) => { if (e.key === 'Escape') cancel(); };
+  const cancel = () => { studio.audio = JSON.parse(before); syncAudio(); gateAudio(); close(); };
+  dlg.querySelector('.aa-c').onclick = cancel; dlg.querySelector('.aa-ok').onclick = () => { save(); close(); }; m.onclick = (e) => { if (e.target === m) cancel(); }; document.addEventListener('keydown', esc);
   document.body.appendChild(m);
 }
 // the mixer can show meters side to side (default) or up and down, like OBS
@@ -1653,7 +1711,7 @@ function showSceneMenu(ev, sc) {
 }
 const mbarItems = {
   file: () => [['New scene', () => $('#addScene').click()], ['Import scenes from OBS...', () => $('#impBtn').click()], ['Export this scene collection', () => window.msColl('export')], null, ['Preview window', () => $('#projBtn').click()], ['Settings', () => $('#setBtn').click()]],
-  edit: () => { const cl = curLayer(); return [['Undo', () => histGo(-1)], ['Redo', () => histGo(1)], null, ['Copy source', () => { clip = JSON.stringify(cl); flash('Copied. Ctrl+V pastes it.', true); }, !cl], ['Paste source', () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'v', ctrlKey: true })), !clip], ['Remove source', () => $('#srcDel').click(), !cl], null, ['Source settings', () => $('#srcCog').click(), !cl], ['Filters (colour, crop, green screen)', () => { if (!cl) return; propsOpen = true; pfxOpen = true; renderLayers(); }, !cl]]; },
+  edit: () => { const cl = curLayer(); return [['Undo', () => histGo(-1)], ['Redo', () => histGo(1)], null, ['Copy source', () => { clip = JSON.stringify(cl); flash('Copied. Ctrl+V pastes it.', true); }, !cl], ['Paste source', () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'v', ctrlKey: true })), !clip], ['Remove source', () => $('#srcDel').click(), !cl], null, ['Source settings', () => $('#srcCog').click(), !cl], ['Filters', () => { if (cl) openFilters(cl); }, !cl]]; },
   view: () => [['Studio mode', () => $('#modeBtn').click(), false, studioMode], ['Meters side to side', () => document.querySelector('[data-mxl=h]').click()], ['Meters up and down', () => document.querySelector('[data-mxl=v]').click()], null, ['Put the panels back', () => $('#resetLayout').click()], ['Full screen', () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); }]],
   help: () => [['Keyboard shortcuts', () => { try { if (parent !== window && parent.msOpenSettings) { parent.msOpenSettings('hotkeys'); return; } } catch {} $('#keysBox').hidden = !$('#keysBox').hidden; }], ['Help', () => { try { if (parent !== window && parent.showPage) { parent.showPage('help'); return; } } catch {} window.open('/#help'); }]],
 };
@@ -1760,6 +1818,7 @@ const MEDIA = new Set(['image', 'video', 'camera', 'screen', 'window', 'browser'
 // ---------------- sources: icons, lock, right-click menu, Add Source window (like OBS) ----------------
 const SVG = (p) => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
 const SRC_ICON = {
+  pptx: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4M7 8h6M7 11h4"/></svg>',
   duo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="13" height="10" rx="1.5"/><rect x="17" y="8" width="5" height="6" rx="1"/><path d="M6 20h5M8.5 16v4"/></svg>',
   mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
   camera: SVG('<path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
@@ -1829,7 +1888,7 @@ function showSourceMenu(ev, l, nameEl) {
     else { b.onclick = () => { closeSub(); closeCtx(); it[1](); }; if (box === m) b.onmouseenter = closeSub; }
     box.appendChild(b);
   };
-  [['Properties', () => { propsOpen = true; renderLayers(); }], ['Filters', () => { propsOpen = true; pfxOpen = true; renderLayers(); }],
+  [['Properties', () => { propsOpen = true; renderLayers(); }], ['Filters', () => openFilters(l)],
     ['Rename', () => { const n = document.querySelector('#layers .lyr.on .n'); if (n) renameInPlace(n, l.name || ICON[l.type] || l.type, (v) => { if (v) { l.name = v; save(); } renderLayers(); }); }],
     [l.locked ? 'Unlock' : 'Lock', () => { l.locked = !l.locked; save(); renderLayers(); }], null,
     ['Order', order], ['Transform', transform],
@@ -1847,78 +1906,129 @@ function showSourceMenu(ev, l, nameEl) {
 // then Reset, Cancel and Add source at the bottom. A source already in another scene can be added as a copy.
 const ADD_GROUPS = [
   ['Cameras and screens', [['camera', 'Camera', 'A webcam, ATEM Mini or capture card'], ['ipcam', 'Phone camera', 'A phone camera app on the Wi-Fi'], ['screen', 'Whole screen', 'Show a display, like slides'], ['window', 'One window', 'Just one program, like ProPresenter'], ['duo', 'Speaker + screen', 'A camera and a screen side by side']]],
-  ['Pictures and video', [['image', 'Picture', 'A logo, poster or overlay'], ['pptx', 'PowerPoint slides', 'The slideshow window'], ['video', 'Video file', 'Announcements or an intro'], ['browser', 'Web page', 'Lyrics, slides or a website'], ['color', 'Colour', 'A plain background']]],
+  ['Pictures and video', [['image', 'Picture', 'A logo, poster or overlay'], ['pptx', 'PowerPoint slides', 'The slideshow window'], ['video', 'Video file', 'Announcements or an intro'], ['browser', 'Web page (lyrics, slides)', 'Lyrics, slides or a website'], ['color', 'Colour', 'A plain background']]],
   ['Text', [['text', 'Text', 'Any words on screen'], ['lower', 'Name bar', "A speaker's name and role"], ['timer', 'Countdown', 'Before you start'], ['clock', 'Clock', 'The time now']]],
   ['Sound', [['mic', 'Microphone', 'A microphone or sound desk']]],
 ];
 function openAddSource() {
   const s = byName(editing); if (!s) { flash('Add a scene first.', false); return; }
-  let pick = 'camera';
+  let pick = 'camera', mode = 'new';
   const kindInfo = (t) => { for (const [, ks] of ADD_GROUPS) { const k = ks.find((x) => x[0] === t); if (k) return k; } return [t, t, '']; };
   const makeDraft = (t) => {
-    if (t === 'mic') return null;
+    if (t === 'mic') return { mic: true, name: 'Microphone', device: '', vol: 0.8, nr: true, mono: false };
     if (t === 'pptx') { const l = newLayer('window'); l.name = 'PowerPoint slides'; return l; }
     const l = newLayer(t); l.name = kindInfo(t)[1]; return l;
   };
-  let draft = makeDraft(pick); addDraft = draft;
+  let draft = makeDraft(pick); addDraft = draft.mic ? null : draft;
   const m = document.createElement('div'); m.className = 'modal';
-  const dlg = document.createElement('div'); dlg.className = 'dlg big addsrc'; dlg.style.height = 'auto';
-  dlg.innerHTML = '<div class="dlg-h"><b>Add a source</b><button type="button" aria-label="Close">×</button></div>';
-  const body = document.createElement('div'); body.className = 'dlg-b as-b';
-  const list = document.createElement('div'); list.className = 'as-list'; list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', 'Kind of source');
-  const right = document.createElement('div'); right.className = 'as-r';
-  body.append(list, right); dlg.appendChild(body);
-  const foot = document.createElement('div'); foot.className = 'dlg-f';
-  const vis = document.createElement('label'); vis.className = 'chk as-vis'; vis.innerHTML = '<input type="checkbox" checked> Show it straight away';
-  const resetB = document.createElement('button'); resetB.type = 'button'; resetB.textContent = 'Reset';
+  const dlg = document.createElement('div'); dlg.className = 'dlg addsrc2'; dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-label', 'Add a source');
+  const left = document.createElement('div'); left.className = 'as-l'; left.innerHTML = '<h2>Add a source</h2>';
+  const list = document.createElement('div'); list.className = 'as-list'; list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', 'Kind of source'); left.appendChild(list);
+  const right = document.createElement('div'); right.className = 'as-r2';
+  const head = document.createElement('div'); head.className = 'as-hd'; head.innerHTML = '<span class="as-ic"></span><b></b><button type="button" class="as-x" aria-label="Close">×</button>';
+  const main = document.createElement('div'); main.className = 'as-main';
+  const foot = document.createElement('div'); foot.className = 'as-ft';
+  const resetB = document.createElement('button'); resetB.type = 'button'; resetB.className = 'as-rs'; resetB.textContent = 'Reset';
   const closeB = document.createElement('button'); closeB.type = 'button'; closeB.textContent = 'Cancel';
-  const addB = document.createElement('button'); addB.type = 'button'; addB.className = 'on'; addB.textContent = 'Add source';
-  foot.append(vis, resetB, closeB, addB); dlg.appendChild(foot); m.appendChild(dlg);
-  let alive = true;
-  const close = () => { alive = false; addDraft = null; m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
-  dlg.querySelector('.dlg-h button').onclick = close; closeB.onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
+  const addB = document.createElement('button'); addB.type = 'button'; addB.className = 'pri'; addB.textContent = 'Add source';
+  const sp = document.createElement('span'); sp.style.flex = '1'; foot.append(resetB, sp, closeB, addB);
+  right.append(head, main, foot); dlg.append(left, right); m.appendChild(dlg);
+  let alive = true, micSt = null, micAn = null, micHear = null;
+  const stopMic = () => { try { micSt && micSt.getTracks().forEach((t) => t.stop()); } catch {} try { micHear && micHear.disconnect(); } catch {} micSt = micAn = micHear = null; };
+  const close = () => { alive = false; addDraft = null; stopMic(); m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
+  head.querySelector('.as-x').onclick = close; closeB.onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
   let nameIn = null;
-  const visible = () => vis.querySelector('input').checked;
   const addNew = () => {
-    if (pick === 'mic') { close(); addAudioInput('mic'); flash('Microphone added. Pick it in the Audio Mixer.', true); return; }
-    const l = draft; const v = nameIn && nameIn.value.trim(); if (v) l.name = v; l.visible = visible(); close(); addLayer(l);
+    if (pick === 'mic') {
+      const a = { id: uid(), name: (nameIn && nameIn.value.trim()) || 'Microphone', device: draft.device || '', label: '', vol: draft.vol, muted: false, mono: Boolean(draft.mono) };
+      if (draft.nr) { const F = fxOf(a); F.gate = { on: true, thr: -50 }; }
+      studio.audio.push(a); const sc = byName(editing); if (sc) (sc.audio = sc.audio || []).push(a.id);
+      close(); save(); renderAudio(); syncAudio(); flash(a.name + ' added to the Audio Mixer.', true); return;
+    }
+    const l = draft; const v = nameIn && nameIn.value.trim(); if (v) l.name = v; l.visible = true; close(); addLayer(l);
   };
   addB.onclick = addNew;
-  resetB.onclick = () => { draft = makeDraft(pick); addDraft = draft; draw(); };
+  resetB.onclick = () => { stopMic(); draft = makeDraft(pick); addDraft = draft.mic ? null : draft; draw(); };
   // live preview of the new source, on its own
   const pv = document.createElement('canvas'); pv.width = 640; pv.height = 360; pv.className = 'as-pv';
   const tickPv = () => { if (!alive) return; const c = pv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#05070f'; c.fillRect(0, 0, 640, 360);
-    if (draft) { c.save(); const k = Math.min(640 / SW, 360 / SH); c.translate((640 - SW * k) / 2, (360 - SH * k) / 2); c.scale(k, k); c.fillStyle = '#000'; c.fillRect(0, 0, SW, SH); try { if (draft.type === 'lower') { draft.visible = true; } drawLayer(c, draft, false); } catch {} c.restore(); }
+    if (draft && !draft.mic) { c.save(); const k = Math.min(640 / SW, 360 / SH); c.translate((640 - SW * k) / 2, (360 - SH * k) / 2); c.scale(k, k); const g = c.createLinearGradient(0, 0, SW, SH); g.addColorStop(0, '#262a63'); g.addColorStop(0.6, '#3a1f5e'); g.addColorStop(1, '#14363a'); c.fillStyle = g; c.fillRect(0, 0, SW, SH); try { if (draft.type === 'lower') { draft.visible = true; } drawLayer(c, draft, false); } catch {} c.restore(); }
+    const st = main.querySelector('.as-st'); if (st && draft && !draft.mic) { const ok = pvOk(draft); st.className = 'as-st' + (ok === true ? ' ok' : ok === false ? ' wait' : ''); st.hidden = ok == null; st.textContent = ok ? 'Picture is coming through' : 'Waiting for the picture...'; }
     requestAnimationFrame(tickPv); };
   requestAnimationFrame(tickPv);
+  const pvOk = (l) => { try { if (l.type === 'camera') { const c = getCam(l); return Boolean(c.ready); } if (l.type === 'screen' || l.type === 'window') { const c = getCapture(l); return Boolean(c.ready); } } catch {} return null; };
+  const row = (box, label, el) => { const r = document.createElement('div'); r.className = 'f'; const lb = document.createElement('label'); lb.textContent = label; r.append(lb, el); box.appendChild(r); return r; };
+  const tgl = (on, set) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'tgl' + (on ? ' on' : ''); b.setAttribute('aria-pressed', String(Boolean(on))); b.onclick = () => { const v = !b.classList.contains('on'); b.classList.toggle('on', v); b.setAttribute('aria-pressed', String(v)); set(v); }; return b; };
+  function micPane(colL, card) {
+    const box = document.createElement('div'); box.className = 'as-mic'; box.innerHTML = '<span class="as-tag">Live sound</span><div class="as-sc">' + ['−∞', '-45', '-30', '-20', '-10', '-5', '0 dB'].map((x) => '<span>' + x + '</span>').join('') + '</div><div class="as-bars"><i></i><i></i></div><p class="as-st"></p>';
+    colL.appendChild(box);
+    const hear = document.createElement('button'); hear.type = 'button'; hear.className = 'as-hear'; hear.textContent = 'Listen in headphones'; colL.appendChild(hear);
+    const st = box.querySelector('.as-st'), bars = box.querySelectorAll('.as-bars i');
+    const start = async () => {
+      stopMic(); ensureAudio();
+      try { micSt = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: draft.device ? { exact: draft.device } : undefined, noiseSuppression: Boolean(draft.nr), echoCancellation: false, autoGainControl: false } }); } catch { st.className = 'as-st wait'; st.textContent = 'This microphone could not be opened.'; return; }
+      const src = actx.createMediaStreamSource(micSt); const sp2 = actx.createChannelSplitter(2); src.connect(sp2); micAn = [actx.createAnalyser(), actx.createAnalyser()]; sp2.connect(micAn[0], 0); sp2.connect(micAn[1], src.channelCount > 1 ? 1 : 0);
+      const g = actx.createGain(); g.gain.value = draft.vol; src.connect(g); micHear = g;
+      const buf = new Float32Array(2048);
+      const loop = () => { if (!micAn || !alive) return; const v = micAn.map((a) => peakOf(a, buf) + 20 * Math.log10(Math.max(0.001, draft.vol))); bars.forEach((b, k) => { b.style.width = meterPct(v[k]) + '%'; }); const top = Math.max(v[0], v[1]); st.className = 'as-st' + (top > -55 ? ' ok' : ''); st.textContent = top > -55 ? 'Sound is coming through · ' + lvlOf(top) : 'No sound yet. Speak or play something.'; micHear.gain.value = draft.vol; requestAnimationFrame(loop); };
+      loop();
+    };
+    hear.onclick = () => { if (!micHear) return; const on = hear.classList.toggle('on'); try { if (on) micHear.connect(actx.destination); else micHear.disconnect(actx.destination); } catch {} hear.textContent = on ? 'Stop listening' : 'Listen in headphones'; };
+    const dev = document.createElement('select'); dev.add(new Option('Default input', '')); devices.audio.forEach((x) => dev.add(new Option(x.label || 'Input', x.deviceId))); dev.value = draft.device || ''; dev.onchange = () => { draft.device = dev.value; start(); };
+    row(card, 'Device', dev);
+    const vw = document.createElement('div'); vw.className = 'as-vol'; vw.innerHTML = '<span>🔈</span><input type="range" min="0" max="100" step="1"><span>🔊</span><b></b>'; const vi = vw.querySelector('input'); vi.value = Math.round(draft.vol * 100); vw.querySelector('b').textContent = vi.value + '%'; vi.oninput = () => { draft.vol = vi.value / 100; vw.querySelector('b').textContent = vi.value + '%'; };
+    const vr = row(card, 'Volume', vw); vr.classList.add('col');
+    row(card, 'Remove background noise', tgl(draft.nr, (v) => { draft.nr = v; start(); }));
+    row(card, 'Make it mono', tgl(draft.mono, (v) => { draft.mono = v; }));
+    const fo = document.createElement('button'); fo.type = 'button'; fo.className = 'sm'; fo.textContent = 'Open'; fo.title = 'Add it first, then its sound filters open'; fo.onclick = () => { addNew(); const a = studio.audio[studio.audio.length - 1]; if (a) setTimeout(() => { const d = document.querySelector('#audio .au[data-id="' + a.id + '"]'); if (d) d.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: innerWidth / 2, clientY: innerHeight / 2 })); }, 200); };
+    row(card, 'Sound filters', fo);
+    start();
+  }
   function draw() {
     list.textContent = '';
     ADD_GROUPS.forEach(([g, ks]) => {
       const h = document.createElement('div'); h.className = 'as-g'; h.textContent = g; list.appendChild(h);
-      ks.forEach(([t, name]) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(t === pick)); b.innerHTML = SRC_ICON[t === 'pptx' ? 'window' : t === 'mic' ? 'mic' : t] || SRC_ICON.mic || ''; b.append(name); b.onclick = () => { if (pick !== t) { pick = t; draft = makeDraft(t); addDraft = draft; } draw(); }; b.ondblclick = addNew; list.appendChild(b); });
+      ks.forEach(([t, name]) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(t === pick)); b.innerHTML = SRC_ICON[t === 'pptx' ? 'pptx' : t] || SRC_ICON.window || ''; b.append(name); b.onclick = () => { if (pick !== t) { stopMic(); pick = t; mode = 'new'; draft = makeDraft(t); addDraft = draft.mic ? null : draft; } draw(); }; b.ondblclick = addNew; list.appendChild(b); });
     });
     const k = kindInfo(pick);
-    right.textContent = '';
-    const h = document.createElement('div'); h.className = 'as-head'; const tx = document.createElement('div'); const b = document.createElement('b'); b.textContent = k[1]; const sm = document.createElement('small'); sm.textContent = k[2]; tx.append(b, sm); h.appendChild(tx); right.appendChild(h);
-    if (pick === 'mic') {
-      const p = document.createElement('p'); p.className = 'note'; p.textContent = 'Adds a sound input to the Audio Mixer. Then choose which microphone or sound desk it uses, and set its volume there.'; right.appendChild(p);
-      return;
-    }
-    const pw = document.createElement('div'); pw.className = 'as-pvw'; const lb = document.createElement('span'); lb.className = 'as-pvl'; lb.textContent = 'Preview'; pw.append(lb, pv); right.appendChild(pw);
-    const f = document.createElement('label'); f.className = 'as-name'; f.textContent = 'Name'; nameIn = document.createElement('input'); nameIn.type = 'text'; nameIn.value = draft.name || k[1]; nameIn.onkeydown = (e) => { if (e.key === 'Enter') addNew(); }; f.appendChild(nameIn); right.appendChild(f);
-    if (pick === 'pptx') { const p = document.createElement('p'); p.className = 'note'; p.textContent = 'Start the slideshow in PowerPoint first, then pick its window below. On a second screen, Whole screen also works.'; right.appendChild(p); }
-    const set = document.createElement('div'); set.className = 'as-set'; renderProps(set, draft); right.appendChild(set);
-    // the same kind already in other scenes: add a copy of it
+    head.querySelector('.as-ic').innerHTML = SRC_ICON[pick] || SRC_ICON.window || ''; head.querySelector('b').textContent = k[1];
+    main.textContent = '';
+    // the same kind already in other scenes: "Use one you have"
     const want = pick === 'pptx' ? 'window' : pick;
     const seen = new Set(), have = [];
-    studio.scenes.forEach((sc) => (sc.layers || []).forEach((l) => { if (l.type !== want || s.layers.some((x) => x.id === l.id)) return; const key = (l.name || '') + '|' + (l.url || l.src || l.device || l.text || ''); if (seen.has(key)) return; seen.add(key); have.push({ l, scene: sc.name }); }));
+    if (pick !== 'mic') studio.scenes.forEach((sc) => (sc.layers || []).forEach((l) => { if (l.type !== want || s.layers.some((x) => x.id === l.id)) return; const key = (l.name || '') + '|' + (l.url || l.src || l.device || l.text || ''); if (seen.has(key)) return; seen.add(key); have.push({ l, scene: sc.name }); }));
     if (have.length) {
-      const t = document.createElement('p'); t.className = 'as-sub'; t.textContent = 'Or add one you already have (from another scene):'; right.appendChild(t);
-      const g = document.createElement('div'); g.className = 'as-grid';
-      have.forEach(({ l, scene }) => { const b2 = document.createElement('button'); b2.type = 'button'; b2.title = 'From the scene ' + scene; b2.innerHTML = SRC_ICON[l.type] || ''; const sp = document.createElement('span'); sp.textContent = l.name || ICON[l.type] || l.type; b2.appendChild(sp);
-        b2.onclick = () => { const c = JSON.parse(JSON.stringify(l)); c.id = uid(); c.visible = visible(); close(); addLayer(c); }; g.appendChild(b2); });
-      right.appendChild(g);
+      const sg = document.createElement('div'); sg.className = 'as-mode';
+      [['new', 'Make a new one'], ['have', 'Use one you have']].forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.className = mode === v ? 'on' : ''; b.onclick = () => { mode = v; draw(); }; sg.appendChild(b); });
+      main.appendChild(sg);
     }
+    if (mode === 'have' && have.length) {
+      const g = document.createElement('div'); g.className = 'as-grid';
+      have.forEach(({ l, scene }) => { const b2 = document.createElement('button'); b2.type = 'button'; b2.title = 'From the scene ' + scene; b2.innerHTML = SRC_ICON[l.type] || ''; const sp3 = document.createElement('span'); sp3.textContent = l.name || ICON[l.type] || l.type; const sm = document.createElement('small'); sm.textContent = 'In ' + scene; b2.append(sp3, sm);
+        b2.onclick = () => { const c = JSON.parse(JSON.stringify(l)); c.id = uid(); c.visible = true; close(); addLayer(c); }; g.appendChild(b2); });
+      main.appendChild(g); addB.disabled = true; return;
+    }
+    addB.disabled = false;
+    const cols = document.createElement('div'); cols.className = 'as-cols'; const colL = document.createElement('div'); colL.className = 'as-cl'; const card = document.createElement('div'); card.className = 'as-card';
+    cols.append(colL, card); main.appendChild(cols);
+    nameIn = document.createElement('input'); nameIn.type = 'text'; nameIn.value = draft.name || k[1]; nameIn.onkeydown = (e) => { if (e.key === 'Enter') addNew(); };
+    row(card, 'Name', nameIn);
+    if (pick === 'mic') { micPane(colL, card); return; }
+    if (pick === 'ipcam') {
+      const c = document.createElement('div'); c.className = 'as-phone'; c.innerHTML = '<span class="as-tag">Connect a phone</span><b>Use a camera app on the phone</b><ol></ol>';
+      ['Put the phone on the same Wi-Fi as this computer.', 'Install a camera app like DroidCam or IP Webcam (Android), or EpocCam (iPhone).', 'Open it. It shows an address like http://192.168.1.20:4747.', 'Type that address in Address, with /video at the end.'].forEach((t) => { const li = document.createElement('li'); li.textContent = t; c.querySelector('ol').appendChild(li); });
+      colL.appendChild(c);
+      const st = document.createElement('p'); st.className = 'as-st wait'; st.textContent = 'Waiting for a phone... (same Wi-Fi as this computer)'; colL.appendChild(st);
+    } else {
+      const pw = document.createElement('div'); pw.className = 'as-pvw'; const lb = document.createElement('span'); lb.className = 'as-tag'; lb.textContent = 'Preview'; pw.append(lb, pv); colL.appendChild(pw);
+      const st = document.createElement('p'); st.className = 'as-st'; st.hidden = true; colL.appendChild(st);
+    }
+    if (pick === 'pptx') { const p = document.createElement('p'); p.className = 'note'; p.textContent = 'Start the slideshow in PowerPoint first, then pick its window. On a second screen, Whole screen also works.'; colL.appendChild(p); }
+    const set = document.createElement('div'); set.className = 'as-set'; renderProps(set, draft); card.appendChild(set);
+    // long notes and the picture tools go under the preview, so the settings stay short
+    set.querySelectorAll(':scope > p.note, :scope > .note, :scope > details').forEach((n) => colL.appendChild(n));
+    if (pick === 'duo') { const lr = [...card.querySelectorAll('.f')].find((r) => /^Layout/.test(r.textContent)); if (lr) { const bs = [...lr.querySelectorAll('button')]; const cap = document.createElement('div'); cap.className = 'as-capl'; cap.textContent = 'Layout'; const g = document.createElement('div'); g.className = 'duo-ly'; bs.forEach((b) => { const c = document.createElement('button'); c.type = 'button'; c.className = 'dl' + (b.classList.contains('on') || b.getAttribute('aria-pressed') === 'true' ? ' on' : ''); c.innerHTML = '<span class="dlp ' + (/big/i.test(b.textContent) ? 'big' : 'side') + '"><i></i><i></i></span><b></b>'; c.querySelector('b').textContent = b.textContent; c.onclick = () => { b.click(); draw(); }; g.appendChild(c); }); lr.hidden = true; colL.append(cap, g); } }
+    if (pick === 'ipcam') set.querySelectorAll(':scope > ol, :scope > .note, :scope > p').forEach((n) => n.remove()), colL.querySelectorAll(':scope > .note, :scope > ol, :scope > details').forEach((n) => n.remove());
   }
   draw(); document.body.appendChild(m); if (nameIn) { nameIn.focus(); nameIn.select(); }
 }
@@ -1951,8 +2061,34 @@ function field(label, el) { const d = document.createElement('div'); d.className
 let pfxOpen = false;
 // the Properties window (opens on double-click, the gear button, or when you add a source, like OBS)
 let propsOpen = false;
-function closeProps() { propsOpen = false; $('#propsBox').hidden = true; }
+function closeProps() { propsOpen = false; $('#propsBox').hidden = true; ssSnap = null; }
+// the left list, the title and the preview of the Source settings window; Cancel puts the source back as it was when the window opened
+let ssSnap = null, ssId = '';
+function ssFrame(l) {
+  const sc = byName(editing);
+  if (ssId !== l.id || !ssSnap) { ssSnap = JSON.stringify(l); ssId = l.id; }
+  $('#propsTitle').textContent = l.name || ICON[l.type] || l.type; $('#ssKind').textContent = ICON[l.type] || l.type; $('#ssIc').innerHTML = SRC_ICON[l.type] || '';
+  $('#ssScene').textContent = 'Scene: ' + (sc ? sc.name : '');
+  const box = $('#ssList'); box.textContent = '';
+  const g = (t) => { const h = document.createElement('div'); h.className = 'as-g'; h.textContent = t; box.appendChild(h); };
+  g('In this scene');
+  (sc ? sc.layers.slice().reverse() : []).forEach((x) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-selected', String(x.id === l.id)); b.innerHTML = SRC_ICON[x.type] || ''; b.append(x.name || ICON[x.type] || x.type); b.onclick = () => { if (x.id === l.id) return; ssSnap = null; sel = x.id; renderLayers(); }; box.appendChild(b); });
+  const au = studio.audio.filter((a) => !sc || (sc.audio || []).includes(a.id));
+  if (au.length) { g('Sound'); au.forEach((a) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = a.kind === 'desktop' ? SVG('<path d="M4 9v6h4l5 4V5L8 9z"/>') : SRC_ICON.mic; b.append(a.name); b.onclick = () => { const d = document.querySelector('#audio .au[data-id="' + a.id + '"]'); if (d) d.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: innerWidth / 2, clientY: innerHeight / 2 })); }; box.appendChild(b); }); }
+  if (!ssLoop) { ssLoop = true; requestAnimationFrame(ssTick); }
+}
+let ssLoop = false;
+function ssTick() {
+  if ($('#propsBox').hidden) { ssLoop = false; return; }
+  const l = curLayer(); const pv = $('#ssPv'), c = pv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#05070f'; c.fillRect(0, 0, 640, 360);
+  if (l) { c.save(); const k = Math.min(640 / SW, 360 / SH); c.translate((640 - SW * k) / 2, (360 - SH * k) / 2); c.scale(k, k); const gr = c.createLinearGradient(0, 0, SW, SH); gr.addColorStop(0, '#262a63'); gr.addColorStop(0.6, '#3a1f5e'); gr.addColorStop(1, '#14363a'); c.fillStyle = gr; c.fillRect(0, 0, SW, SH); const keep = l.visible; l.visible = true; try { drawLayer(c, l, false); } catch {} l.visible = keep; c.restore();
+    let ok = null; try { if (l.type === 'camera') ok = Boolean(getCam(l).ready); else if (l.type === 'screen' || l.type === 'window') ok = Boolean(getCapture(l).ready); } catch {}
+    const st = $('#ssSt'); st.hidden = ok == null; st.className = 'as-st' + (ok ? ' ok' : ' wait'); st.textContent = ok ? 'Picture is coming through' : 'Waiting for the picture...'; }
+  requestAnimationFrame(ssTick);
+}
 $('#propsClose').onclick = closeProps; $('#propsOk').onclick = closeProps;
+$('#ssCancel').onclick = () => { const l = curLayer(); if (l && ssSnap && ssId === l.id) { const o = JSON.parse(ssSnap); Object.keys(l).forEach((k) => { delete l[k]; }); Object.assign(l, o); save(); } closeProps(); renderLayers(); };
+$('#ssReset').onclick = () => { const l = curLayer(); if (!l) return; const n = newLayer(l.type); ['id', 'name', 'x', 'y', 'w', 'h', 'visible', 'locked', 'file', 'url', 'device', 'label', 'display', 'winName'].forEach((k) => { if (l[k] !== undefined) n[k] = l[k]; }); Object.keys(l).forEach((k) => { delete l[k]; }); Object.assign(l, n); save(); renderLayers(); };
 $('#propsBox').addEventListener('mousedown', (e) => { if (e.target === $('#propsBox')) closeProps(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && propsOpen) closeProps(); });
 function selLayer() { const s = byName(editing); return s && s.layers.findIndex((x) => x.id === sel); }
@@ -1965,7 +2101,7 @@ function renderProps(target, draft) {
   const rerender = () => renderProps(target, draft);
   const s = byName(editing), l = draft || (s && s.layers.find((x) => x.id === sel));
   if (!draft) { $('#propsBox').hidden = !l || !propsOpen; if (!l) { propsOpen = false; return; } }
-  if (!draft) $('#propsTitle').textContent = "Properties for '" + (l.name || ICON[l.type] || l.type) + "'";
+  if (!draft) ssFrame(l);
   const inp = (k, type) => { const i = document.createElement('input'); i.type = type || 'text'; i.value = l[k] == null ? '' : l[k]; i.oninput = () => { l[k] = type === 'number' ? Number(i.value) : i.value; save(); }; return i; };
   // small building blocks for the source settings
   const seg = (opts, val, set) => { const g = document.createElement('div'); g.className = 'segc'; opts.forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.classList.toggle('on', v === val); b.onclick = () => { set(v); save(); rerender(); }; g.appendChild(b); }); return g; };
@@ -2203,6 +2339,51 @@ function addLayer(l) {
   s.layers.push(l); sel = l.id; propsOpen = true; save(); renderLayers();
 }
 // "How should Camera fit?": a wide (16:9) picture in a tall (9:16) collection
+// Filters: each one can be turned on or off and changed, with a live preview. Cancel puts them back as they were.
+const FLT = [['cc', 'Colour correction'], ['crop', 'Crop'], ['key', 'Green screen (chroma key)'], ['shape', 'Shape and flip']];
+function fltOn(F, k) { if (k === 'cc') return F.bri != null || F.con != null || F.sat != null || F.op != null; if (k === 'crop') return Boolean(F.crop && (F.crop.l || F.crop.t || F.crop.r || F.crop.b)) || Boolean(F.cropOn); if (k === 'key') return Boolean(F.key && F.key.on); return Boolean(F.shape || F.flip); }
+function openFilters(l) {
+  const F0 = JSON.stringify(l.pfx || {}); const F = (l.pfx = l.pfx || {}); F.stash = F.stash || {};
+  let cur = FLT.find(([k]) => fltOn(F, k)) ? FLT.find(([k]) => fltOn(F, k))[0] : 'cc', alive = true;
+  const m = document.createElement('div'); m.className = 'modal';
+  const d = document.createElement('div'); d.className = 'dlg addsrc2 fltw'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Filters');
+  d.innerHTML = '<div class="as-l"><h2>Filters</h2><small class="ss-sc"></small><div class="as-list fl-list"></div><div class="fl-tb"><span class="addm"><button type="button" class="fl-add">+ Add filter</button></span><button type="button" class="fl-rm" title="Turn this filter off" aria-label="Turn this filter off">−</button></div></div><div class="as-r2"><div class="as-hd"><b class="fl-t"></b></div><div class="as-main"><div class="as-pvw"><span class="as-tag">Preview</span><canvas class="as-pv" width="640" height="360"></canvas></div><div class="as-card fl-set"></div></div><div class="as-ft"><button type="button" class="as-rs">Reset</button><span style="flex:1"></span><button type="button" class="fl-c">Cancel</button><button type="button" class="pri fl-ok">OK</button></div></div>';
+  d.querySelector('.ss-sc').textContent = l.name || ICON[l.type] || l.type;
+  m.appendChild(d); document.body.appendChild(m);
+  const close = () => { alive = false; m.remove(); document.removeEventListener('keydown', esc); renderLayers(); }; const esc = (e) => { if (e.key === 'Escape') cancel(); };
+  const cancel = () => { l.pfx = JSON.parse(F0); save(); close(); };
+  d.querySelector('.fl-c').onclick = cancel; d.querySelector('.fl-ok').onclick = () => { delete l.pfx.stash; save(); close(); }; m.onclick = (e) => { if (e.target === m) cancel(); }; document.addEventListener('keydown', esc);
+  d.querySelector('.as-rs').onclick = () => { Object.keys(F).forEach((k) => { delete F[k]; }); F.stash = {}; save(); draw(); };
+  const setOn = (k, on) => {
+    const keys = { cc: ['bri', 'con', 'sat', 'op'], crop: ['crop'], key: ['key'], shape: ['shape', 'flip'] }[k];
+    if (!on) { F.stash[k] = {}; keys.forEach((x) => { if (F[x] !== undefined) F.stash[k][x] = F[x]; delete F[x]; }); delete F.cropOn; }
+    else { const st = F.stash[k] || {}; keys.forEach((x) => { if (st[x] !== undefined) F[x] = st[x]; }); delete F.stash[k];
+      if (k === 'cc' && F.bri == null && F.con == null && F.sat == null && F.op == null) { F.bri = 100; F.con = 100; F.sat = 100; }
+      if (k === 'crop') { F.crop = F.crop || { l: 0, t: 0, r: 0, b: 0 }; F.cropOn = true; } if (k === 'key') { F.key = F.key || {}; F.key.on = true; } if (k === 'shape' && !F.shape && !F.flip) F.shape = 'round'; }
+    save(); draw();
+  };
+  const pv = d.querySelector('canvas');
+  const tick = () => { if (!alive) return; const c = pv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#05070f'; c.fillRect(0, 0, 640, 360); c.save(); const k = Math.min(640 / SW, 360 / SH); c.translate((640 - SW * k) / 2, (360 - SH * k) / 2); c.scale(k, k); const keep = { x: l.x, y: l.y, w: l.w, h: l.h, v: l.visible }; l.x = 0; l.y = 0; l.w = SW; l.h = SH; l.visible = true; try { drawLayer(c, l, false); } catch {} Object.assign(l, { x: keep.x, y: keep.y, w: keep.w, h: keep.h, visible: keep.v }); c.restore(); requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+  function draw() {
+    const list = d.querySelector('.fl-list'); list.textContent = '';
+    const h = document.createElement('div'); h.className = 'as-g'; h.textContent = 'Picture'; list.appendChild(h);
+    FLT.forEach(([k, t]) => { const b = document.createElement('div'); b.className = 'fl-i' + (k === cur ? ' on' : ''); const c = document.createElement('input'); c.type = 'checkbox'; c.checked = fltOn(F, k); c.setAttribute('aria-label', 'Use ' + t); c.onclick = (e) => { e.stopPropagation(); setOn(k, c.checked); }; const sp = document.createElement('span'); sp.textContent = t; b.append(c, sp); b.onclick = () => { cur = k; draw(); }; list.appendChild(b); });
+    d.querySelector('.fl-t').textContent = FLT.find((x) => x[0] === cur)[1];
+    const set = d.querySelector('.fl-set'); set.textContent = '';
+    const row = (label, el) => { const r = document.createElement('div'); r.className = 'f'; const lb = document.createElement('label'); lb.textContent = label; r.append(lb, el); set.appendChild(r); };
+    const sl = (min, max, val, fmt, put) => { const w = document.createElement('span'); w.className = 'fl-sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { put(Number(i.value)); o.textContent = fmt(Number(i.value)); save(); }; w.append(i, o); return w; };
+    const pct = (v) => v + '%';
+    if (!fltOn(F, cur)) { const p = document.createElement('p'); p.className = 'note'; p.textContent = 'This filter is off. Tick it on the left to use it.'; set.appendChild(p); return; }
+    if (cur === 'cc') { row('Brightness', sl(0, 200, F.bri == null ? 100 : F.bri, pct, (v) => { F.bri = v; })); row('Contrast', sl(0, 200, F.con == null ? 100 : F.con, pct, (v) => { F.con = v; })); row('Colour (saturation)', sl(0, 200, F.sat == null ? 100 : F.sat, pct, (v) => { F.sat = v; })); row('See-through', sl(0, 100, F.op == null ? 100 : F.op, pct, (v) => { F.op = v; })); }
+    if (cur === 'crop') { const C = (F.crop = F.crop || {}); [['l', 'Left'], ['t', 'Top'], ['r', 'Right'], ['b', 'Bottom']].forEach(([k, t]) => row(t, sl(0, 90, C[k] || 0, pct, (v) => { C[k] = v; }))); }
+    if (cur === 'key') { const K = (F.key = F.key || { on: true }); const kc = document.createElement('input'); kc.type = 'color'; kc.value = K.color || '#00ff00'; kc.oninput = () => { K.color = kc.value; save(); }; row('Colour to remove', kc); row('How much', sl(1, 100, K.sim == null ? 40 : K.sim, (v) => String(v), (v) => { K.sim = v; })); row('Soft edge', sl(1, 50, K.smooth == null ? 8 : K.smooth, (v) => String(v), (v) => { K.smooth = v; })); }
+    if (cur === 'shape') { const sh = document.createElement('select'); [['', 'Normal'], ['round', 'Rounded corners'], ['circle', 'Circle']].forEach(([v, t]) => sh.add(new Option(t, v))); sh.value = F.shape || ''; sh.onchange = () => { F.shape = sh.value; save(); }; row('Shape', sh); const fl = document.createElement('input'); fl.type = 'checkbox'; fl.checked = Boolean(F.flip); fl.onchange = () => { F.flip = fl.checked; save(); }; row('Flip left-right', fl); }
+  }
+  d.querySelector('.fl-rm').onclick = () => setOn(cur, false);
+  d.querySelector('.fl-add').onclick = (e) => { e.stopPropagation(); const am = d.querySelector('.addm'); const old = am.querySelector('.menu2'); if (old) { old.remove(); return; } const mm = document.createElement('div'); mm.className = 'menu2'; const h = document.createElement('div'); h.className = 'as-g'; h.textContent = 'Picture'; mm.appendChild(h); FLT.forEach(([k, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.disabled = fltOn(F, k); b.onclick = () => { mm.remove(); cur = k; setOn(k, true); }; mm.appendChild(b); }); am.appendChild(mm); };
+  draw();
+}
 function askPortraitFit(l, done) {
   l.pfAsked = true;
   const m = document.createElement('div'); m.className = 'modal';
