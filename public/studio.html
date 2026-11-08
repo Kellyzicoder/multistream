@@ -254,6 +254,51 @@
   .ctxi { display:block; width:100%; text-align:left; border:0; border-radius:10px; padding:8px 10px; font-size:13px; background:transparent; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
   .ctxi small { display:block; margin-top:1px; font-size:11px; color:var(--muted); }
   .ctxi:hover, .ctxi:focus-visible { background:var(--sel); color:var(--onsel); outline:none; } .ctxi:hover small, .ctxi:focus-visible small { color:inherit; opacity:.8; }
+  /* ---------- mixer: side-to-side or up-and-down, darker row for sound that is heard ---------- */
+  .mxh { display:flex; align-items:center; }
+  .mxl { margin-left:auto; display:flex; padding:2px; border-radius:8px; background:rgba(10,14,31,.5); border:1px solid var(--gl-line); }
+  .mxl button { margin:0; width:26px; height:20px; padding:0; border:0; border-radius:6px; display:grid; place-items:center; background:transparent; color:var(--muted); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .mxh > .mxl ~ * { margin-left:8px !important; }
+  #audio:not(.hz) .au { width:138px; } .aut button { padding:2px 7px; }
+  .mxl button[aria-pressed=true] { background:var(--sel); color:var(--onsel); }
+  #audio .au.live { background:rgba(5,8,20,.65); border-color:rgba(255,255,255,.07); }
+  html.t-light #audio .au.live { background:rgba(15,23,42,.08); }
+  #audio.hz { flex-direction:column; overflow-x:hidden; overflow-y:auto; gap:6px; }
+  #audio.hz .au { width:auto; display:grid; grid-template-columns:minmax(90px,150px) minmax(0,1fr) auto; gap:14px; align-items:center; padding:8px 12px; border-radius:12px; }
+  #audio.hz .au .t { display:flex; align-items:center; gap:4px; min-width:0; } #audio.hz .au .t .n { font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #audio.hz .au .dbr { text-align:left; font-size:11.5px; padding-left:30px; }
+  .hzs { position:relative; height:12px; font-size:10px; color:var(--muted); } .hzs span { position:absolute; top:0; transform:translateX(-50%); white-space:nowrap; } .hzs span:first-child { transform:none; } .hzs span:last-child { transform:translateX(-100%); } .hzp { width:104px; }
+  .hmid { display:flex; flex-direction:column; gap:5px; min-width:0; }
+  #audio .mts.h { flex-direction:column; gap:5px; height:auto; }
+  #audio .mts.h .mt { width:100%; height:4px; border-radius:2px; background:linear-gradient(90deg,#34d399 0%,#4ade80 45%,#a3e635 60%,#facc15 80%,#f87171 100%); }
+  #audio .mts.h .mt i { left:auto; right:0; top:0; bottom:0; width:100%; height:auto; }
+  #audio .mts.h .mt b { top:0; bottom:0; left:0; width:2px; height:auto; }
+  .fdr.h { width:100%; height:16px; } .fdr.h .trk { left:6px; right:6px; top:50%; bottom:auto; width:auto; height:3px; margin:-1.5px 0 0; }
+  .fdr.h .knob { top:0; bottom:auto !important; width:10px; height:16px; margin:0 0 0 -5px; left:0; right:auto; border-radius:3px; }
+  .hbt { display:flex; gap:4px; }
+  .hbt button { width:32px; height:32px; padding:0; border:0; border-radius:9px; display:grid; place-items:center; background:rgba(255,255,255,.06); color:var(--text); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .hbt button.on { background:var(--sel); color:var(--onsel); box-shadow:0 0 0 3px rgba(59,108,255,.35); }
+  .hbt button.mut { background:var(--red); color:#fff; }
+  .aut .lsn.on { background:var(--sel); color:var(--onsel); }
+  /* ---------- choices in source settings ---------- */
+  .segc { display:inline-flex; flex-wrap:wrap; gap:2px; padding:2px; border-radius:9px; background:rgba(0,0,0,.25); border:1px solid var(--gl-line); }
+  .segc button { padding:4px 10px; font-size:12px; border:0; border-radius:7px; background:transparent; color:var(--muted); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .segc button.on { background:var(--sel); color:var(--onsel); }
+  /* ---------- Listen in headphones ---------- */
+  .lsp { position:fixed; z-index:72; width:380px; max-width:calc(100vw - 24px); display:flex; flex-direction:column; gap:14px; padding:18px 18px 16px; border-radius:18px; background:rgba(20,26,54,.98); border:1px solid rgba(255,255,255,.14); box-shadow:0 24px 60px rgba(0,0,0,.55); color:var(--text); animation:lspIn .16s ease-out; }
+  html.t-light .lsp { background:#fff; border-color:rgba(0,0,0,.12); }
+  @keyframes lspIn { from { opacity:0; transform:translateY(6px); } }
+  .lsp .hd { display:flex; align-items:center; gap:10px; } .lsp .ic { width:32px; height:32px; border-radius:10px; background:var(--sel); display:grid; place-items:center; flex:none; }
+  .lsp .ti { flex:1; } .lsp .ti b { display:block; font-size:15px; } .lsp .ti small { font-size:12px; font-weight:600; color:var(--muted); } .lsp.on .ti small { color:#4ade80; }
+  .lsp .tgl { width:40px; height:22px; padding:0; border:0; border-radius:999px; background:rgba(255,255,255,.18); position:relative; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; flex:none; }
+  .lsp .tgl::after { content:""; position:absolute; top:3px; left:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .15s; } .lsp.on .tgl { background:var(--sel); } .lsp.on .tgl::after { left:21px; }
+  .lsp .lv { height:6px; border-radius:3px; background:rgba(0,0,0,.4); overflow:hidden; } .lsp .lv i { display:block; height:100%; width:0; border-radius:3px; background:linear-gradient(90deg,#34d399,#4ade80 60%,#a3e635 85%,#facc15); }
+  .lsp .cd { display:flex; flex-direction:column; gap:12px; padding:12px; border-radius:12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); }
+  .lsp .r { display:flex; align-items:center; justify-content:space-between; gap:12px; } .lsp .rf { display:flex; flex-direction:column; gap:8px; } .lsp .l { font-size:12.5px; color:var(--muted); }
+  .lsp select { max-width:200px; }
+  .lsp .sg { display:flex; padding:2px; border-radius:9px; background:rgba(0,0,0,.3); } .lsp .sg button { padding:4px 10px; font-size:12px; border:0; border-radius:7px; background:transparent; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; color:var(--muted); } .lsp .sg button.on { background:var(--sel); color:var(--onsel); }
+  .lsp .vr { display:flex; align-items:center; gap:10px; } .lsp .vr input { flex:1; accent-color:var(--sel); } .lsp .vr b { width:40px; text-align:right; font-size:12.5px; }
+  .lsp .wn { display:flex; gap:10px; padding:10px 12px; border-radius:12px; background:rgba(250,204,21,.08); border:1px solid rgba(250,204,21,.25); font-size:12px; line-height:1.5; color:#e9dca0; } html.t-light .lsp .wn { color:#7a5d00; }
   .ctxs { height:1px; margin:5px 6px; background:var(--gl-line); }
 .lyr .cog{flex:none;width:28px;height:26px;padding:0;font-size:16px;line-height:1;border-radius:8px;opacity:.9}
 .lyr .cog:hover{opacity:1;background:var(--gl2);border-color:var(--gl-line)}
@@ -366,11 +411,11 @@
     <section class="dock"><h2>Sources</h2>
       <div class="list" id="layers"></div>
       <div class="tb">
-        <div class="menu"><button id="addBtn" title="Add source">Add</button><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Video Capture Device<small>A webcam, ATEM Mini or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a whole computer screen</small></button><button class="mi" data-add="window">Window<small>One program, like lyrics or slides</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
+        <div class="menu"><button id="addBtn" title="Add source">Add</button><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Video Capture Device<small>A webcam, ATEM Mini or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a whole computer screen</small></button><button class="mi" data-add="window">Window<small>One program, like lyrics or slides</small></button><button class="mi" data-add="duo">Speaker + screen<small>A camera and a screen side by side</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
         <button id="srcDel" title="Remove source">Remove</button>
       </div>
     </section>
-    <section class="dock wide"><h2>Audio Mixer</h2>
+    <section class="dock wide"><h2 class="mxh">Audio Mixer<span class="mxl" role="group" aria-label="Meter layout"><button type="button" data-mxl="h" title="Side to side" aria-label="Side to side meters"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M4 8h16M4 16h11"/></svg></button><button type="button" data-mxl="v" title="Up and down" aria-label="Up and down meters"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8 20V4M16 20V9"/></svg></button></span></h2>
       <div class="list" id="audio"></div>
       <div class="tb"><div class="menu"><button id="addAudio" title="Add sound input">Add</button><div class="pop pop-up" id="audPop" hidden><button class="mi" data-addaudio="mic">Sound input<small>A microphone, mixer or the ATEM</small></button><button class="mi" data-addaudio="desktop" id="desktopAudioItem" hidden>Computer sound<small>What this PC plays (Windows)</small></button></div></div><button id="advAudio" type="button" title="Volume, mono, balance, sync offset and monitoring for every sound input">Advanced</button><span class="note" id="audNote"></span></div>
     </section>
@@ -585,7 +630,7 @@ function getCam(l) {
 // cameras nobody uses any more (removed, or changed to another setting) are released so the device is free again
 setInterval(() => {
   const used = new Set();
-  studio.scenes.forEach((s) => s.layers.forEach((l) => { if (l.type === 'camera') used.add(camKey(l)); }));
+  studio.scenes.forEach((s) => s.layers.forEach((l) => { if (l.type === 'camera') used.add(camKey(l)); if (l.type === 'duo') used.add(camKey(duoCam(l))); }));
   cams.forEach((c, k) => {
     if (used.has(k)) return;
     if (!c.unusedAt) c.unusedAt = Date.now();
@@ -595,7 +640,7 @@ setInterval(() => {
   cams.forEach((c, k) => { if (c.dead && used.has(k) && Date.now() - c.seen > 4000) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} cams.delete(k); } });
   // screens, windows, web pages and phone cameras that no scene uses any more are let go the same way
   const usedCap = new Set(), usedBoard = new Set(), usedIp = new Set();
-  studio.scenes.forEach((s) => s.layers.forEach((l) => { usedCap.add(capKey(l)); if (l.url) { usedBoard.add(boardKey(l)); usedIp.add(l.url); } }));
+  studio.scenes.forEach((s) => s.layers.forEach((l) => { usedCap.add(capKey(l)); if (l.type === 'duo') usedCap.add(capKey(duoScr(l))); if (l.url) { usedBoard.add(boardKey(l)); usedIp.add(l.url); } }));
   const later = (o) => { if (!o.unusedAt) o.unusedAt = Date.now(); return Date.now() - o.unusedAt > 2500; };
   caps.forEach((c, k) => { if (usedCap.has(k)) { c.unusedAt = 0; return; } if (later(c)) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(k); } });
   boards.forEach((b, k) => { if (usedBoard.has(k)) { b.unusedAt = 0; return; } if (later(b)) { if (window.msNative) window.msNative.browserClose(k); boards.delete(k); } });
@@ -676,23 +721,76 @@ function note(c, l, msg) {
 }
 // ---- lower thirds, countdown and clock ----
 const lowerState = new Map();
+const LOWER_MS = { typewriter: 1300, bounce: 800, flip: 600, glow: 700 };
 function lowerProgress(l) {
-  const want = l.visible !== false ? 1 : 0, now = performance.now();
-  let st = lowerState.get(l.id); if (!st) { st = { p: want, t: now }; lowerState.set(l.id, st); }
+  const want = l.visible !== false ? 1 : 0, now = performance.now(), ms = want ? (LOWER_MS[l.anim] || 450) : 450;
+  let st = lowerState.get(l.id); if (!st) { st = { p: want, t: now, shownAt: Date.now() }; lowerState.set(l.id, st); }
+  if (want && st.want === 0) st.shownAt = Date.now();
+  st.want = want;
   const dt = now - st.t;
-  if (dt > 0) { st.t = now; st.p = want > st.p ? Math.min(1, st.p + dt / 450) : Math.max(0, st.p - dt / 450); }
+  if (dt > 0) { st.t = now; st.p = want > st.p ? Math.min(1, st.p + dt / ms) : Math.max(0, st.p - dt / 450); }
   return st.p;
 }
+// a name bar set to "Hide after" slides out by itself
+setInterval(() => {
+  let changed = false;
+  studio.scenes.forEach((sc) => sc.layers.forEach((l) => {
+    if (l.type !== 'lower' || l.visible === false || !l.hideAfter) return;
+    const st = lowerState.get(l.id); if (!st || st.want !== 1) return;
+    if (Date.now() - st.shownAt > l.hideAfter * 1000) { l.visible = false; changed = true; }
+  }));
+  if (changed) { save(); renderLayers(); }
+}, 500);
+// fonts: used when they are on this computer, otherwise a similar one
+const FONTS = { '': 'system-ui, sans-serif', inter: 'Inter, "Segoe UI", system-ui, sans-serif', montserrat: 'Montserrat, "Segoe UI", system-ui, sans-serif', poppins: 'Poppins, "Segoe UI", system-ui, sans-serif', playfair: '"Playfair Display", Georgia, "Times New Roman", serif' };
+const fontOf = (l) => FONTS[l.font || ''] || FONTS[''];
+const initials = (t) => String(t || '').trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase();
+const easeOut = (p) => 1 - Math.pow(1 - p, 3);
+function easeBounce(p) { const n = 7.5625, d = 2.75; if (p < 1 / d) return n * p * p; if (p < 2 / d) return n * (p -= 1.5 / d) * p + 0.75; if (p < 2.5 / d) return n * (p -= 2.25 / d) * p + 0.9375; return n * (p -= 2.625 / d) * p + 0.984375; }
 function drawLower(c, l) {
   const p = lowerProgress(l); if (p <= 0) return;
-  const e = 1 - Math.pow(1 - p, 3), w = l.w || 1000, h = l.h || 150, x = l.x - (1 - e) * (w + l.x + 40);
-  c.globalAlpha = Math.min(1, p * 2);
-  c.fillStyle = 'rgba(8,12,10,0.82)'; c.fillRect(x + 14, l.y, w - 14, h);
-  c.fillStyle = l.color || '#3b6cff'; c.fillRect(x, l.y, 14, h);
-  c.fillStyle = l.textColor || '#ffffff'; c.textBaseline = 'alphabetic';
-  const big = Math.round(h * 0.38), small = Math.round(h * 0.24);
-  c.font = `bold ${big}px system-ui, sans-serif`; c.fillText(l.title || '', x + 40, l.y + h * (l.sub ? 0.5 : 0.62), w - 70);
-  if (l.sub) { c.font = `${small}px system-ui, sans-serif`; c.globalAlpha *= 0.85; c.fillText(l.sub, x + 40, l.y + h * 0.82, w - 70); }
+  const anim = l.anim || 'slide', e = easeOut(p), w = l.w || 900, h = l.h || 130;
+  let x = l.x, y = l.y, alpha = Math.min(1, p * 2);
+  const cx = l.x + w / 2, cy = l.y + h / 2, scaleAt = (sx, sy) => { c.translate(cx, cy); c.scale(sx, sy); c.translate(-cx, -cy); };
+  if (anim === 'slide') x = l.x - (1 - e) * (w + l.x + 40);
+  else if (anim === 'fade') alpha = p;
+  else if (anim === 'rise') { y = l.y + (1 - e) * 60; alpha = p; }
+  else if (anim === 'drop') { y = l.y - (1 - e) * 60; alpha = p; }
+  else if (anim === 'pop') { const k = p < 1 ? 1 + 0.12 * Math.sin(p * Math.PI) - 0.4 * (1 - e) : 1; scaleAt(Math.max(0.01, k), Math.max(0.01, k)); alpha = Math.min(1, p * 3); }
+  else if (anim === 'zoom') { scaleAt(1 + 0.3 * (1 - e), 1 + 0.3 * (1 - e)); alpha = p; }
+  else if (anim === 'bounce') { y = l.y - (1 - easeBounce(p)) * (h + 80); alpha = Math.min(1, p * 4); }
+  else if (anim === 'flip') { scaleAt(1, Math.max(0.01, e)); alpha = 1; }
+  else if (anim === 'blur') { c.filter = 'blur(' + Math.round((1 - e) * 24) + 'px)'; alpha = p; }
+  else if (anim === 'wipe') { c.beginPath(); c.rect(l.x - 4, l.y - 4, (w + 8) * e, h + 8); c.clip(); alpha = 1; }
+  else if (anim === 'glow') { alpha = p; c.shadowColor = l.color || '#3b6cff'; c.shadowBlur = 60 * (p < 1 ? Math.sin(p * Math.PI) + 0.2 : 0.2); }
+  c.globalAlpha = alpha;
+  const style = l.style || 'clean', col = l.color || '#3b6cff', tc = l.textColor || '#ffffff', F = fontOf(l);
+  const r = Math.round(h * 0.16);
+  // the box
+  if (style === 'bold') { c.fillStyle = col; c.beginPath(); c.roundRect(x, y, w, h, r); c.fill(); }
+  else if (style === 'minimal') { c.fillStyle = col; c.fillRect(x, y + h - 6, Math.min(w, 260), 6); }
+  else { c.fillStyle = 'rgba(10,14,31,0.84)'; c.beginPath(); c.roundRect(x, y, w, h, r); c.fill(); c.fillStyle = col; c.beginPath(); c.roundRect(x, y, 12, h, [r, 0, 0, r]); c.fill(); }
+  c.shadowBlur = 0; c.filter = 'none';
+  // picture (PNG) or, for a person, their initials in a circle
+  let tx = x + (style === 'minimal' ? 0 : 36);
+  const ph = Math.round(h * 0.62), py = y + (h - ph) / 2;
+  const im = l.pic ? getImg(fileUrl({ file: l.pic, url: l.picUrl })) : null;
+  if (im && im.complete && im.naturalWidth) {
+    c.save(); c.beginPath(); if ((l.tag || 'person') === 'person') c.arc(tx + ph / 2, py + ph / 2, ph / 2, 0, Math.PI * 2); else c.roundRect(tx, py, ph, ph, ph * 0.18); c.clip();
+    const k = Math.max(ph / im.naturalWidth, ph / im.naturalHeight), dw = im.naturalWidth * k, dh = im.naturalHeight * k; c.drawImage(im, tx + (ph - dw) / 2, py + (ph - dh) / 2, dw, dh); c.restore();
+    tx += ph + Math.round(h * 0.2);
+  } else if ((l.tag || 'person') === 'person' && style !== 'minimal' && l.initials !== false) {
+    c.fillStyle = style === 'bold' ? 'rgba(255,255,255,0.22)' : col; c.beginPath(); c.arc(tx + ph / 2, py + ph / 2, ph / 2, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#ffffff'; c.font = `700 ${Math.round(ph * 0.4)}px ${F}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(initials(l.title), tx + ph / 2, py + ph / 2 + 1); c.textAlign = 'left';
+    tx += ph + Math.round(h * 0.2);
+  }
+  // the words (Typewriter shows them a letter at a time)
+  const sub = l.showSub === false ? '' : (l.sub || ''), room = Math.max(40, x + w - tx - 28);
+  const title = anim === 'typewriter' ? String(l.title || '').slice(0, Math.ceil(String(l.title || '').length * Math.min(1, p * 1.25))) : (l.title || '');
+  const big = Math.round(h * 0.34), small = Math.round(h * 0.22);
+  c.fillStyle = tc; c.textBaseline = 'alphabetic'; c.textAlign = 'left';
+  c.font = `700 ${big}px ${F}`; c.fillText(title, tx, y + h * (sub ? 0.5 : 0.62), room);
+  if (sub) { const sp = anim === 'typewriter' ? Math.max(0, Math.min(1, (p - 0.6) / 0.4)) : 1; c.font = `500 ${small}px ${F}`; c.globalAlpha = alpha * 0.85 * sp; c.fillText(sub, tx, y + h * 0.8, room); }
 }
 const pad2 = (n) => String(n).padStart(2, '0');
 function timerLeft(l, now = Date.now()) {
@@ -711,11 +809,57 @@ function clockText(l, now = new Date()) {
   return l.date ? now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) + '   ' + base : base;
 }
 function drawCentered(c, l, text, label) {
-  const w = l.w || SW, size = l.size || 200;
+  const w = l.w || SW, size = l.size || 200, F = fontOf(l);
   c.fillStyle = l.color || '#ffffff'; c.textAlign = 'center'; c.textBaseline = 'top';
   let y = l.y;
-  if (label) { c.font = `${Math.round(size * 0.3)}px system-ui, sans-serif`; c.fillText(label, l.x + w / 2, y, w); y += size * 0.4; }
-  c.font = `bold ${size}px system-ui, sans-serif`; c.fillText(text, l.x + w / 2, y, w);
+  if (label) { c.font = `600 ${Math.round(size * 0.3)}px ${F}`; c.fillText(label, l.x + w / 2, y, w); y += size * 0.4; }
+  c.font = `bold ${size}px ${F}`; c.fillText(text, l.x + w / 2, y, w);
+}
+// words with a font, lined up left, centre or right, with an outline or a shadow
+function drawWords(c, l) {
+  const size = l.size || 60, w = l.w || SW, al = l.align || 'left';
+  c.font = `bold ${size}px ${fontOf(l)}`; c.textBaseline = 'top'; c.textAlign = al === 'centre' ? 'center' : al;
+  const ax = al === 'centre' ? l.x + w / 2 : al === 'right' ? l.x + w : l.x;
+  if (l.shadow) { c.shadowColor = 'rgba(0,0,0,0.6)'; c.shadowBlur = size * 0.18; c.shadowOffsetY = size * 0.06; }
+  String(l.text || '').split('\n').forEach((t, i) => {
+    const ty = l.y + i * size * 1.2;
+    if (l.outline) { c.lineWidth = Math.max(2, size * 0.08); c.strokeStyle = l.outlineColor || '#000000'; c.lineJoin = 'round'; c.strokeText(t, ax, ty, w); }
+    c.fillStyle = l.color || '#fff'; c.fillText(t, ax, ty, w);
+  });
+}
+// something behind a countdown or a Speaker + screen: a picture, a looping video, a colour (or a blurred camera)
+const bgKey = (l) => l.id + ':bg:' + ((l.bg && (l.bg.file || l.bg.url)) || '');
+function bgVidOf(l) { const b = l.bg || {}; return { id: bgKey(l), file: b.file || '', url: b.url || '', loop: b.loop !== false }; }
+function drawBg(c, l, x, y, w, h) {
+  const b = l.bg; if (!b || !b.kind || b.kind === 'none') return;
+  c.save(); c.globalAlpha = (b.op == null ? 100 : b.op) / 100;
+  const cover = (el, sw, sh) => { const k = Math.max(w / sw, h / sh), dw = sw * k, dh = sh * k; c.beginPath(); c.rect(x, y, w, h); c.clip(); c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); };
+  if (b.kind === 'colour') { c.fillStyle = b.color || '#0a0e1f'; c.fillRect(x, y, w, h); }
+  else if (b.kind === 'picture') { const i = getImg(fileUrl(b)); if (i.complete && i.naturalWidth) cover(i, i.naturalWidth, i.naturalHeight); }
+  else if (b.kind === 'video') { const v = getVid(bgVidOf(l)); if (!v.bad && v.el.readyState >= 2 && v.el.videoWidth) cover(v.el, v.el.videoWidth, v.el.videoHeight); }
+  c.restore();
+}
+// Speaker + screen: the screen and a camera, the same height; "Screen big" makes the screen wider
+const duoCam = (l) => ({ type: 'camera', label: l.camLabel || '', device: l.camDevice || '', res: 'auto', fps: 'auto' });
+const duoScr = (l) => ({ type: l.scrType === 'window' ? 'window' : 'screen', display: l.display || '', winName: l.winName || '' });
+function drawDuo(c, l) {
+  const x = l.x, y = l.y, w = l.w || SW, h = l.h || SH, pad = Math.round(w * 0.03), gap = Math.round(w * 0.018);
+  const cm = getCam(duoCam(l)), sc = getCapture(duoScr(l));
+  if (l.bg && l.bg.kind === 'blur') { if (cm.ready && cm.v.videoWidth) { c.save(); c.filter = 'blur(40px) brightness(0.6)'; const k = Math.max(w / cm.v.videoWidth, h / cm.v.videoHeight); c.beginPath(); c.rect(x, y, w, h); c.clip(); c.drawImage(cm.v, x + (w - cm.v.videoWidth * k) / 2, y + (h - cm.v.videoHeight * k) / 2, cm.v.videoWidth * k, cm.v.videoHeight * k); c.restore(); } }
+  else if (l.bg && l.bg.kind && l.bg.kind !== 'none') drawBg(c, l, x, y, w, h);
+  else { c.fillStyle = '#0a0e1f'; c.fillRect(x, y, w, h); }
+  const inner = w - pad * 2 - gap, share = l.layout === 'side' ? 0.5 : 0.68;
+  let sw = inner * share, cw = inner - sw, bh = Math.min(h - pad * 2, sw * 9 / 16);
+  const by = y + (h - bh) / 2, sx = l.camLeft ? x + pad + cw + gap : x + pad, cx = l.camLeft ? x + pad : x + pad + sw + gap;
+  const rad = l.corners === 'square' ? 0 : Math.round(bh * 0.04);
+  const box = (bx, bw, el, vw, vh, mode, msg) => {
+    c.save(); c.beginPath(); c.roundRect(bx, by, bw, bh, rad); c.fillStyle = '#000'; c.fill(); c.clip();
+    if (el && vw) { const k = mode === 'cover' ? Math.max(bw / vw, bh / vh) : Math.min(bw / vw, bh / vh), dw = vw * k, dh = vh * k; c.drawImage(el, bx + (bw - dw) / 2, by + (bh - dh) / 2, dw, dh); }
+    else { c.fillStyle = '#9fb3a5'; c.font = '26px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(msg, bx + bw / 2, by + bh / 2, bw - 30); }
+    c.restore();
+  };
+  box(sx, sw, sc.ready ? sc.v : null, sc.ready ? sc.v.videoWidth : 0, sc.v.videoHeight, 'fit', sc.err ? 'Screen: ' + sc.err : 'Starting the screen...');
+  box(cx, cw, cm.ready ? cm.v : null, cm.ready ? cm.v.videoWidth : 0, cm.v.videoHeight, 'cover', cm.err ? 'Camera: ' + cm.err : 'Starting the camera...');
 }
 // ---- picture tools: crop, colour, green screen, shape, flip, see-through ----
 // l.pfx = { crop:{l,t,r,b} in %, bri, con, sat (percent, 100 = normal), key:{on,color,sim,smooth}, shape:'', round, flip, op }
@@ -781,16 +925,15 @@ function drawLayer(c, l, live) {
   c.save();
   try {
     if (l.type === 'color') { c.fillStyle = l.color || '#000'; c.fillRect(l.x, l.y, l.w || SW, l.h || SH); }
-    else if (l.type === 'text') {
-      c.fillStyle = l.color || '#fff'; c.font = `bold ${l.size || 60}px system-ui, sans-serif`; c.textBaseline = 'top';
-      String(l.text || '').split('\n').forEach((t, i) => c.fillText(t, l.x, l.y + i * (l.size || 60) * 1.2, l.w || SW));
-    } else if (l.type === 'image') {
+    else if (l.type === 'text') drawWords(c, l);
+    else if (l.type === 'duo') drawDuo(c, l); else if (l.type === 'image') {
       const i = getImg(fileUrl(l));
       if (i.complete && i.naturalWidth) { pic(c, l, i, i.naturalWidth, i.naturalHeight); }
       else if (i.bad) note(c, l, 'Picture not found: ' + (l.file || l.url || l.name));
     } else if (l.type === 'video') {
       const v = getVid(l);
       if (v.bad) note(c, l, 'Video not found: ' + (l.file || l.url || l.name));
+      else if (v.el.ended && l.loop === false && l.endDo !== 'keep') { /* finished: hidden */ }
       else if (v.el.readyState >= 2 && v.el.videoWidth) { pic(c, l, v.el, v.el.videoWidth, v.el.videoHeight); }
     } else if (l.type === 'camera') {
       const cm = getCam(l);
@@ -804,8 +947,11 @@ function drawLayer(c, l, live) {
       if (!window.msNative) { note(c, l, 'Web pages need the Multistream desktop app'); }
       else { const b = getBoard(l); if (b.ready) { pic(c, l, b.c, b.c.width, b.c.height); } }
     } else if (l.type === 'timer') {
-      const left = timerLeft(l);
-      drawCentered(c, l, left <= 0 && l.doneText ? l.doneText : fmtLeft(left), l.label);
+      const left = timerLeft(l), done = left <= 0;
+      if (!(done && l.endDo === 'hide')) {
+        if (l.bg && l.bg.kind && l.bg.kind !== 'none') drawBg(c, l, 0, 0, SW, SH);
+        drawCentered(c, l, done && l.endDo !== 'zero' && l.doneText ? l.doneText : fmtLeft(left), l.label);
+      }
     } else if (l.type === 'clock') {
       drawCentered(c, l, clockText(l), '');
     } else if (l.type === 'ipcam') {
@@ -892,6 +1038,31 @@ function updateVideos() {
   }));
 }
 setInterval(updateVideos, 300);
+// countdown background videos play (with no sound) while their scene is shown
+setInterval(() => {
+  const show = new Set();
+  [byName(studio.current), byName(serverPreview), byName(editing)].forEach((sc) => sc && sc.layers.forEach((l) => { if (l.type === 'timer' && l.visible !== false && l.bg && l.bg.kind === 'video') show.add(bgKey(l)); }));
+  studio.scenes.forEach((sc) => sc.layers.forEach((l) => {
+    if (!(l.bg && l.bg.kind === 'video')) return;
+    const k = bgKey(l); if (!show.has(k) && !vids.has(k)) return;
+    const v = getVid(bgVidOf(l)); v.el.muted = true; v.el.loop = l.bg.loop !== false;
+    if (show.has(k)) { if (v.el.paused && !(v.el.ended && !v.el.loop)) v.el.play().catch(() => {}); } else if (!v.el.paused) v.el.pause();
+  }));
+}, 300);
+// a countdown on air that reaches zero can switch to another scene (once)
+const timerFired = new Map();
+setInterval(() => {
+  const live = byName(studio.current); if (!live) return;
+  live.layers.forEach((l) => {
+    if (l.type !== 'timer' || l.endDo !== 'scene' || !l.endScene || l.visible === false) return;
+    if (l.mode !== 'until' && !l.endAt) return; // not started
+    const mark = l.mode === 'until' ? new Date().toDateString() + l.at : String(l.endAt);
+    if (timerLeft(l) > 0) return;
+    if (timerFired.get(l.id) === mark) return;
+    timerFired.set(l.id, mark);
+    if (byName(l.endScene) && l.endScene !== studio.current) setCurrent(l.endScene);
+  });
+}, 500);
 
 // ---------------- sound ----------------
 let actx = null, master = null, dest = null;
@@ -900,11 +1071,27 @@ const streams = new Map(); // device id -> MediaStream
 function ensureAudio() {
   if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
   actx = new AudioContext(); master = actx.createGain(); dest = actx.createMediaStreamDestination(); master.connect(dest);
+  // everything you hear in your headphones goes through monBus (its volume is the headphone volume);
+  // wholeMon lets you hear the whole stream instead of single inputs
+  monBus = actx.createGain(); monBus.connect(actx.destination); wholeMon = actx.createGain(); wholeMon.gain.value = 0; master.connect(wholeMon); wholeMon.connect(monBus);
+  applyMonitorMix();
   setMonitorDevice(monDev);
   syncAudio();
 }
 // where "monitor" sound is heard (your headphones). Not the stream: only you hear it.
 let monDev = ''; try { monDev = localStorage.getItem('ms_mondev') || ''; } catch {}
+let monBus = null, wholeMon = null;
+const monPref = { whole: false, vol: 1 };
+try { monPref.whole = localStorage.getItem('ms_mon_whole') === '1'; const v = parseFloat(localStorage.getItem('ms_mon_vol')); if (v >= 0 && v <= 1) monPref.vol = v; } catch {}
+const isHeard = (a) => a.monitor === 'only' || a.monitor === 'both';
+// "Whole stream" plays the stream mix in your headphones when any input is set to listen; "This sound" plays only those inputs
+function applyMonitorMix() {
+  if (!actx || !monBus) return;
+  const any = studio.audio.some(isHeard), t = actx.currentTime;
+  monBus.gain.setTargetAtTime(monPref.vol, t, 0.02);
+  wholeMon.gain.setTargetAtTime(monPref.whole && any ? 1 : 0, t, 0.02);
+  for (const a of studio.audio) { const n = asrc.get(a.id); if (n && n.mon) n.mon.gain.setTargetAtTime(isHeard(a) && !monPref.whole ? 1 : 0, t, 0.02); }
+}
 function setMonitorDevice(id) {
   monDev = id || '';
   try { localStorage.setItem('ms_mondev', monDev); } catch {}
@@ -954,16 +1141,16 @@ async function syncAudio() {
       n.st = actx.createGain(); n.st.channelCount = 2; n.st.channelCountMode = 'explicit'; n.st.channelInterpretation = 'speakers';
       n.spl = actx.createChannelSplitter(2); n.anL = actx.createAnalyser(); n.anR = actx.createAnalyser(); n.anL.fftSize = n.anR.fftSize = 2048;
       n.gain.connect(n.st); n.st.connect(n.spl); n.spl.connect(n.anL, 0); n.spl.connect(n.anR, 1); n.gate.connect(master); n.gate.gain.value = 0;
-      n.mon.gain.value = 0; n.gain.connect(n.mon); n.mon.connect(actx.destination);
+      n.mon.gain.value = 0; n.gain.connect(n.mon); n.mon.connect(monBus || actx.destination);
       asrc.set(a.id, n);
       const id = pickDevice('audio', a.label, a.device);
       try { const st = a.kind === 'desktop' ? await openDesktopAudio() : await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = ''; } catch (e) { n.err = e.message; }
     }
     n.gain.gain.setTargetAtTime(a.muted ? 0 : (a.vol == null ? 1 : a.vol), actx.currentTime, 0.02);
     if (n.mono) { n.mono.channelCount = a.mono ? 1 : 2; n.bal.pan.setTargetAtTime(Math.max(-1, Math.min(1, a.bal || 0)), actx.currentTime, 0.02); }
-    n.mon.gain.setTargetAtTime(a.monitor === 'only' || a.monitor === 'both' ? 1 : 0, actx.currentTime, 0.02);
     applyFx(a, n);
   }
+  applyMonitorMix();
   gateAudio();
 }
 // sound tools for each input: delay (to line sound up with the picture), noise gate, compressor
@@ -1015,15 +1202,15 @@ const dB = (v) => (v <= 0.0001 ? -60 : Math.max(-60, 20 * Math.log10(v)));
   }
 
 // a vertical fader like OBS: drag, click, mouse wheel, arrow keys; double-click puts it back to 0 dB
-function makeFader(a) {
-  const el = document.createElement('div'); el.className = 'fdr'; el.tabIndex = 0; el.setAttribute('role', 'slider'); el.setAttribute('aria-label', 'Volume of ' + a.name); el.setAttribute('aria-valuemin', '-60'); el.setAttribute('aria-valuemax', '12');
+function makeFader(a, horiz) {
+  const el = document.createElement('div'); el.className = 'fdr' + (horiz ? ' h' : ''); el.tabIndex = 0; el.setAttribute('role', 'slider'); el.setAttribute('aria-label', 'Volume of ' + a.name); el.setAttribute('aria-valuemin', '-60'); el.setAttribute('aria-valuemax', '12');
   el.innerHTML = '<i class="trk"></i><i class="knob"></i>';
   const read = document.createElement('div'); read.className = 'dbr';
   const knob = el.querySelector('.knob');
   let v = dB(a.vol == null ? 1 : a.vol);
-  const show = () => { knob.style.bottom = ((v + 60) / 72 * 100) + '%'; read.textContent = v <= -60 ? '-inf dB' : (v > 0 ? '+' : '') + v.toFixed(1) + ' dB'; el.setAttribute('aria-valuenow', String(Math.round(v))); el.title = read.textContent; };
+  const show = () => { if (horiz) knob.style.left = 'calc(6px + (100% - 12px) * ' + ((v + 60) / 72).toFixed(4) + ')'; else knob.style.bottom = ((v + 60) / 72 * 100) + '%'; read.textContent = v <= -60 ? '-inf dB' : (v > 0 ? '+' : '') + v.toFixed(1) + ' dB'; el.setAttribute('aria-valuenow', String(Math.round(v))); el.title = read.textContent; };
   const set = (x, persist) => { x = Math.max(-60, Math.min(12, Math.round(x * 2) / 2)); if (Math.abs(x) <= 1) x = 0; v = x; a.vol = v <= -60 ? 0 : Math.pow(10, v / 20); show(); if (persist !== false) { save(); syncAudio(); } };
-  const at = (e) => { const r = el.getBoundingClientRect(); const p = 1 - (e.clientY - r.top - 6) / Math.max(1, r.height - 12); set(-60 + Math.max(0, Math.min(1, p)) * 72); };
+  const at = (e) => { const r = el.getBoundingClientRect(); const p = horiz ? (e.clientX - r.left - 6) / Math.max(1, r.width - 12) : 1 - (e.clientY - r.top - 6) / Math.max(1, r.height - 12); set(-60 + Math.max(0, Math.min(1, p)) * 72); };
   el.addEventListener('pointerdown', (e) => { if (e.button !== 0) return; el.setPointerCapture(e.pointerId); el.focus(); at(e); const mv = (ev) => at(ev); const up = () => { el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); }; el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); });
   el.addEventListener('dblclick', () => set(0));
   el.addEventListener('wheel', (e) => { e.preventDefault(); set(v + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 5 : 1)); }, { passive: false });
@@ -1084,19 +1271,29 @@ function openAdvancedAudio() {
   dlg.querySelector('.dlg-h button').onclick = close; ok.onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
   document.body.appendChild(m);
 }
+// the mixer can show meters side to side (default) or up and down, like OBS
+let mixLayout = 'h'; try { if (localStorage.getItem('ms_mixer_layout') === 'v') mixLayout = 'v'; } catch {}
+function paintMixLayout() { document.querySelectorAll('[data-mxl]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mxl === mixLayout))); }
+document.querySelectorAll('[data-mxl]').forEach((b) => { b.onclick = () => { mixLayout = b.dataset.mxl; try { localStorage.setItem('ms_mixer_layout', mixLayout); } catch {} paintMixLayout(); renderAudio(); }; });
+paintMixLayout();
+const ICON_SPK = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>';
+const ICON_MUTE = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9l5 6M21 9l-5 6"/></svg>';
+const ICON_HP = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg>';
 function renderAudio() {
   const box = $('#audio'); box.textContent = '';
+  const HZ = mixLayout === 'h'; box.classList.toggle('hz', HZ);
+  if (HZ && studio.audio.length) { const sc = document.createElement('div'); sc.className = 'au hzh'; sc.style.cssText = 'background:none;border:0;padding:0 12px'; sc.innerHTML = '<span></span><div class="hzs">' + [-60, -48, -36, -24, -12, 0].map((v) => '<span style="left:' + ((v + 60) / 60 * 100) + '%">' + (v === 0 ? '0 dB' : v) + '</span>').join('') + '</div><span class="hzp"></span>'; box.appendChild(sc); }
   const s = byName(editing), on = new Set((s && s.audio) || []);
   studio.audio.forEach((a) => {
-    const d = document.createElement('div'); d.className = 'au' + (on.has(a.id) ? '' : ' off'); d.dataset.id = a.id;
+    const d = document.createElement('div'); d.className = 'au' + (on.has(a.id) ? '' : ' off') + (on.has(a.id) && !a.muted ? ' live' : ''); d.dataset.id = a.id;
     const t = document.createElement('div'); t.className = 't';
     const n = document.createElement('span'); n.className = 'n'; n.textContent = a.name; n.title = a.name + (asrc.get(a.id) && asrc.get(a.id).err ? ' - ' + asrc.get(a.id).err : '');
     const inScene = eyeBtn(on.has(a.id), 'Heard in the scene being edited', (v) => { const sc = byName(editing); if (!sc) return; sc.audio = sc.audio || []; if (v) { if (!sc.audio.includes(a.id)) sc.audio.push(a.id); } else sc.audio = sc.audio.filter((x) => x !== a.id); save(); gateAudio(); renderAudio(); });
     const m = document.createElement('button'); m.className = 'sm' + (a.muted ? ' on' : ''); m.textContent = a.muted ? 'Muted' : 'Mute';
     m.onclick = () => { a.muted = !a.muted; save(); syncAudio(); renderAudio(); };
     t.append(inScene, n);
-    const fd = makeFader(a);
-    const mt = document.createElement('div'); mt.className = 'mts'; mt.title = 'Left and right'; mt.innerHTML = '<div class="mt"><i></i><b></b></div><div class="mt"><i></i><b></b></div>';
+    const fd = makeFader(a, HZ);
+    const mt = document.createElement('div'); mt.className = 'mts' + (HZ ? ' h' : ''); mt.title = 'Left and right'; mt.innerHTML = '<div class="mt"><i></i><b></b></div><div class="mt"><i></i><b></b></div>';
     const sc = document.createElement('div'); sc.className = 'scale'; [0, -6, -12, -18, -24, -30, -36, -42, -48, -54, -60].forEach((v) => { const e = document.createElement('span'); e.textContent = String(v); e.style.bottom = ((v + 60) / 60 * 100) + '%'; sc.appendChild(e); });
     const sl = document.createElement('select');
     if (a.kind === 'desktop') { sl.add(new Option('The sound this computer plays', '')); sl.disabled = true; }
@@ -1129,14 +1326,70 @@ function renderAudio() {
     row('Limiter (stops peaks)', sw(F.lim && F.lim.on, (v) => { F.lim = { ...(F.lim || {}), on: v }; }));
     row('  ceiling', slider(-20, 0, 1, F.lim && F.lim.thr != null ? F.lim.thr : -3, (v) => v + ' dB', (v) => { F.lim = { ...(F.lim || {}), thr: v }; }));
     const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'sm'; tb.textContent = 'Tools'; tb.title = 'Input, headphones, delay, low cut, bass/treble, gate, compressor, limiter'; tb.onclick = () => openTools(a, fx);
-    const body = document.createElement('div'); body.className = 'aub'; const wrap = document.createElement('div'); wrap.className = 'aum'; wrap.append(sc, mt, fd.el); body.appendChild(wrap);
-    const bt = document.createElement('div'); bt.className = 'aut'; bt.append(m, tb);
-    d.append(t, body, fd.read, bt); box.appendChild(d);
+    const lb = document.createElement('button'); lb.type = 'button'; lb.className = 'sm lsn' + (isHeard(a) ? ' on' : ''); lb.title = 'Listen in headphones'; lb.setAttribute('aria-label', 'Listen to ' + a.name + ' in headphones');
+    lb.onclick = (e) => { e.stopPropagation(); openListen(a, lb); };
+    if (HZ) {
+      // side to side: name and volume, then the two meters with the fader under them, then mute, listen and tools
+      const left = document.createElement('div'); left.append(t, fd.read);
+      const mid = document.createElement('div'); mid.className = 'hmid'; mid.append(mt, fd.el);
+      const bt = document.createElement('div'); bt.className = 'hbt';
+      m.className = a.muted ? 'mut' : ''; m.innerHTML = a.muted ? ICON_MUTE : ICON_SPK; m.title = a.muted ? 'Muted - click to hear it again' : 'Mute'; m.setAttribute('aria-label', (a.muted ? 'Unmute ' : 'Mute ') + a.name);
+      lb.className = isHeard(a) ? 'on' : ''; lb.innerHTML = ICON_HP;
+      tb.className = ''; tb.textContent = '⋯'; tb.setAttribute('aria-label', 'Sound tools for ' + a.name);
+      bt.append(m, lb, tb); d.append(left, mid, bt);
+    } else {
+      const body = document.createElement('div'); body.className = 'aub'; const wrap = document.createElement('div'); wrap.className = 'aum'; wrap.append(sc, mt, fd.el); body.appendChild(wrap);
+      lb.innerHTML = ICON_HP; lb.style.padding = '2px 6px';
+      const bt = document.createElement('div'); bt.className = 'aut'; bt.append(m, lb, tb);
+      d.append(t, body, fd.read, bt);
+    }
+    box.appendChild(d);
     // right-click a sound input (like OBS): rename, mute, hear it in this scene, properties and filters
     d.addEventListener('contextmenu', (e) => showAudioMenu(e, a, n, fx, on.has(a.id)));
   });
   $('#audNote').textContent = studio.audio.length ? '' : 'No sound inputs yet.';
 }
+// Listen in headphones: only you hear it, the stream does not change
+let lspEl = null;
+function closeListen() { if (lspEl) { lspEl.remove(); lspEl = null; } }
+function openListen(a, anchor) {
+  if (lspEl && lspEl.dataset.id === a.id) { closeListen(); return; }
+  closeListen(); ensureAudio();
+  const p = document.createElement('div'); p.className = 'lsp' + (isHeard(a) ? ' on' : ''); p.dataset.id = a.id; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Listen in headphones');
+  p.innerHTML = '<div class="hd"><span class="ic">' + ICON_HP.replace('currentColor', '#fff') + '</span><div class="ti"><b>Listen in headphones</b><small></small></div><button type="button" class="tgl" aria-label="Listen on or off"></button></div>'
+    + '<div class="lv"><i></i></div>'
+    + '<div class="cd"><div class="r"><span class="l">Headphones</span><select class="hpd"></select></div>'
+    + '<div class="r"><span class="l">What I hear</span><div class="sg"><button type="button" data-w="0">This sound</button><button type="button" data-w="1">Whole stream</button></div></div>'
+    + '<div class="rf"><span class="l">Headphone volume</span><div class="vr"><input type="range" min="0" max="100" step="1"><b></b></div></div></div>'
+    + '<div class="wn"><span>⚠</span><span>Bluetooth headphones can be a little behind. Wired is best for checking sound.</span></div>';
+  p.querySelector('.ti b').textContent = a.name;
+  const paint = () => {
+    const onNow = isHeard(a); p.classList.toggle('on', onNow);
+    p.querySelector('.ti small').textContent = onNow ? '● Only you can hear this' : 'Off - you are not listening to this';
+    p.querySelector('.tgl').setAttribute('aria-pressed', String(onNow));
+    p.querySelectorAll('[data-w]').forEach((b) => b.classList.toggle('on', (b.dataset.w === '1') === monPref.whole));
+  };
+  p.querySelector('.tgl').onclick = () => { a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); paint(); renderAudio(); };
+  p.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => { monPref.whole = b.dataset.w === '1'; try { localStorage.setItem('ms_mon_whole', monPref.whole ? '1' : '0'); } catch {} applyMonitorMix(); paint(); }; });
+  const sel = p.querySelector('.hpd'); sel.add(new Option('Default output', ''));
+  (devices.out || []).forEach((x) => sel.add(new Option(x.label || 'Output', x.deviceId)));
+  sel.value = [...sel.options].some((o) => o.value === monDev) ? monDev : '';
+  sel.onchange = () => { setMonitorDevice(sel.value); const mm = $('#monDev'); if (mm) mm.value = sel.value; };
+  const vr = p.querySelector('.vr input'), vb = p.querySelector('.vr b');
+  vr.value = Math.round(monPref.vol * 100); vb.textContent = vr.value + '%';
+  vr.oninput = () => { monPref.vol = vr.value / 100; vb.textContent = vr.value + '%'; try { localStorage.setItem('ms_mon_vol', String(monPref.vol)); } catch {} applyMonitorMix(); };
+  paint(); document.body.appendChild(p); lspEl = p;
+  // sit above the button, kept on screen
+  const r = anchor.getBoundingClientRect(), w = p.offsetWidth, h = p.offsetHeight;
+  p.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left + r.width / 2 - w / 2)) + 'px';
+  p.style.top = (r.top - h - 12 > 8 ? r.top - h - 12 : Math.min(window.innerHeight - h - 8, r.bottom + 12)) + 'px';
+  // the level of this input
+  const lv = p.querySelector('.lv i'), buf = new Float32Array(2048);
+  const tick = () => { if (lspEl !== p) return; const n = asrc.get(a.id); const v = n && n.anL ? peakOf(n.anL, buf) : -60; lv.style.width = meterPct(v) + '%'; requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+document.addEventListener('pointerdown', (e) => { if (lspEl && !lspEl.contains(e.target) && !e.target.closest('.lsn, .hbt button')) closeListen(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeListen(); });
 function addAudioInput(kind) {
   const a = { id: uid(), name: kind === 'desktop' ? 'Computer sound' : 'Sound ' + (studio.audio.length + 1), device: '', label: '', vol: 1, muted: false };
   if (kind === 'desktop') a.kind = 'desktop';
@@ -1156,7 +1409,7 @@ function drawMeters(now) {
   requestAnimationFrame(drawMeters);
   const dt = Math.min(0.2, (now - meterT) / 1000); meterT = now;
   if (document.hidden) return;
-  document.querySelectorAll('#audio .au').forEach((d) => {
+  document.querySelectorAll('#audio .au[data-id]').forEach((d) => {
     const bars = d.querySelectorAll('.mt'); if (!bars.length) return;
     const n = asrc.get(d.dataset.id);
     let st = meterState.get(d.dataset.id); if (!st) { st = [{ l: -60, p: -60, at: 0 }, { l: -60, p: -60, at: 0 }]; meterState.set(d.dataset.id, st); }
@@ -1165,8 +1418,14 @@ function drawMeters(now) {
       const m = st[k], c = cur[k];
       m.l = Math.max(c, m.l - 26 * dt);
       if (c >= m.p) { m.p = c; m.at = now; } else if (now - m.at > 1500) m.p = Math.max(c, m.p - 20 * dt);
-      bar.firstChild.style.height = (100 - meterPct(m.l)) + '%';
-      bar.lastChild.style.bottom = 'calc(' + meterPct(m.p) + '% - 1px)'; bar.lastChild.style.opacity = m.p > -59 ? '1' : '0';
+      if (bar.parentNode.classList.contains('h')) {
+        bar.firstChild.style.width = (100 - meterPct(m.l)) + '%';
+        bar.lastChild.style.left = 'calc(' + meterPct(m.p) + '% - 1px)';
+      } else {
+        bar.firstChild.style.height = (100 - meterPct(m.l)) + '%';
+        bar.lastChild.style.bottom = 'calc(' + meterPct(m.p) + '% - 1px)';
+      }
+      bar.lastChild.style.opacity = m.p > -59 ? '1' : '0';
     });
   });
 }
@@ -1388,7 +1647,7 @@ function openAddSource() {
   }
   draw(); document.body.appendChild(m); nameIn.focus(); nameIn.select();
 }
-const ICON = { camera: 'Video capture', window: 'Window', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera', lower: 'Name bar', timer: 'Countdown', clock: 'Clock' };
+const ICON = { camera: 'Video capture', window: 'Window', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera', lower: 'Name bar', timer: 'Countdown', clock: 'Clock', duo: 'Speaker + screen' };
 function renderLayers() {
   const s = byName(editing), box = $('#layers'); box.textContent = '';
   $('#editName').textContent = editing ? '(' + editing + ')' : ''; $('#airName').textContent = studio.current ? '(' + studio.current + ')' : '';
@@ -1430,6 +1689,24 @@ function renderProps() {
   $('#propsBox').hidden = !l || !propsOpen; if (!l) { propsOpen = false; return; }
   $('#propsTitle').textContent = "Properties for '" + (l.name || ICON[l.type] || l.type) + "'";
   const inp = (k, type) => { const i = document.createElement('input'); i.type = type || 'text'; i.value = l[k] == null ? '' : l[k]; i.oninput = () => { l[k] = type === 'number' ? Number(i.value) : i.value; save(); }; return i; };
+  // small building blocks for the source settings
+  const seg = (opts, val, set) => { const g = document.createElement('div'); g.className = 'segc'; opts.forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.classList.toggle('on', v === val); b.onclick = () => { set(v); save(); renderProps(); }; g.appendChild(b); }); return g; };
+  const rng = (min, max, step, val, fmt, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { o.textContent = fmt(Number(i.value)); set(Number(i.value)); save(); }; w.append(i, o); return w; };
+  const tick = (val, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(val); c.onchange = () => { set(c.checked); save(); renderProps(); }; return c; };
+  const colour = (val, set) => { const c = document.createElement('input'); c.type = 'color'; c.value = val; c.oninput = () => { set(c.value); save(); }; return c; };
+  const fontPick = () => { const f = document.createElement('select'); [['inter', 'Inter'], ['montserrat', 'Montserrat'], ['poppins', 'Poppins'], ['playfair', 'Playfair'], ['', 'This computer\'s font']].forEach(([v, t]) => f.add(new Option(t, v))); f.value = l.font || ''; f.onchange = () => { l.font = f.value; save(); }; return field('Font', f); };
+  const bgPick = (kinds) => {
+    const b = (l.bg = l.bg || { kind: 'none' });
+    box.append(field('Background', seg(kinds, b.kind || 'none', (v) => { b.kind = v; })));
+    if (b.kind === 'colour') box.append(field('Colour', colour(b.color || '#0a0e1f', (v) => { b.color = v; })));
+    if (b.kind === 'picture' || b.kind === 'video') {
+      const nm = document.createElement('span'); nm.className = 'note'; nm.textContent = (b.file || b.url || 'Nothing chosen yet').split(/[\\/]/).pop();
+      const ch = document.createElement('button'); ch.type = 'button'; ch.className = 'sm'; ch.textContent = 'Choose...'; ch.onclick = () => pickFile(b, b.kind === 'video' ? 'video/*' : 'image/*');
+      const r = document.createElement('div'); r.className = 'row'; r.append(ch, nm); box.append(field(b.kind === 'video' ? 'Video' : 'Picture', r));
+      box.append(field(b.kind === 'video' ? 'Video opacity' : 'Picture opacity', rng(0, 100, 1, b.op == null ? 100 : b.op, (v) => v + '%', (v) => { b.op = v; })));
+      if (b.kind === 'video') box.append(field('Play on a loop', tick(b.loop !== false, (v) => { b.loop = v; const vv = vids.get(bgKey(l)); if (vv) vv.el.loop = v; })));
+    }
+  };
   box.append(field('Name', inp('name')));
   const lk = document.createElement('input'); lk.type = 'checkbox'; lk.checked = Boolean(l.locked); lk.onchange = () => { l.locked = lk.checked; save(); renderLayers(); };
   lk.title = 'A locked item cannot be moved by accident in the Preview'; box.append(field('Lock in place', lk));
@@ -1445,10 +1722,43 @@ function renderProps() {
     const b2 = document.createElement('button'); b2.textContent = 'Fill the screen'; b2.title = 'Stretch it over the whole picture'; b2.onclick = full('stretch');
     r.append(b1, b2); box.append(r);
   }
-  if (l.type === 'color' || l.type === 'text') { const c = document.createElement('input'); c.type = 'color'; c.value = l.color || '#ffffff'; c.oninput = () => { l.color = c.value; save(); }; box.append(field('Colour', c)); }
+  if (l.type === 'color') { const c = document.createElement('input'); c.type = 'color'; c.value = l.color || '#ffffff'; c.oninput = () => { l.color = c.value; save(); }; box.append(field('Colour', c)); }
   if (l.type === 'text') {
     const t = document.createElement('textarea'); t.rows = 3; t.value = l.text || ''; t.oninput = () => { l.text = t.value; save(); };
-    box.append(field('Words', t), field('Size', inp('size', 'number')));
+    box.append(field('Words', t), fontPick());
+    box.append(field('Size', rng(20, 400, 2, l.size || 60, (v) => v + ' px', (v) => { l.size = v; })));
+    box.append(field('Colour', colour(l.color || '#ffffff', (v) => { l.color = v; })));
+    box.append(field('Line up', seg([['left', 'Left'], ['centre', 'Centre'], ['right', 'Right']], l.align || 'left', (v) => { l.align = v; })));
+    box.append(field('Outline', tick(l.outline, (v) => { l.outline = v; })));
+    if (l.outline) box.append(field('Outline colour', colour(l.outlineColor || '#000000', (v) => { l.outlineColor = v; })));
+    box.append(field('Shadow', tick(l.shadow, (v) => { l.shadow = v; })));
+  }
+  if (l.type === 'duo') {
+    box.append(field('Layout', seg([['side', 'Side by side'], ['big', 'Screen big']], l.layout || 'big', (v) => { l.layout = v; })));
+    const cs = document.createElement('select'); cs.add(new Option('Default camera', ''));
+    devices.video.forEach((x) => cs.add(new Option(x.label || 'Camera', x.deviceId)));
+    cs.value = pickDevice('video', l.camLabel, l.camDevice); cs.onchange = () => { l.camDevice = cs.value; l.camLabel = cs.value ? cs.options[cs.selectedIndex].text : ''; save(); }; box.append(field('Camera', cs));
+    const ss = document.createElement('select'); let list = [];
+    const fill = async () => {
+      ss.textContent = ''; ss.add(new Option('First screen', 'screen|'));
+      if (l.scrType === 'window' && l.winName) ss.add(new Option('Saved: ' + l.winName, 'window|__saved'));
+      if (window.msNative) {
+        const a = await window.msNative.sources('screen').catch(() => []), b = await window.msNative.sources('window').catch(() => []);
+        list = [...a.map((x) => ({ ...x, k: 'screen' })), ...b.map((x) => ({ ...x, k: 'window' }))];
+        list.forEach((x) => ss.add(new Option((x.k === 'window' ? 'Window: ' : 'Screen: ') + x.name, x.k + '|' + x.id)));
+      }
+      const cur = (l.scrType || 'screen') + '|' + (l.display || ''); ss.value = [...ss.options].some((o) => o.value === cur) ? cur : (l.scrType === 'window' && l.winName ? 'window|__saved' : 'screen|');
+    };
+    ss.onchange = () => {
+      const [k, id] = ss.value.split('|'); if (id === '__saved') return;
+      const old = caps.get(capKey(duoScr(l))); if (old) { try { old.st && old.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(capKey(duoScr(l))); }
+      l.scrType = k; l.display = id; l.winName = k === 'window' ? ss.options[ss.selectedIndex].text.replace(/^Window: /, '') : ''; save();
+    };
+    fill(); box.append(field('Screen', ss));
+    box.append(field('Camera on the left', tick(l.camLeft, (v) => { l.camLeft = v; })));
+    bgPick([['colour', 'Colour'], ['picture', 'Picture'], ['video', 'Video'], ['blur', 'Blur']]);
+    box.append(field('Corners', seg([['round', 'Rounded'], ['square', 'Square']], l.corners || 'round', (v) => { l.corners = v; })));
+    const h = document.createElement('p'); h.className = 'note'; h.textContent = 'The screen can be slides, notes or anything else on a screen. The screen and the camera are the same height; Screen big makes the screen wider.'; box.append(h);
   }
   if (l.type === 'camera') {
     const sl = document.createElement('select'); sl.add(new Option('Default camera', ''));
@@ -1466,14 +1776,33 @@ function renderProps() {
     const b = document.createElement('button'); b.textContent = 'Upload a file instead...'; b.onclick = () => pickFile(l); box.append(b);
   }
   if (l.type === 'video') {
-    const lp = document.createElement('input'); lp.type = 'checkbox'; lp.checked = l.loop !== false; lp.onchange = () => { l.loop = lp.checked; const v = vids.get(l.id); if (v) v.el.loop = lp.checked; save(); };
-    const mu = document.createElement('input'); mu.type = 'checkbox'; mu.checked = !!l.muted; mu.onchange = () => { l.muted = mu.checked; save(); };
-    box.append(field('Repeat', lp), field('Mute its sound', mu));
+    box.append(field('Loop video', tick(l.loop !== false, (v) => { l.loop = v; const vv = vids.get(l.id); if (vv) vv.el.loop = v; })));
+    box.append(field('Start from the beginning when shown', tick(l.restart !== false, (v) => { l.restart = v; })));
+    if (l.loop === false) box.append(field('When it ends', seg([['hide', 'Hide it'], ['keep', 'Keep the last picture']], l.endDo === 'keep' ? 'keep' : 'hide', (v) => { l.endDo = v; })));
+    box.append(field('Play its sound', tick(!l.muted, (v) => { l.muted = !v; })));
+    if (!l.muted) box.append(field('Volume', rng(0, 100, 1, Math.round((l.vol == null ? 1 : l.vol) * 100), (v) => v + '%', (v) => { l.vol = v / 100; })));
   }
   if (l.type === 'lower') {
-    box.append(field('Big line', inp('title')), field('Small line', inp('sub')));
-    const bc = document.createElement('input'); bc.type = 'color'; bc.value = l.color || '#3b6cff'; bc.oninput = () => { l.color = bc.value; save(); }; box.append(field('Bar colour', bc));
-    const tc = document.createElement('input'); tc.type = 'color'; tc.value = l.textColor || '#ffffff'; tc.oninput = () => { l.textColor = tc.value; save(); }; box.append(field('Text colour', tc));
+    box.append(field('Tag', seg([['person', 'Person'], ['ministry', 'Group']], l.tag || 'person', (v) => { l.tag = v; })));
+    const nm = inp('title'); nm.oninput = () => { l.title = nm.value; save(); }; box.append(field(l.tag === 'ministry' ? 'Group name' : "Person's name", nm));
+    box.append(field('Show role', tick(l.showSub !== false, (v) => { l.showSub = v; })));
+    if (l.showSub !== false) box.append(field('Role', inp('sub')));
+    { const pn = document.createElement('span'); pn.className = 'note'; pn.textContent = (l.pic || l.picUrl || 'None').split(/[\\/]/).pop();
+      const ch = document.createElement('button'); ch.type = 'button'; ch.className = 'sm'; ch.textContent = 'Choose...';
+      ch.onclick = () => { const o = {}; pickFile(o, 'image/png,image/*', () => { l.pic = o.file || ''; l.picUrl = o.url || ''; save(); renderProps(); }); };
+      const r = document.createElement('div'); r.className = 'row'; r.append(ch, pn);
+      if (l.pic || l.picUrl) { const rm = document.createElement('button'); rm.type = 'button'; rm.className = 'sm'; rm.textContent = 'Remove'; rm.onclick = () => { l.pic = ''; l.picUrl = ''; save(); renderProps(); }; r.append(rm); }
+      box.append(field('Picture (PNG)', r)); }
+    box.append(field('Style', seg([['clean', 'Clean'], ['bold', 'Bold'], ['minimal', 'Minimal']], l.style || 'clean', (v) => { l.style = v; })));
+    const an = document.createElement('select'); [['wipe', 'Wipe'], ['slide', 'Slide'], ['fade', 'Fade'], ['pop', 'Pop'], ['rise', 'Rise'], ['drop', 'Drop'], ['typewriter', 'Typewriter'], ['blur', 'Blur in'], ['zoom', 'Zoom'], ['bounce', 'Bounce'], ['flip', 'Flip'], ['glow', 'Glow']].forEach(([v, t]) => an.add(new Option(t, v)));
+    an.value = l.anim || 'slide'; an.onchange = () => { l.anim = an.value; save(); lowerState.set(l.id, { p: 0, t: performance.now(), shownAt: Date.now(), want: 1 }); }; box.append(field('How it comes in', an));
+    box.append(fontPick());
+    const sz = { small: 100, medium: 130, large: 170 }, cur = l.h <= 110 ? 'small' : l.h >= 160 ? 'large' : 'medium';
+    box.append(field('Text size', seg([['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']], cur, (v) => { const k = sz[v] / (l.h || 130); l.h = sz[v]; l.w = Math.round((l.w || 820) * k); })));
+    box.append(field('Bar colour', colour(l.color || '#3b6cff', (v) => { l.color = v; })));
+    box.append(field('Text colour', colour(l.textColor || '#ffffff', (v) => { l.textColor = v; })));
+    const ha = document.createElement('select'); [['5', '5 seconds'], ['8', '8 seconds'], ['15', '15 seconds'], ['0', 'Stay until I hide it']].forEach(([v, t]) => ha.add(new Option(t, v)));
+    ha.value = String(l.hideAfter || 0); ha.onchange = () => { l.hideAfter = Number(ha.value); save(); }; box.append(field('Hide after', ha));
     const sh = document.createElement('button'); sh.textContent = l.visible === false ? 'Show it (slides in)' : 'Hide it (slides out)'; sh.onclick = () => { l.visible = l.visible === false; save(); renderLayers(); }; box.append(sh);
   }
   if (l.type === 'timer') {
@@ -1487,13 +1816,21 @@ function renderProps() {
       const re = document.createElement('button'); re.className = 'sm'; re.textContent = 'Reset'; re.onclick = () => { delete l.endAt; delete l.left; save(); };
       row.append(go, pa, re); box.append(row);
     }
-    box.append(field('Words above', inp('label')), field('At zero show', inp('doneText')), field('Size', inp('size', 'number')));
-    const c = document.createElement('input'); c.type = 'color'; c.value = l.color || '#ffffff'; c.oninput = () => { l.color = c.value; save(); }; box.append(field('Colour', c));
+    box.append(field('Words above', inp('label')));
+    const ed = document.createElement('select'); ed.add(new Option('Show these words', 'words')); ed.add(new Option('Show 00:00', 'zero')); ed.add(new Option('Hide it', 'hide'));
+    studio.scenes.forEach((x) => ed.add(new Option('Switch to scene: ' + x.name, 'scene:' + x.name)));
+    ed.value = l.endDo === 'scene' ? 'scene:' + l.endScene : (l.endDo || 'words'); ed.onchange = () => { const v = ed.value; if (v.startsWith('scene:')) { l.endDo = 'scene'; l.endScene = v.slice(6); } else { l.endDo = v; delete l.endScene; } save(); renderProps(); };
+    box.append(field('When it ends', ed));
+    if ((l.endDo || 'words') === 'words') box.append(field('Words at the end', inp('doneText')));
+    box.append(fontPick(), field('Size', rng(40, 400, 2, l.size || 220, (v) => v + ' px', (v) => { l.size = v; })));
+    box.append(field('Colour', colour(l.color || '#ffffff', (v) => { l.color = v; })));
+    bgPick([['none', 'None'], ['picture', 'Picture'], ['video', 'Video'], ['colour', 'Colour']]);
+    if (l.bg && l.bg.kind && l.bg.kind !== 'none') { const h = document.createElement('p'); h.className = 'note'; h.textContent = 'The background fills the whole picture, behind the countdown.'; box.append(h); }
   }
   if (l.type === 'clock') {
     const k = (key, label) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(l[key]); c.onchange = () => { l[key] = c.checked; save(); }; box.append(field(label, c)); };
     k('h24', '24 hour clock'); k('secs', 'Show seconds'); k('date', 'Show the date');
-    box.append(field('Size', inp('size', 'number')));
+    box.append(fontPick(), field('Size', rng(30, 400, 2, l.size || 120, (v) => v + ' px', (v) => { l.size = v; })));
     const c = document.createElement('input'); c.type = 'color'; c.value = l.color || '#ffffff'; c.oninput = () => { l.color = c.value; save(); }; box.append(field('Colour', c));
 }
   if (['image', 'video', 'camera', 'screen', 'browser', 'ipcam'].includes(l.type)) {
@@ -1550,12 +1887,12 @@ function renderProps() {
     if (win) { const h = document.createElement('p'); h.className = 'note'; h.textContent = 'Open the program first (for example the lyrics or slides), then pick it here. If you close it and open it again, the Studio finds it again by its name. On a Mac, allow Screen Recording for Multistream when the Mac asks.'; box.append(h); }
   }
 }
-function pickFile(l) {
-  const f = $('#file'); f.value = ''; f.accept = l.type === 'video' ? 'video/*' : 'image/*';
+function pickFile(l, accept, done) {
+  const f = $('#file'); f.value = ''; f.accept = accept || (l.type === 'video' ? 'video/*' : 'image/*');
   f.onchange = async () => {
     const file = f.files[0]; if (!file) return;
     const r = await fetch('/api/studio/asset/' + encodeURIComponent(uid() + '-' + file.name), { method: 'PUT', body: file }).then((x) => x.json());
-    if (r.url) { l.url = r.url; l.file = ''; save(); renderLayers(); }
+    if (r.url) { l.url = r.url; l.file = ''; save(); if (done) done(); else { renderLayers(); renderProps(); } }
   }; f.click();
 }
 function newLayer(t) {
@@ -1564,8 +1901,9 @@ function newLayer(t) {
   if (t === 'color') l.color = '#0b3d1e';
   if (t === 'window') { l.display = ''; l.winName = ''; l.fit = 'fit'; }
   if (t === 'screen' || t === 'camera') l.fit = 'fit';
-  if (t === 'lower') Object.assign(l, { title: 'Name here', sub: 'Role or message', color: '#3b6cff', textColor: '#ffffff', x: 100, y: 800, w: 1100, h: 170, fit: 'stretch' });
-  if (t === 'timer') Object.assign(l, { mode: 'duration', minutes: 10, at: '10:00', label: 'Service starts in', doneText: 'Starting now', size: 220, color: '#ffffff', x: 0, y: 330, w: SW, h: 420 });
+  if (t === 'lower') Object.assign(l, { title: 'Name here', sub: 'Role', tag: 'person', style: 'clean', anim: 'wipe', font: 'inter', hideAfter: 8, color: '#3b6cff', textColor: '#ffffff', x: 80, y: 860, w: 820, h: 130, fit: 'stretch' });
+  if (t === 'duo') Object.assign(l, { layout: 'big', corners: 'round', scrType: 'screen', display: '', winName: '', camLabel: '', camDevice: '', bg: { kind: 'colour', color: '#0a0e1f' } });
+  if (t === 'timer') Object.assign(l, { mode: 'duration', minutes: 10, at: '10:00', label: 'Starting soon', doneText: 'Starting now', font: 'inter', bg: { kind: 'none', op: 60, loop: true }, size: 220, color: '#ffffff', x: 0, y: 330, w: SW, h: 420 });
   if (t === 'clock') Object.assign(l, { size: 120, color: '#ffffff', x: 0, y: 60, w: SW, h: 200, h24: false, secs: false, date: false });
   if (t === 'browser') { l.url = 'http://'; l.bw = SW; l.bh = SH; }
   if (t === 'ipcam') { l.url = 'http://192.168.0.0:4747/video'; l.fit = 'fit'; }
