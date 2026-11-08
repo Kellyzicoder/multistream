@@ -127,6 +127,7 @@ handleIpc('ms-open-dashboard', () => {
   browsers.forEach((b) => b.destroy()); browsers.clear();
   win.webContents.setBackgroundThrottling(true);
   win.loadURL(HOME + '/');
+  win.show(); win.focus(); // bring the Stream page to the front
 });
 // the screens that are connected (for showing the Control Room or a Preview/Program picture full screen on one of them)
 const displayList = () => { const main = screen.getPrimaryDisplay().id; return screen.getAllDisplays().map((d, i) => ({ id: d.id, n: i + 1, label: d.label || '', w: d.size.width, h: d.size.height, main: d.id === main })); };

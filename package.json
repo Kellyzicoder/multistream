@@ -1,7 +1,7 @@
 {
   "name": "multistream",
   "version": "3.0.0",
-  "description": "Multistream 3: make the show in the Studio and send it to Facebook, YouTube and Instagram at the same time. Nothing runs on localhost unless you switch it on.",
+  "description": "Multistream: make the show in the Studio and send it to Facebook, YouTube and Instagram at the same time. Nothing runs on localhost unless you switch it on.",
   "main": "main.js",
   "author": "Kelvin Mensah",
   "scripts": {
