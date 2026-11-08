@@ -469,7 +469,7 @@
     <span>Multistream</span>
   </div>
   <nav class="seg" id="pageTabs" aria-label="Pages">
-    <button type="button" data-page="dash" aria-current="page">Stream</button>
+    <button type="button" data-page="dash" aria-current="page">Go Live</button>
     <button type="button" data-page="studio" title="The built-in studio: scenes, cameras, sound, recording">Studio</button>
     <button type="button" data-page="cr">Multiview</button>
   </nav>
@@ -878,7 +878,7 @@ function stopPreview(keepMessage) {
   if (!keepMessage) setPreviewMsg($('#pvSwitch').checked ? '' : 'Preview is off');
 }
 
-// The preview only plays while the Stream page is on screen (not on the Multiview, and not while the
+// The preview only plays while the Go Live page is on screen (not on the Multiview, and not while the
 // window is minimised or hidden), so the computer does not decode video nobody is looking at.
 function syncPreview() {
   let onStream = true; try { onStream = page === 'dash'; } catch {} // (page is set further down)
@@ -1131,12 +1131,12 @@ async function pollCr() {
   } catch {}
   crBusy = false;
 }
-setInterval(pollCr, 400);
+setInterval(pollCr, 200); // 5 pictures a second
 if (location.hash === '#control-room') setTimeout(() => showPage('cr'), 0);
 window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' ? 'cr' : 'dash'));
 
 // Appearance and accessibility: saved in this browser only
-const SWATCHES = ['#22c55e', '#14b8a6', '#3b9eff', '#6366f1', '#a78bfa', '#fb923c', '#eab308'];
+const SWATCHES = ['#22c55e', '#14b8a6', '#3b9eff', '#6366f1', '#a78bfa', '#fb923c', '#eab308', '#ffffff'];
 const OLD_ACCENT = { blue: '#3b9eff', purple: '#a78bfa', orange: '#fb923c' };
 const root = document.documentElement;
 let acc = {};
@@ -1165,9 +1165,11 @@ function applyAcc(a) {
   if (a.bigbtn) cl.add('a-bigbtn');
   if (a.nomotion) cl.add('a-nomotion');
   if (validHex(a.accent || '')) {
-    root.style.setProperty('--blue', a.accent);
-    root.style.setProperty('--link', light ? mix(a.accent, 0, 0.35) : mix(a.accent, 255, 0.25));
-    root.style.setProperty('--onblue', lum(a.accent) > 0.3 ? '#05130a' : '#ffffff');
+    // a white main colour on the light (white) theme would not show: it becomes dark there
+    const acc = light && lum(a.accent) > 0.8 ? '#1f2933' : a.accent;
+    root.style.setProperty('--blue', acc);
+    root.style.setProperty('--link', light ? mix(acc, 0, 0.35) : mix(acc, 255, 0.25));
+    root.style.setProperty('--onblue', lum(acc) > 0.3 ? '#05130a' : '#ffffff');
   } else ['--blue', '--link', '--onblue'].forEach((k) => root.style.removeProperty(k));
 }
 function syncAcc() {
