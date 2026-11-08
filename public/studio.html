@@ -26,7 +26,7 @@
   .wrap { display:grid; grid-template-columns:250px minmax(0,1fr) 300px; gap:12px; padding:12px; align-items:start; }
   .panel { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px; margin-bottom:12px; }
   .panel h2 { margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); }
-  canvas.v { width:100%; aspect-ratio:16/9; background:#000; border:3px solid var(--line); border-radius:8px; display:block; }
+  canvas.v { width:100%; aspect-ratio:var(--asp, 16 / 9); background:#000; border:3px solid var(--line); border-radius:8px; display:block; }
   #cv.live { border-color:var(--red); }
   #ev { border-color:var(--green); }
   .lab { font-size:12px; font-weight:700; letter-spacing:.5px; margin:6px 0 4px; color:var(--muted); }
@@ -348,6 +348,19 @@
   .as-grid button { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 8px; border-radius:12px; }
   .as-grid button svg { width:26px; height:26px; } .as-grid button span { font-size:12px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .as-vis { margin-right:auto; }
+  /* tall (9:16) collections: the Preview and Program are tall and centred */
+  html.tall .stage canvas.v { width:auto; height:100%; max-width:100%; margin:0 auto; }
+  .pcoll { display:inline-flex; align-items:center; gap:8px; margin-left:14px; font-size:13px; color:var(--muted); } .pcoll b { color:var(--text); font-weight:600; }
+  .pcoll i { font-style:normal; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; background:var(--gl2); border:1px solid var(--gl-line); color:var(--text); }
+  .pfit { width:min(560px, 94vw) !important; } .pf-opts { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .pf-o { display:flex; align-items:center; gap:14px; text-align:left; padding:12px; border-radius:14px; border:1px solid var(--gl-line); background:var(--gl2); box-shadow:none; }
+  .pf-o.on { border-color:var(--sel); box-shadow:0 0 0 2px color-mix(in srgb, var(--sel) 40%, transparent); }
+  .pf-o.on { background:color-mix(in srgb, var(--sel) 16%, var(--gl2)); color:var(--text); }
+  .pf-o em { margin-left:auto; font-style:normal; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--sel); color:var(--onsel); }
+  .pf-t b { display:block; font-size:13.5px; } .pf-t small { display:block; font-size:12px; color:var(--muted); margin-top:2px; }
+  .pf-pic { flex:none; width:34px; height:60px; border-radius:6px; background:#000; position:relative; overflow:hidden; border:1px solid var(--gl-line); }
+  .pf-pic i { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:linear-gradient(135deg,#3b6cff,#22c55e); }
+  .pf-cover i { width:107px; height:60px; } .pf-fit i, .pf-blur i { width:34px; height:19px; } .pf-blur { background:linear-gradient(135deg,#2b3f8f,#1a6b46); filter:saturate(.8); }
   .as-g { padding:12px 10px 4px; font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); } .as-g:first-child { padding-top:2px; }
   .as-r { max-height:66vh; overflow:auto; padding-right:6px; }
   .as-pvw { position:relative; } .as-pv { display:block; height:200px; width:auto; max-width:100%; aspect-ratio:16/9; margin:0 auto; border-radius:12px; border:1px solid var(--gl-line); background:#05070f; }
@@ -394,7 +407,7 @@
   <button type="button" id="navSet" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </aside>
 <div class="obs">
-  <header class="ptop"><h1 class="ptitle">Studio</h1></header>
+  <header class="ptop"><h1 class="ptitle">Studio</h1><span class="pcoll" id="pColl" title="Scene collection"></span></header>
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
   <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside><div class="split v" id="splitL" title="Drag to make the left panels wider or narrower" hidden></div>
   <div class="stage">
@@ -572,14 +585,32 @@
   window.addEventListener('storage', (e) => { if (e.key === 'ms_access') apply(); });
   if (dark && dark.addEventListener) dark.addEventListener('change', apply);
 })();
-const SW = 1920, SH = 1080;           // the size scenes are drawn in (same as OBS)
+let SW = 1920, SH = 1080;             // the size scenes are drawn in (same as OBS); a tall (9:16) collection is 1080 x 1920
 let PW = 1280, PH = 720;              // the size of the Program picture (small while idle, the real size while sending)
 // What viewers get. Saved on this computer. Facebook and Instagram take 1080p at most; the app makes them a smaller copy.
 const OUT = { h: 1080, fps: 30, kbps: 6000 };
 try { Object.assign(OUT, JSON.parse(localStorage.getItem('ms_out') || '{}')); } catch {}
 const outW = (h) => Math.round(h * 16 / 9 / 2) * 2;
+// the picture size for a chosen quality: "1080p" is 1920 x 1080 wide, 1080 x 1920 tall, 1080 x 1080 square
+const SHAPE_OF = () => (SH > SW ? 'portrait' : SH === SW ? 'square' : 'landscape');
+const outSize = (h) => (SH > SW ? [h, outW(h)] : SH === SW ? [h, h] : [outW(h), h]);
 const $ = (s) => document.querySelector(s);
 const cv = $('#cv'), ctx = cv.getContext('2d'), ev = $('#ev'), ectx = ev.getContext('2d');
+// the scene collection's shape: wide (16:9), tall (9:16) or square (1:1)
+async function showColl() {
+  const el = $('#pColl'); if (!el) return;
+  try { const r = await fetch('/api/collections').then((x) => x.json()); el.textContent = ''; const b = document.createElement('b'); b.textContent = r.current || ''; const t = document.createElement('i'); t.textContent = SH > SW ? '9:16' : SH === SW ? '1:1' : '16:9'; el.append(b, t); } catch {}
+}
+function applyShape(shape) {
+  const [w, h] = shape === 'portrait' ? [1080, 1920] : shape === 'square' ? [1080, 1080] : [1920, 1080];
+  if (w === SW && h === SH) return;
+  SW = w; SH = h;
+  document.documentElement.style.setProperty('--asp', w + ' / ' + h);
+  document.documentElement.classList.toggle('tall', h > w);
+  const [ew, eh] = h > w ? [540, 960] : h === w ? [720, 720] : [960, 540]; ev.width = ew; ev.height = eh;
+  if (!wantSend) setProgramSize(...(h > w ? [720, 1280] : h === w ? [720, 720] : [1280, 720]));
+  trPairs.clear();
+}
 let studio = { scenes: [], audio: [], current: '' };
 let editing = '';        // scene being edited
 let sel = '';            // layer being edited
@@ -893,6 +924,15 @@ function chromaKey(cx, w, h, k) {
   cx.putImageData(img, 0, 0);
 }
 function pic(c, l, el, sw, sh) {
+  // "Fill the screen" (crop the sides) and "Fit with blurred background" (for a wide camera in a tall picture)
+  if (l.fit === 'cover' || l.fit === 'blur') {
+    const bx = l.x, by = l.y, bw = l.w || SW, bh = l.h || SH, k = Math.max(bw / sw, bh / sh), dw = sw * k, dh = sh * k;
+    c.save(); c.beginPath(); c.rect(bx, by, bw, bh); c.clip();
+    if (l.fit === 'blur') c.filter = 'blur(' + Math.round(bw / 30) + 'px) brightness(0.7)';
+    c.drawImage(el, bx + (bw - dw) / 2, by + (bh - dh) / 2, dw, dh); c.restore();
+    if (l.fit === 'cover') return;
+    pic(c, { ...l, fit: 'fit' }, el, sw, sh); return;
+  }
   const f = l.pfx;
   if (!hasPfx(f)) { const [x, y, w, h] = place(l, sw, sh); c.drawImage(el, x, y, w, h); return; }
   const k = f.crop || {}, cl = Math.min(90, k.l || 0) / 100, ct = Math.min(90, k.t || 0) / 100, cr = Math.min(90, k.r || 0) / 100, cb = Math.min(90, k.b || 0) / 100;
@@ -972,7 +1012,7 @@ function drawLayer(c, l, live) {
   c.restore();
 }
 function drawScene(c, scene, k, live) {
-  c.save(); c.setTransform(k, 0, 0, k, 0, 0);
+  c.save(); const m = c.getTransform(); c.setTransform(k * m.a, 0, 0, k * m.d, m.e, m.f); // keeps any move set before (see drawFit)
   c.fillStyle = '#000'; c.fillRect(0, 0, SW, SH);
   if (scene) scene.layers.forEach((l) => drawLayer(c, l, live));
   c.restore();
@@ -988,6 +1028,16 @@ function trPair(w, h) {
 }
 let shown = null, trans = null;
 const ease = (p) => (p < 0.5 ? 2 * p * p : 1 - 2 * (1 - p) * (1 - p));
+// a scene or picture fitted into a box of another shape (black bars), for 16:9 pictures of a tall collection
+function drawFit(c, W, H, scene, live) {
+  const k = Math.min(W / SW, H / SH);
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+  c.translate(Math.round((W - SW * k) / 2), Math.round((H - SH * k) / 2)); drawScene(c, scene, k, live); c.restore();
+}
+function copyFit(c, W, H, src) {
+  const k = Math.min(W / src.width, H / src.height), dw = src.width * k, dh = src.height * k;
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#000'; c.fillRect(0, 0, W, H); c.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh); c.restore();
+}
 function drawTransition(c, from, to, p, type, k) {
   const W = Math.round(SW * k), H = Math.round(SH * k), e = ease(p), t = trPair(W, H);
   drawScene(t.ac, from, k, true); drawScene(t.bc, to, k, true);
@@ -1017,7 +1067,7 @@ function frame() {
   paint(ctx, PW / SW, now);
   // the recording and the virtual camera copy the finished Program picture when it is the same size or bigger (much less work than drawing the scene again)
   if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); }
-  if (vcOn) { if (cv.width >= 1280) vctx.drawImage(cv, 0, 0, 1280, 720); else paint(vctx, 1280 / SW, now); }
+  if (vcOn) { if (SW > SH && cv.width >= 1280) vctx.drawImage(cv, 0, 0, 1280, 720); else copyFit(vctx, 1280, 720, cv); }
 }
 $('#trType').value = trCfg.type; $('#trMs').value = String(trCfg.ms);
 const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#trMs').value); try { localStorage.setItem('ms_trans', JSON.stringify(trCfg)); } catch {} };
@@ -1659,7 +1709,7 @@ function openAddSource() {
   // live preview of the new source, on its own
   const pv = document.createElement('canvas'); pv.width = 640; pv.height = 360; pv.className = 'as-pv';
   const tickPv = () => { if (!alive) return; const c = pv.getContext('2d'); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#05070f'; c.fillRect(0, 0, 640, 360);
-    if (draft) { c.save(); c.scale(640 / SW, 360 / SH); try { if (draft.type === 'lower') { draft.visible = true; } drawLayer(c, draft, false); } catch {} c.restore(); }
+    if (draft) { c.save(); const k = Math.min(640 / SW, 360 / SH); c.translate((640 - SW * k) / 2, (360 - SH * k) / 2); c.scale(k, k); c.fillStyle = '#000'; c.fillRect(0, 0, SW, SH); try { if (draft.type === 'lower') { draft.visible = true; } drawLayer(c, draft, false); } catch {} c.restore(); }
     requestAnimationFrame(tickPv); };
   requestAnimationFrame(tickPv);
   function draw() {
@@ -1759,7 +1809,7 @@ function renderProps(target, draft) {
   const lk = document.createElement('input'); lk.type = 'checkbox'; lk.checked = Boolean(l.locked); lk.onchange = () => { l.locked = lk.checked; save(); renderLayers(); };
   lk.title = 'A locked item cannot be moved by accident in the Preview'; box.append(field('Lock in place', lk));
   box.append(field('Left', inp('x', 'number')), field('Top', inp('y', 'number')));
-  const fit = document.createElement('select'); [['stretch', 'Fill the box'], ['fit', 'Fit in the box'], ['natural', 'Own size']].forEach(([v, t]) => fit.add(new Option(t, v)));
+  const fit = document.createElement('select'); [['stretch', 'Fill the box'], ['fit', 'Fit in the box'], ['natural', 'Own size']].concat(MEDIA.has(l.type) ? [['cover', 'Fill and cut off the edges'], ['blur', 'Fit with blurred background']] : []).forEach(([v, t]) => fit.add(new Option(t, v)));
   fit.value = l.fit || 'stretch'; fit.onchange = () => { l.fit = fit.value; save(); rerender(); }; box.append(field('Size', fit));
   if ((l.fit || 'stretch') === 'natural') { const sc = inp('sx', 'number'); sc.step = 0.05; sc.value = l.sx || 1; sc.oninput = () => { l.sx = l.sy = Number(sc.value); save(); }; box.append(field('Scale', sc)); }
   else box.append(field('Width', inp('w', 'number')), field('Height', inp('h', 'number')));
@@ -1959,11 +2009,42 @@ function newLayer(t) {
   if (t === 'video' || t === 'image') l.fit = 'fit';
   return l;
 }
-function addLayer(l) { const s = byName(editing); if (!s) return; s.layers.push(l); sel = l.id; propsOpen = true; save(); renderLayers(); }
+function addLayer(l) {
+  const s = byName(editing); if (!s) return;
+  if (SH > SW && ['camera', 'screen', 'window', 'video', 'ipcam', 'browser'].includes(l.type) && !l.pfAsked) { askPortraitFit(l, () => addLayer(l)); return; }
+  s.layers.push(l); sel = l.id; propsOpen = true; save(); renderLayers();
+}
+// "How should Camera fit?": a wide (16:9) picture in a tall (9:16) collection
+function askPortraitFit(l, done) {
+  l.pfAsked = true;
+  const m = document.createElement('div'); m.className = 'modal';
+  const d = document.createElement('div'); d.className = 'dlg pfit'; d.style.height = 'auto';
+  d.innerHTML = '<div class="dlg-h"><b></b><button type="button" aria-label="Close">×</button></div><div class="dlg-b"><p class="note"></p><div class="pf-opts"></div></div><div class="dlg-f"><button type="button" class="pf-c">Cancel</button><button type="button" class="on pf-ok">Use this</button></div>';
+  d.querySelector('b').textContent = 'How should ' + (l.name || ICON[l.type] || 'this') + ' fit?';
+  d.querySelector('.note').textContent = 'Your ' + (ICON[l.type] || 'picture').toLowerCase() + ' is wide (16:9). This scene collection is tall (9:16).';
+  const opts = [['cover', 'Fill the screen', 'It fills the phone screen. The left and right sides are cut off.', 'Best'], ['blur', 'Fit with blurred background', 'You see all of it. The gaps above and below are a soft blur.', ''], ['fit', 'Fit with black bars', 'You see all of it, with black above and below.', '']];
+  let pick = 'cover';
+  const box = d.querySelector('.pf-opts');
+  const draw = () => { box.textContent = ''; opts.forEach(([v, t, sub, tag]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'pf-o' + (v === pick ? ' on' : ''); b.innerHTML = '<span class="pf-pic pf-' + v + '"><i></i></span><span class="pf-t"><b></b><small></small></span>' + (tag ? '<em>' + tag + '</em>' : ''); b.querySelector('b').textContent = t; b.querySelector('small').textContent = sub; b.onclick = () => { pick = v; draw(); }; b.ondblclick = ok; box.appendChild(b); }); };
+  const close = () => { m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
+  function ok() { Object.assign(l, { fit: pick, x: 0, y: 0, w: SW, h: SH }); close(); done(); }
+  d.querySelector('.dlg-h button').onclick = close; d.querySelector('.pf-c').onclick = close; d.querySelector('.pf-ok').onclick = ok;
+  m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
+  draw(); m.appendChild(d); document.body.appendChild(m);
+}
 document.querySelectorAll('[data-add]').forEach((b) => b.onclick = () => { if (byName(editing)) addLayer(newLayer(b.dataset.add)); });
 function renderAll() { renderScenes(); renderLayers(); renderAudio(); updateVideos(); gateAudio(); }
 
 // ---------------- import from OBS ----------------
+async function importObsText(text) {
+  let j; try { j = JSON.parse(text); } catch { alert('That file could not be read.'); return; }
+  let data; try { data = importObs(j); } catch { alert('That file could not be read as an OBS scene file.'); return; }
+  if (!data || !data.scenes.length) { alert('No scenes found in that file.'); return; }
+  const n = await askName('Name for the imported scene collection', j.name || 'From OBS'); if (!n) return;
+  const r = await fetch('/api/collections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ do: 'import', name: n, data: { scenes: data.scenes, audio: data.audio || [], current: data.current || '' } }) }).then((x) => x.json()).catch(() => ({ error: 'The app did not answer' }));
+  if (r.error) { flash(r.error, false); return; }
+  await reloadStudio(); flash('Imported ' + data.scenes.length + ' scenes from OBS into "' + n + '".', true);
+}
 function importObs(j) {
   const srcs = new Map((j.sources || []).map((s) => [s.uuid, s]));
   const groups = new Map((j.groups || []).map((g) => [g.uuid, g]));
@@ -2027,7 +2108,7 @@ function askName(title, value) {
 }
 async function reloadStudio() {
   const s = await fetch('/api/studio').then((r) => r.json());
-  studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '' }; lastRev = s.rev;
+  studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '', shape: s.shape || 'landscape' }; lastRev = s.rev; applyShape(studio.shape); showColl();
   editing = studio.current; sel = ''; propsOpen = false;
   asrc.forEach((n) => { try { n.node && n.node.disconnect(); n.gain.disconnect(); n.gate.disconnect(); } catch {} }); asrc.clear();
   renderAll(); syncAudio();
@@ -2125,7 +2206,7 @@ let rec = null, wsOut = null, wantSend = false, retryT = 0, deadTicks = 0;
 const vcv = document.createElement('canvas'); vcv.width = 1280; vcv.height = 720; const vctx = vcv.getContext('2d'); let vcOn = false; // the virtual camera has its own 720p picture
 async function startSend() {
   wantSend = true; deadTicks = 0;
-  setProgramSize(outW(OUT.h), OUT.h); setFps(OUT.fps); lockOut();
+  setProgramSize(...outSize(OUT.h)); setFps(OUT.fps); lockOut();
   $('#sendBtn').textContent = 'Stop Streaming'; $('#sendBtn').className = 'stop'; liveT0 = liveT0 || Date.now();
   await connectSend();
 }
@@ -2136,7 +2217,7 @@ async function connectSend() {
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
   const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
   const fast = useFast(mt);
-  wsOut = openPipe(`/studio-ingest?h=${OUT.h}&fps=${OUT.fps}&kbps=${OUT.kbps}${fast ? '&copy=1' : ''}`);
+  wsOut = openPipe(`/studio-ingest?h=${OUT.h}&fps=${OUT.fps}&kbps=${OUT.kbps}&shape=${SHAPE_OF()}${fast ? '&copy=1' : ''}`);
   wsOut.binaryType = 'arraybuffer';
   wsOut.onopen = () => {
     // fast: the browser's bitrate is the one we send, so it is set to the target exactly
@@ -2161,7 +2242,7 @@ function scheduleRetry() {
 function stopSend() {
   wantSend = false; clearTimeout(retryT);
   dropSend();
-  setProgramSize(1280, 720); setFps(30); lockOut();
+  setProgramSize(...(SH > SW ? [720, 1280] : SH === SW ? [720, 720] : [1280, 720])); setFps(30); lockOut();
   $('#sendBtn').textContent = 'Start Streaming'; $('#sendBtn').className = ''; liveT0 = 0;
 }
 // Theme and main colour (the same setting as the Stream page: Settings, Appearance). White is one of the colours.
@@ -2203,14 +2284,14 @@ if (!$('#recQ').value) $('#recQ').value = '1080-8';
 $('#recQ').onchange = () => { try { localStorage.setItem('ms_recq', $('#recQ').value); } catch {} };
 async function startRec() {
   const [res, mb] = $('#recQ').value.split('-').map(Number);
-  recW = outW(res); rcv.width = recW; rcv.height = res;
+  [recW, rcv.height] = outSize(res); rcv.width = recW;
   const rfps = OUT.fps === 60 ? 60 : 30;
   try { ensureAudio(); await syncAudio(); } catch {}
   const out = new MediaStream(rcv.captureStream(rfps).getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
   const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
   const fast = useFast(mt);
-  const ws = recWs = openPipe(`/studio-record?h=${rcv.height}&mbit=${mb}&fps=${rfps}${fast ? '&copy=1' : ''}`);
+  const ws = recWs = openPipe(`/studio-record?h=${res}&mbit=${mb}&fps=${rfps}&shape=${SHAPE_OF()}${fast ? '&copy=1' : ''}`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
     // fast (encode once): the file is exactly what the browser makes, so use the chosen size. Normal way: give ffmpeg a bit more to work from.
@@ -2692,7 +2773,7 @@ async function poll() {
     serverPreview = s.preview || '';
     if (!s.same && s.rev !== lastRev && !saveT && !drag) {
       const wasEditing = editing;
-      studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '' }; lastRev = s.rev;
+      studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '', shape: s.shape || 'landscape' }; lastRev = s.rev; applyShape(studio.shape); showColl();
       editing = byName(wasEditing) ? wasEditing : studio.current;
       renderAll();
     }
@@ -2719,14 +2800,14 @@ async function shots() {
       pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;
     }
     // the Program picture is a small copy of what is on air (one quick copy, not drawing the scene again)
-    if (cv.width >= 960) sctx.drawImage(cv, 0, 0, 960, 540); else drawScene(sctx, byName(studio.current), 960 / SW, true);
+    if (SW > SH && cv.width >= 960) sctx.drawImage(cv, 0, 0, 960, 540); else if (cv.width >= 540) copyFit(sctx, 960, 540, cv); else drawFit(sctx, 960, 540, byName(studio.current), true);
     const prog = small.toDataURL('image/jpeg', 0.8);
-    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawScene(sctx, byName(serverPreview), 960 / SW, false); pv = small.toDataURL('image/jpeg', 0.8); }
+    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawFit(sctx, 960, 540, byName(serverPreview), false); pv = small.toDataURL('image/jpeg', 0.8); }
     const body = { prog, pv };
     // the small scene pictures are sent only when one of them changed (a scene with a camera changes each time)
     if (Date.now() - thumbAt > 1500 || !Object.keys(thumbs).length) {
       thumbAt = Date.now(); const next = {};
-      studio.scenes.forEach((s) => { drawScene(tctx, s, 480 / SW, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.75); });
+      studio.scenes.forEach((s) => { drawFit(tctx, 480, 270, s, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.75); });
       const names = Object.keys(next), changed = names.length !== Object.keys(thumbs).length || names.some((n) => next[n] !== thumbs[n]);
       thumbs = next;
       if (changed) body.thumbs = thumbs;
@@ -2738,7 +2819,9 @@ async function shots() {
 }
 (async () => {
   studio = await fetch('/api/studio').then((r) => r.json()); lastRev = studio.rev;
-  studio.audio = studio.audio || [];
+  studio.audio = studio.audio || []; applyShape(studio.shape); showColl();
+  // the Scene collections page can hand over an OBS file to import here (it needs the Studio's OBS reader)
+  try { const pend = localStorage.getItem('ms_pending_obs'); if (pend) { localStorage.removeItem('ms_pending_obs'); setTimeout(() => importObsText(pend), 800); } } catch {}
   if (!studio.scenes.length) {
     studio.scenes = [{ name: 'Welcome', audio: [], layers: [{ id: uid(), type: 'color', color: '#0b3d1e', x: 0, y: 0, w: SW, h: SH, fit: 'stretch', visible: true }, { id: uid(), type: 'text', text: 'Welcome', size: 180, color: '#ffffff', x: 120, y: 420, w: 1600, h: 240, fit: 'stretch', visible: true }] }];
     studio.current = 'Welcome'; dirtyCurrent = true; save();
