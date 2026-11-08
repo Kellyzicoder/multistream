@@ -253,10 +253,10 @@ async function until(fn, ms, what) {
   ok('Settings: video presets up to 4K and 60 frames, bitrate, recording up to 4K');
 
   // 6. Start sending: the video goes Studio -> app -> fake YouTube, with no local server
-  assert.strictEqual((await studio.textContent('#sendBtn')).trim(), 'Start Streaming');
+  assert.strictEqual((await studio.textContent('#sendBtn')).trim(), 'Start streaming');
   await studio.click('#sendBtn');
   await until(() => dash.evaluate(() => fetch('/api/state').then((r) => r.json()).then((s) => s.obsLive)), 30000, 'video coming in');
-  assert.strictEqual((await studio.textContent('#sendBtn')).trim(), 'Stop Streaming');
+  assert.strictEqual((await studio.textContent('#sendBtn')).trim(), 'Stop streaming');
   ok('Studio video reaches the app');
   await until(() => dash.evaluate(() => fetch('/api/state').then((r) => r.json()).then((s) => s.destinations.length === 2 && s.destinations.every((d) => d.status.state === 'live'))), 45000, 'both channels live');
   ok('both channels are live');
