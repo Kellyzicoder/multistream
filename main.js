@@ -94,7 +94,7 @@ function createWindow() {
     title: 'Multistream',
     autoHideMenuBar: false,
     backgroundColor: '#eaf1fb',
-    // the Stream page may slow down while minimised or hidden (it only shows things); the Studio makes the video,
+    // the Go Live page may slow down while minimised or hidden (it only shows things); the Studio makes the video,
     // so it never slows down (see ms-open-studio)
     webPreferences: { contextIsolation: true, nodeIntegration: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
@@ -126,12 +126,12 @@ handleIpc('ms-open-studio', (e, same) => {
 });
 handleIpc('ms-open-dashboard', () => {
   if (!win || win.isDestroyed()) return;
-  // the Studio has its own window: only bring the Stream page to the front (reloading would close the Studio's web pages)
+  // the Studio has its own window: only bring the Go Live page to the front (reloading would close the Studio's web pages)
   if (studioWin && !studioWin.isDestroyed()) { win.show(); win.focus(); return; }
   browsers.forEach((b) => b.destroy()); browsers.clear();
   win.webContents.setBackgroundThrottling(true);
   win.loadURL(HOME + '/');
-  win.show(); win.focus(); // bring the Stream page to the front
+  win.show(); win.focus(); // bring the Go Live page to the front
 });
 // the screens that are connected (for showing the Multiview or a Preview/Program picture full screen on one of them)
 const displayList = () => { const main = screen.getPrimaryDisplay().id; return screen.getAllDisplays().map((d, i) => ({ id: d.id, n: i + 1, label: d.label || '', w: d.size.width, h: d.size.height, main: d.id === main })); };
