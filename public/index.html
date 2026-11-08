@@ -484,6 +484,49 @@
   html.nav-small .snv-tg svg { transform:rotate(180deg); }
   html.nav-small #pageTabs button, html.nav-small .snv-b { justify-content:center; padding:12px 0; }
   @media (max-width:700px) { html { --navw:64px; } .snv { padding:16px 8px; } .snv-name, #pageTabs span, .snv-b span, .snv-tg { display:none; } #pageTabs button, .snv-b { justify-content:center; padding:12px 0; } }
+
+  /* ---------- Welcome screen and Get started (3 steps) ---------- */
+  .wl { position:fixed; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px; background:radial-gradient(700px 420px at 50% 42%, color-mix(in srgb, var(--blue) 18%, transparent), transparent), var(--bg); }
+  .wl.open { display:flex; animation:wlIn .4s ease both; }
+  @keyframes wlIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  .wl-logo { display:flex; flex-direction:column; align-items:center; gap:6px; font-weight:700; font-size:15px; margin-bottom:40px; }
+  .wl-logo svg { width:48px; height:58px; color:var(--blue); }
+  .wl h1 { font-size:clamp(34px,5vw,60px); line-height:1.08; margin:0 0 20px; letter-spacing:-1.2px; }
+  .wl p.lead2 { font-size:18px; line-height:1.55; color:var(--muted); margin:0 0 38px; max-width:600px; }
+  .wl-boxes { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; width:min(980px,100%); text-align:left; }
+  .wl-boxes button { display:flex; flex-direction:column; gap:10px; padding:24px; border-radius:22px; background:var(--gl2, var(--card2)); border:1px solid var(--gl-line, var(--line)); color:var(--text); font-size:13.5px; transition:transform .15s ease; }
+  .wl-boxes button:active { transform:scale(.97); }
+  .wl-boxes button.pri { background:var(--blue); border-color:transparent; color:var(--onblue); box-shadow:0 14px 40px color-mix(in srgb, var(--blue) 40%, transparent); }
+  .wl-boxes b { font-size:20px; } .wl-boxes span.d { opacity:.85; }
+  .wl-boxes i { width:46px; height:46px; border-radius:14px; display:grid; place-items:center; background:rgba(255,255,255,.14); }
+  .wl-boxes i svg { width:23px; height:23px; }
+  @media (max-width:760px) { .wl-boxes { grid-template-columns:1fr; } }
+  .gs { width:min(760px,100%); display:flex; flex-direction:column; gap:20px; text-align:left; }
+  .gs-steps { display:flex; align-items:center; justify-content:center; gap:12px; font-size:13.5px; font-weight:600; color:var(--muted); }
+  .gs-steps b { width:28px; height:28px; border-radius:50%; display:inline-grid; place-items:center; border:1.5px solid var(--line); margin-right:8px; font-size:12px; }
+  .gs-steps .on { color:var(--text); } .gs-steps .on b { background:var(--blue); border-color:var(--blue); color:var(--onblue); }
+  .gs-steps .done b { background:color-mix(in srgb, var(--green) 20%, transparent); border-color:var(--green); color:var(--green); }
+  .gs-steps hr { width:46px; border:0; border-top:2px solid var(--line); margin:0; }
+  .gs-card { background:var(--gl, var(--card)); border:1px solid var(--gl-line, var(--line)); border-radius:26px; padding:28px 30px; display:flex; flex-direction:column; gap:14px; box-shadow:0 30px 80px rgba(0,0,0,.4); }
+  .gs-card h2 { margin:0 0 4px; font-size:26px; }
+  .gs-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .gs-row { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; background:var(--btn); }
+  .gs-row .t { flex:1; line-height:1.35; } .gs-row .t small { display:block; color:var(--muted); font-size:12px; }
+  .gs-ok { color:var(--green); font-weight:700; font-size:12.5px; }
+  .gs-lay { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+  .gs-lay button { display:flex; flex-direction:column; gap:6px; padding:12px; border-radius:16px; border:1.5px solid var(--line); background:var(--btn); color:var(--text); text-align:left; font-size:12px; }
+  .gs-lay button b { font-size:13.5px; } .gs-lay button span { color:var(--muted); }
+  .gs-lay button[aria-pressed="true"] { border-color:var(--blue); background:color-mix(in srgb, var(--blue) 14%, transparent); }
+  .gs-f { display:grid; grid-template-columns:1fr 1fr 150px; gap:12px; }
+  .gs-f label { display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted); }
+  .gs-f select { padding:9px 10px; border-radius:10px; background:var(--field); border:1px solid var(--line); color:var(--text); }
+  .gs-meter { height:36px; border-radius:10px; background:var(--field); border:1px solid var(--line); display:flex; align-items:center; padding:0 10px; }
+  .gs-meter i { display:block; height:6px; width:0; border-radius:3px; background:linear-gradient(90deg,#34d399,#a3e635 70%,#facc15); transition:width .08s linear; }
+  .gs-nav { display:flex; align-items:center; gap:10px; margin-top:6px; }
+  .gs-nav .sp { flex:1; }
+  .gs-note { font-size:12.5px; color:var(--muted); }
+  #setOverlay, #overlay { z-index:70; }
+  @media (max-width:760px) { .gs-grid, .gs-f { grid-template-columns:1fr; } .gs-lay { grid-template-columns:1fr 1fr; } }
 </style>
 </head>
 <body>
@@ -653,6 +696,57 @@
 </div>
 
 <!-- settings window -->
+
+<!-- Welcome screen: shows each time Multistream opens -->
+<div class="wl" id="welcome" role="dialog" aria-modal="true" aria-label="Welcome">
+  <div class="wl-logo"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="var(--red)"/></svg>Multistream</div>
+  <h1>Go live everywhere<br>at once</h1>
+  <p class="lead2">Go live on YouTube, Facebook and more at the same time. Set up your camera and sound, and record, all in one app.</p>
+  <div class="wl-boxes">
+    <button type="button" class="pri" id="wlStart"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></i><b>Get started</b><span class="d">New here? We'll help you set up</span></button>
+    <button type="button" id="wlStudio"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg></i><b>Open Studio</b><span class="d">Set up your camera, slides and sound</span></button>
+    <button type="button" id="wlLive"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg></i><b>Go Live</b><span class="d">Start streaming now</span></button>
+  </div>
+</div>
+
+<!-- Get started: 3 steps -->
+<div class="wl" id="setup" role="dialog" aria-modal="true" aria-label="Get started">
+  <div class="gs">
+    <div class="gs-steps" id="gsSteps"><span data-s="1"><b>1</b>Add channels</span><hr><span data-s="2"><b>2</b>Camera and sound</span><hr><span data-s="3"><b>3</b>Ready</span></div>
+    <div class="gs-card" data-step="1">
+      <h2>Where do you want to stream?</h2>
+      <div class="gs-grid">
+        <div class="gs-row"><div class="t"><b>YouTube</b><small id="gsYt">Not connected</small></div><button type="button" class="b2" id="gsYtBtn">Sign in</button></div>
+        <div class="gs-row"><div class="t"><b>Facebook</b><small id="gsFb">Sign in and pick your Page</small></div><button type="button" class="b2" id="gsFbBtn">Sign in</button></div>
+        <div class="gs-row"><div class="t"><b>Instagram, TikTok, Twitch or another site</b><small>Paste the stream key from that site</small></div><button type="button" class="b2" id="gsAddBtn">Add</button></div>
+        <div class="gs-row"><div class="t"><b>Channels added</b><small id="gsChCount">None yet</small></div></div>
+      </div>
+      <div class="gs-nav"><button type="button" class="b2" data-gs="skip">Skip for now</button><span class="sp"></span><button type="button" class="b2 pri" data-gs="next">Next: camera and sound</button></div>
+    </div>
+    <div class="gs-card" data-step="2" hidden>
+      <h2>What should your stream look like?</h2>
+      <div class="gs-lay" id="gsLay">
+        <button type="button" data-l="full" aria-pressed="true"><b>Full setup</b><span>Camera, welcome slide, name bar and a backup screen</span></button>
+        <button type="button" data-l="camera"><b>Camera only</b><span>Just your camera</span></button>
+        <button type="button" data-l="blank"><b>Start blank</b><span>Start empty and build it yourself</span></button>
+        <button type="button" data-l="keep"><b>Keep what I have</b><span>Use the scenes you already made</span></button>
+      </div>
+      <div class="gs-f">
+        <label>Camera<select id="gsCam"><option value="">No camera</option></select></label>
+        <label>Microphone<select id="gsMic"><option value="">No microphone</option></select></label>
+        <label>Test sound<div class="gs-meter"><i id="gsLvl"></i></div></label>
+      </div>
+      <p class="gs-note" id="gsLayNote"></p>
+      <div class="gs-nav"><button type="button" class="b2" data-gs="skip">Skip for now</button><span class="sp"></span><button type="button" class="b2" data-gs="back">Back</button><button type="button" class="b2 pri" data-gs="next">Next: check everything</button></div>
+    </div>
+    <div class="gs-card" data-step="3" hidden>
+      <h2>You're ready to stream</h2>
+      <div id="gsCheck" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div class="gs-row" style="background:color-mix(in srgb, var(--blue) 12%, transparent)"><div class="t"><b>Try a private test first: only you can see it</b><small>Private test is on the Go Live page</small></div></div>
+      <div class="gs-nav"><button type="button" class="b2" data-gs="back">Back</button><span class="sp"></span><button type="button" class="b2" id="gsStudio">Open Studio</button><button type="button" class="b2 pri" data-gs="done">Go to Go Live</button></div>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="setOverlay">
   <div class="swin" role="dialog" aria-modal="true" aria-labelledby="setTitle">
     <div class="swin-h"><span id="setTitle">Settings</span><button class="swin-x" id="setX" type="button" aria-label="Close without saving">×</button></div>
@@ -1557,6 +1651,119 @@ setInterval(refresh, 2000);
   }, { passive: false });
 })();
 
+
+// ---------- Welcome screen (each time the app opens) and Get started ----------
+(function () {
+  const wl = $('#welcome'), gs = $('#setup');
+  if (!wl || !gs) return;
+  let seen = false; try { seen = sessionStorage.getItem('ms_welcomed') === '1'; } catch {}
+  const isMv = location.hash === '#control-room';
+  const closeWl = () => { wl.classList.remove('open'); try { sessionStorage.setItem('ms_welcomed', '1'); } catch {} };
+  if (!seen && !isMv && !window.DEMO) wl.classList.add('open');
+  $('#wlLive').onclick = closeWl;
+  $('#wlStudio').onclick = () => { closeWl(); showPage('studio'); };
+  $('#wlStart').onclick = () => { closeWl(); openSetup(); };
+  let step = 1, lay = 'full', stream = null, raf = 0, hadScenes = false;
+  function showStep(n) {
+    step = n;
+    gs.querySelectorAll('.gs-card').forEach((c) => { c.hidden = Number(c.dataset.step) !== n; });
+    gs.querySelectorAll('#gsSteps span').forEach((x) => { const v = Number(x.dataset.s); x.className = v === n ? 'on' : v < n ? 'done' : ''; x.querySelector('b').textContent = v < n ? '\u2713' : String(v); });
+    if (n === 1) fillChannels();
+    if (n === 2) startDevices(); else stopDevices();
+    if (n === 3) fillCheck();
+  }
+  function fillChannels() {
+    $('#gsYt').textContent = $('#ytSub').textContent || 'Not connected';
+    $('#gsFb').textContent = $('#fbSub').textContent || 'No Page added';
+    const n = (last.destinations || []).length;
+    $('#gsChCount').textContent = n ? n + (n === 1 ? ' channel' : ' channels') + ': ' + last.destinations.map((d) => d.name).join(', ') : 'None yet';
+  }
+  async function openSetup() {
+    gs.classList.add('open');
+    try { const st = await api('/api/studio'); hadScenes = (st.scenes || []).some((x) => (x.layers || []).length); } catch {}
+    lay = hadScenes ? 'keep' : 'full'; syncLay(); showStep(1);
+  }
+  window.openSetup = openSetup;
+  function syncLay() {
+    gs.querySelectorAll('#gsLay button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.l === lay)));
+    $('#gsLayNote').textContent = hadScenes && lay !== 'keep' ? 'This adds a new scene collection called "Starter", so the scenes you already have are kept.' : '';
+  }
+  gs.querySelectorAll('#gsLay button').forEach((b) => { b.onclick = () => { lay = b.dataset.l; syncLay(); }; });
+  // the setup windows on top: come back here when they close
+  const reopen = () => setTimeout(() => { if (step === 1 && gs.classList.contains('open')) fillChannels(); }, 300);
+  $('#gsYtBtn').onclick = () => { openSettings('youtube'); reopen(); };
+  $('#gsFbBtn').onclick = () => { openSettings('facebook'); reopen(); };
+  $('#gsAddBtn').onclick = () => { $('#addBtn').click(); reopen(); };
+  setInterval(() => { if (gs.classList.contains('open') && step === 1) fillChannels(); }, 1500);
+  async function startDevices() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() => navigator.mediaDevices.getUserMedia({ audio: true }));
+      const ds = await navigator.mediaDevices.enumerateDevices();
+      const fill = (sel, kind, none) => { const v = sel.value; sel.innerHTML = ''; sel.add(new Option(none, '')); ds.filter((d) => d.kind === kind && d.deviceId !== 'default' && d.deviceId !== 'communications').forEach((d, i) => sel.add(new Option(d.label || (kind === 'videoinput' ? 'Camera ' : 'Microphone ') + (i + 1), d.deviceId))); if (v) sel.value = v; else if (sel.options.length > 1) sel.selectedIndex = 1; };
+      fill($('#gsCam'), 'videoinput', 'No camera'); fill($('#gsMic'), 'audioinput', 'No microphone');
+      meter();
+    } catch { $('#gsLayNote').textContent = 'Allow the camera and microphone to pick them here. You can also set them later in the Studio.'; }
+  }
+  async function meter() {
+    cancelAnimationFrame(raf);
+    const id = $('#gsMic').value; if (!id) { $('#gsLvl').style.width = '0'; return; }
+    try {
+      const s2 = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: id } } });
+      if (stream) stream.getTracks().forEach((t) => t.stop()); stream = s2;
+      const ac = new AudioContext(), an = ac.createAnalyser(); an.fftSize = 512; ac.createMediaStreamSource(s2).connect(an);
+      const buf = new Float32Array(an.fftSize);
+      const tick = () => { an.getFloatTimeDomainData(buf); let p = 0; for (const v of buf) p = Math.max(p, Math.abs(v)); const db = 20 * Math.log10(p || 1e-6); $('#gsLvl').style.width = Math.max(0, Math.min(100, (db + 60) / 60 * 100)) + '%'; raf = requestAnimationFrame(tick); };
+      tick();
+    } catch {}
+  }
+  $('#gsMic').onchange = meter;
+  function stopDevices() { cancelAnimationFrame(raf); if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; } }
+  // make the scenes for the chosen look (a new collection when there are scenes already, so nothing is lost)
+  async function buildScenes() {
+    if (lay === 'keep') return;
+    const uid = () => Math.random().toString(36).slice(2, 10);
+    const cam = $('#gsCam'), mic = $('#gsMic');
+    const camL = () => ({ id: uid(), type: 'camera', x: 0, y: 0, w: 1920, h: 1080, fit: 'fit', visible: true, device: cam.value, label: cam.value ? cam.selectedOptions[0].text : '' });
+    const text = (t, y, size) => ({ id: uid(), type: 'text', text: t, size, color: '#ffffff', x: 120, y, w: 1680, h: size + 50, fit: 'stretch', visible: true });
+    const colour = (c) => ({ id: uid(), type: 'color', color: c, x: 0, y: 0, w: 1920, h: 1080, fit: 'stretch', visible: true });
+    const audio = mic.value ? [{ id: uid(), name: 'Microphone', device: mic.value, label: mic.selectedOptions[0].text, vol: 1, muted: false }] : [];
+    const aIds = audio.map((a) => a.id);
+    let scenes;
+    if (lay === 'blank') scenes = [{ name: 'Scene', layers: [], audio: aIds }];
+    else if (lay === 'camera') scenes = [{ name: 'Camera', layers: cam.value ? [camL()] : [], audio: aIds }];
+    else scenes = [
+      { name: 'Welcome', layers: [colour('#10152e'), text('Welcome', 440, 140)], audio: aIds },
+      { name: 'Camera', layers: cam.value ? [camL()] : [], audio: aIds },
+      { name: 'Camera with name bar', layers: [...(cam.value ? [camL()] : []), { id: uid(), type: 'lower', title: 'Name here', sub: 'Role or message', color: '#3b6cff', textColor: '#ffffff', x: 100, y: 800, w: 1100, h: 170, fit: 'stretch', visible: true }], audio: aIds },
+      { name: 'Backup screen', layers: [colour('#10152e'), text('We will be right back', 460, 110)], audio: aIds },
+    ];
+    if (hadScenes) { const r = await api('/api/collections', 'POST', { do: 'new', name: 'Starter ' + new Date().toLocaleString() }); if (r.error) throw new Error(r.error); }
+    const r2 = await api('/api/studio', 'PUT', { scenes, audio, current: scenes[0].name });
+    if (r2.error) throw new Error(r2.error);
+  }
+  async function fillCheck() {
+    const items = [];
+    const n = (last.destinations || []).length;
+    items.push([n ? n + (n === 1 ? ' channel added' : ' channels added') : 'No channels yet', n ? last.destinations.map((d) => d.name).join(', ') : 'Add them on the Go Live page', n > 0]);
+    let sc = 0; try { const st = await api('/api/studio'); sc = (st.scenes || []).length; } catch {}
+    items.push([sc ? 'Your scenes are ready' : 'No scenes yet', sc ? sc + (sc === 1 ? ' scene' : ' scenes') + ' in the Studio' : 'Open the Studio to add some', sc > 0]);
+    items.push([$('#gsMic').value ? 'Sound is set' : 'No microphone picked', $('#gsMic').value ? $('#gsMic').selectedOptions[0].text : 'You can add one in the Studio', Boolean($('#gsMic').value)]);
+    const box = $('#gsCheck'); box.innerHTML = '';
+    items.forEach(([t, sub, good]) => { const d = document.createElement('div'); d.className = 'gs-row'; d.innerHTML = '<span class="gs-ok"></span><div class="t"><b></b><small></small></div>'; d.querySelector('.gs-ok').textContent = good ? '\u2713' : '!'; if (!good) d.querySelector('.gs-ok').style.color = 'var(--amber)'; d.querySelector('b').textContent = t; d.querySelector('small').textContent = sub; box.appendChild(d); });
+  }
+  const close = () => { stopDevices(); gs.classList.remove('open'); };
+  gs.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-gs]'); if (!b) return;
+    const a = b.dataset.gs;
+    if (a === 'skip' || a === 'done') return close();
+    if (a === 'back') return showStep(step - 1);
+    if (a === 'next') {
+      if (step === 2) { b.disabled = true; try { await buildScenes(); } catch (err) { $('#gsLayNote').textContent = 'Could not make the scenes: ' + err.message; b.disabled = false; return; } b.disabled = false; }
+      showStep(step + 1);
+    }
+  });
+  $('#gsStudio').onclick = () => { close(); showPage('studio'); };
+})();
 </script>
 </body>
 </html>
