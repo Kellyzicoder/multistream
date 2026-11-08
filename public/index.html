@@ -168,6 +168,16 @@
   .as-r select, .as-r input[type=time], .as-r input[type=number] { padding:5px 8px; border-radius:8px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:12.5px; }
   .as-x { display:flex; flex-direction:column; gap:4px; } .as-x button { width:28px; height:26px; padding:0; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--muted); }
   .as-add { display:flex; gap:8px; } .asd .rc-sw { flex-direction:row; align-items:center; text-align:left; } .as-opt { display:flex; flex-direction:column; gap:8px; font-size:13px; } .as-opt label { display:flex; align-items:center; gap:8px; color:var(--text); flex-direction:row; }
+  /* ---------- Go Live while live: health in the side, and the tall (9:16) view ---------- */
+  .glh { padding:16px 18px; } .glh .sec-h { gap:10px; } .glh .lnk { font-size:12px; white-space:nowrap; } .glh .sec-t { white-space:nowrap; } .glh .hl-badge { white-space:nowrap; padding:3px 10px; font-size:11.5px; }
+  .gh-g { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-top:10px; }
+  .gh-g > div { padding:10px 12px; border-radius:14px; background:var(--card2); display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 5px; }
+  .gh-g small { flex-basis:100%; font-size:11.5px; color:var(--muted); font-weight:600; } .gh-g b { font-size:20px; font-variant-numeric:tabular-nums; } .gh-g i { font-style:normal; font-size:11.5px; color:var(--muted); }
+  .gh-g em { flex-basis:100%; font-style:normal; font-size:11.5px; color:var(--muted); } .gh-g em.good { color:#4ade80; } .gh-g em.bad { color:#f87171; }
+  .gh-ch { display:flex; flex-direction:column; gap:6px; margin-top:12px; } .gh-ch div { display:flex; align-items:center; gap:10px; font-size:13px; } .gh-ch span:nth-child(2) { margin-left:auto; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .gh-ch .hl-st { min-width:70px; text-align:right; }
+  .app.tall .pv-box { aspect-ratio:9/16; width:min(100%, calc((100vh - 560px) * 9 / 16)); min-width:200px; }
+  .pv-ig { display:flex; flex-wrap:wrap; justify-content:center; gap:10px 36px; padding:14px 0 4px; text-align:center; } .pv-ig p { flex-basis:100%; } .pv-ig[hidden] { display:none; } .pv-ig small { display:block; font-size:12px; color:var(--muted); } .pv-ig b { font-size:18px; } .pv-ig p { margin:6px 0 0; font-size:13px; color:var(--muted); line-height:1.5; }
   /* ---------- Help ---------- */
   .hp-q { padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:14px; max-width:520px; }
   .hp-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(380px, 1fr)); gap:12px; align-items:start; }
@@ -687,6 +697,7 @@
         <div class="pv-msg" id="pvMsg">Preview is off</div>
         <div class="pv-ov"><span class="ov live">LIVE</span><span class="ov" id="ovTime">00:00:00</span></div>
       </div>
+      <div class="pv-ig" id="pvIg" hidden><div><small>Live for</small><b id="igFor">0:00</b></div><div><small>Scene</small><b id="igScene">–</b></div><div><small>Collection</small><b id="igColl">–</b></div><p>Viewers, likes and comments show in the Instagram app.</p></div>
       <div class="pv-ctl"><span id="lvLead"></span><span class="grow"></span><span>Preview (no sound)</span>
         <label class="sw"><input type="checkbox" id="pvSwitch" checked aria-label="Show the preview"><span></span></label>
       </div>
@@ -780,6 +791,11 @@
       </div>
       <div class="pf" id="pfList" hidden></div>
       </details>
+    </section>
+    <section class="card glh" id="glHealth" aria-label="Stream health" hidden>
+      <div class="sec-h"><span class="sec-t">Stream health</span><span class="hl-badge" id="ghBadge"></span><span class="grow"></span><button type="button" class="lnk" id="ghMore">Details in Stream health →</button></div>
+      <div class="gh-g"><div><small>Sending</small><b id="ghK">0</b><i>Mbit/s</i><em id="ghKn"></em></div><div><small>Frame rate</small><b id="ghF">–</b><i>fps</i><em id="ghFn"></em></div><div><small>Dropped frames</small><b id="ghD">0</b><em id="ghDn"></em></div><div><small>Computer</small><b id="ghC">0</b><i>%</i><em id="ghCn"></em></div></div>
+      <div class="gh-ch" id="ghCh"></div>
     </section>
     <section class="card cht" aria-label="Chat">
       <div class="sec-h">
@@ -1427,6 +1443,35 @@ const XPAGES = {};
     }
     draw(); document.body.appendChild(w);
   };
+})();
+// Go Live while live: a short Stream health in the side; a tall (9:16) stream shows a tall preview
+(() => {
+  const STATE = { live: 'Good', starting: 'Starting', error: 'Trouble', off: 'Off' };
+  let collName = '';
+  async function tick() {
+    if (page !== 'dash' || !last.obsLive) { $('#glHealth').hidden = true; $('.app').classList.remove('tall'); $('#pvIg').hidden = true; return; }
+    let h; try { h = await api('/api/health'); } catch { return; }
+    $('#glHealth').hidden = false;
+    const mb = (k) => (k / 1000).toFixed(1), bad = h.channels.some((c) => c.enabled && c.state === 'error'), drop = h.frames ? (h.drops / h.frames) * 100 : 0;
+    const bg = $('#ghBadge'); bg.className = 'hl-badge ' + (bad || !h.ok ? 'bad' : drop > 1 || h.cpu > 85 ? 'ok' : 'good'); bg.textContent = bad || !h.ok ? '● Needs a look' : drop > 1 || h.cpu > 85 ? '● OK' : '● Excellent';
+    const hist = h.history || [], avg = hist.length ? hist.reduce((a, b) => a + b, 0) / hist.length : 0, vary = avg ? Math.max(...hist.map((k) => Math.abs(k - avg))) / avg : 0;
+    $('#ghK').textContent = mb(h.kbps); const kn = $('#ghKn'); kn.textContent = vary < 0.35 ? 'Steady' : 'Going up and down'; kn.className = vary < 0.35 ? 'good' : 'bad';
+    $('#ghF').textContent = h.fps ? Math.round(h.fps) : '–'; $('#ghFn').textContent = h.size || '';
+    $('#ghD').textContent = h.drops.toLocaleString(); const dn = $('#ghDn'); dn.textContent = h.frames ? drop.toFixed(1) + '%' + (h.drops ? '' : ' · none lost') : ''; dn.className = drop > 1 ? 'bad' : '';
+    $('#ghC').textContent = h.cpu; const cn = $('#ghCn'); cn.textContent = 'Memory ' + h.memory + '%'; cn.className = h.cpu > 85 ? 'bad' : '';
+    const ch = $('#ghCh'); ch.textContent = '';
+    h.channels.filter((c) => c.enabled).forEach((c) => { const r = document.createElement('div'); r.innerHTML = '<span></span><span></span><span></span>'; r.children[0].textContent = c.name; r.children[1].textContent = c.kbps ? mb(c.kbps) + ' Mbit/s' : ''; r.children[2].className = 'hl-st ' + c.state; r.children[2].textContent = '● ' + (STATE[c.state] || c.state); ch.appendChild(r); });
+    // a tall stream (a 9:16 scene collection)
+    const m = /^(\d+)x(\d+)$/.exec(h.size || ''), tall = Boolean(m && Number(m[2]) > Number(m[1]));
+    $('.app').classList.toggle('tall', tall); $('#pvIg').hidden = !tall;
+    if (tall) {
+      const s = Math.floor((Date.now() - h.startedAt) / 1000); $('#igFor').textContent = (s >= 3600 ? Math.floor(s / 3600) + ':' : '') + String(Math.floor(s / 60) % 60).padStart(s >= 3600 ? 2 : 1, '0') + ':' + String(s % 60).padStart(2, '0');
+      try { const st = await api('/api/studio?rev=0'); if (st && st.current) $('#igScene').textContent = st.current; } catch {}
+      if (!collName) { try { collName = (await api('/api/collections')).current || ''; } catch {} } $('#igColl').textContent = collName || '–';
+    } else collName = '';
+  }
+  setInterval(tick, 2000);
+  $('#ghMore').onclick = () => showPage('health');
 })();
 // Help: start here, fixing problems, keys; the search box hides what does not match
 (() => {
