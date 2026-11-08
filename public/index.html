@@ -191,25 +191,28 @@
   .hp-c kbd { font-family:inherit; font-size:11.5px; font-weight:600; line-height:1; padding:3px 6px; border-radius:6px; border:1px solid var(--line); background:var(--card2); }
   .hp-n { margin:10px 0 0; color:var(--muted); font-size:12.5px; } .hp-b { display:flex; align-items:center; gap:10px; margin-top:14px; } .hp-v { color:var(--muted); font-size:12px; }
   .hp-hide { display:none; } mark.hp-m { background:rgba(250,204,21,.3); color:inherit; border-radius:3px; }
-  /* ---------- Scene collections ---------- */
-  .sc-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; }
-  .sc-c { padding:16px; display:flex; flex-direction:column; gap:12px; } .sc-c.cur { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue); }
-  .sc-h { display:flex; align-items:flex-start; gap:12px; }
-  .sc-sh { flex:none; width:64px; height:64px; display:grid; place-items:center; border-radius:12px; background:var(--card2); }
-  .sc-sh i { display:block; border-radius:4px; border:2px solid var(--link); background:rgba(59,108,255,.15); } .sc-sh i.landscape { width:44px; height:25px; } .sc-sh i.portrait { width:25px; height:44px; } .sc-sh i.square { width:34px; height:34px; }
-  .sc-t { min-width:0; flex:1; } .sc-t b { display:block; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .sc-t small { display:block; font-size:12px; color:var(--muted); margin-top:3px; }
-  .sc-in { font-size:11px; font-weight:700; padding:3px 8px; border-radius:999px; background:rgba(59,108,255,.18); color:var(--link); white-space:nowrap; }
-  .sc-b { display:flex; gap:6px; flex-wrap:wrap; } .sc-b button { padding:6px 12px; font-size:12.5px; color:var(--text); }
-  .sc-add { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height:150px; border:1.5px dashed var(--line); background:transparent; color:var(--muted); border-radius:24px; font-size:13px; }
-  .sc-add b { font-size:26px; font-weight:400; line-height:1; } .sc-add:hover { border-color:var(--blue); color:var(--text); }
-  .scd { position:fixed; inset:0; z-index:80; display:grid; place-items:center; background:rgba(4,6,15,.6); }
-  .scd > div { width:min(460px, 92vw); padding:20px; border-radius:22px; background:var(--card); border:1px solid var(--line); box-shadow:0 24px 60px rgba(0,0,0,.5); display:flex; flex-direction:column; gap:14px; }
-  .scd h3 { margin:0; font-size:16px; } .scd label { font-size:12.5px; color:var(--muted); display:flex; flex-direction:column; gap:6px; }
-  .scd input[type=text] { padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:14px; }
-  .scd .shp { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; } .scd .shp button { display:flex; flex-direction:column; align-items:center; gap:6px; padding:12px 6px; border-radius:14px; border:1px solid var(--line); background:var(--card2); color:var(--text); font-size:12.5px; }
-  .scd .shp button small { font-size:11px; color:var(--muted); } .scd .shp button.on { border-color:var(--blue); box-shadow:0 0 0 2px rgba(59,108,255,.35); }
-  .scd .chs { display:flex; flex-wrap:wrap; gap:8px; } .scd .chs label { flex-direction:row; align-items:center; gap:6px; color:var(--text); font-size:13px; padding:6px 10px; border-radius:10px; background:var(--card2); }
-  .scd .ft { display:flex; justify-content:flex-end; gap:8px; }
+  /* ---------- Scene collections (as in the design) ---------- */
+  .sc { gap:18px; }
+  .sc-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:18px; } @media (max-width:1000px) { .sc-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  .scc { display:flex; flex-direction:column; gap:12px; padding:14px; border-radius:22px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:2px solid transparent; }
+  .scc.cur { border-color:var(--blue); }
+  .scc .g6 { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:6px; } .scc .g6 i { aspect-ratio:16/9; border-radius:6px; display:block; }
+  .scc .g3 { display:flex; gap:6px; justify-content:center; } .scc .g3 i { width:42px; aspect-ratio:9/16; border-radius:6px; display:block; } .scc .g3.sq i { width:58px; aspect-ratio:1; }
+  .scc .hd { display:flex; align-items:center; gap:8px; } .scc .hd b { font-size:16px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .scc .in { margin-left:auto; padding:3px 10px; border-radius:999px; background:var(--blue); color:#fff; font-size:11px; font-weight:700; } .scc .hd .mini { margin-left:auto; }
+  .scc .meta2 { font-size:12.5px; color:var(--muted); } .scc .shp { padding:2px 8px; border-radius:6px; background:rgba(255,255,255,.08); color:var(--soft); font-weight:600; margin-right:4px; } .scc .shp.p { background:rgba(214,36,159,.2); color:#f0a6d8; }
+  .scc .bt { display:flex; gap:6px; flex-wrap:wrap; } .mini.red { color:#ff8a92; }
+  .sc-add { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:14px; min-height:200px; border-radius:22px; background:transparent; border:2px dashed rgba(255,255,255,.18); color:var(--muted); font-size:15px; font-weight:600; }
+  .sc-add .pl { width:46px; height:46px; border-radius:50%; display:grid; place-items:center; background:color-mix(in srgb, var(--blue) 15%, transparent); color:var(--link); font-size:24px; } .sc-add small { font-weight:500; font-size:12.5px; } .sc-add:hover { border-color:var(--blue); color:var(--text); }
+  .sc-new { padding:18px; border-radius:20px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); display:flex; flex-direction:column; gap:12px; } .sc-new[hidden] { display:none; } .sc-new > b { font-size:15px; }
+  .sc-new label { display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:var(--muted); } .sc-new input[type=text] { padding:10px 14px; border-radius:12px; background:rgba(10,14,31,.6); border:1px solid var(--gl-line); color:var(--text); font-size:14px; font-weight:500; }
+  .sc-l { font-size:12.5px; color:var(--muted); }
+  .sc-shp { display:flex; gap:10px; } .sc-shp button { flex:1; display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; border:1.5px solid var(--gl-line); background:transparent; color:var(--text); font-size:13px; font-weight:600; }
+  .sc-shp button small { color:var(--muted); font-weight:500; } .sc-shp button.on { border:2px solid var(--blue); background:color-mix(in srgb, var(--blue) 12%, transparent); }
+  .sc-shp i { border-radius:4px; border:2px solid var(--soft); flex:none; } .sc-shp i.l { width:40px; height:22px; } .sc-shp i.p { width:16px; height:28px; } .sc-shp i.q { width:24px; height:24px; } .sc-shp button.on i { border-color:var(--link); }
+  .sc-new .sc-only { flex-direction:row; align-items:center; gap:9px; font-size:13px; color:var(--soft); } .sc-only input { accent-color:var(--blue); width:15px; height:15px; }
+  .sc-fb { display:flex; justify-content:flex-end; gap:8px; }
+  #collView { min-height:calc(100vh - 70px); box-sizing:border-box; }
   /* ---------- Recordings (as in the design) ---------- */
   .rc { gap:18px; }
   .rc-where { color:var(--muted); font-size:13px; margin-right:8px; }
@@ -951,6 +954,18 @@
 </section>
 <section class="xpage sc" id="collView" hidden aria-label="Scene collections">
   <div class="sc-grid" id="scGrid"></div>
+  <div class="sc-new" id="scForm" hidden>
+    <b>New collection</b>
+    <label>Name<input type="text" id="scName" maxlength="60" placeholder="For example: Youth (Instagram)"></label>
+    <div class="sc-l">Shape</div>
+    <div class="sc-shp" id="scShp">
+      <button type="button" data-v="landscape"><i class="l"></i>Landscape 16:9<small>YouTube, Facebook</small></button>
+      <button type="button" data-v="portrait"><i class="p"></i>Portrait 9:16<small>Instagram, TikTok</small></button>
+      <button type="button" data-v="square"><i class="q"></i>Square 1:1</button>
+    </div>
+    <label class="sc-only"><input type="checkbox" id="scOnly"><span id="scOnlyT">When I switch to this, turn on only these channels</span></label>
+    <div class="sc-fb"><button type="button" class="mini" id="scCancel">Cancel</button><button type="button" class="mini pri" id="scMake">Make collection</button></div>
+  </div>
   <input type="file" id="scFile" accept=".json,application/json" hidden>
 </section>
 <section class="xpage hp" id="helpView" hidden aria-label="Help">
@@ -1899,34 +1914,10 @@ const XPAGES = {};
 })();
 // Scene collections: sets of scenes; wide (16:9), tall (9:16) or square; switch, rename, copy, export, remove
 (() => {
-  const SHP = { landscape: ['16:9 Landscape', '1920 x 1080'], portrait: ['9:16 Portrait', '1080 x 1920'], square: ['1:1 Square', '1080 x 1080'] };
+  const SHP = { landscape: ['\u25ad 16:9 Landscape', '1920 x 1080'], portrait: ['\u25af 9:16 Portrait', '1080 x 1920'], square: ['\u25a1 1:1 Square', '1080 x 1080'] };
+  const G6 = ['#1d2a5e,#0e1430', '#14363a,#1d2a5e', '#262a63,#3a1f5e', '#3a2a14,#1c1430', '#123a33,#0e1a30', '#2a2a35,#14141c'], G3 = ['#d6249f,#5851db', '#262a63,#3a1f5e', '#f58529,#d6249f'];
   const ago = (ts) => { if (!ts) return ''; const d = Math.floor((Date.now() - ts) / 86400000); return d < 1 ? 'changed today' : d < 2 ? 'changed yesterday' : 'changed ' + d + ' days ago'; };
   const post = (body) => api('/api/collections', 'POST', body).then((r) => { if (r && r.error) alert(r.error); draw(); return r; });
-  function dialog(title, opts, done) {
-    const w = document.createElement('div'); w.className = 'scd';
-    const d = document.createElement('div'); w.appendChild(d);
-    const h = document.createElement('h3'); h.textContent = title; d.appendChild(h);
-    const nl = document.createElement('label'); nl.textContent = 'Name'; const ni = document.createElement('input'); ni.type = 'text'; ni.value = opts.name || ''; nl.appendChild(ni); d.appendChild(nl);
-    let shape = opts.shape || 'landscape';
-    const only = new Set(opts.only || []);
-    if (opts.withShape) {
-      const sl = document.createElement('label'); sl.textContent = 'Shape'; const g = document.createElement('div'); g.className = 'shp';
-      [['landscape', 'Landscape 16:9', 'YouTube, Facebook'], ['portrait', 'Portrait 9:16', 'Instagram, TikTok'], ['square', 'Square 1:1', 'Feeds']].forEach(([v, t, sub]) => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = '<span class="sc-sh" style="width:48px;height:48px;background:none"><i class="' + v + '"></i></span><span></span><small></small>'; b.children[1].textContent = t; b.children[2].textContent = sub; b.classList.toggle('on', v === shape); b.onclick = () => { shape = v; g.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); }; g.appendChild(b); });
-      sl.appendChild(g); d.appendChild(sl);
-      const cl = document.createElement('label'); cl.textContent = 'When I switch to this, turn on only:'; const cg = document.createElement('div'); cg.className = 'chs';
-      (last.destinations || []).forEach((x) => { const lb = document.createElement('label'); const c = document.createElement('input'); c.type = 'checkbox'; c.checked = only.has(x.name); c.onchange = () => { if (c.checked) only.add(x.name); else only.delete(x.name); }; lb.append(c, document.createTextNode(x.name)); cg.appendChild(lb); });
-      if (!(last.destinations || []).length) cg.textContent = 'No channels yet.';
-      const nt = document.createElement('small'); nt.textContent = 'Leave all off to keep your channels as they are.'; nt.style.cssText = 'font-size:11.5px;color:var(--muted)';
-      cl.append(cg, nt); d.appendChild(cl);
-    }
-    const ft = document.createElement('div'); ft.className = 'ft'; const cb = document.createElement('button'); cb.type = 'button'; cb.className = 'ghost'; cb.textContent = 'Cancel'; const ob = document.createElement('button'); ob.type = 'button'; ob.className = 'go'; ob.textContent = opts.ok || 'OK';
-    ft.append(cb, ob); d.appendChild(ft);
-    const close = () => w.remove();
-    cb.onclick = close; w.onclick = (e) => { if (e.target === w) close(); };
-    ob.onclick = () => { const n = ni.value.trim(); if (!n) { ni.focus(); return; } close(); done({ name: n, shape, only: [...only] }); };
-    ni.onkeydown = (e) => { if (e.key === 'Enter') ob.click(); if (e.key === 'Escape') close(); };
-    document.body.appendChild(w); ni.focus(); ni.select();
-  }
   async function exportOne(name) {
     const j = await api('/api/collections/file?name=' + encodeURIComponent(name));
     const blob = new Blob([JSON.stringify(j, null, 2)], { type: 'application/json' });
@@ -1936,26 +1927,37 @@ const XPAGES = {};
     let r; try { r = await api('/api/collections?details=1'); } catch { return; }
     const g = $('#scGrid'); g.textContent = '';
     (r.list || []).sort((a, b) => (b.current ? 1 : 0) - (a.current ? 1 : 0)).forEach((c) => {
-      const el = document.createElement('div'); el.className = 'card sc-c' + (c.current ? ' cur' : '');
-      const h = document.createElement('div'); h.className = 'sc-h';
-      h.innerHTML = '<span class="sc-sh"><i class="' + c.shape + '"></i></span><div class="sc-t"><b></b><small></small><small></small></div>';
-      h.querySelector('b').textContent = c.name;
-      const sm = h.querySelectorAll('small'); sm[0].textContent = SHP[c.shape][0] + ' · ' + SHP[c.shape][1];
-      sm[1].textContent = c.scenes + (c.scenes === 1 ? ' scene' : ' scenes') + ' · ' + c.sources + (c.sources === 1 ? ' source' : ' sources') + (c.only && c.only.length ? ' · turns on: ' + c.only.join(', ') + ' only' : '') + (ago(c.at) ? ' · ' + ago(c.at) : '');
-      if (c.current) { const s = document.createElement('span'); s.className = 'sc-in'; s.textContent = 'In use'; h.appendChild(s); }
-      const b = document.createElement('div'); b.className = 'sc-b';
-      const btn = (t, fn, cls) => { const x = document.createElement('button'); x.type = 'button'; x.className = cls || 'ghost'; x.textContent = t; x.onclick = fn; b.appendChild(x); };
-      if (!c.current) btn('Switch to this', () => { if (last.obsLive && !confirm('You are live. The scenes on air change to "' + c.name + '". Continue?')) return; post({ do: 'switch', name: c.name }); }, 'go');
-      btn('Rename', () => dialog('Rename "' + c.name + '"', { name: c.name, ok: 'Rename' }, (v) => post({ do: 'rename', name: v.name, from: c.name })));
-      btn('Settings', () => dialog('Settings for "' + c.name + '"', { name: c.name, shape: c.shape, only: c.only, withShape: true, ok: 'Save' }, async (v) => { if (v.name !== c.name) await post({ do: 'rename', name: v.name, from: c.name }); post({ do: 'settings', from: v.name, shape: v.shape, only: v.only }); }));
-      btn('Duplicate', () => dialog('Duplicate "' + c.name + '"', { name: c.name + ' copy', ok: 'Duplicate' }, (v) => post({ do: 'duplicate', name: v.name, from: c.name })));
+      const el = document.createElement('div'); el.className = 'scc' + (c.current ? ' cur' : '');
+      const n = Math.max(1, Math.min(c.shape === 'landscape' ? 6 : 3, c.scenes || 1));
+      el.innerHTML = c.shape === 'landscape' ? '<div class="g6">' + G6.slice(0, Math.max(n, 6)).map((x, k) => '<i style="background:linear-gradient(135deg,' + x + ');opacity:' + (k < c.scenes ? 1 : .35) + '"></i>').join('') + '</div>' : '<div class="g3' + (c.shape === 'square' ? ' sq' : '') + '">' + G3.map((x, k) => '<i style="background:linear-gradient(160deg,' + x + ');opacity:' + (k < c.scenes ? 1 : .35) + '"></i>').join('') + '</div>';
+      const hd = document.createElement('div'); hd.className = 'hd'; const b = document.createElement('b'); b.textContent = c.name; hd.appendChild(b);
+      if (c.current) { const s2 = document.createElement('span'); s2.className = 'in'; s2.textContent = 'In use'; hd.appendChild(s2); }
+      else { const sb = document.createElement('button'); sb.type = 'button'; sb.className = 'mini pri'; sb.textContent = 'Switch to this'; sb.onclick = () => { if (last.obsLive && !confirm('You are live. The scenes on air change to "' + c.name + '". Continue?')) return; post({ do: 'switch', name: c.name }); }; hd.appendChild(sb); }
+      el.appendChild(hd);
+      const m1 = document.createElement('div'); m1.className = 'meta2'; m1.innerHTML = '<span class="shp' + (c.shape === 'portrait' ? ' p' : '') + '"></span>'; m1.firstChild.textContent = SHP[c.shape][0]; m1.append(' ' + SHP[c.shape][1]); el.appendChild(m1);
+      const m2 = document.createElement('div'); m2.className = 'meta2'; m2.textContent = c.scenes + (c.scenes === 1 ? ' scene' : ' scenes') + ' · ' + c.sources + (c.sources === 1 ? ' source' : ' sources') + (c.only && c.only.length ? ' · turns on: ' + c.only.join(', ') + ' only' : ago(c.at) ? ' · ' + ago(c.at) : ''); el.appendChild(m2);
+      const bt = document.createElement('div'); bt.className = 'bt';
+      const btn = (t, fn, cls) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'mini' + (cls ? ' ' + cls : ''); x.textContent = t; x.onclick = fn; bt.appendChild(x); };
+      btn('Rename', () => { const v = prompt('New name for "' + c.name + '"', c.name); if (v && v.trim() && v.trim() !== c.name) post({ do: 'rename', name: v.trim(), from: c.name }); });
+      btn('Duplicate', () => { const v = prompt('Name for the copy', c.name + ' copy'); if (v && v.trim()) post({ do: 'duplicate', name: v.trim(), from: c.name }); });
       btn('Export', () => exportOne(c.name));
-      if ((r.list || []).length > 1) btn('Remove', () => { if (confirm('Remove "' + c.name + '"? Its scenes are deleted.')) post({ do: 'remove', from: c.name }); });
-      el.append(h, b); g.appendChild(el);
+      if (!c.current && (r.list || []).length > 1) btn('Remove', () => { if (confirm('Remove "' + c.name + '"? Its scenes are deleted.')) post({ do: 'remove', from: c.name }); }, 'red');
+      el.appendChild(bt); g.appendChild(el);
     });
-    const add = document.createElement('button'); add.type = 'button'; add.className = 'sc-add'; add.innerHTML = '<b>+</b><span>New collection</span><small>Pick landscape or portrait</small>'; add.onclick = () => $('#scNew').click(); g.appendChild(add);
+    const add = document.createElement('button'); add.type = 'button'; add.className = 'sc-add'; add.innerHTML = '<span class="pl">+</span>New collection<small>Pick landscape or portrait</small>'; add.onclick = () => openForm(); g.appendChild(add);
   }
-  $('#scNew').onclick = () => dialog('New collection', { name: '', withShape: true, ok: 'Make it' }, (v) => post({ do: 'new', name: v.name, shape: v.shape, only: v.only }));
+  // New collection: name, shape, and which channels to turn on when switching to it
+  let shape = 'landscape';
+  const onlyFor = (sh) => (last.destinations || []).map((d) => d.name).concat(last.youtube && last.youtube.connected ? ['YouTube'] : [], last.facebook && last.facebook.pageId ? ['Facebook'] : []).filter((n, i, a) => a.indexOf(n) === i).filter((n) => (sh === 'landscape' ? /youtube|facebook/i : /instagram|tiktok/i).test(n));
+  function paintForm() {
+    document.querySelectorAll('#scShp button').forEach((b) => b.classList.toggle('on', b.dataset.v === shape));
+    const o = onlyFor(shape); $('#scOnlyT').textContent = 'When I switch to this, turn on only: ' + (o.join(', ') || 'no matching channels yet'); $('#scOnly').disabled = !o.length; if (!o.length) $('#scOnly').checked = false;
+  }
+  function openForm() { $('#scForm').hidden = false; $('#scName').value = ''; shape = 'landscape'; $('#scOnly').checked = false; paintForm(); $('#scName').focus(); }
+  document.querySelectorAll('#scShp button').forEach((b) => { b.onclick = () => { shape = b.dataset.v; if (shape !== 'landscape' && onlyFor(shape).length) $('#scOnly').checked = true; paintForm(); }; });
+  $('#scCancel').onclick = () => { $('#scForm').hidden = true; };
+  $('#scMake').onclick = async () => { const n = $('#scName').value.trim(); if (!n) { $('#scName').focus(); return; } const r = await post({ do: 'new', name: n, shape, only: $('#scOnly').checked ? onlyFor(shape) : [] }); if (r && !r.error) $('#scForm').hidden = true; };
+  $('#scNew').onclick = () => openForm();
   let obsMode = false;
   $('#scImp').onclick = () => { obsMode = false; $('#scFile').value = ''; $('#scFile').click(); };
   $('#scObs').onclick = () => { obsMode = true; $('#scFile').value = ''; $('#scFile').click(); };
@@ -1963,13 +1965,15 @@ const XPAGES = {};
     const f = $('#scFile').files[0]; if (!f) return;
     const text = await f.text(); let j; try { j = JSON.parse(text); } catch { alert('That file could not be read.'); return; }
     if (Array.isArray(j.sources) || obsMode) {
-      // an OBS file: the Studio reads it (it knows OBS sources), so open the Studio and hand it over
       if (!Array.isArray(j.sources)) { alert('That is not an OBS scene collection file. In OBS: Scene Collection, Export.'); return; }
       try { localStorage.setItem('ms_pending_obs', text); } catch { alert('That file is too big.'); return; }
-      showPage('studio'); return;
+      const w = (() => { try { return document.querySelector('#studioView iframe').contentWindow; } catch { return null; } })();
+      if (w && w.importObsText) { localStorage.removeItem('ms_pending_obs'); showPage('studio'); w.importObsText(text); } else showPage('studio');
+      return;
     }
     if (!Array.isArray(j.scenes)) { alert('No scenes found in that file.'); return; }
-    dialog('Import "' + (j.name || f.name) + '"', { name: j.name || f.name.replace(/\.json$/i, ''), ok: 'Import' }, (v) => post({ do: 'import', name: v.name, data: { scenes: j.scenes, audio: j.audio || [], current: j.current || '', shape: j.shape, only: j.only } }));
+    const n = prompt('Name for the imported collection', j.name || f.name.replace(/\.json$/i, '')); if (!n || !n.trim()) return;
+    post({ do: 'import', name: n.trim(), data: { scenes: j.scenes, audio: j.audio || [], current: j.current || '', shape: j.shape, only: j.only } });
   };
   XPAGES.coll = { title: 'Scene collections', el: 'collView', open() { draw(); }, close() {} };
 })();
