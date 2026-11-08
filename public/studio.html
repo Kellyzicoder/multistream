@@ -339,7 +339,7 @@
       <div class="spanes">
         <section class="sp" data-sp="general">
           <h3>Studio</h3>
-          <div class="f"><label>Open the Studio in</label><select id="studioOpen"><option value="window">A new window</option><option value="same">The same window as the Stream page</option></select></div>
+          <div class="f"><label>Open the Studio in</label><select id="studioOpen"><option value="same">The same window as the Stream page</option><option value="window">A new window</option></select></div>
           <p class="note">This is also on the Stream page under Settings, Appearance. It applies the next time you open the Studio.</p>
           <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
           <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
@@ -1431,7 +1431,7 @@ function stopSend() {
   setProgramSize(1280, 720); setFps(30); lockOut();
   $('#sendBtn').textContent = 'Start Streaming'; $('#sendBtn').className = ''; liveT0 = 0;
 }
-$('#tabStream').onclick = () => { if (window.msNative) window.msNative.openDashboard(); else location.href = '/'; };
+$('#tabStream').onclick = () => { if (!$('#backBtn').hidden) { $('#backBtn').click(); return; } if (window.msNative) window.msNative.openDashboard(); else location.href = '/'; };
 $('#tabCr').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else location.href = '/#control-room'; };
 $('#sendBtn').onclick = () => { if (wantSend) { if (askStop && !confirm('Stop streaming now?')) return; stopSend(); } else startSend(); };
 
@@ -1747,7 +1747,7 @@ function showPane(n) {
 document.querySelectorAll('#setNav button').forEach((b) => { b.onclick = () => showPane(b.dataset.sp); });
 function openSettings(pane) {
   fillMon(); lockOut();
-  try { $('#studioOpen').value = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+  try { $('#studioOpen').value = localStorage.getItem('ms_studio_open') || 'same'; } catch {}
   $('#optSnap').checked = snapOn; $('#optConfirm').checked = askStop;
   $('#setBox').hidden = false; showPane(typeof pane === 'string' ? pane : spane);
 }

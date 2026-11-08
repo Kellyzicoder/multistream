@@ -658,7 +658,7 @@
           </div>
                   <div class="grp"><h4>Studio</h4>
             <div class="srow"><label class="lb" for="studioOpenSel">Open the Studio in<small>A new window keeps the Stream page in view. This window replaces the Stream page; a button in the Studio comes back.</small></label>
-              <div class="ctl"><select class="t" id="studioOpenSel"><option value="window">A new window</option><option value="same">This window</option></select></div></div>
+              <div class="ctl"><select class="t" id="studioOpenSel"><option value="same">This window</option><option value="window">A new window</option></select></div></div>
           </div>
         </section>
 
@@ -1023,7 +1023,7 @@ document.querySelectorAll('[data-copy]').forEach((b) => {
 $('#openStudioBtn').onclick = () => showPage('studio');
 (function () {
   const sel = $('#studioOpenSel'); if (!sel) return;
-  try { sel.value = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+  try { sel.value = localStorage.getItem('ms_studio_open') || 'same'; } catch {}
   sel.onchange = () => { try { localStorage.setItem('ms_studio_open', sel.value); } catch {} };
 })();
 // Version 3 has no OBS connection. These stay as empty helpers so older code paths are harmless.
@@ -1036,7 +1036,7 @@ let crPrev = '';
 const pageTabs = document.querySelectorAll('#pageTabs button');
 function showPage(p) {
   if (p === 'studio') {
-    let m = 'window'; try { m = localStorage.getItem('ms_studio_open') || 'window'; } catch {}
+    let m = 'same'; try { m = localStorage.getItem('ms_studio_open') || 'same'; } catch {}
     if (window.msNative) window.msNative.openStudio(m === 'same'); else window.open('/studio.html', m === 'same' ? '_self' : '_blank');
     return;
   }

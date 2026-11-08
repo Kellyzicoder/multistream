@@ -124,6 +124,8 @@ handleIpc('ms-open-studio', (e, same) => {
 });
 handleIpc('ms-open-dashboard', () => {
   if (!win || win.isDestroyed()) return;
+  // the Studio has its own window: only bring the Stream page to the front (reloading would close the Studio's web pages)
+  if (studioWin && !studioWin.isDestroyed()) { win.show(); win.focus(); return; }
   browsers.forEach((b) => b.destroy()); browsers.clear();
   win.webContents.setBackgroundThrottling(true);
   win.loadURL(HOME + '/');
