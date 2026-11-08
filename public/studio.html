@@ -68,6 +68,9 @@
   html, body { height:100%; }
   body { display:flex; flex-direction:column; overflow:hidden; font-size:13px; }
   .obs { display:flex; flex-direction:column; height:100vh; }
+  .pagetabs { display:flex; gap:6px; padding:2px 0 0; flex:none; }
+  .pagetabs button { padding:4px 14px; border-radius:999px; background:var(--btn); font-size:12px; }
+  .pagetabs button[aria-pressed="true"] { background:var(--sel); color:var(--onsel); }
   .stage { flex:1; min-height:0; display:flex; align-items:center; gap:10px; padding:10px; }
   .screen { flex:1; min-width:0; display:flex; flex-direction:column; height:100%; justify-content:center; }
   .screen .cap { text-align:center; font-size:12px; color:var(--muted); margin-bottom:4px; }
@@ -264,6 +267,7 @@
 <body>
 <div class="alertbar" id="alertBar" role="alert"><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 <div class="obs">
+  <nav class="pagetabs" aria-label="Pages"><button type="button" id="tabStream" title="Go to the Stream page">Stream</button><button type="button" aria-pressed="true" title="You are here">Studio</button><button type="button" id="tabCr" title="Open the Control Room">Control Room</button></nav>
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
   <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside><div class="split v" id="splitL" title="Drag to make the left panels wider or narrower" hidden></div>
   <div class="stage">
@@ -1430,6 +1434,8 @@ function stopSend() {
   setProgramSize(1280, 720); setFps(30); lockOut();
   $('#sendBtn').textContent = 'Start Streaming'; $('#sendBtn').className = ''; liveT0 = 0;
 }
+$('#tabStream').onclick = () => { if (window.msNative) window.msNative.openDashboard(); else location.href = '/'; };
+$('#tabCr').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else location.href = '/#control-room'; };
 $('#sendBtn').onclick = () => { if (wantSend) { if (askStop && !confirm('Stop streaming now?')) return; stopSend(); } else startSend(); };
 
 // ---------------- status bar clocks (LIVE and REC), like OBS ----------------
