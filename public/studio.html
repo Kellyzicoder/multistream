@@ -2667,6 +2667,22 @@ window.msStart = async (usePlan) => {
   ensureAudio(); startSend(); return true;
 };
 window.msStop = () => { if (wantSend) stopSend(); if (recWs) endRec(false); };
+// true when the scene on air shows something real (a colour, words, or a camera, screen, picture or video that is coming through)
+function layerShows(l) {
+  if (l.visible === false && l.type !== 'lower') return false;
+  try {
+    if (['color', 'text', 'lower', 'timer', 'clock'].includes(l.type)) return true;
+    if (l.type === 'image') { const i = getImg(fileUrl(l)); return Boolean(i.complete && i.naturalWidth); }
+    if (l.type === 'video') { const v = getVid(l); return !v.bad && v.el.readyState >= 2 && Boolean(v.el.videoWidth); }
+    if (l.type === 'camera') return Boolean(getCam(l).ready);
+    if (l.type === 'screen' || l.type === 'window') return Boolean(getCapture(l).ready);
+    if (l.type === 'browser') return Boolean(window.msNative && getBoard(l).ready);
+    if (l.type === 'ipcam') { const i = getIpcam(l); return Boolean(i.complete && i.naturalWidth); }
+    if (l.type === 'duo') return true;
+  } catch {}
+  return false;
+}
+window.msHasPicture = () => { const s = byName(studio.current); return Boolean(s && s.layers.some(layerShows)); };
 window.msState = () => ({ sending: wantSend, recording: Boolean(recWs), scene: studio.current, collection: ($('#pColl b') || {}).textContent || '', shape: SHAPE_OF(), quality: OUT.h + 'p', fps: OUT.fps });
 async function maybeAutoStart() {
   let plan; try { plan = await fetch('/api/autostart').then((r) => r.json()); } catch { return; }
