@@ -1242,6 +1242,9 @@ function renderTest() {
   $('#tmBox').classList.toggle('pub', !t);
   $('#tmState').textContent = t ? 'Only you can see it. Turn this off for the real service.' : 'OFF: everyone can watch when you go live.';
 }
+// Private test is shared with the Studio (its Start Streaming goes live too)
+try { $('#fbTest').checked = localStorage.getItem('ms_private') !== '0'; } catch {}
+$('#fbTest').addEventListener('change', () => { try { localStorage.setItem('ms_private', $('#fbTest').checked ? '1' : '0'); } catch {} });
 $('#fbTest').addEventListener('change', renderTest);
 renderTest();
 

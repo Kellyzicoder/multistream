@@ -305,6 +305,7 @@
     <section class="dock narrow"><h2>Controls</h2>
       <div class="pad ctl">
         <button id="sendBtn">Start Streaming</button>
+        <label class="chk" id="privBox" title="On: YouTube and Facebook lives are private (only you can see them). Off: everyone can watch."><input type="checkbox" id="privTest"> Private test</label>
         <button id="recBtn">Start Recording</button>
         <button id="vcBtn" hidden>Start Virtual Camera</button>
         <button id="modeBtn" type="button" aria-pressed="true" title="On: a Preview and a Program picture, and a Transition button (like OBS Studio Mode). Off: only the live picture, and a click on a scene puts it on air.">Studio Mode</button>
@@ -1433,7 +1434,45 @@ function stopSend() {
 }
 $('#tabStream').onclick = () => { if (!$('#backBtn').hidden) { $('#backBtn').click(); return; } if (window.msNative) window.msNative.openDashboard(); else location.href = '/'; };
 $('#tabCr').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else location.href = '/#control-room'; };
-$('#sendBtn').onclick = () => { if (wantSend) { if (askStop && !confirm('Stop streaming now?')) return; stopSend(); } else startSend(); };
+// Start Streaming also goes live on YouTube and Facebook (the ones that are set up), like Go live on the Stream page.
+// Stop Streaming ends those lives. Private test (on by default) makes them private.
+const privOn = () => { try { return localStorage.getItem('ms_private') !== '0'; } catch { return true; } };
+$('#privTest').checked = privOn();
+$('#privTest').onchange = () => { try { localStorage.setItem('ms_private', $('#privTest').checked ? '1' : '0'); } catch {} };
+const liveApi = (path, method, body) => fetch(path, { method: method || 'GET', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then((r) => r.json()).catch(() => ({ error: 'The app did not answer' }));
+async function liveSites() {
+  const [y, f] = await Promise.all([liveApi('/api/youtube'), liveApi('/api/facebook')]);
+  const s = []; if (y && y.connected) s.push(['youtube', 'YouTube']); if (f && f.pageId && f.hasToken) s.push(['facebook', 'Facebook']);
+  return s;
+}
+async function goLiveAll(sites, test) {
+  // Go live needs the video to reach the app first: wait for it (up to 30 seconds)
+  for (let i = 0; i < 30 && wantSend; i++) {
+    const st = await liveApi('/api/state');
+    if (st && st.obsLive) {
+      for (const [k, name] of sites) {
+        if (!wantSend) return;
+        if (st.session && st.session[k]) continue; // already live there
+        const r = await liveApi('/api/' + k + '/live', 'POST', { test });
+        flash(r.error ? name + ': ' + r.error : 'Live on ' + name + (test ? ' (private test)' : ''), !r.error);
+      }
+      return;
+    }
+    await new Promise((ok) => setTimeout(ok, 1000));
+  }
+  if (wantSend) flash('Go live on ' + sites.map((x) => x[1]).join(' and ') + ' did not start: the video did not reach the app', false);
+}
+async function endLiveAll() {
+  const st = await liveApi('/api/state');
+  for (const k of ['youtube', 'facebook']) if (st && st.session && st.session[k]) { const r = await liveApi('/api/' + k + '/end', 'POST'); if (r.error) flash(r.error, false); }
+}
+$('#sendBtn').onclick = async () => {
+  if (wantSend) { if (askStop && !confirm('Stop streaming now? The YouTube and Facebook lives end too.')) return; stopSend(); endLiveAll(); return; }
+  const sites = await liveSites(), test = privOn();
+  if (sites.length && !test && !confirm('Private test is off. Start Streaming goes live publicly on ' + sites.map((x) => x[1]).join(' and ') + '. Continue?')) return;
+  startSend();
+  if (sites.length) goLiveAll(sites, test);
+};
 
 // ---------------- status bar clocks (LIVE and REC), like OBS ----------------
 let liveT0 = 0;
