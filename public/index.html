@@ -1131,7 +1131,7 @@ async function pollCr() {
   } catch {}
   crBusy = false;
 }
-setInterval(pollCr, 400);
+setInterval(pollCr, 200); // 5 pictures a second
 if (location.hash === '#control-room') setTimeout(() => showPage('cr'), 0);
 window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' ? 'cr' : 'dash'));
 
