@@ -104,6 +104,21 @@ function createWindow() {
   });
   win.webContents.on('did-fail-load', (e, code, desc, url) => console.error('Page failed to load:', code, desc, url));
   win.loadURL(HOME + '/').catch((e) => console.error('Dashboard did not load:', e && e.message));
+  // the Analytics page shows your own live dashboard website inside it: some sites say "do not show me inside
+  // another page", so that rule is removed for pages shown inside the app's own pages (not for whole windows)
+  if (!win.webContents.session.__msFrames) {
+    win.webContents.session.__msFrames = true;
+    win.webContents.session.webRequest.onHeadersReceived({ urls: ['https://*/*'] }, (d, cb) => {
+      const top = d.webContents && !d.webContents.isDestroyed() ? d.webContents.getURL() : '';
+      if (d.resourceType !== 'subFrame' || !isAppUrl(top)) return cb({});
+      const h = { ...d.responseHeaders };
+      for (const k of Object.keys(h)) {
+        if (k.toLowerCase() === 'x-frame-options') delete h[k];
+        else if (k.toLowerCase() === 'content-security-policy') h[k] = h[k].map((v) => v.replace(/frame-ancestors[^;]*;?/gi, ''));
+      }
+      cb({ responseHeaders: h });
+    });
+  }
   // links that leave the dashboard open in the normal browser
   win.webContents.setWindowOpenHandler(({ url }) => {
     const p = projectorOptions(url); if (p) return p;

@@ -178,12 +178,9 @@
   .gh-ch .hl-st { min-width:70px; text-align:right; }
   .app.tall .pv-box { aspect-ratio:9/16; width:min(100%, calc((100vh - 560px) * 9 / 16)); min-width:200px; }
   .pv-ig { display:flex; flex-wrap:wrap; justify-content:center; gap:10px 36px; padding:14px 0 4px; text-align:center; } .pv-ig p { flex-basis:100%; } .pv-ig[hidden] { display:none; } .pv-ig small { display:block; font-size:12px; color:var(--muted); } .pv-ig b { font-size:18px; } .pv-ig p { margin:6px 0 0; font-size:13px; color:var(--muted); line-height:1.5; }
-  /* ---------- Analytics ---------- */
-  #anPick { padding:8px 12px; border-radius:10px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:13.5px; font-weight:600; }
-  .an-pl { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px; }
-  .an-p { padding:14px 16px; } .an-p h4 { margin:0 0 10px; font-size:14px; display:flex; align-items:center; gap:8px; } .an-p h4 i { width:10px; height:10px; border-radius:3px; }
-  .an-p dl { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0; } .an-p dt { font-size:11.5px; color:var(--muted); } .an-p dd { margin:2px 0 0; font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; }
-  .an-n { margin:0; font-size:12px; color:var(--muted); } .an-empty { padding:28px; text-align:center; color:var(--muted); font-size:13px; }
+  /* ---------- Analytics (your live dashboard) ---------- */
+  .an-fr { flex:1; min-height:calc(100vh - 170px); padding:0; overflow:hidden; display:flex; } .an-fr iframe { flex:1; width:100%; border:0; background:var(--card); border-radius:inherit; }
+  .an-empty { margin:auto; padding:28px; text-align:center; color:var(--muted); font-size:13px; }
   /* ---------- Help ---------- */
   .hp-q { padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:14px; max-width:520px; }
   .hp-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(380px, 1fr)); gap:12px; align-items:start; }
@@ -881,11 +878,8 @@
   </div>
 </section>
 <section class="xpage an" id="statsView" hidden aria-label="Analytics">
-  <div class="rc-top"><select id="anPick" aria-label="Which live"></select><span class="rc-where" id="anWhen"></span><span class="sp"></span><button type="button" class="ghost" id="anRef">Update numbers</button></div>
-  <div class="hl-cards" id="anCards"></div>
-  <div class="card hl-chart"><div class="hl-h">Viewers during the live <span class="segc" id="anTabs"><button type="button" data-v="all" class="on">All</button><button type="button" data-v="yt">YouTube</button><button type="button" data-v="fb">Facebook</button></span></div><svg id="anSvg" viewBox="0 0 600 160" preserveAspectRatio="none" aria-hidden="true"></svg><div class="hl-ax" id="anAx"></div></div>
-  <div class="an-pl" id="anPl"></div>
-  <p class="an-n">Numbers come from YouTube and Facebook while you are live with Go live on this page, and are checked every minute. Watch time needs YouTube Studio. Zoom is not included.</p>
+  <div class="rc-top"><span class="rc-where" id="anAddr"></span><span class="sp"></span><button type="button" class="ghost" id="anReload">Reload</button><button type="button" class="ghost" id="anEdit">Change address</button><button type="button" class="ghost" id="anOpen">Open in browser</button></div>
+  <div class="card an-fr"><iframe id="anFrame" title="Live dashboard"></iframe><div class="an-empty" id="anNone" hidden>Add the address of your live dashboard with Change address.</div></div>
 </section>
 <div class="cr" id="crView" hidden>
   <div class="cr-bar">
@@ -1487,47 +1481,15 @@ const XPAGES = {};
   setInterval(tick, 2000);
   $('#ghMore').onclick = () => showPage('health');
 })();
-// Analytics: views, highest live viewers, comments and likes for each live; a chart of viewers during it
+// Analytics: your own live dashboard website, shown inside the app (the address can be changed)
 (() => {
-  let data = { list: [] }, pick = '', tab = 'all', t = null;
-  const COL = { yt: '#ff4d4d', fb: '#4f8cff', all: 'var(--blue)' };
-  const num = (n) => (n == null ? '–' : Number(n).toLocaleString());
-  const tm = (ts) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  const dur = (ms) => { const m = Math.round(ms / 60000); return m >= 60 ? Math.floor(m / 60) + ' h ' + (m % 60) + ' min' : m + ' min'; };
-  async function load() { try { data = await api('/api/analytics'); } catch { return; } draw(); }
-  function draw() {
-    const sel = $('#anPick'); const list = data.list || [];
-    if (!pick || !list.some((r) => r.id === pick)) pick = list.length ? list[0].id : '';
-    sel.textContent = ''; list.forEach((r) => sel.add(new Option(r.title + ' – ' + new Date(r.start).toLocaleDateString([], { day: 'numeric', month: 'short' }) + (r.end ? '' : ' (live now)'), r.id))); sel.value = pick;
-    const r = list.find((x) => x.id === pick), cards = $('#anCards'), pl = $('#anPl');
-    if (!r) { $('#anWhen').textContent = ''; cards.innerHTML = '<div class="card an-empty" style="grid-column:1/-1">No lives yet. Numbers show here after you go live on YouTube or Facebook with the Go live buttons.</div>'; pl.textContent = ''; $('#anSvg').innerHTML = ''; $('#anAx').textContent = ''; return; }
-    $('#anWhen').textContent = tm(r.start) + ' – ' + (r.end ? tm(r.end) : 'now');
-    const sm = r.samples || [], tot = sm.map((x) => (x.yt || 0) + (x.fb || 0));
-    let pk = 0, pkAt = 0; tot.forEach((v, i) => { if (v >= pk) { pk = v; pkAt = sm[i].t; } });
-    const views = (r.yt ? r.yt.views || 0 : 0) + (r.fb ? r.fb.views || 0 : 0), chats = (r.yt ? Math.max(r.yt.chat || 0, r.yt.comments || 0) : 0) + (r.fb ? r.fb.chat || 0 : 0);
-    const card = (label, big, unit, sub) => '<div class="card hl-c"><small>' + label + '</small><b><span>' + big + '</span>' + (unit ? '<i>' + unit + '</i>' : '') + '</b><em>' + sub + '</em></div>';
-    cards.innerHTML = card('Total views', num(views), '', [r.yt && 'YouTube', r.fb && 'Facebook'].filter(Boolean).join(' + ') || '')
-      + card('Highest live viewers', num(pk), '', pkAt ? 'at ' + tm(pkAt) : '')
-      + card('Live for', dur((r.end || Date.now()) - r.start), '', '')
-      + card('Comments', num(chats), '', r.yt ? 'Likes ' + num(r.yt.likes) : '');
-    // chart
-    const key = tab, vals = sm.map((x) => key === 'yt' ? x.yt || 0 : key === 'fb' ? x.fb || 0 : (x.yt || 0) + (x.fb || 0));
-    const W = 600, H = 160, mx = Math.max(5, ...vals) * 1.15;
-    const pts = vals.map((v, i) => [vals.length > 1 ? (i / (vals.length - 1)) * W : 0, H - (v / mx) * H]);
-    const line = pts.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' ');
-    const col = COL[key];
-    $('#anSvg').innerHTML = [0.25, 0.5, 0.75].map((f) => '<line x1="0" x2="' + W + '" y1="' + H * f + '" y2="' + H * f + '" stroke="var(--line)" stroke-width="1"/>').join('') + (pts.length > 1 ? '<path d="' + line + ' L' + W + ' ' + H + ' L0 ' + H + 'Z" fill="' + col + '" fill-opacity=".14"/><path d="' + line + '" fill="none" stroke="' + col + '" stroke-width="2.2" vector-effect="non-scaling-stroke"/>' : '');
-    $('#anAx').innerHTML = sm.length > 1 ? [0, 0.25, 0.5, 0.75, 1].map((f) => '<span>' + tm(sm[Math.round(f * (sm.length - 1))].t) + '</span>').join('') : '<span>The chart fills in every minute while live</span>';
-    // each platform
-    pl.textContent = '';
-    const plat = (name, c, rows) => { const d = document.createElement('div'); d.className = 'card an-p'; d.innerHTML = '<h4><i style="background:' + c + '"></i></h4><dl></dl>'; d.querySelector('h4').append(name); rows.filter(([a]) => a).forEach(([a, b]) => { const w = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = a; dd.textContent = b; w.append(dt, dd); d.querySelector('dl').appendChild(w); }); pl.appendChild(d); };
-    if (r.yt) plat('YouTube', COL.yt, [['Views', num(r.yt.views)], ['Peak live', num(r.yt.peak)], ['Likes', num(r.yt.likes)], ['Comments', num(Math.max(r.yt.chat || 0, r.yt.comments || 0))]]);
-    if (r.fb) plat('Facebook', COL.fb, [['Views', r.fb.views ? num(r.fb.views) : '–'], ['Peak live', num(r.fb.peak)], ['Comments', num(r.fb.chat)], ['', '']]);
-  }
-  $('#anPick').onchange = () => { pick = $('#anPick').value; draw(); };
-  document.querySelectorAll('#anTabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.v; document.querySelectorAll('#anTabs button').forEach((x) => x.classList.toggle('on', x === b)); draw(); }; });
-  $('#anRef').onclick = async () => { if (!pick) return; $('#anRef').textContent = 'Updating...'; const r = await api('/api/analytics/refresh', 'POST', { id: pick }).catch(() => ({})); $('#anRef').textContent = 'Update numbers'; if (r && r.error) alert(r.error); load(); };
-  XPAGES.stats = { title: 'Analytics', el: 'statsView', open() { load(); t = setInterval(load, 30000); }, close() { clearInterval(t); t = null; } };
+  const DEF = 'https://live.fcchq.workers.dev';
+  const get = () => { try { const v = localStorage.getItem('ms_dash_url'); return v == null ? DEF : v; } catch { return DEF; } };
+  const show = () => { const u = get(); $('#anAddr').textContent = u ? 'Live dashboard: ' + u.replace(/^https?:\/\//, '') : 'No dashboard yet'; $('#anNone').hidden = Boolean(u); $('#anFrame').hidden = !u; if (u && $('#anFrame').dataset.src !== u) { $('#anFrame').dataset.src = u; $('#anFrame').src = u; } };
+  $('#anReload').onclick = () => { const f = $('#anFrame'); if (f.dataset.src) f.src = f.dataset.src; };
+  $('#anOpen').onclick = () => { const u = get(); if (u) window.open(u, '_blank'); };
+  $('#anEdit').onclick = () => { const v = prompt('Address of your live dashboard (leave empty to remove it):', get()); if (v == null) return; let u = v.trim(); if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u; if (u && !/^https:\/\//i.test(u)) { alert('The address must start with https://'); return; } try { localStorage.setItem('ms_dash_url', u); } catch {} show(); };
+  XPAGES.stats = { title: 'Analytics', el: 'statsView', open() { show(); }, close() {} };
 })();
 // Help: start here, fixing problems, keys; the search box hides what does not match
 (() => {
