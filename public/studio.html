@@ -6,7 +6,7 @@
 <title>Multistream Studio</title>
 <style>
   /* same colours as the dashboard (and its light theme and accent colour from Settings, Appearance) */
-  :root { color-scheme:dark; --bg:#07090b; --card:#0c1013; --head:#131a20; --line:#1b242b; --text:#e8eef1; --muted:#7a8890; --green:#34d27b; --red:#ff4d5a; --field:#090c0f; --sel:#22c55e; --onsel:#04130a; --btn:#141b21; --btn2:#1b252c; --hover:#2a363f; }
+  :root { color-scheme:dark; --bg:#0a0e1f; --card:#10152e; --head:#151b38; --line:#222a4a; --text:#eef1f8; --muted:#a3abc4; --green:#34d27b; --red:#ff4d5a; --field:#0b1026; --sel:#3b6cff; --onsel:#ffffff; --btn:#161c38; --btn2:#1d2546; --hover:#2c3560; }
   html.t-light { color-scheme:light; --bg:#f2f5f4; --card:#fff; --head:#eef2f0; --line:#d9e0dc; --text:#13201a; --muted:#5b6b64; --green:#15803d; --red:#d6333b; --field:#f7f9f8; --btn:#e8eeea; --btn2:#dce5df; --hover:#c6d2cb; }
   * { box-sizing:border-box; }
   [hidden] { display:none !important; }
@@ -138,12 +138,12 @@
   @media (max-width:1000px) { .docks { height:auto; flex-wrap:wrap; overflow:auto; } .dock { min-height:180px; } body { overflow:auto; } .obs { height:auto; } }
   input[type=range], input[type=checkbox] { accent-color:var(--sel); }
   /* ---------- Liquid Glass: rounded, frosted, translucent (turned off by Settings > Appearance > High contrast or reduced transparency) ---------- */
-  :root { --gl:rgba(18,26,32,.52); --gl2:rgba(30,42,50,.46); --gl-line:rgba(255,255,255,.14); --gl-hi:rgba(255,255,255,.22); --gl-sh:0 10px 34px rgba(0,0,0,.38); --gl-blur:blur(26px) saturate(180%); --r:18px; }
+  :root { --gl:rgba(18,24,52,.52); --gl2:rgba(32,40,78,.44); --gl-line:rgba(255,255,255,.14); --gl-hi:rgba(255,255,255,.22); --gl-sh:0 10px 34px rgba(0,0,0,.38); --gl-blur:blur(26px) saturate(180%); --r:18px; }
   html.t-light { --gl:rgba(255,255,255,.58); --gl2:rgba(255,255,255,.5); --gl-line:rgba(255,255,255,.75); --gl-hi:rgba(255,255,255,.95); --gl-sh:0 10px 30px rgba(40,70,60,.16); }
   body { background:
     radial-gradient(900px 520px at 90% -10%, color-mix(in srgb, var(--sel) 26%, transparent), transparent 62%),
     radial-gradient(760px 480px at -8% 108%, color-mix(in srgb, var(--sel) 18%, transparent), transparent 62%),
-    radial-gradient(520px 360px at 50% 40%, rgba(90,120,255,.10), transparent 70%), var(--bg); background-attachment:fixed; }
+    radial-gradient(520px 360px at 30% 85%, rgba(168,85,247,.14), transparent 70%), radial-gradient(420px 360px at 95% 90%, rgba(20,184,166,.12), transparent 70%), var(--bg); background-attachment:fixed; }
   .obs { padding:8px; gap:8px; }
   .stage { padding:4px; }
   .docks { padding:0; gap:8px; }
@@ -495,7 +495,7 @@
   const lum = (h) => { const n = parseInt(h.slice(1), 16); const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
   function apply() {
     let a = {}; try { a = JSON.parse(localStorage.getItem('ms_access') || '{}') || {}; } catch {}
-    const t = a.theme || 'system';
+    const t = a.theme || 'dark';
     const light = t === 'light' || (t === 'system' && dark && !dark.matches);
     document.documentElement.classList.toggle('t-light', light);
     document.documentElement.classList.toggle('glass-off', Boolean(a.contrast));
@@ -675,7 +675,7 @@ function drawLower(c, l) {
   const e = 1 - Math.pow(1 - p, 3), w = l.w || 1000, h = l.h || 150, x = l.x - (1 - e) * (w + l.x + 40);
   c.globalAlpha = Math.min(1, p * 2);
   c.fillStyle = 'rgba(8,12,10,0.82)'; c.fillRect(x + 14, l.y, w - 14, h);
-  c.fillStyle = l.color || '#22c55e'; c.fillRect(x, l.y, 14, h);
+  c.fillStyle = l.color || '#3b6cff'; c.fillRect(x, l.y, 14, h);
   c.fillStyle = l.textColor || '#ffffff'; c.textBaseline = 'alphabetic';
   const big = Math.round(h * 0.38), small = Math.round(h * 0.24);
   c.font = `bold ${big}px system-ui, sans-serif`; c.fillText(l.title || '', x + 40, l.y + h * (l.sub ? 0.5 : 0.62), w - 70);
@@ -1459,7 +1459,7 @@ function renderProps() {
   }
   if (l.type === 'lower') {
     box.append(field('Big line', inp('title')), field('Small line', inp('sub')));
-    const bc = document.createElement('input'); bc.type = 'color'; bc.value = l.color || '#22c55e'; bc.oninput = () => { l.color = bc.value; save(); }; box.append(field('Bar colour', bc));
+    const bc = document.createElement('input'); bc.type = 'color'; bc.value = l.color || '#3b6cff'; bc.oninput = () => { l.color = bc.value; save(); }; box.append(field('Bar colour', bc));
     const tc = document.createElement('input'); tc.type = 'color'; tc.value = l.textColor || '#ffffff'; tc.oninput = () => { l.textColor = tc.value; save(); }; box.append(field('Text colour', tc));
     const sh = document.createElement('button'); sh.textContent = l.visible === false ? 'Show it (slides in)' : 'Hide it (slides out)'; sh.onclick = () => { l.visible = l.visible === false; save(); renderLayers(); }; box.append(sh);
   }
@@ -1551,7 +1551,7 @@ function newLayer(t) {
   if (t === 'color') l.color = '#0b3d1e';
   if (t === 'window') { l.display = ''; l.winName = ''; l.fit = 'fit'; }
   if (t === 'screen' || t === 'camera') l.fit = 'fit';
-  if (t === 'lower') Object.assign(l, { title: 'Name here', sub: 'Role or message', color: '#22c55e', textColor: '#ffffff', x: 100, y: 800, w: 1100, h: 170, fit: 'stretch' });
+  if (t === 'lower') Object.assign(l, { title: 'Name here', sub: 'Role or message', color: '#3b6cff', textColor: '#ffffff', x: 100, y: 800, w: 1100, h: 170, fit: 'stretch' });
   if (t === 'timer') Object.assign(l, { mode: 'duration', minutes: 10, at: '10:00', label: 'Service starts in', doneText: 'Starting now', size: 220, color: '#ffffff', x: 0, y: 330, w: SW, h: 420 });
   if (t === 'clock') Object.assign(l, { size: 120, color: '#ffffff', x: 0, y: 60, w: SW, h: 200, h24: false, secs: false, date: false });
   if (t === 'browser') { l.url = 'http://'; l.bw = SW; l.bh = SH; }
@@ -1766,12 +1766,12 @@ function stopSend() {
 }
 // Theme and main colour (the same setting as the Stream page: Settings, Appearance). White is one of the colours.
 (function () {
-  const COLS = ['#22c55e', '#14b8a6', '#3b9eff', '#6366f1', '#a78bfa', '#fb923c', '#eab308', '#ffffff'];
+  const COLS = ['#3b6cff', '#22c55e', '#14b8a6', '#6366f1', '#a78bfa', '#fb923c', '#eab308', '#ffffff'];
   const th = document.getElementById('lookTheme'), cols = document.getElementById('lookCols'); if (!th || !cols) return;
   const get = () => { try { return JSON.parse(localStorage.getItem('ms_access') || '{}') || {}; } catch { return {}; } };
-  const hex = document.createElement('input'); hex.type = 'text'; hex.maxLength = 7; hex.className = 'hexin'; hex.placeholder = '#22c55e'; hex.title = 'Any colour, for example #ff0080';
+  const hex = document.createElement('input'); hex.type = 'text'; hex.maxLength = 7; hex.className = 'hexin'; hex.placeholder = '#3b6cff'; hex.title = 'Any colour, for example #ff0080';
   const show = () => {
-    const a = get(); th.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((a.theme || 'system') === b.dataset.v)));
+    const a = get(); th.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((a.theme || 'dark') === b.dataset.v)));
     const cur = (a.accent || COLS[0]).toLowerCase(); cols.querySelectorAll('.sw').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === cur))); hex.value = cur;
   };
   const set = (k, v) => { const a = get(); a[k] = v; try { localStorage.setItem('ms_access', JSON.stringify(a)); } catch {} if (window.msApplyLook) window.msApplyLook(); show(); };
