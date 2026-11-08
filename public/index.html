@@ -153,6 +153,30 @@
   /* ---------- layout ---------- */
   .app { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:18px; padding:18px 22px 22px; height:calc(100% - 60px); min-height:560px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; }
+  /* ---------- Stream health ---------- */
+  .xpage { padding:4px 18px 24px; display:flex; flex-direction:column; gap:14px; animation:xpIn .2s ease-out; }
+  @keyframes xpIn { from { opacity:0; transform:translateY(6px); } }
+  .hl-top { display:flex; align-items:center; gap:12px; }
+  .hl-badge { padding:5px 12px; border-radius:999px; font-size:12.5px; font-weight:700; background:var(--card2); color:var(--muted); }
+  .hl-badge.good { background:rgba(52,211,153,.14); color:#4ade80; } .hl-badge.ok { background:rgba(250,204,21,.14); color:#facc15; } .hl-badge.bad { background:rgba(248,113,113,.15); color:#f87171; }
+  .hl-since { font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .hl-cards { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:12px; }
+  @media (max-width:900px) { .hl-cards { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  .hl-c { padding:14px 16px; display:flex; flex-direction:column; gap:4px; }
+  .hl-c small { font-size:12px; color:var(--muted); font-weight:600; }
+  .hl-c b { font-size:30px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.01em; } .hl-c b i { font-style:normal; font-size:13px; font-weight:600; color:var(--muted); margin-left:5px; }
+  .hl-c em { font-style:normal; font-size:12px; color:var(--muted); } .hl-c em.good { color:#4ade80; } .hl-c em.bad { color:#f87171; }
+  .hl-h { font-size:13px; font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:10px; }
+  .hl-k { margin-left:auto; font-size:11.5px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:6px; } .hl-k i { width:14px; height:3px; border-radius:2px; background:var(--blue); }
+  .hl-chart { padding:14px 16px; } .hl-chart svg { width:100%; height:160px; display:block; }
+  .hl-ax { display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); margin-top:4px; }
+  .hl-row { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr); gap:12px; } @media (max-width:1000px) { .hl-row { grid-template-columns:1fr; } }
+  .hl-tb, .hl-log { padding:14px 16px; }
+  .hl-tb table { width:100%; border-collapse:collapse; font-size:13px; } .hl-tb th { text-align:left; font-size:11.5px; color:var(--muted); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--line); }
+  .hl-tb td { padding:9px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; } .hl-tb tr:last-child td { border-bottom:0; }
+  .hl-st { font-weight:600; } .hl-st.live { color:#4ade80; } .hl-st.error { color:#f87171; } .hl-st.starting { color:#facc15; } .hl-st.off { color:var(--muted); }
+  .hl-log ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; max-height:280px; overflow:auto; }
+  .hl-log li { display:flex; gap:12px; font-size:13px; line-height:1.4; } .hl-log li time { flex:none; width:74px; white-space:nowrap; color:var(--muted); font-variant-numeric:tabular-nums; }
   .stage { position:relative; display:flex; justify-content:center; align-items:flex-start; padding:0 6px; overflow:auto; }
   .stage-in { width:100%; max-width:760px; text-align:center; }
   #offlineView { max-width:460px; margin:0 auto; text-align:center; }
@@ -563,6 +587,7 @@
     <button type="button" data-page="dash" aria-current="page" title="Go Live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg><span>Go Live</span></button>
     <button type="button" data-page="studio" title="Studio: scenes, cameras, sound, recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg><span>Studio</span></button>
     <button type="button" data-page="cr" title="Multiview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><span>Multiview</span></button>
+    <button type="button" data-page="health" title="Stream health"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>Stream health</span></button>
   </nav>
   <span class="snv-sp"></span>
   <button type="button" class="snv-b" id="setBtn" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
@@ -699,6 +724,20 @@
 </div>
 
 <!-- multiview -->
+<section class="xpage hl" id="healthView" hidden aria-label="Stream health">
+  <div class="hl-top"><span class="hl-badge" id="hlBadge">Not live</span><span class="hl-since" id="hlSince"></span></div>
+  <div class="hl-cards">
+    <div class="card hl-c"><small>Sending</small><b><span id="hlKbps">0</span><i>Mbit/s</i></b><em id="hlKbpsN">Not sending</em></div>
+    <div class="card hl-c"><small>Frame rate</small><b><span id="hlFps">–</span><i>fps</i></b><em id="hlFpsN"></em></div>
+    <div class="card hl-c"><small>Dropped frames</small><b><span id="hlDrop">0</span></b><em id="hlDropN"></em></div>
+    <div class="card hl-c"><small>Computer</small><b><span id="hlCpu">0</span><i>%</i></b><em id="hlCpuN"></em></div>
+  </div>
+  <div class="card hl-chart"><div class="hl-h">Sending speed over time <span class="hl-k"><i></i> Sending</span></div><svg id="hlSvg" viewBox="0 0 600 160" preserveAspectRatio="none" aria-hidden="true"></svg><div class="hl-ax" id="hlAx"></div></div>
+  <div class="hl-row">
+    <div class="card hl-tb"><div class="hl-h">Each channel</div><table><thead><tr><th>Channel</th><th>Status</th><th>Speed</th><th>Reconnects</th><th>Live for</th></tr></thead><tbody id="hlChans"></tbody></table></div>
+    <div class="card hl-log"><div class="hl-h">What happened</div><ul id="hlLog"></ul></div>
+  </div>
+</section>
 <div class="cr" id="crView" hidden>
   <div class="cr-bar">
     <h1>Multiview</h1>
@@ -1194,6 +1233,57 @@ function pollThumbs() {}
 let page = 'dash';
 let crPrev = '';
 const pageTabs = document.querySelectorAll('#pageTabs button');
+// ---------------- pages in the side menu (other than Go Live and Multiview) ----------------
+const XPAGES = {};
+// Stream health: how the stream is doing right now, updated every 2 seconds while the page is open
+(() => {
+  let t = null;
+  const fmtDur = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(x).padStart(2, '0'); };
+  const clock = (ts) => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const STATE = { live: 'Good', starting: 'Starting', error: 'Trouble', off: 'Off' };
+  async function tick() {
+    let h; try { h = await api('/api/health'); } catch { return; }
+    const mb = (k) => (k / 1000).toFixed(1);
+    const live = h.live && h.ok, bad = h.channels.some((c) => c.enabled && c.state === 'error'), dropPct = h.frames ? (h.drops / h.frames) * 100 : 0;
+    const badge = $('#hlBadge');
+    badge.className = 'hl-badge' + (!h.live ? '' : bad || !h.ok ? ' bad' : dropPct > 1 || h.cpu > 85 ? ' ok' : ' good');
+    badge.textContent = !h.live ? 'Not live' : bad || !h.ok ? '● Needs a look' : dropPct > 1 || h.cpu > 85 ? '● OK' : '● Excellent';
+    $('#hlSince').textContent = h.live && h.startedAt ? 'Live for ' + fmtDur(Date.now() - h.startedAt) : '';
+    $('#hlKbps').textContent = mb(h.kbps);
+    const hist = h.history || [], avg = hist.length ? hist.reduce((a, b) => a + b, 0) / hist.length : 0, vary = avg ? Math.max(...hist.map((k) => Math.abs(k - avg))) / avg : 0;
+    const kn = $('#hlKbpsN'); kn.textContent = !live ? 'Not sending' : vary < 0.35 ? 'Steady' : 'Going up and down'; kn.className = live && vary < 0.35 ? 'good' : '';
+    $('#hlFps').textContent = h.fps ? Math.round(h.fps) : '–';
+    $('#hlFpsN').textContent = h.size ? h.size : '';
+    $('#hlDrop').textContent = h.drops.toLocaleString();
+    const dn = $('#hlDropN'); dn.textContent = h.frames ? dropPct.toFixed(1) + '% of ' + h.frames.toLocaleString() : 'None yet'; dn.className = dropPct > 1 ? 'bad' : '';
+    $('#hlCpu').textContent = h.cpu;
+    const cn = $('#hlCpuN'); cn.textContent = 'Memory ' + h.memory + '%' + (h.cpu > 85 ? ' · very busy' : ''); cn.className = h.cpu > 85 ? 'bad' : '';
+    // chart: the last 90 seconds
+    const W = 600, H = 160, max = Math.max(1000, ...hist) * 1.15;
+    const pts = hist.map((k, i) => [hist.length > 1 ? (i / (hist.length - 1)) * W : 0, H - (k / max) * H]);
+    const line = pts.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' ');
+    $('#hlSvg').innerHTML = '<defs><linearGradient id="hlG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--blue)" stop-opacity=".35"/><stop offset="1" stop-color="var(--blue)" stop-opacity="0"/></linearGradient></defs>'
+      + [0.25, 0.5, 0.75].map((f) => '<line x1="0" x2="' + W + '" y1="' + H * f + '" y2="' + H * f + '" stroke="var(--line)" stroke-width="1"/>').join('')
+      + (pts.length > 1 ? '<path d="' + line + ' L' + W + ' ' + H + ' L0 ' + H + 'Z" fill="url(#hlG)"/><path d="' + line + '" fill="none" stroke="var(--blue)" stroke-width="2.2" vector-effect="non-scaling-stroke"/>' : '');
+    $('#hlAx').innerHTML = hist.length > 1 ? '<span>' + hist.length + ' seconds ago</span><span>now</span>' : '<span>The chart starts when you go live</span>';
+    // channels
+    const tb = $('#hlChans'); tb.textContent = '';
+    h.channels.forEach((c) => {
+      const tr = document.createElement('tr');
+      const st = c.enabled ? c.state : 'off';
+      const cells = [c.name, (st === 'off' ? '' : '● ') + (STATE[st] || st), c.kbps ? mb(c.kbps) + ' Mbit/s' : '–', st === 'off' ? '–' : String(c.reconnects), c.liveSince && st === 'live' ? fmtDur(Date.now() - c.liveSince) : '–'];
+      cells.forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i === 1) { td.className = 'hl-st ' + st; if (c.message) td.title = c.message; } tr.appendChild(td); });
+      tb.appendChild(tr);
+    });
+    if (!h.channels.length) tb.innerHTML = '<tr><td colspan="5">No channels yet. Add one on the Go Live page.</td></tr>';
+    // what happened
+    const ul = $('#hlLog'); ul.textContent = '';
+    if (h.live && !bad) { const li = document.createElement('li'); li.innerHTML = '<time></time><span></span>'; li.firstChild.textContent = clock(Date.now()); li.lastChild.textContent = 'All good. Nothing to do.'; ul.appendChild(li); }
+    h.log.forEach((e) => { const li = document.createElement('li'); li.innerHTML = '<time></time><span></span>'; li.firstChild.textContent = clock(e.t); li.lastChild.textContent = e.text; ul.appendChild(li); });
+    if (!ul.children.length) ul.innerHTML = '<li><span>Nothing yet. Things that happen while you are live show here.</span></li>';
+  }
+  XPAGES.health = { title: 'Stream health', el: 'healthView', open() { if (!t) { tick(); t = setInterval(tick, 2000); } }, close() { clearInterval(t); t = null; } };
+})();
 function showPage(p) {
   if (p === 'studio') {
     // the Studio always opens in this window (only the Multiview gets its own window). ms_studio_window is for the automatic test only.
@@ -1201,12 +1291,14 @@ function showPage(p) {
     if (window.msNative) window.msNative.openStudio(m === 'same'); else window.open('/studio.html', m === 'same' ? '_self' : '_blank');
     return;
   }
-  page = p === 'cr' ? 'cr' : 'dash';
-  $('#pageTitle').textContent = page === 'cr' ? 'Multiview' : 'Go Live';
-  $('.app').hidden = page === 'cr';
+  page = XPAGES[p] || p === 'cr' ? p : 'dash';
+  $('#pageTitle').textContent = page === 'cr' ? 'Multiview' : XPAGES[page] ? XPAGES[page].title : 'Go Live';
+  $('.app').hidden = page !== 'dash';
   $('#crView').hidden = page !== 'cr';
+  document.querySelectorAll('.xpage').forEach((x) => { x.hidden = !(XPAGES[page] && x.id === XPAGES[page].el); });
+  Object.entries(XPAGES).forEach(([k, v]) => { if (k === page) v.open(); else v.close(); });
   pageTabs.forEach((b) => { if (b.dataset.page === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-  try { history.replaceState(null, '', page === 'cr' ? '#control-room' : location.pathname + location.search); } catch {}
+  try { history.replaceState(null, '', page === 'cr' ? '#control-room' : XPAGES[page] ? '#' + page : location.pathname + location.search); } catch {}
   renderCr();
   pollThumbs();
   syncPreview();
@@ -1311,7 +1403,8 @@ async function pollCr() {
 }
 setInterval(pollCr, 200); // 5 pictures a second
 if (location.hash === '#control-room') setTimeout(() => showPage('cr'), 0);
-window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' ? 'cr' : 'dash'));
+window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' ? 'cr' : XPAGES[location.hash.slice(1)] ? location.hash.slice(1) : 'dash'));
+if (XPAGES[location.hash.slice(1)]) setTimeout(() => showPage(location.hash.slice(1)), 0);
 
 // Appearance and accessibility: saved in this browser only
 const SWATCHES = ['#3b6cff', '#22c55e', '#14b8a6', '#6366f1', '#a78bfa', '#fb923c', '#eab308', '#ffffff'];
