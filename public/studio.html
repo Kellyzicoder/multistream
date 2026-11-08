@@ -1606,12 +1606,12 @@ function vcOff(msg) {
 }
 $('#vcBtn').onclick = async () => {
   if (vcWs) { vcOff(); $('#st').textContent = 'Virtual camera is off.'; $('#st').className = 'stat'; return; }
-  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok3') === '1'; } catch {}
+  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok4') === '1'; } catch {}
   if (!ok) {
-    if (!confirm('Windows will ask for permission one time, to add the camera called Multistream Camera (it replaces the old DirectShow Softcam name). Continue?')) return;
+    if (!confirm('Windows will ask for permission one time, to add the camera called Multistream Camera (it replaces the old DirectShow Softcam name). Quit Zoom fully first (also from the icons next to the clock). Continue?')) return;
     const r = await fetch('/api/vcam/install', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then((x) => x.json()).catch(() => ({ error: 'Could not reach the app' }));
     if (r.error) { $('#st').textContent = 'Virtual camera setup: ' + r.error; $('#st').className = 'stat bad'; return; }
-    try { localStorage.setItem('ms_vcam_ok3', '1'); } catch {}
+    try { localStorage.setItem('ms_vcam_ok4', '1'); } catch {}
   }
   const ws = vcWs = openPipe('/studio-vcam');
   ws.binaryType = 'arraybuffer';
