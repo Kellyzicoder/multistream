@@ -811,6 +811,12 @@ const SHAPE_OF = () => (SH > SW ? 'portrait' : SH === SW ? 'square' : 'landscape
 const outSize = (h) => (SH > SW ? [h, outW(h)] : SH === SW ? [h, h] : [outW(h), h]);
 const $ = (s) => document.querySelector(s);
 const cv = $('#cv'), ctx = cv.getContext('2d'), ev = $('#ev'), ectx = ev.getContext('2d');
+// Nobody is looking at the Studio's own screen: the window is minimised, or (inside the app window) another page is open.
+// Then only the picture that goes out is made; the Studio's screen (edit preview, meters) is not drawn, like OBS when minimised.
+const uiHidden = () => {
+  if (document.hidden) return true;
+  try { const f = window.frameElement, box = f && f.closest('.stv'); return Boolean(box && (box.hidden || box.classList.contains('bg'))); } catch { return false; }
+};
 // the scene collection's shape: wide (16:9), tall (9:16) or square (1:1)
 let collNames = [];
 async function showColl() {
@@ -901,6 +907,10 @@ setInterval(() => {
   caps.forEach((c, k) => { if (usedCap.has(k)) { c.unusedAt = 0; return; } if (later(c)) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(k); } });
   boards.forEach((b, k) => { if (usedBoard.has(k)) { b.unusedAt = 0; return; } if (later(b)) { if (window.msNative) window.msNative.browserClose(k); boards.delete(k); } });
   ipcams.forEach((i, k) => { if (usedIp.has(k)) { i.unusedAt = 0; return; } if (later(i)) { i.src = ''; ipcams.delete(k); } });
+  // videos of items that were removed from every scene (and finished Auto start videos) are closed
+  const usedVid = new Set(); if (autoVid) usedVid.add(autoVid.id);
+  allLayers().forEach((l) => { if (l.type === 'video') usedVid.add(l.id); if (l.bg && l.bg.kind === 'video') usedVid.add(bgKey(l)); });
+  vids.forEach((v, k) => { if (usedVid.has(k)) { v.unusedAt = 0; return; } if (later(v)) dropVid(k); });
 }, 1000);
 // Screens and windows. Asking the app one at a time, because each ask names what it wants.
 let capQ = Promise.resolve();
@@ -924,14 +934,23 @@ function getCapture(l) {
 const vids = new Map();   // layer id -> { el, gain, active }
 const vgate = {};         // layer id -> gain node
 function getVid(l) {
-  let c = vids.get(l.id); if (c) return c;
+  let c = vids.get(l.id);
+  if (c && c.src === fileUrl(l)) return c;
+  if (c) dropVid(l.id); // the item now plays another file: the old one is let go
+
   if (!actx) ensureAudio();
   const el = document.createElement('video');
   el.preload = 'metadata'; el.loop = l.loop !== false; el.playsInline = true; el.src = fileUrl(l);
   el.onerror = () => { c.bad = true; };
-  c = { el, active: false, bad: false }; vids.set(l.id, c);
+  c = { el, active: false, bad: false, id: l.id, src: fileUrl(l) }; vids.set(l.id, c);
   if (actx) { const g = actx.createGain(); g.gain.value = 0; try { actx.createMediaElementSource(el).connect(g); g.connect(master); c.gain = g; } catch {} }
   return c;
+}
+// a video player nobody needs any more gives back its memory (the file is closed)
+function dropVid(id) {
+  const c = vids.get(id); if (!c) return; vids.delete(id);
+  try { c.el.pause(); c.el.removeAttribute('src'); c.el.load(); } catch {}
+  try { c.gain && c.gain.disconnect(); } catch {}
 }
 const boards = new Map();  // browser sources: id -> canvas the desktop app draws into
 const boardKey = (l) => l.url + '|' + (l.bw || SW) + 'x' + (l.bh || SH);
@@ -1706,7 +1725,7 @@ let meterT = performance.now();
 function drawMeters(now) {
   requestAnimationFrame(drawMeters);
   const dt = Math.min(0.2, (now - meterT) / 1000); meterT = now;
-  if (document.hidden) return;
+  if (uiHidden()) return;
   document.querySelectorAll('#audio .au[data-id]').forEach((d) => {
     const bars = d.querySelectorAll('.mt'); if (!bars.length) return;
     const n = asrc.get(d.dataset.id);
@@ -2767,6 +2786,8 @@ function layerShows(l) {
 }
 phColors();
 window.msHasPicture = () => { const s = byName(studio.current); return Boolean(s && s.layers.some(layerShows)); };
+// the Multiview page in the same window reads the scenes from here (no asking the app for them 5 times a second)
+window.msScenes = () => ({ scenes: studio.scenes.map((s) => s.name), current: studio.current, shape: SHAPE_OF(), collection: ($('#pColl b') || {}).textContent || '' });
 window.msState = () => ({ sending: wantSend, recording: Boolean(recWs), scene: studio.current, collection: ($('#pColl b') || {}).textContent || '', shape: SHAPE_OF(), quality: OUT.h + 'p', fps: OUT.fps });
 async function maybeAutoStart() {
   let plan; try { plan = await fetch('/api/autostart').then((r) => r.json()); } catch { return; }
@@ -3105,6 +3126,7 @@ function drawSelection() {
 // When you edit the scene that is on air, the finished Program picture is copied (one quick copy)
 // instead of drawing every item of the scene a second time.
 setInterval(() => {
+  if (uiHidden()) return;
   const s = byName(editing);
   if (s && editing === shown && !trans && cv.width >= ev.width) { ectx.save(); ectx.setTransform(1, 0, 0, 1, 0, 0); ectx.drawImage(cv, 0, 0, ev.width, ev.height); ectx.restore(); }
   else drawScene(ectx, s, ev.width / SW, false);

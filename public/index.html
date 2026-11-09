@@ -831,6 +831,7 @@
   .mv2 .mvt.prog, .mv2 .mvt.on { border-color:#ff4d5a; }
   .mv2 .mvt.empty { background:rgba(10,14,31,.5); border-style:dashed; box-shadow:none; }
   .mv2 .mvt img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; } .mv2 .mvt img:not([src]) { visibility:hidden; }
+  .mv2 .mvt canvas.mvc { position:absolute; inset:0; width:100%; height:100%; display:block; } .mv2:not(.direct) .mvt canvas.mvc, .mv2.direct .mvt img { display:none; }
   .mv2 .mvt .lb { position:absolute; left:8px; right:8px; bottom:8px; padding:7px 11px; border-radius:10px; font-size:14px; font-weight:600; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.14); display:flex; align-items:center; gap:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .mv2 .mvt .lb small { margin-left:auto; color:#cdd3e4; font-weight:500; font-size:12px; }
   .mv2 .mvt .nb { position:absolute; left:10px; top:10px; z-index:1; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.16); }
@@ -2500,8 +2501,40 @@ function renderCr() {
   fitCrTiles();
 }
 let crBusy = false;
+// In the app window the Studio runs right here, so the Multiview copies its pictures straight across
+// (like OBS): no pictures turned into files and passed back and forth 5 times a second. Much less work, and a smoother Program.
+// The separate Multiview window (another screen) still gets the pictures from the app.
+function crStudio() {
+  if (location.hash === '#control-room') return null;
+  try { const f = document.querySelector('#studioView iframe'), w = f && f.contentWindow; return w && w.msScenes && w.drawFit && w.copyFit && w.byName && w.document.getElementById('cv') ? w : null; } catch { return null; }
+}
+const crCanvas = (box) => { let c = box.querySelector('canvas.mvc'); if (!c) { c = document.createElement('canvas'); c.className = 'mvc'; box.prepend(c); } return c; };
+const crSize = (big) => { const k = big ? 2 : 1; return stu.shape === 'portrait' ? [270 * k, 480 * k] : stu.shape === 'square' ? [360 * k, 360 * k] : [480 * k, 270 * k]; };
+let crKey = '', crKeyAt = 0, crThumbAt = 0;
+function crDirectTick() {
+  if (page !== 'cr' || document.hidden) return;
+  const w = crStudio(); $('#crView').classList.toggle('direct', Boolean(w)); if (!w) return;
+  try {
+    const d = w.msScenes();
+    stu.alive = true; stu.current = d.current; stu.shape = d.shape; stu.coll = d.collection ? { name: d.collection, shape: d.shape } : null;
+    if (stu.scenes.map((s) => s.name).join('\n') !== d.scenes.join('\n')) stu.scenes = d.scenes.map((name) => ({ name }));
+    // the page itself (names, which scene is on air, sizes) only when something changed, or once a second
+    const key = d.scenes.join('\n') + '|' + d.current + '|' + d.shape + '|' + $('#navLive').classList.contains('on');
+    const changed = key !== crKey; if (changed || Date.now() - crKeyAt > 1000) { crKey = key; crKeyAt = Date.now(); renderCr(); if (changed) crThumbAt = 0; }
+    // Program: one quick copy of the picture on air, 15 times a second
+    const src = w.document.getElementById('cv'), pc = crCanvas($('#crProgBox')), [pw, ph] = crSize(true);
+    if (pc.width !== pw || pc.height !== ph) { pc.width = pw; pc.height = ph; }
+    if (src.width) w.copyFit(pc.getContext('2d'), pw, ph, src);
+    // the scenes: drawn small every 1.5 seconds
+    if (Date.now() - crThumbAt > 1500) {
+      crThumbAt = Date.now(); const [tw, th] = crSize(false);
+      $('#crTiles').querySelectorAll('button.mvt').forEach((b) => { const c = crCanvas(b); if (c.width !== tw || c.height !== th) { c.width = tw; c.height = th; } w.drawFit(c.getContext('2d'), tw, th, w.byName(b.dataset.n), false); });
+    }
+  } catch {}
+}
+setInterval(crDirectTick, 66);
 async function pollCr() {
-  if (page !== 'cr' || crBusy || document.hidden) return;
+  if (page !== 'cr' || crBusy || document.hidden || crStudio()) return;
   crBusy = true;
   try {
     const sh = await api('/api/studio/shots?tv=' + (stu.tv || 0)); stu.alive = !!sh.alive; const keep = stu.shots.thumbs; stu.shots = sh; if (!sh.thumbs) stu.shots.thumbs = keep; stu.tv = sh.tv || 0;
