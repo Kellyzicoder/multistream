@@ -1980,8 +1980,8 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     // wait for the picture to arrive, then go live on the sign-in channels
     const t0 = Date.now(); let s2 = st;
     while (Date.now() - t0 < 25000) { await new Promise((r) => setTimeout(r, 700)); try { s2 = await api('/api/state'); } catch {} if (s2 && s2.obsLive) break; }
-    if (s2 && s2.obsLive) for (const c of apis) if (!(s2.session && s2.session[c.site])) await goLiveOn(c.site);
-    else if (!(s2 && s2.obsLive)) alert('The Studio started, but no picture arrived yet. Check the Studio page.');
+    if (s2 && s2.obsLive) { for (const c of apis) if (!(s2.session && s2.session[c.site])) await goLiveOn(c.site); }
+    else alert('The Studio started, but no picture arrived yet. Check the Studio page.' + (s2 && s2.studio && s2.studio.error ? '\n\n' + s2.studio.error : ''));
     starting = false; refresh();
   };
   const askPlan = (pl) => window.msAskPlan(pl);

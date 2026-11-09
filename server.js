@@ -448,7 +448,7 @@ app.get('/api/state', (req, res) => {
   res.json({
     obsLive,
     ingest: { preview: '/live.flv' },
-    studio: { sending: studioInfo.sending },
+    studio: { sending: studioInfo.sending, error: studioInfo.error },
     signal: {
       startedAt: signal.startedAt,
       video: signal.video,

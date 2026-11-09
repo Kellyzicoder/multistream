@@ -603,7 +603,10 @@
 </style>
 </head>
 <body>
-<script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
+<script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');
+// Inside the app window the Studio sometimes misses the app's helpers (it then tries a connection that does not exist
+// in the desktop app and never sends any video). The window around it has them, so it uses those.
+try { if (!window.msNative && window.parent !== window && window.parent.msNative) window.msNative = window.parent.msNative; } catch {}</script>
 <div class="asbar" id="asBar" hidden><div class="as-r1"><span class="as-dot"></span><b id="asStep">Auto start</b><span class="as-left" id="asLeft"></span><button type="button" class="as-min" id="asMin" title="Make smaller" aria-label="Make smaller">−</button><span class="sp"></span><button type="button" id="asNext">Next step now</button><button type="button" id="asStop">Stop plan</button></div><div class="as-seg" id="asSeg"></div></div>
 <div class="alertbar" id="alertBar" role="alert"><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 <aside class="snv" aria-label="Menu">
