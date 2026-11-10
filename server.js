@@ -93,7 +93,7 @@ const chat = createChat({
 });
 
 // what is open right now on each site, so the Go live button can turn into End live
-const session = { youtube: '', facebook: '' }; // YouTube broadcast id, Facebook live video id
+const session = { youtube: '', facebook: '', fbAlso: [] }; // YouTube broadcast id, Facebook live video id, lives on the extra Pages
 
 // ---- relay state ----
 let obsLive = false;
@@ -553,12 +553,15 @@ app.post('/api/facebook/end', async (req, res) => {
   if (d) stopDestination(d.id);
   chat.stopFacebook();
   let warning = '';
-  try {
-    const r = await fetch(`${GRAPH}/${session.facebook}`, { method: 'POST', body: new URLSearchParams({ access_token: fb.token, end_live_video: 'true' }) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok && !/already|ended|finished/i.test((j.error && j.error.message) || '')) warning = (j.error && j.error.message) || 'Facebook did not confirm';
-  } catch { warning = 'Could not reach Facebook'; }
+  try { warning = await fbEndLive(session.facebook, fb.token); } catch { warning = 'Could not reach Facebook'; }
   session.facebook = '';
+  // the extra Pages end too
+  for (const a of session.fbAlso.splice(0)) {
+    stopDestination(a.destId);
+    const p = (fb.also || []).find((x) => x.pageId === a.pageId);
+    if (!p) continue;
+    try { const w = await fbEndLive(a.id, p.token); if (w) warning = (warning ? warning + '; ' : '') + (p.pageName || 'Page') + ': ' + w; } catch { warning = (warning ? warning + '; ' : '') + 'Could not reach Facebook'; }
+  }
   res.json({ ok: true, warning });
 });
 
@@ -866,17 +869,22 @@ app.get('/api/golive/thumbnail', (req, res) => {
 // ---- Facebook Page: "Go live on Facebook" button ----
 // The Page token is stored only in facebook.json on this computer. It is never sent back to the browser.
 const FB_FILE = path.join(DATA_DIR, 'facebook.json');
-let fb = { pageId: '', pageName: '', token: '' };
+// also: more Pages the same video goes to at the same time ([{ pageId, pageName, token }]). The main Page
+// (pageId) is the one whose comments, viewers and title the app shows and changes.
+let fb = { pageId: '', pageName: '', token: '', also: [] };
 try {
   fb = { ...fb, ...JSON.parse(fs.readFileSync(FB_FILE, 'utf8')) };
   fb.token = openKept('fb.token', fb.token);
+  try { fb.also = typeof fb.also === 'string' && fb.also ? JSON.parse(openKept('fb.also', fb.also) || '[]') : []; } catch { fb.also = []; }
+  if (!Array.isArray(fb.also)) fb.also = [];
 } catch {}
 function saveFb() {
-  fs.writeFileSync(FB_FILE, JSON.stringify({ ...fb, token: sealKept('fb.token', fb.token) }, null, 2), { mode: 0o600 });
+  fs.writeFileSync(FB_FILE, JSON.stringify({ ...fb, token: sealKept('fb.token', fb.token), also: sealKept('fb.also', JSON.stringify(fb.also || [])) }, null, 2), { mode: 0o600 });
 }
 const GRAPH = 'https://graph.facebook.com/v26.0';
 function fbView() {
-  return { pageId: fb.pageId, pageName: fb.pageName, hasToken: Boolean(fb.token), tokenEnd: fb.token ? fb.token.slice(-4) : '', appId: fb.appId || '', hasClientToken: Boolean(fb.clientToken) };
+  return { pageId: fb.pageId, pageName: fb.pageName, hasToken: Boolean(fb.token), tokenEnd: fb.token ? fb.token.slice(-4) : '', appId: fb.appId || '', hasClientToken: Boolean(fb.clientToken),
+    also: (fb.also || []).map((p) => ({ pageId: p.pageId, pageName: p.pageName })) };
 }
 // ---- Sign in with Facebook (Facebook Login for Devices) ----
 // Needs only the Meta app ID and its client token (both are meant to be inside apps; no app secret).
@@ -940,8 +948,32 @@ app.get('/api/facebook/login', async (req, res) => {
     res.json({ done: true, pages: pages() });
   } catch { res.json({ pending: true }); }
 });
+// the main Page's channel (the channels for the extra Pages carry the Page's id in fbPage)
 function fbDestination() {
-  return destinations.find((d) => /facebook/i.test(d.name));
+  return destinations.find((d) => /facebook/i.test(d.name) && !d.fbPage);
+}
+function fbAlsoDestination(p) {
+  let d = destinations.find((x) => x.fbPage === p.pageId);
+  if (!d) { d = { id: crypto.randomUUID(), name: 'Facebook: ' + (p.pageName || p.pageId), url: '', key: '', enabled: true, fbPage: p.pageId }; destinations.push(d); save(); }
+  else if (p.pageName && d.name !== 'Facebook: ' + p.pageName) { d.name = 'Facebook: ' + p.pageName; save(); }
+  return d;
+}
+// a new live video on one Page; gives back { id, url, key }
+async function fbNewLive(pageId, token, status, title, description) {
+  const r = await fetch(`${GRAPH}/${pageId}/live_videos`, { method: 'POST', body: new URLSearchParams({ access_token: token, status, title, ...(description ? { description } : {}) }) });
+  const j = await r.json();
+  const streamUrl = j.secure_stream_url || j.stream_url;
+  if (!r.ok || !streamUrl) throw new Error((j.error && j.error.message) || 'Facebook did not create the live video');
+  // Facebook gives one full address. Split it into the URL and the key the relay already uses.
+  const [addr, query] = streamUrl.split('?');
+  const idx = addr.lastIndexOf('/');
+  return { id: j.id || '', url: addr.slice(0, idx), key: addr.slice(idx + 1) + (query ? '?' + query : '') };
+}
+async function fbEndLive(id, token) {
+  const r = await fetch(`${GRAPH}/${id}`, { method: 'POST', body: new URLSearchParams({ access_token: token, end_live_video: 'true' }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok && !/already|ended|finished/i.test((j.error && j.error.message) || '')) return (j.error && j.error.message) || 'Facebook did not confirm';
+  return '';
 }
 // Go live needs a channel to put the new key in. If the person has not added one yet, make it here.
 function addDestination(name) {
@@ -969,6 +1001,18 @@ app.put('/api/facebook', async (req, res) => {
     const j = await r.json();
     if (!r.ok || !j.id) return res.status(400).json({ error: (j.error && j.error.message) || 'Facebook did not accept this Page ID and token' });
     fb = { ...fb, pageId, pageName: j.name || '', token: newToken };
+    // the extra Pages (ids from the last sign-in, or ones already saved); never the main Page twice
+    const want = (req.body || {}).also;
+    if (Array.isArray(want)) {
+      const next = [];
+      want.map(String).filter((id) => /^\d+$/.test(id) && id !== pageId).slice(0, 10).forEach((id) => {
+        const p = fbLogin && fbLogin.pages ? fbLogin.pages.find((x) => x.id === id) : null;
+        const kept = (fb.also || []).find((x) => x.pageId === id);
+        if (p) next.push({ pageId: id, pageName: p.name || '', token: p.access_token });
+        else if (kept) next.push(kept);
+      });
+      fb.also = next;
+    }
     saveFb(); // the Pages from this sign-in stay (in memory, until the app closes) so Change Page can switch without signing in again
     res.json(fbView());
   } catch {
@@ -982,30 +1026,33 @@ app.post('/api/facebook/live', async (req, res) => {
   const d = fbDestination() || addDestination('Facebook');
   const title = goLiveTitle(req);
   const description = goLiveDescription(req);
-  try {
-    const r = await fetch(`${GRAPH}/${fb.pageId}/live_videos`, {
-      method: 'POST',
-      // Test mode: Facebook takes the stream but the video is not published on the Page.
-      body: new URLSearchParams({ access_token: fb.token, status: (req.body || {}).test || (req.body || {}).privacy === 'self' ? 'UNPUBLISHED' : 'LIVE_NOW', title, ...(description ? { description } : {}) }),
-    });
-    const j = await r.json();
-    const streamUrl = j.secure_stream_url || j.stream_url;
-    if (!r.ok || !streamUrl) return res.status(502).json({ error: (j.error && j.error.message) || 'Facebook did not create the live video' });
-    // Facebook gives one full address. Split it into the URL and the key the relay already uses.
-    const [addr, query] = streamUrl.split('?');
-    const idx = addr.lastIndexOf('/');
-    stopDestination(d.id);
-    d.url = addr.slice(0, idx);
-    d.key = addr.slice(idx + 1) + (query ? '?' + query : '');
-    d.enabled = true;
-    save();
-    startDestination(d);
-    session.facebook = j.id || '';
-    chat.startFacebook(j.id);
-    res.json({ ok: true, liveVideoId: j.id || '' });
-  } catch {
-    res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' });
+  // Test mode: Facebook takes the stream but the video is not published on the Page.
+  const status = (req.body || {}).test || (req.body || {}).privacy === 'self' ? 'UNPUBLISHED' : 'LIVE_NOW';
+  let main;
+  try { main = await fbNewLive(fb.pageId, fb.token, status, title, description); }
+  catch (e) { return res.status(502).json({ error: /fetch failed/i.test(e.message) ? 'Could not reach Facebook. Check the internet connection.' : e.message }); }
+  stopDestination(d.id);
+  d.url = main.url; d.key = main.key; d.enabled = true;
+  save();
+  startDestination(d);
+  session.facebook = main.id;
+  chat.startFacebook(main.id);
+  // the extra Pages: the same video, each with its own live and its own channel
+  const also = [];
+  for (const p of fb.also || []) {
+    try {
+      const l = await fbNewLive(p.pageId, p.token, status, title, description);
+      const pd = fbAlsoDestination(p);
+      stopDestination(pd.id);
+      pd.url = l.url; pd.key = l.key; pd.enabled = true;
+      save();
+      startDestination(pd);
+      session.fbAlso.push({ pageId: p.pageId, id: l.id, destId: pd.id });
+      also.push({ page: p.pageName, ok: true });
+    } catch (e) { also.push({ page: p.pageName, ok: false, error: e.message }); }
   }
+  const failed = also.filter((x) => !x.ok);
+  res.json({ ok: true, liveVideoId: main.id, also, warning: failed.length ? failed.map((x) => x.page + ': ' + x.error).join('; ') : '' });
 });
 
 // ---- YouTube: sign in once, then "Go live on YouTube" ----
