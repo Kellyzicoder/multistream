@@ -41,6 +41,7 @@
       "outargs.js",
       "public/**/*",
       "package.json",
+      "engine.js",
       "vcam.js",
       "secret.js",
       "!node_modules/flv.js/src/**",
@@ -65,6 +66,10 @@
             "vcam.exe",
             "softcam-LICENSE.txt"
           ]
+        },
+        {
+          "from": "node_modules/obs-studio-node",
+          "to": "obs-studio-node"
         }
       ]
     },
@@ -86,7 +91,17 @@
         "NSCameraUsageDescription": "Multistream uses cameras and capture cards in the Studio.",
         "NSMicrophoneUsageDescription": "Multistream uses audio inputs (like the mixing desk) in the Studio.",
         "NSAudioCaptureUsageDescription": "Multistream can send the sound this Mac plays (for example a video) to the stream."
-      }
+      },
+      "extraResources": [
+        {
+          "from": "node_modules/obs-studio-node",
+          "to": "obs-studio-node"
+        },
+        {
+          "from": "node_modules/node-window-rendering",
+          "to": "node-window-rendering"
+        }
+      ]
     },
     "afterPack": "adhoc-sign.js",
     "publish": [
