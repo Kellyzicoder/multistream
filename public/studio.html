@@ -702,15 +702,15 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
           <div class="f"><label>Theme</label><span class="lookbtns" id="lookTheme"><button type="button" data-v="system">System</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></span></div>
           <div class="f"><label>Main colour</label><span class="lookcols" id="lookCols"></span></div>
           <p class="note">Theme and main colour are the same as on the Go Live page (Settings, Appearance).</p>
-          <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
-          <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
+          <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap items to edges, the centre and each other</label></div>
+          <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Confirm before stopping the stream</label></div>
           <div class="f"><label>Panels</label><span><button id="resetLayout" type="button">Reset panels</button> <span class="note">Drag a panel by its title to move it. Drag it up to float it; drop it on the bottom row to put it back.</span></span></div>
           <h3>Scenes and windows</h3>
           <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes from OBS...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
         </section>
         <section class="sp" data-sp="channels">
           <h3>Where your video goes</h3>
-          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the Go Live page under Settings.</p>
+          <p class="note">Every channel gets the same picture and sound. Turn one off to stop sending to it. A channel that drops reconnects by itself. YouTube and Facebook sign-in is in Settings → Stream.</p>
           <div id="chanList"></div>
           <h3>Add a channel</h3>
           <div class="f"><label>Site</label><select id="chType"><option value="youtube">YouTube</option><option value="facebook">Facebook</option><option value="other">Instagram or another site</option></select></div>
@@ -724,25 +724,25 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
           <div class="f"><label>Quality</label><select id="outQ"></select></div>
           <div class="f"><label>Bitrate (kbps)</label><input id="outKbps" type="number" min="1000" max="60000" step="500"></div>
           <p class="note" id="outNote"></p>
-          <div class="f"><label>Canvas</label><span>1920 x 1080 (items are placed on this, like OBS)</span></div>
+          <div class="f"><label>Canvas</label><span>1920 x 1080 (the size scenes are built at)</span></div>
           <div class="f"><label>Encoder</label><span id="encName">...</span></div>
-          <div class="f"><label>Encoding</label><span>The picture is encoded once for the stream and the recording. If this computer cannot do that, the app goes back to the older way by itself and tells you.</span></div>
+          <div class="f"><label>Encoding</label><span>The video is made once for both the stream and the recording. If this computer can't, the app switches to the older way and tells you.</span></div>
           <div class="f"><label>Keyframes</label><span>Every 2 seconds (what YouTube and Facebook ask for)</span></div>
         </section>
         <section class="sp" data-sp="output">
           <h3>Recording</h3>
           <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal (about 3.6 GB an hour)</option><option value="1080-4">1080p small file (about 1.8 GB an hour)</option><option value="720-6">720p normal (about 2.7 GB an hour)</option><option value="720-3">720p small file (about 1.4 GB an hour)</option></select></div>
-          <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Also save the stream as soon as it starts</label></div>
+          <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Record automatically when the stream starts</label></div>
           <div class="f"><label>Saved in</label><span><code id="recDir2"></code></span></div>
           <div class="row"><button id="recOpen2">Open folder</button><span class="note" id="recMsg2"></span></div>
-          <p class="note">Recordings are .mkv files, so they still play if the power goes out. VLC plays them.</p>
+          <p class="note">Saved as .mkv, so a file still plays if the power goes out. Open them with VLC.</p>
         </section>
         <section class="sp" data-sp="audio">
           <h3>Monitoring</h3>
           <div class="f"><label>Monitoring output</label><select id="monDev"></select></div>
-          <p class="note">Monitoring lets you hear an input in your headphones. Use headphones, or the microphone will pick up the speakers. Turn it on for each input in the Audio Mixer, under Tools.</p>
+          <p class="note">Hear an input in your headphones. Turn on Listen for each input in the Audio Mixer (Tools). Use headphones, or the microphone will pick up the speakers.</p>
           <h3>Inputs</h3>
-          <p class="note">Add and set up sound inputs in the Audio Mixer: volume, mute, delay, low cut, bass/mid/treble, noise gate, compressor and limiter. "Computer sound" (what this PC plays) is in the Windows app.</p>
+          <p class="note">Add sound inputs in the Audio Mixer, then set volume, mute, delay, EQ, noise gate, compressor and limiter. "Computer sound" (what this PC plays) works in the Windows app.</p>
         </section>
         <section class="sp" data-sp="hotkeys">
           <h3>Hotkeys</h3>
@@ -773,9 +773,9 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
         </section>
         <section class="sp" data-sp="advanced">
           <h3>Advanced</h3>
-          <div class="f"><label>Dropped channels</label><span>Started again after 3, 6, 9 ... up to 30 seconds, 10 tries, then it says so.</span></div>
+          <div class="f"><label>Dropped channels</label><span>It reconnects by itself (up to 10 tries, a bit longer apart each time), then tells you.</span></div>
           <div class="f"><label>Reset</label><span><button id="resetStudio">Reset Studio settings</button></span></div>
-          <p class="note">Reset puts the video size, recording quality, transition, monitoring output and the options above back to how they started. Your scenes, sources and channels are kept.</p>
+          <p class="note">Puts the video size, recording quality, transition, headphone output and the options above back to how they started. Your scenes, sources and channels stay.</p>
         </section>
       </div>
     </div>
