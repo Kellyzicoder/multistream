@@ -956,6 +956,10 @@
   .fbc-v { font:700 30px/1.1 ui-monospace, Menlo, Consolas, monospace; letter-spacing:.14em; color:var(--text); user-select:all; }
   .fbc-steps { margin:0; padding-left:20px; display:grid; gap:8px; font-size:13px; color:var(--text); }
   .fbpages { display:grid; gap:8px; margin-bottom:8px; }
+  .fbp { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .fbp > button { flex:1 1 220px; }
+  .fbalso { display:flex; align-items:center; gap:8px; font-size:14px; color:var(--text); cursor:pointer; }
+  .fbalso input { width:18px; height:18px; accent-color:var(--blue); }
   .fbpages button { text-align:left; padding:12px 16px; border-radius:14px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:14px; font-weight:500; cursor:pointer; }
   .fbpages button[aria-checked="true"] { background:var(--blue); border-color:var(--blue); color:var(--onblue, #fff); font-weight:600; }
 </style>
@@ -1305,7 +1309,7 @@
           <div class="grp"><h4>Sign in with Facebook</h4>
             <p>Sign in, then pick the Page to stream to. If Facebook shows an error later, just sign in again.</p>
             <div class="srow"><p class="lb">Facebook</p>
-              <div class="ctl"><p class="note" id="fbStatus" hidden></p><div class="fbbtns"><button class="b2 pri" id="fbSignIn" type="button">Sign in with Facebook</button><button class="b2" id="fbChange" type="button" hidden>Change Page</button></div><p class="note" id="fbCode" hidden></p></div></div>
+              <div class="ctl"><p class="note" id="fbStatus" hidden></p><div class="fbbtns"><button class="b2 pri" id="fbSignIn" type="button">Sign in with Facebook</button><button class="b2" id="fbChange" type="button" hidden>Change Pages</button></div><p class="note" id="fbCode" hidden></p></div></div>
             <!-- the code to type on Facebook: big, with Copy and Open buttons and the steps -->
             <div class="fbcode" id="fbCodeBox" hidden>
               <p class="fbc-lb">Your code</p>
@@ -1317,10 +1321,11 @@
               </ol>
               <p class="note" id="fbCodeLeft"></p>
             </div>
-            <div class="srow" id="fbPickRow" hidden><p class="lb" id="fbPickLb">Page</p>
-              <div class="ctl"><div class="fbpages" id="fbPick" role="radiogroup" aria-labelledby="fbPickLb"></div>
-                <p class="note">Only the Pages you ticked on Facebook show here. To add one, press Sign in with Facebook again and on Facebook choose <b>Edit access</b> (or <b>Choose Pages</b>) and tick it.</p>
-                <button class="b2 pri" id="fbUse" type="button">Use this Page</button></div></div>
+            <div class="srow" id="fbPickRow" hidden><p class="lb" id="fbPickLb">Pages</p>
+              <div class="ctl"><p class="note">Pick the <b>main Page</b> (its comments and viewers show in the app). Tick <b>Also stream here</b> for any other Page that should get the same video.</p>
+                <div class="fbpages" id="fbPick" aria-labelledby="fbPickLb"></div>
+                <p class="note">Only the Pages you ticked on Facebook show here. To add one, press Sign in again and on Facebook choose <b>Edit access</b> (or <b>Choose Pages</b>) and tick it.</p>
+                <button class="b2 pri" id="fbUse" type="button">Save Pages</button></div></div>
           </div>
           <div class="grp"><h4>Meta app (set once)</h4>
             <p>On developers.facebook.com, open your app. The App ID is under App settings → Basic. The client token is under App settings → Advanced. Then turn on <b>Login from devices</b> under Facebook Login → Settings, and press Save changes.</p>
@@ -2165,7 +2170,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       const fbk = ch.site === 'facebook';
       f.innerHTML = '<label>Name shown in Multistream<input type="text" class="e1"></label>' + (fbk ? '<label>Page<select class="e4" disabled></select></label>' : '') + '<div><div style="font-size:12.5px;color:var(--muted);margin-bottom:6px">Who can watch</div><div class="seg3"></div></div><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
       f.querySelector('.e1').value = ch.name;
-      if (fbk) { const o = new Option(ch.sub || 'Your Page', ''); f.querySelector('.e4').add(o); f.querySelector('.e4').title = 'To use another Page, press Change Page in Settings → Stream.'; }
+      if (fbk) { const o = new Option(ch.sub || 'Your Page', ''); f.querySelector('.e4').add(o); f.querySelector('.e4').title = 'To change Pages, press Change Pages in Settings → Stream.'; }
       let pick = who[ch.site] || 'public';
       const opts = fbk ? [['public', 'Public'], ['self', 'Only me (test)']] : [['public', 'Public'], ['unlisted', 'Unlisted'], ['private', 'Private (test)']];
       const sg = f.querySelector('.seg3');
@@ -2747,19 +2752,24 @@ async function endLive(site, name) {
   else if (r.warning) alert(`Sending has stopped. ${name} did not confirm the end: ${r.warning}. It should end by itself soon.`);
   refresh();
 }
+let fbState0 = null;
 function renderFb(fbState, live, inSession) {
+  fbState0 = fbState;
   const ready = Boolean(fbState && fbState.hasToken && fbState.pageId);
   goBtn('#fbLive', Boolean(inSession));
   $('#fbLive').disabled = inSession ? false : !(live && ready);
   $('#fbLive').title = inSession ? 'Stop sending and end the live video on Facebook' : !live ? 'Start Streaming in the Studio first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
-  $('#fbSub').textContent = ready ? (fbState.pageName || 'Page ' + fbState.pageId) : 'No Page added';
+  const more = ((fbState && fbState.also) || []).map((x) => x.pageName).filter(Boolean);
+  $('#fbSub').textContent = ready ? (fbState.pageName || 'Page ' + fbState.pageId) + (more.length ? ' + ' + more.join(', ') : '') : 'No Page added';
+  $('#fbSub').title = more.length ? 'Goes live on ' + [fbState.pageName].concat(more).join(', ') : '';
 }
 async function loadFb() {
   const s = await api('/api/facebook');
   $('#fb-appid').value = s.appId || ''; $('#fb-ct').value = ''; $('#fb-ct').placeholder = s.hasClientToken ? 'Saved (paste a new one to change it)' : 'Paste the client token';
   $('#fb-page').value = s.pageId || '';
   $('#fb-token').value = '';
-  fbNoteSet('#fb-saved', s.hasToken ? `\u2713 Connected to ${s.pageName || 'Page ' + s.pageId}` : 'No Page saved yet.', false);
+  const more = (s.also || []).map((x) => x.pageName).filter(Boolean);
+  fbNoteSet('#fb-saved', s.hasToken ? `\u2713 Connected to ${s.pageName || 'Page ' + s.pageId}${more.length ? ' + ' + more.join(', ') : ''}` : 'No Page saved yet.', false);
   $('#fb-saved').classList.toggle('conn-ok', Boolean(s.hasToken));
   $('#fbChange').hidden = !s.hasToken;
   // once a Page is connected, the button says so (instead of asking to sign in as if it had not worked)
@@ -2787,16 +2797,33 @@ $('#fbAppSave').onclick = async () => {
 };
 let fbPageId = '', fbLeftT = 0;
 // the list of Pages as buttons (one can be picked), in the app's style
+// each Page: a button to make it the main Page, and (for the others) a switch to also stream to it
+let fbAlso = new Set();
 async function fbShowPages(pages) {
   const box = $('#fbPick'); box.textContent = '';
-  const cur = (await api('/api/facebook')).pageId;
-  fbPageId = pages.some((p) => p.id === cur) ? cur : (pages[0] || {}).id || '';
+  const st = await api('/api/facebook');
+  fbPageId = pages.some((p) => p.id === st.pageId) ? st.pageId : (pages[0] || {}).id || '';
+  fbAlso = new Set((st.also || []).map((x) => x.pageId).filter((id) => pages.some((p) => p.id === id)));
+  const draw = () => {
+    box.querySelectorAll('.fbp').forEach((row) => {
+      const id = row.dataset.id, main = id === fbPageId;
+      const b = row.querySelector('button'); b.setAttribute('aria-checked', String(main));
+      b.textContent = row.dataset.name + (main ? '  ·  Main Page' : '');
+      const t = row.querySelector('label'); t.hidden = main;
+      t.querySelector('input').checked = !main && fbAlso.has(id);
+    });
+  };
   pages.forEach((p) => {
-    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio'); b.textContent = p.name; b.dataset.id = p.id;
-    const mark = () => box.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x.dataset.id === fbPageId)));
-    b.onclick = () => { fbPageId = p.id; mark(); };
-    box.appendChild(b); mark();
+    const row = document.createElement('div'); row.className = 'fbp'; row.dataset.id = p.id; row.dataset.name = p.name;
+    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio'); b.title = 'Make ' + p.name + ' the main Page';
+    b.onclick = () => { fbPageId = p.id; fbAlso.delete(p.id); draw(); };
+    const t = document.createElement('label'); t.className = 'fbalso';
+    const i = document.createElement('input'); i.type = 'checkbox';
+    i.onchange = () => { if (i.checked) fbAlso.add(p.id); else fbAlso.delete(p.id); };
+    t.append(i, document.createTextNode(' Also stream here'));
+    row.append(b, t); box.appendChild(row);
   });
+  draw();
   $('#fbPickRow').hidden = false;
 }
 function fbCodeOff() { clearInterval(fbLeftT); $('#fbCodeBox').hidden = true; }
@@ -2824,21 +2851,22 @@ $('#fbSignIn').onclick = async () => {
     if (s.pending) { fbPollT = setTimeout(poll, (r.interval || 5) * 1000); return; }
     fbCodeOff();
     if (s.error) { fbNoteSet('#fbCode', s.error, true); return; }
-    if (s.done) { await fbShowPages(s.pages); fbNoteSet('#fbCode', 'Signed in. Pick the Page and press Use this Page.', false); }
+    if (s.done) { await fbShowPages(s.pages); fbNoteSet('#fbCode', 'Signed in. Pick the Pages and press Save Pages.', false); }
   };
   fbPollT = setTimeout(poll, (r.interval || 5) * 1000);
 };
 // pick another Page later (from the Pages shared at the last sign-in, while the app is open)
 $('#fbChange').onclick = async () => {
   const s = await api('/api/facebook/login');
-  if (s.done && s.pages && s.pages.length) { await fbShowPages(s.pages); fbNoteSet('#fbCode', 'Pick the Page and press Use this Page.', false); }
+  if (s.done && s.pages && s.pages.length) { await fbShowPages(s.pages); fbNoteSet('#fbCode', 'Pick the Pages and press Save Pages.', false); }
   else fbNoteSet('#fbCode', 'Press Sign in with Facebook to see your Pages again.', false);
 };
 $('#fbUse').onclick = async () => {
   if (!fbPageId) return;
-  const r = await api('/api/facebook', 'PUT', { pageId: fbPageId });
+  const r = await api('/api/facebook', 'PUT', { pageId: fbPageId, also: [...fbAlso].filter((id) => id !== fbPageId) });
   if (r.error) { fbNoteSet('#fbCode', r.error, true); return; }
-  $('#fbPickRow').hidden = true; fbNoteSet('#fbCode', 'Using ' + (r.pageName || 'the Page') + '. You can change it any time with Change Page.', false); loadFb(); refresh();
+  const more = (r.also || []).map((x) => x.pageName).filter(Boolean);
+  $('#fbPickRow').hidden = true; fbNoteSet('#fbCode', 'Streaming to ' + (r.pageName || 'the Page') + (more.length ? ' and ' + more.join(', ') : '') + '. Change it any time with Change Pages.', false); loadFb(); refresh();
 };
 $('#fbLive').onclick = async () => {
   const btn = $('#fbLive');
@@ -2847,13 +2875,15 @@ $('#fbLive').onclick = async () => {
   btn.dataset.busy = '1';
   btn.textContent = 'Going live...';
   const test = $('#fbTest').checked;
-  if (!test && !confirm('Private test is off. This goes live publicly on the Facebook Page. Continue?')) {
+  const nPages = 1 + ((fbState0 && fbState0.also) || []).length;
+  if (!test && !confirm('Private test is off. This goes live publicly on ' + (nPages > 1 ? nPages + ' Facebook Pages' : 'the Facebook Page') + '. Continue?')) {
     delete btn.dataset.busy;
     return refresh();
   }
   const r = await api('/api/facebook/live', 'POST', { test, title: $('#glTitle').value.trim(), description: $('#glDesc').value.trim() });
   delete btn.dataset.busy;
   if (r.error) alert(r.error);
+  else if (r.warning) alert('Live on the main Page, but not on every extra Page: ' + r.warning);
   refresh();
 };
 
