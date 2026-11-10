@@ -7,7 +7,31 @@
 // Sound inputs (microphones, the computer's sound) are put in the scenes that use them, so a scene's sound is
 // only heard while that scene is on air, the same as in the Studio.
 
-const NATIVE = new Set(['camera', 'screen', 'window', 'image', 'video', 'color']);
+const NATIVE = new Set(['camera', 'screen', 'window', 'image', 'video', 'color', 'browser', 'ipcam', 'text', 'lower', 'timer', 'clock']);
+// drawn by the app's graphics page (public/engine-overlay.html) inside the engine's web page source
+const GFX = new Set(['text', 'lower', 'timer', 'clock']);
+let ov = ''; // where the graphics page is (a listener only this computer can reach)
+
+// Speaker + screen: the same layout as the Studio's drawDuo(), made of a background, the screen and the camera
+function expand(layers, W) {
+  const out = [];
+  (layers || []).forEach((l) => {
+    if (l.type !== 'duo') { out.push(l); return; }
+    const x = l.x || 0, y = l.y || 0, w = l.w || W[0], h = l.h || W[1];
+    const pad = Math.round(w * 0.03), gap = Math.round(w * 0.018);
+    const inner = w - pad * 2 - gap, share = l.layout === 'side' ? 0.5 : 0.68;
+    const sw = inner * share, cw = inner - sw, bh = Math.min(h - pad * 2, sw * 9 / 16);
+    const by = y + (h - bh) / 2, sx = l.camLeft ? x + pad + cw + gap : x + pad, cx = l.camLeft ? x + pad : x + pad + sw + gap;
+    const vis = l.visible;
+    const bg = l.bg && l.bg.kind === 'colour' ? l.bg.color : '#0a0e1f';
+    out.push({ id: l.id + ':bg', type: 'color', color: bg, x, y, w, h, visible: vis });
+    if (l.bg && l.bg.kind === 'picture') out.push({ id: l.id + ':bgpic', type: 'image', path: l.bg.path, x, y, w, h, fit: 'cover', visible: vis });
+    out.push({ id: l.id + ':scr', type: l.scrType === 'window' ? 'window' : 'screen', winName: l.winName || '', screenIndex: l.screenIndex || 0, x: sx, y: by, w: sw, h: bh, fit: 'fit', visible: vis });
+    out.push({ id: l.id + ':cam', type: 'camera', label: l.camLabel || '', x: cx, y: by, w: cw, h: bh, fit: 'cover', visible: vis });
+  });
+  return out;
+}
+
 const TRANS = { cut: 'cut_transition', fade: 'fade_transition', slide: 'slide_transition', dip: 'fade_to_color_transition' };
 const PROGRAM = 'Multistream Program'; // the name the preview box shows
 // the engine's own numbers (its names for them only exist while it is being built)
@@ -81,6 +105,9 @@ function keyOf(l) {
   if (l.type === 'image') return 'image|' + (l.path || l.link || '');
   if (l.type === 'video') return 'video|' + l.id;
   if (l.type === 'color') return 'color|' + l.id;
+  if (GFX.has(l.type)) return 'gfx|' + l.id;
+  if (l.type === 'browser') return 'web|' + (l.url || '') + '|' + (l.bw || size[0]) + 'x' + (l.bh || size[1]);
+  if (l.type === 'ipcam') return 'ipcam|' + (l.url || '');
   return '';
 }
 function colorInt(hex) {
@@ -137,6 +164,18 @@ function audioFor(a) {
 
 function makeInput(l, name) {
   const mk = (type, settings) => osn.InputFactory.create(type, name, settings || {});
+  if (GFX.has(l.type)) {
+    if (!ov) return null;
+    return mk('browser_source', { url: ov + '/page?id=' + encodeURIComponent(l.id), is_local_file: false, width: size[0], height: size[1], fps: 30, fps_custom: true, shutdown: false, restart_when_active: false, reroute_audio: false, css: '' });
+  }
+  if (l.type === 'browser') {
+    if (!/^https?:\/\//i.test(l.url || '')) return null;
+    return mk('browser_source', { url: l.url, is_local_file: false, width: Math.round(l.bw || size[0]), height: Math.round(l.bh || size[1]), fps: 30, shutdown: false, restart_when_active: false });
+  }
+  if (l.type === 'ipcam') {
+    if (!/^https?:\/\//i.test(l.url || '')) return null;
+    return mk('ffmpeg_source', { is_local_file: false, input: l.url, looping: false, restart_on_activate: false, close_when_inactive: false, reconnect_delay_sec: 3, hw_decode: true });
+  }
   if (l.type === 'camera') {
     const dev = pickItem(cameraList(), l.label);
     if (!dev) return null;
@@ -191,6 +230,9 @@ function inputFor(l) {
     inputs.set(key, s);
   }
   s.used = true;
+  if (s.input && GFX.has(l.type)) {
+    try { const st = s.input.settings || {}; if (st.width !== size[0] || st.height !== size[1]) s.input.update({ width: size[0], height: size[1] }); } catch (e) {}
+  }
   if (s.input && l.type === 'color') {
     try { s.input.update({ color: colorInt(l.color), width: Math.round(l.w || size[0]), height: Math.round(l.h || size[1]) }); } catch (e) {}
   }
@@ -245,10 +287,14 @@ function sceneFor(name) {
 function buildScene(sc, audio) {
   const s = sceneFor(sc.name);
   const want = [];
-  (sc.layers || []).forEach((l) => {
+  expand(sc.layers, size).forEach((l) => {
     if (!NATIVE.has(l.type)) return;
     const got = inputFor(l);
-    if (got) want.push({ id: l.id, key: got.key, input: got.input, l });
+    if (!got) return;
+    // graphics fill the whole picture (the page draws them in their place); a name bar is always there, so
+    // it can slide out by itself when it is hidden
+    const at = GFX.has(l.type) ? { x: 0, y: 0, w: size[0], h: size[1], fit: 'stretch', visible: l.type === 'lower' ? true : l.visible } : l;
+    want.push({ id: l.id, key: got.key, input: got.input, l: at });
   });
   // the sound inputs this scene uses (they have no picture, so where they sit does not matter)
   (sc.audio || []).forEach((id) => {
@@ -267,6 +313,7 @@ function buildScene(sc, audio) {
     });
   }
   s.items.forEach((it, i) => { if (!want[i].sound) place(it.item, want[i].l, want[i].input); });
+  s.want = want;
   s.used = true;
 }
 
@@ -303,6 +350,7 @@ function resize(w, h, video) {
 function sync(data, video) {
   if (!osn || !data) return false;
   last = data;
+  ov = data.ov || ov;
   let remake = resize(data.w || 1920, data.h || 1080, video);
   inputs.forEach((s) => { s.used = false; });
   scenes.forEach((s) => { s.used = false; });
@@ -340,12 +388,9 @@ function sync(data, video) {
 
 // a picture's or video's size is only known once it has loaded: crop and natural size are set again then
 function refresh() {
-  if (!last) return;
-  (last.scenes || []).forEach((sc) => {
-    const s = scenes.get(sc.name);
-    if (!s) return;
-    const ls = (sc.layers || []).filter((l) => NATIVE.has(l.type) && inputs.has(keyOf(l)) && inputs.get(keyOf(l)).input);
-    s.items.forEach((it, i) => { if (ls[i] && ls[i].id === it.id) place(it.item, ls[i], inputs.get(it.key).input); });
+  scenes.forEach((s) => {
+    if (!s.want) return;
+    s.items.forEach((it, i) => { const w = s.want[i]; if (w && !w.sound && w.id === it.id) place(it.item, w.l, w.input); });
   });
 }
 

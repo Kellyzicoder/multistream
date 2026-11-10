@@ -1546,6 +1546,50 @@ function engineIngestStop() {
   if (studioFf === me.ff) { studioFf = null; studioInfo.sending = false; }
 }
 
+// ---- the OBS engine's graphics (text, name bars, countdowns, the clock) ----
+// The engine draws these with its built-in web page source. Its pages are fetched from a small listener that
+// only this computer can reach (127.0.0.1, a free port) and only with a secret made fresh each time the app starts.
+// It hands out the graphics page, one graphic's settings, and the pictures and videos those graphics use.
+let ovServer = null, ovBase = '';
+const ovToken = crypto.randomBytes(16).toString('hex');
+function findLayer(id) {
+  for (const sc of studio.scenes || []) for (const l of sc.layers || []) if (l.id === id) return l;
+  return null;
+}
+function overlayBase() {
+  if (ovServer) return Promise.resolve(ovBase);
+  return new Promise((resolve, reject) => {
+    const srv = http.createServer((req, res) => {
+      const u = new URL(req.url || '/', 'http://x');
+      const pre = '/ov/' + ovToken + '/';
+      if (!u.pathname.startsWith(pre)) { res.writeHead(404); return res.end(); }
+      const rest = u.pathname.slice(pre.length);
+      const send = (code, type, body) => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(body); };
+      const sendFile = (f) => {
+        if (!f || !MEDIA_EXT.test(f) || !fs.existsSync(f)) return send(404, 'text/plain', '');
+        const ext = path.extname(f).slice(1).toLowerCase();
+        const type = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', avif: 'image/avif', mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', mkv: 'video/x-matroska' }[ext] || 'application/octet-stream';
+        res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'max-age=60' });
+        fs.createReadStream(f).pipe(res);
+      };
+      if (rest === 'page') return fs.readFile(path.join(__dirname, 'public', 'engine-overlay.html'), (err, b) => (err ? send(404, 'text/plain', '') : send(200, 'text/html; charset=utf-8', b)));
+      if (rest === 'layer') {
+        const [w, h] = studio.shape === 'portrait' ? [1080, 1920] : studio.shape === 'square' ? [1080, 1080] : [1920, 1080];
+        return send(200, 'application/json', JSON.stringify({ layer: findLayer(String(u.searchParams.get('id') || '')), w, h }));
+      }
+      if (rest === 'file') { const p = String(u.searchParams.get('p') || ''); return sendFile(path.isAbsolute(p) ? p : ''); }
+      if (rest.startsWith('asset/')) return sendFile(path.join(ASSET_DIR, path.basename(decodeURIComponent(rest.slice(6)))));
+      send(404, 'text/plain', '');
+    });
+    srv.on('error', reject);
+    srv.listen(0, '127.0.0.1', () => {
+      ovServer = srv;
+      ovBase = `http://127.0.0.1:${srv.address().port}/ov/${ovToken}`;
+      resolve(ovBase);
+    });
+  });
+}
+
 // ---- for the desktop app (main.js) ----
 // A request from an app window, answered with no network: { method, url, headers, body } -> { status, headers, body }
 function handle(r) { return inject(app, r); }
@@ -1568,6 +1612,7 @@ function openPipe(p, toWindow) {
 function shutdown() {
   stopAll();
   engineIngestStop();
+  try { if (ovServer) ovServer.close(); } catch {}
   try { if (studioFf) studioFf.kill('SIGKILL'); } catch {}
   try { vcam.quit(); } catch {}
   try { loginServer && loginServer.close(); } catch {}
@@ -1589,7 +1634,7 @@ module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => {
   // the Studio's scenes as saved, for the OBS engine (rev changes whenever they change)
   studioNow: () => ({ studio, rev: studioRev, assets: ASSET_DIR }),
   // the OBS engine's video comes in here (see engineIngest)
-  engineIngest, engineIngestStop,
+  engineIngest, engineIngestStop, overlayBase,
   // a recording made by the OBS engine: where it goes and what it is called, then "it is saved"
   engineRecName: () => {
     fs.mkdirSync(REC_DIR, { recursive: true });
