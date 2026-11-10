@@ -33,4 +33,5 @@ if (location.protocol === 'app:') contextBridge.exposeInMainWorld('msNative', {
   engineState: () => ipcRenderer.invoke('ms-engine-state'),
   enginePreview: (rect) => ipcRenderer.invoke('ms-engine-preview', rect),
   onEngine: (cb) => { ipcRenderer.on('ms-engine', (e, st) => cb(st)); },
+  engineTrans: (t) => ipcRenderer.invoke('ms-engine-trans', t),
 });

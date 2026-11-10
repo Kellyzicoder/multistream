@@ -4,7 +4,7 @@ name: OBS engine check
 on:
   workflow_dispatch:
   push:
-    branches: [feat/obs-engine]
+    branches: [feat/obs-engine, feat/engine-scenes]
 permissions:
   contents: read
 jobs:

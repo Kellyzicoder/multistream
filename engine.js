@@ -2,16 +2,19 @@
 // It draws the picture on the graphics card, inside the app, so the app's own pages stay exactly as designed.
 // It is optional: if the engine is not installed with this copy of the app, nothing here runs and the app
 // works as before. For now it is a test you switch on from the Help menu.
+// The Studio's scenes are built in the engine by engine-scenes.js.
 const path = require('path');
 const { app } = require('electron');
+const scenes = require('./engine-scenes');
 
 let osn = null; // the engine, once loaded (false if it is not installed)
 let nwr = null; // Mac only: puts the engine's picture on top of the window
 let started = false;
 let video = null;
-let scene = null;
-let camera = null;
 let preview = null; // { key, win, macSurface }
+let lastWin = null;  // where the preview box was last asked for, so it can be made again
+let lastRect = null;
+let refreshTimer = null;
 
 // Where the engine lives: next to the app when installed, in node_modules while developing
 function enginePath(name) {
@@ -37,29 +40,6 @@ function available() {
   return Boolean(load());
 }
 
-// The first camera, or nothing if there is none
-function firstCamera() {
-  const mac = process.platform === 'darwin';
-  const type = mac ? 'av_capture_input' : 'dshow_input';
-  const prop = mac ? 'device' : 'video_device_id';
-  let probe = null;
-  try {
-    probe = osn.InputFactory.create(type, 'multistream-camera-list', {});
-    const p = probe.properties.get(prop);
-    const items = p && p.details ? p.details.items : [];
-    probe.release();
-    probe = null;
-    const dev = items.find((i) => i.value);
-    if (!dev) return null;
-    console.log('[engine] camera:', dev.name);
-    return osn.InputFactory.create(type, 'Camera', { [prop]: dev.value });
-  } catch (e) {
-    if (probe) try { probe.release(); } catch (_) {}
-    console.log('[engine] no camera:', e.message);
-    return null;
-  }
-}
-
 function start() {
   if (started) return true;
   if (!load()) return false;
@@ -80,15 +60,15 @@ function start() {
     video.video = {
       fpsNum: 30, fpsDen: 1,
       baseWidth: 1920, baseHeight: 1080, outputWidth: 1920, outputHeight: 1080,
-      outputFormat: osn.EVideoFormat.NV12, colorspace: osn.EColorSpace.CS709, range: osn.ERangeType.Partial,
-      scaleType: osn.EScaleType.Bilinear, fpsType: osn.EFPSType.Fractional,
+      // the engine's own numbers for these (its names for them only exist while it is being built):
+      // NV12 = 2, colour space 709 = 2, partial range = 1, bilinear = 3, fractional frame rate = 2
+      outputFormat: 2, colorspace: 2, range: 1, scaleType: 3, fpsType: 2,
     };
 
-    // one scene with the camera in it (a first test; the Studio's scenes come next)
-    scene = osn.SceneFactory.create('Multistream');
-    camera = firstCamera();
-    if (camera) scene.add(camera);
-    osn.Global.setOutputSource(0, scene);
+    // the Studio's scenes come in through sync(); until then the picture is black
+    scenes.init(osn);
+    scenes.sync({ w: 1920, h: 1080, scenes: [], current: '', trans: { type: 'cut', ms: 0 } }, video);
+    refreshTimer = setInterval(() => { try { scenes.refresh(); } catch (e) {} }, 2000);
     started = true;
     console.log('[engine] started');
     return true;
@@ -114,6 +94,7 @@ function askMacCamera() {
 
 // Shows the engine's picture over a box of the window (rect in the page's own pixels), or hides it (rect null)
 function showPreview(win, rect) {
+  lastWin = win; lastRect = rect;
   if (!started || !win || win.isDestroyed()) return false;
   const key = 'golive';
   if (!rect || rect.width < 2 || rect.height < 2) {
@@ -127,7 +108,7 @@ function showPreview(win, rect) {
   const h = Math.max(2, Math.round(rect.height * zoom));
   try {
     if (!preview) {
-      osn.NodeObs.OBS_content_createSourcePreviewDisplay(win.getNativeWindowHandle(), scene.name, key, false, video);
+      osn.NodeObs.OBS_content_createSourcePreviewDisplay(win.getNativeWindowHandle(), scenes.programName(), key, false, video);
       osn.NodeObs.OBS_content_setShouldDrawUI(key, false);
       osn.NodeObs.OBS_content_setPaddingSize(key, 0);
       osn.NodeObs.OBS_content_setPaddingColor(key, 0, 0, 0);
@@ -167,12 +148,26 @@ function hidePreview() {
   preview = null;
 }
 
+// The Studio's scenes, sources and the scene on air (see engine-scenes.js)
+function sync(data) {
+  if (!started) return false;
+  let remake = false;
+  try { remake = scenes.sync(data, video); } catch (e) { console.error('[engine] scenes:', e.message); }
+  if (remake && preview) {
+    // the picture changed size or the transition changed: the preview box is made again
+    const win = lastWin, rect = lastRect;
+    hidePreview();
+    showPreview(win, rect);
+  }
+  return true;
+}
+
 function stop() {
   hidePreview();
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
   if (!osn) return;
+  try { scenes.clear(); } catch (e) {}
   try {
-    if (camera) { camera.release(); camera = null; }
-    if (scene) { scene.release(); scene = null; }
     if (video) { video.destroy(); video = null; }
   } catch (e) {}
   try { osn.NodeObs.InitShutdownSequence(); } catch (e) {}
@@ -181,4 +176,4 @@ function stop() {
   started = false;
 }
 
-module.exports = { available, start, stop, askMacCamera, showPreview, hidePreview, isStarted: () => started };
+module.exports = { available, start, stop, askMacCamera, showPreview, hidePreview, sync, isStarted: () => started };

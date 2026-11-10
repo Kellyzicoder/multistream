@@ -149,7 +149,60 @@ async function setEngine(on) {
   }
   if (win && !win.isDestroyed()) win.webContents.send('ms-engine', engineState());
   setMenu();
+  engineFollow(engine().isStarted());
 }
+
+// The engine builds the Studio's scenes: whenever the Studio saves (a new source, a move, another scene on air),
+// the engine gets the same scenes. Only the facts it needs are sent: where each file is on this computer,
+// and which screen (by its place in the list of screens).
+let engineTimer = null, engineRev = -1, engineTrans = { type: 'fade', ms: 500 }, screenIds = [], screenAt = 0;
+async function screenOrder() {
+  if (Date.now() - screenAt < 10000) return screenIds;
+  try { screenIds = (await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } })).map((s) => s.id); } catch (e) {}
+  screenAt = Date.now();
+  return screenIds;
+}
+function engineFile_(l, assets) {
+  if (l.file && path.isAbsolute(l.file)) return l.file;
+  const m = /^\/api\/studio\/asset\/(.+)$/.exec(l.url || '');
+  if (m) { try { return path.join(assets, path.basename(decodeURIComponent(m[1]))); } catch (e) { return ''; } }
+  return '';
+}
+async function engineSend(force) {
+  if (!relay || !relay.studioNow || !engine().isStarted()) return;
+  const now = relay.studioNow();
+  if (!force && now.rev === engineRev) return;
+  engineRev = now.rev;
+  const st = now.studio || {};
+  const order = await screenOrder();
+  const [w, h] = st.shape === 'portrait' ? [1080, 1920] : st.shape === 'square' ? [1080, 1080] : [1920, 1080];
+  const scenes = (st.scenes || []).map((sc) => ({
+    name: String(sc.name || ''),
+    layers: (sc.layers || []).map((l) => {
+      const x = { ...l };
+      if (l.type === 'image' || l.type === 'video') {
+        x.path = engineFile_(l, now.assets);
+        x.link = !x.path && /^https?:\/\//i.test(l.url || '') ? l.url : '';
+      }
+      if (l.type === 'screen') { const i = order.indexOf(l.display); x.screenIndex = i >= 0 ? i : 0; }
+      return x;
+    }),
+  }));
+  engine().sync({ w, h, scenes, current: String(st.current || ''), trans: engineTrans });
+}
+function engineFollow(on) {
+  if (engineTimer) { clearInterval(engineTimer); engineTimer = null; }
+  engineRev = -1;
+  if (!on) return;
+  engineSend(true);
+  engineTimer = setInterval(() => { engineSend(false).catch(() => {}); }, 400);
+}
+// the Studio's transition (Cut, Fade, Slide, Dip to black) and how long it takes
+handleIpc('ms-engine-trans', (e, t) => {
+  if (t && typeof t === 'object') engineTrans = { type: String(t.type || 'fade'), ms: Math.max(0, Math.min(5000, Number(t.ms) || 0)) };
+  engineSend(true).catch(() => {});
+  return true;
+});
 function engineState() {
   return { available: engine().available(), on: engineOn(), started: engine().isStarted() };
 }
