@@ -2915,6 +2915,15 @@ if (!$('#recQ').value) $('#recQ').value = '1080-8';
 $('#recQ').onchange = () => { try { localStorage.setItem('ms_recq', $('#recQ').value); } catch {} };
 async function startRec() {
   const [res, mb] = $('#recQ').value.split('-').map(Number);
+  // the OBS engine is on: it records the file itself
+  if (await engineReady() && window.msNative.engineRecord) {
+    const [w, h] = outSize(res);
+    const r = await window.msNative.engineRecord({ w, h, fps: OUT.fps === 60 ? 60 : 30, kbps: mb * 1000 }).catch((e) => ({ ok: false, error: e.message }));
+    if (!r || !r.ok) { flash('The OBS engine could not record: ' + ((r && r.error) || 'no answer'), false); return; }
+    recWs = { engine: true, readyState: 1, send() {}, close() {} };
+    recT0 = Date.now(); $('#recBtn').textContent = 'Stop recording'; $('#recBtn').className = 'stop';
+    return;
+  }
   [recW, rcv.height] = outSize(res); rcv.width = recW;
   const rfps = OUT.fps === 60 ? 60 : 30;
   try { ensureAudio(); await syncAudio(); } catch {}
@@ -2938,6 +2947,15 @@ async function startRec() {
 }
 function endRec(fromClose) {
   clearInterval(recTick); recW = 0;
+  if (recWs && recWs.engine) {
+    recWs = null; $('#recBtn').textContent = 'Start recording'; $('#recBtn').className = ''; recT0 = 0;
+    flash('Finishing the recording...', true);
+    window.msNative.engineUnrecord().then((r) => {
+      if (r && r.saved) flash('Saved: ' + r.saved + ' (in your Videos/Multistream folder)', true);
+      else flash('Recording problem: ' + ((r && r.error) || 'no answer'), false);
+    }).catch((e) => flash('Recording problem: ' + e.message, false));
+    return;
+  }
   try { recMr && recMr.state !== 'inactive' && recMr.stop(); } catch {}
   const ws = recWs; recWs = recMr = null;
   // tell the relay we are done; it finishes the file, says where it saved it, then closes

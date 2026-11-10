@@ -1589,4 +1589,13 @@ module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => {
   // the Studio's scenes as saved, for the OBS engine (rev changes whenever they change)
   studioNow: () => ({ studio, rev: studioRev, assets: ASSET_DIR }),
   // the OBS engine's video comes in here (see engineIngest)
-  engineIngest, engineIngestStop };
+  engineIngest, engineIngestStop,
+  // a recording made by the OBS engine: where it goes and what it is called, then "it is saved"
+  engineRecName: () => {
+    fs.mkdirSync(REC_DIR, { recursive: true });
+    const d = new Date(), two = (n) => String(n).padStart(2, '0');
+    const base = `Studio ${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}`;
+    if (gl.title) { upCfg.titles = upCfg.titles || {}; upCfg.titles[base + '.mkv'] = gl.title; saveUp(); }
+    return { dir: REC_DIR, base, name: base + '.mkv' };
+  },
+  engineRecSaved: (name) => { try { recordingSaved(name); } catch {} } };

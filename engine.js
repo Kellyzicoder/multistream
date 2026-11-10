@@ -173,10 +173,11 @@ let stream = null;
 let encoder = null;
 let sendState = { sending: false, error: '', encoder: '' };
 
-// the best way to make video on this computer: its video chip first, the processor (x264) last
+// the best way to make video on this computer: its video chip first, the processor (x264) last.
+// Only the ones the engine allows for going live and recording (others are refused when starting).
 const ENCODERS = [
-  'com.apple.videotoolbox.videoencoder.ave.avc', 'com.apple.videotoolbox.videoencoder.h264.gva', 'com.apple.videotoolbox.videoencoder.h264',
-  'jim_nvenc', 'obs_nvenc_h264_tex', 'ffmpeg_nvenc', 'h264_texture_amf', 'amd_amf_h264', 'obs_qsv11_v2', 'obs_qsv11',
+  'com.apple.videotoolbox.videoencoder.ave.avc', 'com.apple.videotoolbox.videoencoder.h264.gva', // Apple
+  'obs_nvenc_h264_tex', 'ffmpeg_nvenc', 'h264_texture_amf', 'obs_qsv11_v2',                     // NVIDIA, AMD, Intel
   'obs_x264',
 ];
 // every way this computer has, best first (if one does not work here, the next one is tried)
@@ -185,7 +186,6 @@ function encoderChoices() {
   try { types = osn.VideoEncoderFactory.types() || []; } catch (e) {}
   console.log('[engine] video makers on this computer:', types.join(', '));
   const list = ENCODERS.filter((t) => types.includes(t));
-  types.filter((t) => /h264|avc/i.test(t) && !list.includes(t)).forEach((t) => list.splice(list.length - (list.includes('obs_x264') ? 1 : 0), 0, t));
   if (!list.includes('obs_x264')) list.push('obs_x264');
   return list;
 }
@@ -263,6 +263,71 @@ function stopStream() {
   sendState = { ...sendState, sending: false };
 }
 
+// ---- recording ----
+// The engine records the same picture and sound to a file, with its own video maker (so the file can be a
+// higher quality than the stream). o: { dir, base (file name without .mkv), w, h, fps, kbps }
+let rec = null;
+let recEncoder = null;
+let recDone = null; // waits for the file to be finished
+function startRecord(o) {
+  if (!started) return { ok: false, error: 'The engine is not on' };
+  if (rec) return { ok: false, error: 'Already recording' };
+  const fps = Number(o.fps) === 60 ? 60 : 30;
+  try { if (!stream && video.video.fpsNum !== fps) video.video = { ...video.video, fpsNum: fps, fpsDen: 1 }; } catch (e) {}
+  let lastError = '';
+  for (const id of encoderChoices()) {
+    try {
+      const kbps = Math.max(1000, Math.min(80000, Number(o.kbps) || 8000));
+      const settings = { rate_control: 'CBR', bitrate: kbps, keyint_sec: 2, profile: 'high' };
+      if (id === 'obs_x264') settings.preset = 'veryfast';
+      recEncoder = osn.VideoEncoderFactory.create(id, 'ms-record-encoder', settings);
+      if (!recEncoder) throw new Error('could not make the video maker');
+      rec = osn.AdvancedRecordingFactory.create();
+      rec.path = o.dir;
+      rec.format = 'mkv';           // a file that is still good if the computer stops suddenly
+      rec.fileFormat = o.base;      // the exact name (the engine adds .mkv)
+      rec.overwrite = false;
+      rec.noSpace = false;
+      rec.video = video;
+      rec.videoEncoder = recEncoder;
+      rec.useStreamEncoders = false;
+      rec.mixer = 1;                // sound track 1
+      const [bw, bh] = [video.video.baseWidth, video.video.baseHeight];
+      if (o.w && o.h && (o.w !== bw || o.h !== bh)) { rec.rescaling = true; rec.outputWidth = o.w; rec.outputHeight = o.h; }
+      if (!osn.AudioTrackFactory.getAtIndex(1)) osn.AudioTrackFactory.setAtIndex(osn.AudioTrackFactory.create(160, 'ms-sound'), 1);
+      let finish;
+      recDone = new Promise((r) => { finish = r; });
+      rec.signalHandler = (sig) => {
+        if (!sig || sig.type !== 'recording') return;
+        if (sig.signal === 'wrote') finish({ ok: true });
+        if (sig.signal === 'writing_error') finish({ ok: false, error: sig.error || 'The file could not be finished' });
+        if (sig.signal === 'stop' && sig.code) finish({ ok: false, error: sig.error || 'Recording stopped (' + sig.code + ')' });
+      };
+      rec.start();
+      console.log('[engine] recording with', id, kbps + ' kbps', o.w + 'x' + o.h, 'to', o.base);
+      return { ok: true, encoder: id };
+    } catch (e) {
+      lastError = e.message;
+      console.log('[engine] recording: ' + id + ' did not work here:', e.message);
+      dropRecord();
+    }
+  }
+  return { ok: false, error: lastError };
+}
+function dropRecord() {
+  if (rec) { try { osn.AdvancedRecordingFactory.destroy(rec); } catch (e) {} rec = null; }
+  if (recEncoder) { try { recEncoder.release(); } catch (e) {} recEncoder = null; }
+}
+// stops and waits (up to 20 seconds) until the file is finished
+async function stopRecord() {
+  if (!rec) return { ok: false, error: 'Not recording' };
+  const done = recDone;
+  try { rec.stop(); } catch (e) {}
+  const r = await Promise.race([done, new Promise((res) => setTimeout(() => res({ ok: true, late: true }), 20000))]);
+  dropRecord();
+  return r;
+}
+
 function streamState() {
   let stats = {};
   if (stream) { try { stats = { kbps: Math.round(stream.kbitsPerSec || 0), dropped: stream.droppedFrames || 0, frames: stream.totalFrames || 0 }; } catch (e) {} }
@@ -270,6 +335,7 @@ function streamState() {
 }
 
 function stop() {
+  if (rec) { try { rec.stop(true); } catch (e) {} dropRecord(); }
   stopStream();
   hidePreview();
   if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
@@ -284,4 +350,4 @@ function stop() {
   started = false;
 }
 
-module.exports = { available, start, stop, askMacCamera, showPreview, hidePreview, sync, startStream, stopStream, streamState, isStarted: () => started };
+module.exports = { available, start, stop, askMacCamera, showPreview, hidePreview, sync, startStream, stopStream, streamState, startRecord, stopRecord, isRecording: () => Boolean(rec), isStarted: () => started };
