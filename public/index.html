@@ -942,6 +942,8 @@
   .asrun.mini { width:auto !important; padding:8px 12px !important; border-radius:999px !important; cursor:pointer; gap:0 !important; }
   .asrun.mini .as-seg, .asrun.mini .as-r1 > button:not(.as-min), .asrun.mini .sp { display:none !important; } .asrun.mini #asRunT { flex:none !important; margin-left:8px !important; order:1; }
   .asrun.mini .as-r1 { flex-wrap:nowrap !important; } .asrun.mini .as-min { margin-left:10px; }
+  /* Start / Stop streaming keeps the main colour you picked (Settings, Appearance) while live, instead of turning red */
+  .hb.sb.stop { background:var(--blue) !important; color:var(--onblue) !important; box-shadow:0 8px 24px color-mix(in srgb, var(--blue) 40%, transparent) !important; }
 </style>
 </head>
 <body>
@@ -1999,9 +2001,10 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     if (st && st.obsLive) {
       if (!confirm('Stop streaming now? Every channel stops.')) return;
       starting = true; sb.disabled = true; sb.querySelector('span').textContent = 'Stopping...';
-      const w = sw(); if (w && w.msStop) w.msStop();
+      // the lives end first, then the video stops (so no "the live is still open" warning in between)
       if (st.session && st.session.youtube) await api('/api/youtube/end', 'POST');
       if (st.session && st.session.facebook) await api('/api/facebook/end', 'POST');
+      const w = sw(); if (w && w.msStop) w.msStop();
       starting = false; refresh(); return;
     }
     const chs = st ? channels(st) : [], apis = chs.filter((c) => c.kind === 'api' && c.on);

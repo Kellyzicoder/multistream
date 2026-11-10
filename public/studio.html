@@ -600,6 +600,10 @@
   .asbar .as-min { width:26px; height:26px; min-width:0; padding:0 !important; border-radius:8px; border:0; background:rgba(255,255,255,.08); color:#cdd3e4; display:grid; place-items:center; font-size:16px; line-height:1; margin-left:auto; order:1 !important; flex:none !important; }
   .asbar.mini { width:auto !important; padding:8px 12px !important; border-radius:999px !important; cursor:pointer; gap:0 !important; }
   .asbar.mini .as-seg, .asbar.mini .as-r1 > button:not(.as-min), .asbar.mini .as-r1 .sp { display:none !important; } .asbar.mini .as-left { flex:none !important; margin-left:8px !important; order:1; } .asbar.mini .as-r1 { flex-wrap:nowrap !important; } .asbar.mini .as-min { margin-left:10px; }
+  /* Streaming, recording and the virtual camera keep the main colour you picked (Settings, Appearance) while they run, instead of turning red */
+  #sendBtn.stop, #recBtn.stop, #vcBtn.stop, .dock .ctl button#sendBtn.stop, .dock .ctl button#recBtn.stop, .dock .ctl button#vcBtn.stop { background:var(--sel) !important; border-color:var(--sel) !important; color:var(--onsel) !important; box-shadow:0 4px 16px color-mix(in srgb, var(--sel) 45%, transparent) !important; }
+  #sendBtn.stop::before, #recBtn.stop::before, #vcBtn.stop::before { background:var(--onsel) !important; }
+  #recBtn:not(.stop)::before, #sendBtn:not(.stop)::before { background:var(--sel) !important; }
 </style>
 </head>
 <body>
@@ -2722,7 +2726,25 @@ function stopSend() {
 })();
 $('#tabStream').onclick = () => { if (!$('#backBtn').hidden) { $('#backBtn').click(); return; } if (window.msNative) window.msNative.openDashboard(); else location.href = '/'; };
 $('#tabCr').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else location.href = '/#control-room'; };
-$('#sendBtn').onclick = async () => { if (wantSend) { if (askStop && !confirm('Stop streaming now?')) return; stopSend(); } else { try { await maybeAutoStart(); } catch { return; } startSend(); } };
+// Stopping on purpose also ends the live on YouTube and Facebook, so it does not stay open with no video.
+// The lives end first, then the video stops (so no "the live is still open" warning in between).
+async function endLives() {
+  try {
+    const s = await (await fetch('/api/state')).json();
+    const ends = [];
+    if (s.session && s.session.youtube) ends.push(fetch('/api/youtube/end', { method: 'POST' }));
+    if (s.session && s.session.facebook) ends.push(fetch('/api/facebook/end', { method: 'POST' }));
+    await Promise.all(ends);
+  } catch {}
+}
+$('#sendBtn').onclick = async () => {
+  if (wantSend) {
+    if (askStop && !confirm('Stop streaming now? The live ends on every channel.')) return;
+    const b = $('#sendBtn'); b.disabled = true; b.textContent = 'Stopping...';
+    await endLives();
+    b.disabled = false; stopSend();
+  } else { try { await maybeAutoStart(); } catch { return; } startSend(); }
+};
 
 // ---------------- Auto start: runs the plan's steps when you press Start Streaming ----------------
 let auto = null, autoVid = null, autoRanPlan = null;
