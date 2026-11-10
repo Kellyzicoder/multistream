@@ -1930,9 +1930,15 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   function channels(s) {
     const out = [], hid = new Set();
     const yt = s.youtube || {}, fbs = s.facebook || {};
-    const keyOf = (re) => s.destinations.find((d) => re.test(d.name));
+    const keyOf = (re) => s.destinations.find((d) => re.test(d.name) && !d.fbPage);
     if (yt.connected) { const d = keyOf(/youtube/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'youtube', c: 'yt', name: names.youtube || 'YouTube', on: apiOn('youtube'), dest: d, session: Boolean(s.session && s.session.youtube), sub: yt.channelTitle || '' }); }
     if (fbs.hasToken && fbs.pageId) { const d = keyOf(/facebook/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'facebook', c: 'fb', name: names.facebook || 'Facebook', on: apiOn('facebook'), dest: d, session: Boolean(s.session && s.session.facebook), sub: fbs.pageName || '' }); }
+    // every extra Facebook Page is its own channel (like Restream): its own switch and its own state
+    if (fbs.hasToken && fbs.pageId) (fbs.also || []).forEach((p) => {
+      const d = s.destinations.find((x) => x.fbPage === p.pageId);
+      out.push({ kind: 'api', site: 'facebook', page: p.pageId, c: 'fb', name: p.pageName || 'Facebook Page', on: p.on !== false && apiOn('facebook'), dest: d, session: Boolean(s.session && (s.session.fbAlso || []).includes(p.pageId)), sub: 'Facebook Page' });
+    });
+    s.destinations.forEach((d) => { if (d.fbPage) hid.add(d.id); });
     s.destinations.forEach((d) => { if (!hid.has(d.id)) out.push({ kind: 'key', c: platform(d.name).c, name: d.name, on: d.enabled, dest: d }); });
     return out;
   }
@@ -1948,22 +1954,27 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   function row(ch, live, small) {
     const r = document.createElement('div'); r.className = 'cc' + (small ? ' sm' : '') + (ch.on && !small ? ' on' : '');
     const s2 = stateOf(ch, live); if (s2.cls === 'bad' && !small) r.classList.add('err');
-    r.innerHTML = tileHTML(ch.c) + '<div class="cmn"><div class="nm"></div><div class="sub"></div></div>' + (small ? '' : '<button type="button" class="ed" title="Edit">' + ICON_PEN + '</button>') + '<button type="button" class="tg2" role="switch"></button>';
+    r.innerHTML = tileHTML(ch.c) + '<div class="cmn"><div class="nm"></div><div class="sub"></div></div>' + (small || ch.page ? '' : '<button type="button" class="ed" title="Edit">' + ICON_PEN + '</button>') + '<button type="button" class="tg2" role="switch"></button>';
     const nm = r.querySelector('.nm'); nm.textContent = ch.name;
     if (!small) { if (live && s2.cls === 'live') { const x = document.createElement('div'); x.className = 'st live'; x.textContent = s2.t; nm.after(x); } else { const x = document.createElement('small'); x.textContent = ' · ' + s2.t; nm.appendChild(x); } }
     const sub = r.querySelector('.sub');
     if (small) sub.remove();
     else if (s2.msg) { sub.textContent = s2.msg; sub.title = s2.msg; sub.style.color = '#ff8a90'; }
-    else sub.textContent = ch.kind === 'api' ? (titleFor(ch.c).title || ch.sub) : (live ? '' : ch.dest.hasKey ? '' : 'Add its stream key');
+    else sub.textContent = ch.page ? ch.sub : ch.kind === 'api' ? (titleFor(ch.c).title || ch.sub) : (live ? '' : ch.dest.hasKey ? '' : 'Add its stream key');
     if (!sub.textContent) sub.remove();
     const tg = r.querySelector('.tg2'); tg.classList.toggle('on', ch.on); tg.setAttribute('aria-checked', String(ch.on)); tg.setAttribute('aria-label', ch.name + (ch.on ? ' on' : ' off'));
     tg.onclick = () => toggleCh(ch, !ch.on);
     const ed = r.querySelector('.ed'); if (ed) ed.onclick = () => editChannel(ch);
-    if (small) r.onclick = (e) => { if (e.target !== tg) editChannel(ch); };
+    if (small && !ch.page) r.onclick = (e) => { if (e.target !== tg) editChannel(ch); };
     return r;
   }
   async function toggleCh(ch, on) {
-    if (ch.kind === 'api') {
+    if (ch.page) {
+      // an extra Facebook Page: on or off by itself (during a live, its live starts or ends now)
+      if (!on && ch.session && !confirm('End the live on ' + ch.name + ' now?')) return;
+      const r = await api('/api/facebook/also/' + ch.page, 'PUT', { on });
+      if (r && r.error) alert(ch.name + ': ' + r.error);
+    } else if (ch.kind === 'api') {
       prefs[ch.site] = on; savePrefs();
       if (!on && ch.session) { if (confirm('End the live on ' + ch.name + ' now?')) { await api('/api/' + ch.site + '/end', 'POST'); } }
       else if (on && st && st.obsLive && !ch.session) await goLiveOn(ch.site);

@@ -425,6 +425,7 @@ function publicView(d) {
     hasKey: Boolean(d.key),
     keyEnd: d.key ? d.key.slice(-4) : '',
     enabled: d.enabled,
+    fbPage: d.fbPage || '',
     cap1080: d.cap1080 === undefined ? null : d.cap1080,
     status: status.get(d.id) || { state: 'off', message: '' },
     stats: destStats.get(d.id) || null,
@@ -462,7 +463,7 @@ app.get('/api/state', (req, res) => {
     facebook: fbView(),
     youtube: ytView(),
     recording: recView(),
-    session: { youtube: Boolean(session.youtube), facebook: Boolean(session.facebook) },
+    session: { youtube: Boolean(session.youtube), facebook: Boolean(session.facebook), fbAlso: session.fbAlso.map((a) => a.pageId) },
   });
 });
 
@@ -556,11 +557,9 @@ app.post('/api/facebook/end', async (req, res) => {
   try { warning = await fbEndLive(session.facebook, fb.token); } catch { warning = 'Could not reach Facebook'; }
   session.facebook = '';
   // the extra Pages end too
-  for (const a of session.fbAlso.splice(0)) {
-    stopDestination(a.destId);
+  for (const a of session.fbAlso.slice()) {
     const p = (fb.also || []).find((x) => x.pageId === a.pageId);
-    if (!p) continue;
-    try { const w = await fbEndLive(a.id, p.token); if (w) warning = (warning ? warning + '; ' : '') + (p.pageName || 'Page') + ': ' + w; } catch { warning = (warning ? warning + '; ' : '') + 'Could not reach Facebook'; }
+    try { const w = await fbEndAlso(a.pageId); if (w) warning = (warning ? warning + '; ' : '') + ((p && p.pageName) || 'Page') + ': ' + w; } catch { warning = (warning ? warning + '; ' : '') + 'Could not reach Facebook'; }
   }
   res.json({ ok: true, warning });
 });
@@ -884,7 +883,7 @@ function saveFb() {
 const GRAPH = 'https://graph.facebook.com/v26.0';
 function fbView() {
   return { pageId: fb.pageId, pageName: fb.pageName, hasToken: Boolean(fb.token), tokenEnd: fb.token ? fb.token.slice(-4) : '', appId: fb.appId || '', hasClientToken: Boolean(fb.clientToken),
-    also: (fb.also || []).map((p) => ({ pageId: p.pageId, pageName: p.pageName })) };
+    also: (fb.also || []).map((p) => ({ pageId: p.pageId, pageName: p.pageName, on: p.on !== false })) };
 }
 // ---- Sign in with Facebook (Facebook Login for Devices) ----
 // Needs only the Meta app ID and its client token (both are meant to be inside apps; no app secret).
@@ -969,6 +968,25 @@ async function fbNewLive(pageId, token, status, title, description) {
   const idx = addr.lastIndexOf('/');
   return { id: j.id || '', url: addr.slice(0, idx), key: addr.slice(idx + 1) + (query ? '?' + query : '') };
 }
+async function fbStartAlso(p) {
+  const m = session.fbMeta || { status: 'LIVE_NOW', title: 'Live', description: '' };
+  const l = await fbNewLive(p.pageId, p.token, m.status, m.title, m.description);
+  const pd = fbAlsoDestination(p);
+  stopDestination(pd.id);
+  pd.url = l.url; pd.key = l.key; pd.enabled = true;
+  save();
+  startDestination(pd);
+  session.fbAlso = session.fbAlso.filter((a) => a.pageId !== p.pageId);
+  session.fbAlso.push({ pageId: p.pageId, id: l.id, destId: pd.id });
+}
+async function fbEndAlso(pageId) {
+  const a = session.fbAlso.find((x) => x.pageId === pageId);
+  if (!a) return '';
+  session.fbAlso = session.fbAlso.filter((x) => x !== a);
+  stopDestination(a.destId);
+  const p = (fb.also || []).find((x) => x.pageId === pageId);
+  return p ? fbEndLive(a.id, p.token) : '';
+}
 async function fbEndLive(id, token) {
   const r = await fetch(`${GRAPH}/${id}`, { method: 'POST', body: new URLSearchParams({ access_token: token, end_live_video: 'true' }) });
   const j = await r.json().catch(() => ({}));
@@ -1008,7 +1026,7 @@ app.put('/api/facebook', async (req, res) => {
       want.map(String).filter((id) => /^\d+$/.test(id) && id !== pageId).slice(0, 10).forEach((id) => {
         const p = fbLogin && fbLogin.pages ? fbLogin.pages.find((x) => x.id === id) : null;
         const kept = (fb.also || []).find((x) => x.pageId === id);
-        if (p) next.push({ pageId: id, pageName: p.name || '', token: p.access_token });
+        if (p) next.push({ pageId: id, pageName: p.name || '', token: p.access_token, on: kept ? kept.on !== false : true });
         else if (kept) next.push(kept);
       });
       fb.also = next;
@@ -1018,6 +1036,20 @@ app.put('/api/facebook', async (req, res) => {
   } catch {
     res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' });
   }
+});
+
+// one extra Page switched on or off on Go Live (during a live it starts or ends that Page's live straight away)
+app.put('/api/facebook/also/:pageId', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  const p = (fb.also || []).find((x) => x.pageId === req.params.pageId);
+  if (!p) return res.status(404).json({ error: 'That Page is not saved' });
+  p.on = Boolean((req.body || {}).on);
+  saveFb();
+  try {
+    if (!p.on) await fbEndAlso(p.pageId);
+    else if (session.facebook && obsLive && !session.fbAlso.some((a) => a.pageId === p.pageId)) await fbStartAlso(p);
+    res.json({ ok: true });
+  } catch (e) { res.status(502).json({ error: e.message }); }
 });
 
 app.post('/api/facebook/live', async (req, res) => {
@@ -1037,19 +1069,12 @@ app.post('/api/facebook/live', async (req, res) => {
   startDestination(d);
   session.facebook = main.id;
   chat.startFacebook(main.id);
-  // the extra Pages: the same video, each with its own live and its own channel
+  // the extra Pages that are switched on: the same video, each with its own live and its own channel
+  session.fbMeta = { status, title, description };
   const also = [];
-  for (const p of fb.also || []) {
-    try {
-      const l = await fbNewLive(p.pageId, p.token, status, title, description);
-      const pd = fbAlsoDestination(p);
-      stopDestination(pd.id);
-      pd.url = l.url; pd.key = l.key; pd.enabled = true;
-      save();
-      startDestination(pd);
-      session.fbAlso.push({ pageId: p.pageId, id: l.id, destId: pd.id });
-      also.push({ page: p.pageName, ok: true });
-    } catch (e) { also.push({ page: p.pageName, ok: false, error: e.message }); }
+  for (const p of (fb.also || []).filter((x) => x.on !== false)) {
+    try { await fbStartAlso(p); also.push({ page: p.pageName, ok: true }); }
+    catch (e) { also.push({ page: p.pageName, ok: false, error: e.message }); }
   }
   const failed = also.filter((x) => !x.ok);
   res.json({ ok: true, liveVideoId: main.id, also, warning: failed.length ? failed.map((x) => x.page + ': ' + x.error).join('; ') : '' });
