@@ -1536,4 +1536,6 @@ if (STANDALONE) {
 // used by the desktop app (main.js)
 module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => { openFolderHook = fn; }, setShowFile: (fn) => { showFileHook = fn; },
   // scene collections for the menu bar
-  collections: () => ({ current: coll.current, names: collNames() }), onCollections: (fn) => { collHook = fn; } };
+  collections: () => ({ current: coll.current, names: collNames() }), onCollections: (fn) => { collHook = fn; },
+  // the Studio's scenes as saved, for the OBS engine (rev changes whenever they change)
+  studioNow: () => ({ studio, rev: studioRev, assets: ASSET_DIR }) };

@@ -42,6 +42,7 @@
       "public/**/*",
       "package.json",
       "engine.js",
+      "engine-scenes.js",
       "vcam.js",
       "secret.js",
       "!node_modules/flv.js/src/**",

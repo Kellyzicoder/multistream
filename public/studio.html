@@ -848,7 +848,7 @@ function save() {
     try { const r = await fetch('/api/studio', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); if (r.rev) lastRev = r.rev; } catch {}
   }, 300);
 }
-function setCurrent(name, byPlan) { if (!byPlan && auto && auto.plan.takeover !== false) autoStop('You changed the scene, so the plan stopped.'); studio.current = name; dirtyCurrent = true; save(); renderAll(); }
+function setCurrent(name, byPlan) { if (!byPlan && auto && auto.plan.takeover !== false) autoStop('You changed the scene, so the plan stopped.'); studio.current = name; dirtyCurrent = true; try { trTell(); } catch {} save(); renderAll(); }
 
 // ---------------- media ----------------
 const devices = { video: [], audio: [] };
@@ -1313,7 +1313,10 @@ function frame() {
   if (vcOn) { if (SW > SH && cv.width >= 1280) vctx.drawImage(cv, 0, 0, 1280, 720); else copyFit(vctx, 1280, 720, cv); }
 }
 $('#trType').value = trCfg.type; $('#trMs').value = String(trCfg.ms);
-const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#trMs').value); try { localStorage.setItem('ms_trans', JSON.stringify(trCfg)); } catch {} };
+// the OBS engine (when it is on) changes scene the same way
+const trTell = () => { try { if (window.msNative && window.msNative.engineTrans) window.msNative.engineTrans({ type: trCfg.type, ms: trCfg.ms }); } catch {} };
+const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#trMs').value); try { localStorage.setItem('ms_trans', JSON.stringify(trCfg)); } catch {} trTell(); };
+setTimeout(trTell, 0);
 $('#trType').onchange = saveTr; $('#trMs').onchange = saveTr;
 // not requestAnimationFrame, so it keeps running if the window is covered
 let frameT = 0, frameFps = 0;
