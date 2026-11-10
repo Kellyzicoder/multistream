@@ -185,11 +185,14 @@ async function engineSend(force) {
         x.path = engineFile_(l, now.assets);
         x.link = !x.path && /^https?:\/\//i.test(l.url || '') ? l.url : '';
       }
-      if (l.type === 'screen') { const i = order.indexOf(l.display); x.screenIndex = i >= 0 ? i : 0; }
+      if (l.type === 'screen' || (l.type === 'duo' && l.scrType !== 'window')) { const i = order.indexOf(l.display); x.screenIndex = i >= 0 ? i : 0; }
+      if (l.type === 'duo' && l.bg && l.bg.kind === 'picture') x.bg = { ...l.bg, path: engineFile_(l.bg, now.assets) };
       return x;
     }),
   }));
-  engine().sync({ w, h, scenes, audio: st.audio || [], current: String(st.current || ''), trans: engineTrans });
+  let ov = '';
+  try { ov = relay.overlayBase ? await relay.overlayBase() : ''; } catch (e) {}
+  engine().sync({ w, h, scenes, audio: st.audio || [], current: String(st.current || ''), trans: engineTrans, ov });
 }
 function engineFollow(on) {
   if (engineTimer) { clearInterval(engineTimer); engineTimer = null; }
