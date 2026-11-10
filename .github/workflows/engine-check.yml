@@ -1,0 +1,51 @@
+name: OBS engine check
+# Checks that the OBS engine (obs-studio-node) loads in this app's Electron on Mac and Windows.
+# It installs the engine only for the check; the app itself does not change.
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/obs-engine]
+permissions:
+  contents: read
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            osn: osn-0.27.33-release-osx-arm64.tar.gz
+            nwr: node-window-rendering-1.0.22-osx-arm64.tar.gz
+          - os: windows-2022
+            osn: osn-0.27.33-release-win64.tar.gz
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the app
+        run: npm install --no-audit --no-fund
+      - name: Install the OBS engine (for this check only)
+        shell: bash
+        run: |
+          # unpacked straight into node_modules, the way Streamlabs Desktop installs it
+          cd node_modules
+          curl -sSfL -o osn.tgz "https://s3-us-west-2.amazonaws.com/obsstudionodes3.streamlabs.com/${{ matrix.osn }}"
+          tar -xzf osn.tgz && rm osn.tgz
+          if [ -n "${{ matrix.nwr }}" ]; then
+            curl -sSfL -o nwr.tgz "https://slobs-node-window-rendering.s3-us-west-2.amazonaws.com/${{ matrix.nwr }}"
+            tar -xzf nwr.tgz && rm nwr.tgz
+            ls node-window-rendering | head
+          fi
+          du -sh obs-studio-node
+          ls obs-studio-node | head -40
+      - name: Start the engine inside Electron
+        shell: bash
+        run: npx electron tools/engine-test.js 2>&1 | tee engine.txt
+        timeout-minutes: 5
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engine-${{ matrix.os }}
+          path: engine.txt

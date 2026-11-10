@@ -129,6 +129,34 @@ function createWindow() {
 }
 
 
+// ---- OBS engine (test) ----
+// The engine draws the picture on the graphics card inside the app (see engine.js). It is off unless switched on
+// in the Help menu, and only exists in copies of the app built with it.
+let engineMod = null;
+const engine = () => engineMod || (engineMod = require('./engine'));
+const engineFile = () => path.join(app.getPath('userData'), 'engine-settings.json');
+function engineOn() {
+  try { return JSON.parse(fs.readFileSync(engineFile(), 'utf8')).on === true; } catch (e) { return false; }
+}
+async function setEngine(on) {
+  try { fs.writeFileSync(engineFile(), JSON.stringify({ on: Boolean(on) })); } catch (e) {}
+  if (on) {
+    const ok = engine().start();
+    if (ok) await engine().askMacCamera();
+    if (!ok) dialog.showMessageBox({ type: 'warning', message: 'The OBS engine could not start.', detail: 'The app keeps working as before. Help > Developer tools shows the reason.' });
+  } else {
+    engine().stop();
+  }
+  if (win && !win.isDestroyed()) win.webContents.send('ms-engine', engineState());
+  setMenu();
+}
+function engineState() {
+  return { available: engine().available(), on: engineOn(), started: engine().isStarted() };
+}
+handleIpc('ms-engine-state', () => engineState());
+// the page tells where its preview box is (or null when it is hidden); the engine draws its picture there
+handleIpc('ms-engine-preview', (e, rect) => (win && e.sender === win.webContents ? engine().showPreview(win, rect) : false));
+
 // ---- Studio helpers ----
 let studioWin = null;
 // same = true: the Studio replaces the dashboard in the same window (a button in the Studio goes back).
@@ -386,6 +414,10 @@ function buildMenu() {
     { label: 'Help', submenu: [
       { label: 'Download page (latest version)', click: () => shell.openExternal(RELEASE_PAGE) },
       { label: 'Developer tools (for problems)', accelerator: 'F12', click: () => { const w = focusedWin(); if (w) w.webContents.toggleDevTools(); } },
+      ...(engine().available() ? [
+        { type: 'separator' },
+        { label: 'Use the OBS engine (test)', type: 'checkbox', checked: engineOn(), click: (item) => setEngine(item.checked) },
+      ] : []),
     ] },
   ];
   return Menu.buildFromTemplate(template);
@@ -413,6 +445,7 @@ async function start() {
   setMenu(); screen.on('display-added', setMenu); screen.on('display-removed', setMenu); // the Multiview list follows the screens
   createWindow();
   startUpdates();
+  if (engineOn() && engine().available()) setEngine(true);
 }
 
 // only one copy at a time
@@ -430,6 +463,7 @@ if (!app.requestSingleInstanceLock()) {
 
 // stop every platform stream when the app closes
 app.on('before-quit', () => {
+  if (engineMod) engineMod.stop();
   if (relay) relay.shutdown();
 });
 app.on('window-all-closed', () => app.quit());

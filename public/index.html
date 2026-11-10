@@ -1597,6 +1597,42 @@ let crPrev = '';
 const pageTabs = document.querySelectorAll('#sideNav [data-page]');
 // ---------------- pages in the side menu (other than Go Live and Multiview) ----------------
 const XPAGES = {};
+
+// OBS engine (test, switched on in the Help menu): the engine draws the picture straight onto the Go Live
+// preview box, on the graphics card. Its picture sits on top of the page, so it is taken away whenever the
+// box is not showing (another page, a pop-up window, or the app is minimised).
+(function () {
+  const nat = window.msNative;
+  if (!nat || !nat.engineState) return;
+  let st = { on: false, started: false };
+  let last = '';
+  const send = (rect) => {
+    const key = rect ? [rect.x, rect.y, rect.width, rect.height].join(',') : 'none';
+    if (key === last) return;
+    last = key;
+    nat.enginePreview(rect);
+  };
+  const tick = () => {
+    if (!st.on || !st.started) return send(null);
+    const box = document.querySelector('#glPrev .glp-v');
+    const popup = document.querySelector('.overlay:not([hidden]), dialog[open]');
+    if (page !== 'dash' || document.hidden || !box || popup) return send(null);
+    const r = box.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) return send(null);
+    send({ x: Math.round(r.left), y: Math.round(r.top), width: Math.round(r.width), height: Math.round(r.height) });
+  };
+  const apply = (s) => {
+    st = s || st;
+    last = '';
+    const label = document.getElementById('ovPrev');
+    if (label) label.textContent = st.on && st.started ? 'Preview from the OBS engine' : 'Preview from the Studio';
+    tick();
+  };
+  nat.onEngine(apply);
+  nat.engineState().then(apply).catch(() => {});
+  setInterval(tick, 250);
+  window.addEventListener('resize', () => { last = ''; tick(); });
+})();
 // a small box to type a name or an address in (the desktop app does not show the browser's own prompt box)
 window.askText = (title, value, hint) => new Promise((ok) => {
   const w = document.createElement('div'); w.className = 'pop2 ask';

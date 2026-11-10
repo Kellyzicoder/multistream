@@ -93,6 +93,11 @@ jobs:
       - name: Get ffmpeg
         shell: bash
         run: bash scripts/get-ffmpeg.sh ${{ matrix.name == 'Mac Intel' && 'x64' || '' }}
+      # the OBS engine (test, switched on in the Help menu). Not for Linux.
+      - name: Get the OBS engine
+        if: matrix.name != 'Linux'
+        shell: bash
+        run: bash scripts/get-obs-engine.sh ${{ matrix.name == 'Mac Intel' && 'x64' || '' }}
       # if GitHub's downloads fail, try again with the npmmirror copies of Electron and its build tools
       - name: Build
         shell: bash
