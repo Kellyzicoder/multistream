@@ -11,9 +11,6 @@ let osn = null; // the engine, once loaded (false if it is not installed)
 let nwr = null; // Mac only: puts the engine's picture on top of the window
 let started = false;
 let video = null;
-let preview = null; // { key, win, macSurface }
-let lastWin = null;  // where the preview box was last asked for, so it can be made again
-let lastRect = null;
 let refreshTimer = null;
 
 // Where the engine lives: next to the app when installed, in node_modules while developing
@@ -95,73 +92,101 @@ function askMacCamera() {
   });
 }
 
-// Shows the engine's picture over a box of the window (rect in the page's own pixels), or hides it (rect null)
-function showPreview(win, rect) {
-  lastWin = win; lastRect = rect;
-  if (!started || !win || win.isDestroyed()) return false;
-  const key = 'golive';
-  if (!rect || rect.width < 2 || rect.height < 2) {
-    hidePreview();
-    return true;
-  }
+// ---- pictures on the app's pages ----
+// The engine paints straight into boxes on a page: the Go Live preview, the Studio's Program, and the Multiview.
+// Each box has a key. src is 'program' (what viewers see) or { scene: 'Studio scene name' }.
+// rect is in the page's own pixels; null takes the picture away (another page, a pop-up, the window minimised).
+// On Windows the picture lets clicks through to the page under it.
+const displays = new Map(); // key -> { key, win, src, name, rect, macSurface }
+
+function sourceName(src) {
+  if (src && src.scene) return scenes.sceneName(src.scene) || '';
+  return scenes.programName();
+}
+
+function dropDisplay(d) {
+  try {
+    if (d.macSurface && nwr) { nwr.destroyWindow(d.key); nwr.destroyIOSurface(d.key); }
+    osn.NodeObs.OBS_content_destroyDisplay(d.key);
+  } catch (e) {}
+}
+
+function placeDisplay(d) {
+  const { win, rect, key } = d;
   const zoom = win.webContents.getZoomFactor ? win.webContents.getZoomFactor() : 1;
   const x = Math.round(rect.x * zoom);
   const y = Math.round(rect.y * zoom);
   const w = Math.max(2, Math.round(rect.width * zoom));
   const h = Math.max(2, Math.round(rect.height * zoom));
+  if (process.platform === 'darwin') {
+    // Mac: sizes are in points; the picture is a surface placed over the window, measured from the bottom
+    osn.NodeObs.OBS_content_resizeDisplay(key, w, h);
+    if (nwr) {
+      if (d.macSurface) { nwr.destroyWindow(key); nwr.destroyIOSurface(key); }
+      const surface = osn.NodeObs.OBS_content_createIOSurface(key);
+      nwr.createWindow(key, win.getNativeWindowHandle());
+      nwr.connectIOSurface(key, surface);
+      const contentH = win.getContentBounds().height;
+      nwr.moveWindow(key, x, contentH - (y + h));
+      d.macSurface = true;
+    }
+  } else {
+    // Windows: sizes are in real screen pixels
+    const scale = require('electron').screen.getDisplayMatching(win.getBounds()).scaleFactor || 1;
+    osn.NodeObs.OBS_content_resizeDisplay(key, Math.round(w * scale), Math.round(h * scale));
+    osn.NodeObs.OBS_content_moveDisplay(key, Math.round(x * scale), Math.round(y * scale));
+  }
+}
+
+function showDisplay(win, key, rect, src) {
+  if (!started || !win || win.isDestroyed()) return false;
+  let d = displays.get(key);
+  if (!rect || rect.width < 2 || rect.height < 2) { hideDisplay(key); return true; }
+  const name = sourceName(src);
+  if (!name) { hideDisplay(key); return true; } // that scene is not built (yet)
   try {
-    if (!preview) {
-      osn.NodeObs.OBS_content_createSourcePreviewDisplay(win.getNativeWindowHandle(), scenes.programName(), key, false, video);
+    if (d && (d.name !== name || d.win !== win)) { dropDisplay(d); displays.delete(key); d = null; }
+    if (!d) {
+      osn.NodeObs.OBS_content_createSourcePreviewDisplay(win.getNativeWindowHandle(), name, key, false, video);
       osn.NodeObs.OBS_content_setShouldDrawUI(key, false);
       osn.NodeObs.OBS_content_setPaddingSize(key, 0);
       osn.NodeObs.OBS_content_setPaddingColor(key, 0, 0, 0);
-      preview = { key, win, macSurface: false };
+      d = { key, win, src, name, rect, macSurface: false };
+      displays.set(key, d);
+      // a window that closes takes its pictures with it
+      if (!win.__msDisplays) { win.__msDisplays = true; win.once('closed', () => { displays.forEach((x) => { if (x.win === win) { dropDisplay(x); displays.delete(x.key); } }); }); }
     }
-    if (process.platform === 'darwin') {
-      // Mac: sizes are in points; the picture is a surface placed over the window, measured from the bottom
-      osn.NodeObs.OBS_content_resizeDisplay(key, w, h);
-      if (nwr) {
-        if (preview.macSurface) { nwr.destroyWindow(key); nwr.destroyIOSurface(key); }
-        const surface = osn.NodeObs.OBS_content_createIOSurface(key);
-        nwr.createWindow(key, win.getNativeWindowHandle());
-        nwr.connectIOSurface(key, surface);
-        const contentH = win.getContentBounds().height;
-        nwr.moveWindow(key, x, contentH - (y + h));
-        preview.macSurface = true;
-      }
-    } else {
-      // Windows: sizes are in real screen pixels
-      const scale = require('electron').screen.getDisplayMatching(win.getBounds()).scaleFactor || 1;
-      osn.NodeObs.OBS_content_resizeDisplay(key, Math.round(w * scale), Math.round(h * scale));
-      osn.NodeObs.OBS_content_moveDisplay(key, Math.round(x * scale), Math.round(y * scale));
-    }
+    d.src = src; d.rect = rect;
+    placeDisplay(d);
     return true;
   } catch (e) {
-    console.error('[engine] preview:', e.message);
+    console.error('[engine] picture ' + key + ':', e.message);
     return false;
   }
 }
 
-function hidePreview() {
-  if (!preview || !osn) return;
-  try {
-    if (preview.macSurface && nwr) { nwr.destroyWindow(preview.key); nwr.destroyIOSurface(preview.key); }
-    osn.NodeObs.OBS_content_destroyDisplay(preview.key);
-  } catch (e) {}
-  preview = null;
+function hideDisplay(key) {
+  const d = displays.get(key);
+  if (!d || !osn) return;
+  dropDisplay(d);
+  displays.delete(key);
 }
+function hideAll() { displays.forEach((d) => dropDisplay(d)); displays.clear(); }
+
+// the Go Live preview (kept for the Go Live page)
+function showPreview(win, rect) { return showDisplay(win, 'golive', rect, 'program'); }
+function hidePreview() { hideDisplay('golive'); }
 
 // The Studio's scenes, sources and the scene on air (see engine-scenes.js)
 function sync(data) {
   if (!started) return false;
   let remake = false;
   try { remake = scenes.sync(data, video); } catch (e) { console.error('[engine] scenes:', e.message); }
-  if (remake && preview) {
-    // the picture changed size or the transition changed: the preview box is made again
-    const win = lastWin, rect = lastRect;
-    hidePreview();
-    showPreview(win, rect);
-  }
+  // pictures whose scene was built again, or all of them when the size or transition changed, are made again
+  [...displays.values()].forEach((d) => {
+    if (d.win.isDestroyed()) { displays.delete(d.key); return; }
+    if (remake || d.name !== sourceName(d.src)) { const { win, key, rect, src } = d; dropDisplay(d); displays.delete(key); showDisplay(win, key, rect, src); }
+  });
   return true;
 }
 
@@ -337,7 +362,7 @@ function streamState() {
 function stop() {
   if (rec) { try { rec.stop(true); } catch (e) {} dropRecord(); }
   stopStream();
-  hidePreview();
+  hideAll();
   if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
   if (!osn) return;
   try { scenes.clear(); } catch (e) {}
@@ -350,4 +375,4 @@ function stop() {
   started = false;
 }
 
-module.exports = { available, start, stop, askMacCamera, showPreview, hidePreview, sync, startStream, stopStream, streamState, startRecord, stopRecord, isRecording: () => Boolean(rec), isStarted: () => started };
+module.exports = { available, start, stop, askMacCamera, showPreview, hidePreview, showDisplay, hideDisplay, sync, startStream, stopStream, streamState, startRecord, stopRecord, isRecording: () => Boolean(rec), isStarted: () => started };

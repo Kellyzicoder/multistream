@@ -1644,7 +1644,7 @@ const XPAGES = {};
   const tick = () => {
     if (!st.on || !st.started) return send(null);
     const box = document.querySelector('#glPrev .glp-v');
-    const popup = document.querySelector('.overlay:not([hidden]), dialog[open]');
+    const popup = document.querySelector('.overlay:not([hidden]), dialog[open], .pop2');
     if (page !== 'dash' || document.hidden || !box || popup) return send(null);
     const r = box.getBoundingClientRect();
     if (r.width < 2 || r.height < 2) return send(null);
@@ -1661,6 +1661,45 @@ const XPAGES = {};
   nat.engineState().then(apply).catch(() => {});
   setInterval(tick, 250);
   window.addEventListener('resize', () => { last = ''; tick(); });
+})();
+// OBS engine: the Multiview's Program and scene boxes are painted by the engine too. The engine's picture sits on
+// top of the page, so each box leaves room at the top and bottom for its number and name, and all of them are
+// taken away while a pop-up is open or another page is showing.
+(function () {
+  const nat = window.msNative;
+  if (!nat || !nat.engineDisplay) return;
+  let on = false;
+  const poll = () => nat.engineState().then((s) => { on = Boolean(s && s.on && s.started); }).catch(() => {});
+  poll(); setInterval(poll, 2000);
+  const sent = new Map(); // key -> last rect sent ('' = hidden)
+  const send = (key, rect, src) => {
+    const k = rect ? [rect.x, rect.y, rect.width, rect.height, JSON.stringify(src)].join(',') : '';
+    if (sent.get(key) === k) return;
+    sent.set(key, k);
+    nat.engineDisplay(key, rect, src).catch(() => {});
+  };
+  const rectOf = (el, top, bottom) => {
+    const r = el.getBoundingClientRect();
+    const h = r.height - top - bottom;
+    if (r.width < 8 || h < 8) return null;
+    return { x: Math.round(r.left), y: Math.round(r.top + top), width: Math.round(r.width), height: Math.round(h) };
+  };
+  const tick = () => {
+    const want = new Map();
+    const popup = document.querySelector('.overlay:not([hidden]), dialog[open], .pop2');
+    if (on && page === 'cr' && !document.hidden && !popup) {
+      const prog = $('#crProg');
+      if (prog) want.set('mv-program', { rect: rectOf(prog, 34, 40), src: 'program' });
+      document.querySelectorAll('#crTiles button.mvt[data-n]').forEach((b, i) => {
+        const im = b.querySelector('img');
+        if (im) want.set('mv-scene-' + i, { rect: rectOf(im, 26, 30), src: { scene: b.dataset.n } });
+      });
+    }
+    want.forEach((v, k) => send(k, v.rect, v.src));
+    sent.forEach((v, k) => { if (!want.has(k)) send(k, null, null); });
+  };
+  setInterval(tick, 250);
+  window.addEventListener('resize', () => { sent.clear(); tick(); });
 })();
 // a small box to type a name or an address in (the desktop app does not show the browser's own prompt box)
 window.askText = (title, value, hint) => new Promise((ok) => {

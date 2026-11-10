@@ -2661,6 +2661,36 @@ if (/[?&]same=1/.test(location.search) && window.msNative) {
 let stHold = 0;
 function flash(text, ok) { $('#st').textContent = text; $('#st').className = 'stat ' + (ok ? 'ok' : 'bad'); stHold = Date.now() + 6000; }
 
+// ---------------- OBS engine: the Program box ----------------
+// When the engine is on (Help > Use the OBS engine (test)), the engine paints the Program box itself, so it shows
+// exactly what viewers get. Its picture sits on top of the page, so it is taken away while a menu or window is open.
+// The Preview box (the scene you are editing) stays drawn here, because you move and resize items on it.
+(function () {
+  const nat = window.msNative;
+  if (!nat || !nat.engineDisplay) return;
+  let on = false, last = '';
+  const poll = () => nat.engineState().then((s) => { on = Boolean(s && s.on && s.started); }).catch(() => {});
+  poll(); setInterval(poll, 2000);
+  const send = (rect) => {
+    const k = rect ? [rect.x, rect.y, rect.width, rect.height].join(',') : '';
+    if (k === last) return;
+    last = k;
+    nat.engineDisplay('studio-program', rect, 'program').catch(() => {});
+  };
+  const popupHere = () => document.querySelector('.ctxm, .modal, .menu2, dialog[open]');
+  const popupThere = () => { try { return window.parent !== window && window.parent.document.querySelector('.overlay:not([hidden]), dialog[open], .pop2'); } catch { return null; } };
+  const tick = () => {
+    if (!on || document.hidden || popupHere() || popupThere()) return send(null);
+    let ox = 0, oy = 0;
+    try { if (window.frameElement) { if (window.frameElement.checkVisibility && !window.frameElement.checkVisibility({ visibilityProperty: true })) return send(null); const f = window.frameElement.getBoundingClientRect(); if (f.width < 2 || f.height < 2) return send(null); ox = f.left; oy = f.top; } } catch {}
+    const r = cv.getBoundingClientRect(), b = 3; // inside the box's border
+    if (r.width < 10 || r.height < 10 || r.bottom < 0 || r.top > innerHeight) return send(null);
+    send({ x: Math.round(ox + r.left + b), y: Math.round(oy + r.top + b), width: Math.round(r.width - b * 2), height: Math.round(r.height - b * 2) });
+  };
+  setInterval(tick, 250);
+  window.addEventListener('resize', () => { last = '-'; tick(); });
+})();
+
 // ---------------- sending ----------------
 // Once you press Start sending, it keeps trying to send until you press Stop. If the link drops, or the
 // encoder stops, it reconnects by itself, so a long service does not end because of one hiccup.
