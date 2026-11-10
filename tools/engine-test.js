@@ -21,10 +21,11 @@ app.whenReady().then(() => {
   out('NodeObs:', Object.keys(osn.NodeObs || {}).join(', '));
 
   try {
-    if (osn.NodeObs.IPC && osn.NodeObs.IPC.host) osn.NodeObs.IPC.host('multistream-engine-test-' + process.pid);
+    const hosted = osn.NodeObs.IPC.host('multistream-engine-test-' + process.pid);
+    out('engine process:', hosted, hosted === 0 ? '(OK)' : '(problem)');
     osn.NodeObs.SetWorkingDirectory(path.join(__dirname, '..', 'node_modules', 'obs-studio-node'));
     const dataDir = path.join(app.getPath('userData'), 'engine-test');
-    const result = osn.NodeObs.OBS_API_initAPI('en-US', dataDir, '1.0.0', '');
+    const result = osn.NodeObs.OBS_API_initAPI({ language: 'en-US', appDataPath: dataDir, version: '1.0.0', crashServerUrl: '' });
     out('start result:', result, result === 0 ? '(OK)' : '(problem)');
 
     if (result === 0) {

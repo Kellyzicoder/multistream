@@ -29,10 +29,17 @@ jobs:
       - name: Install the OBS engine (for this check only)
         shell: bash
         run: |
-          npm install --no-save --no-audit --no-fund "obs-studio-node@https://s3-us-west-2.amazonaws.com/obsstudionodes3.streamlabs.com/${{ matrix.osn }}"
-          if [ -n "${{ matrix.nwr }}" ]; then npm install --no-save --no-audit --no-fund "node-window-rendering@https://slobs-node-window-rendering.s3-us-west-2.amazonaws.com/${{ matrix.nwr }}"; fi
-          du -sh node_modules/obs-studio-node
-          ls node_modules/obs-studio-node | head -40
+          # unpacked straight into node_modules, the way Streamlabs Desktop installs it
+          cd node_modules
+          curl -sSfL -o osn.tgz "https://s3-us-west-2.amazonaws.com/obsstudionodes3.streamlabs.com/${{ matrix.osn }}"
+          tar -xzf osn.tgz && rm osn.tgz
+          if [ -n "${{ matrix.nwr }}" ]; then
+            curl -sSfL -o nwr.tgz "https://slobs-node-window-rendering.s3-us-west-2.amazonaws.com/${{ matrix.nwr }}"
+            tar -xzf nwr.tgz && rm nwr.tgz
+            ls node-window-rendering | head
+          fi
+          du -sh obs-studio-node
+          ls obs-studio-node | head -40
       - name: Start the engine inside Electron
         shell: bash
         run: npx electron tools/engine-test.js 2>&1 | tee engine.txt
