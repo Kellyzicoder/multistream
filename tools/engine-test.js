@@ -60,8 +60,7 @@ app.whenReady().then(() => {
         const video = osn.VideoFactory.create();
         video.video = {
           fpsNum: 30, fpsDen: 1, baseWidth: 1920, baseHeight: 1080, outputWidth: 1920, outputHeight: 1080,
-          outputFormat: osn.EVideoFormat.NV12, colorspace: osn.EColorSpace.CS709, range: osn.ERangeType.Partial,
-          scaleType: osn.EScaleType.Bilinear, fpsType: osn.EFPSType.Fractional,
+          outputFormat: 2, colorspace: 2, range: 1, scaleType: 3, fpsType: 2,
         };
         scenes.init(osn);
         const pic = path.join(__dirname, '..', 'build', 'icon.png');

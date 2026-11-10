@@ -8,6 +8,9 @@
 const NATIVE = new Set(['camera', 'screen', 'window', 'image', 'video', 'color']);
 const TRANS = { cut: 'cut_transition', fade: 'fade_transition', slide: 'slide_transition', dip: 'fade_to_color_transition' };
 const PROGRAM = 'Multistream Program'; // the name the preview box shows
+// the engine's own numbers (its names for them only exist while it is being built)
+const BOUNDS = { none: 0, stretch: 1, inside: 2, outside: 3 };
+const ALIGN = { center: 0, topLeft: 5 };
 
 let osn = null;
 let types = [];
@@ -96,8 +99,10 @@ function makeInput(l, name) {
     const win = l.type === 'window';
     let input;
     if (mac()) {
-      const type = has('screen_capture') ? 'screen_capture' : win ? 'window_capture' : 'display_capture';
-      input = mk(type, type === 'screen_capture' ? { type: win ? 1 : 0, show_cursor: true } : {});
+      // the Mac's newer screen capture (ScreenCaptureKit) when the engine has it
+      const sck = has('mac_screen_capture') ? 'mac_screen_capture' : has('screen_capture') ? 'screen_capture' : '';
+      const type = sck || (win ? 'window_capture' : 'display_capture');
+      input = mk(type, sck ? { type: win ? 1 : 0, show_cursor: true } : {});
     } else {
       input = mk(win ? 'window_capture' : 'monitor_capture', { capture_cursor: true, cursor: true });
     }
@@ -152,18 +157,18 @@ function place(item, l, input) {
   try {
     item.deferUpdateBegin();
     if (l.fit === 'natural') {
-      item.boundsType = osn.EBoundsType.None;
-      item.alignment = osn.EAlignment.TopLeft;
+      item.boundsType = BOUNDS.none;
+      item.alignment = ALIGN.topLeft;
       item.position = { x, y };
       item.scale = { x: (l.sx || 1) * flipX, y: (l.sy || 1) * flipY };
     } else {
       // a box: the source is stretched into it, fitted inside it, or fills it (sides cut off)
-      item.alignment = osn.EAlignment.Center; // turns around its middle, like the Studio
+      item.alignment = ALIGN.center; // turns around its middle, like the Studio
       item.boundsAlignment = 0;
       item.position = { x: x + w / 2, y: y + h / 2 };
       item.bounds = { x: w, y: h };
-      item.boundsType = l.fit === 'fit' || l.fit === 'blur' ? osn.EBoundsType.ScaleInner
-        : l.fit === 'cover' ? osn.EBoundsType.ScaleOuter : osn.EBoundsType.Stretch;
+      item.boundsType = l.fit === 'fit' || l.fit === 'blur' ? BOUNDS.inside
+        : l.fit === 'cover' ? BOUNDS.outside : BOUNDS.stretch;
       item.cropToBounds = l.fit === 'cover';
       item.scale = { x: flipX, y: flipY };
     }

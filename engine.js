@@ -60,8 +60,9 @@ function start() {
     video.video = {
       fpsNum: 30, fpsDen: 1,
       baseWidth: 1920, baseHeight: 1080, outputWidth: 1920, outputHeight: 1080,
-      outputFormat: osn.EVideoFormat.NV12, colorspace: osn.EColorSpace.CS709, range: osn.ERangeType.Partial,
-      scaleType: osn.EScaleType.Bilinear, fpsType: osn.EFPSType.Fractional,
+      // the engine's own numbers for these (its names for them only exist while it is being built):
+      // NV12 = 2, colour space 709 = 2, partial range = 1, bilinear = 3, fractional frame rate = 2
+      outputFormat: 2, colorspace: 2, range: 1, scaleType: 3, fpsType: 2,
     };
 
     // the Studio's scenes come in through sync(); until then the picture is black
