@@ -1261,11 +1261,11 @@
     <nav class="snav" id="setNav" role="tablist" aria-orientation="vertical" aria-label="Settings sections"><div class="s2t">Settings</div><button type="button" role="tab" data-pane="general"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>General</button><button type="button" role="tab" data-pane="appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg>Appearance</button><button type="button" role="tab" data-pane="stream"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8"/></svg>Stream</button><button type="button" role="tab" data-pane="recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>Recording</button><button type="button" role="tab" data-pane="audio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/></svg>Audio</button><button type="button" role="tab" data-pane="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/></svg>Video</button><button type="button" role="tab" data-pane="hotkeys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6"/></svg>Hotkeys</button><button type="button" role="tab" data-pane="advanced"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/></svg>Advanced</button><button type="button" role="tab" data-pane="system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="4" width="16" height="12" rx="1.5"/><path d="M9 20h6M12 16v4"/></svg>System</button></nav>
     <div class="s2r">
       <div class="smain"><section class="pane" data-pane="general" role="tabpanel" aria-label="General"><div class="s2h"><h2>General</h2></div><div class="g2"><h3>Studio</h3><div class="c2">
-  <div class="r2"><span class="l">Snap items to the edges, the middle and other items</span><button type="button" class="tg2" data-mirror="#optSnap" aria-label="Snap items"></button></div>
-  <div class="r2"><span class="l">Ask "Are you sure?" before stopping the stream</span><button type="button" class="tg2" data-mirror="#optConfirm" aria-label="Ask before stopping"></button></div>
-  <div class="r2"><span class="l">Panels in the Studio</span><button type="button" class="b3" data-click="#resetLayout">Put the panels back</button></div>
+  <div class="r2"><span class="l">Snap items to edges, the centre and each other</span><button type="button" class="tg2" data-mirror="#optSnap" aria-label="Snap items"></button></div>
+  <div class="r2"><span class="l">Confirm before stopping the stream</span><button type="button" class="tg2" data-mirror="#optConfirm" aria-label="Ask before stopping"></button></div>
+  <div class="r2"><span class="l">Studio panel layout</span><button type="button" class="b3" data-click="#resetLayout">Reset panels</button></div>
   <div class="r2"><span class="l">Scenes from OBS</span><button type="button" class="b3" data-click="#impBtn">Import scenes from OBS...</button></div>
-  <div class="r2"><span class="l">The Program picture in its own window</span><button type="button" class="b3" data-click="#projBtn">Preview window</button></div>
+  <div class="r2"><span class="l">Show the live picture in its own window</span><button type="button" class="b3" data-click="#projBtn">Open window</button></div>
 </div><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div>
 <div class="g2"><h3>Reading and using</h3><div class="c2 acc2">
           <div class="grp"><h4>Reading</h4>
@@ -1293,7 +1293,7 @@
 <div class="g2"><h3>Theme</h3><div class="seg2" id="themes"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button><button type="button" data-v="system">Match computer</button></div></div>
 <div class="g2"><h3>Colour</h3><div class="sws2" id="sws"></div></div></section><section class="pane" data-pane="stream" role="tabpanel" aria-label="Stream"><div class="s2h"><h2>Stream</h2></div><div class="g2 old2">
           <div class="grp"><h4>YouTube account</h4>
-            <p>Choose the file you downloaded from Google, then sign in with the church YouTube account. The file and the login are saved only on this computer.</p>
+            <p>Add the file from Google, then sign in with the church YouTube account. Both stay on this computer only.</p>
             <div class="srow"><label class="lb" for="yt-file">1. File from Google</label>
               <div class="ctl"><input class="t" id="yt-file" type="file" accept=".json,application/json"></div></div>
             <div class="srow"><p class="lb">2. Sign in</p>
@@ -1303,7 +1303,7 @@
           </div>
         </div><div class="g2 old2">
           <div class="grp"><h4>Sign in with Facebook</h4>
-            <p>Sign in, then pick the Page. Nothing to copy. If Facebook shows an error later, sign in again here and it picks the Page up again.</p>
+            <p>Sign in, then pick the Page to stream to. If Facebook shows an error later, just sign in again.</p>
             <div class="srow"><p class="lb">Facebook</p>
               <div class="ctl"><p class="note" id="fbStatus" hidden></p><div class="fbbtns"><button class="b2 pri" id="fbSignIn" type="button">Sign in with Facebook</button><button class="b2" id="fbChange" type="button" hidden>Change Page</button></div><p class="note" id="fbCode" hidden></p></div></div>
             <!-- the code to type on Facebook: big, with Copy and Open buttons and the steps -->
@@ -1323,14 +1323,14 @@
                 <button class="b2 pri" id="fbUse" type="button">Use this Page</button></div></div>
           </div>
           <div class="grp"><h4>Meta app (set once)</h4>
-            <p>On developers.facebook.com, open your app. App ID: App settings, Basic. Client token: App settings, Advanced. Also turn on <b>Login from devices</b> in Facebook Login, Settings.</p>
+            <p>On developers.facebook.com, open your app. The App ID is under App settings → Basic. The client token is under App settings → Advanced. Then turn on <b>Login from devices</b> under Facebook Login → Settings, and press Save changes.</p>
             <div class="srow"><label class="lb" for="fb-appid">App ID</label>
               <div class="ctl"><input class="t" id="fb-appid" type="text" placeholder="Numbers only"></div></div>
             <div class="srow"><label class="lb" for="fb-ct">Client token</label>
               <div class="ctl"><input class="t" id="fb-ct" type="password" placeholder="Paste the client token" autocomplete="off"><button class="b2" id="fbAppSave" type="button">Save app</button><p class="note" id="fb-appmsg"></p></div></div>
           </div>
           <div class="grp"><h4>Or paste a Page token</h4>
-            <p>Paste the Page ID and the Page access token from the Graph API Explorer. The token is saved only on this computer.</p>
+            <p>Only if sign-in does not work: paste the Page ID and a Page access token from the Graph API Explorer. Saved on this computer only.</p>
             <div class="srow"><label class="lb" for="fb-page">Page ID</label>
               <div class="ctl"><input class="t" id="fb-page" type="text" placeholder="Numbers only"></div></div>
             <div class="srow"><label class="lb" for="fb-token">Page access token</label>
@@ -1340,21 +1340,21 @@
           </div>
         </div></section><section class="pane" data-pane="recording" role="tabpanel" aria-label="Recording"><div class="s2h"><h2>Recording</h2></div><div class="g2"><div class="c2">
   <div class="r2"><span class="l">Quality</span><select class="i3" data-mirror="#recQ"></select></div>
-  <div class="r2"><span class="l">Also save the stream as soon as it starts</span><button type="button" class="tg2" data-mirror="#recAuto2" aria-label="Record automatically"></button></div>
+  <div class="r2"><span class="l">Record automatically when the stream starts</span><button type="button" class="tg2" data-mirror="#recAuto2" aria-label="Record automatically"></button></div>
   <div class="r2"><span class="l">Saved in</span><code class="pth" id="s2RecDir"></code><button type="button" class="b3" id="s2RecOpen">Open folder</button></div>
-</div><p class="n2">Recordings are .mkv files, so they still play if the power goes out. VLC plays them. Recordings, Remux to MP4 makes MP4 copies.</p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="audio" role="tabpanel" aria-label="Audio"><div class="s2h"><h2>Audio</h2></div><div class="g2"><h3>Monitoring</h3><div class="c2">
+</div><p class="n2">Saved as .mkv, so a file still plays if the power goes out. Open them with VLC, or make an MP4 copy on the Recordings page (Remux to MP4).</p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="audio" role="tabpanel" aria-label="Audio"><div class="s2h"><h2>Audio</h2></div><div class="g2"><h3>Monitoring</h3><div class="c2">
   <div class="r2"><span class="l">Monitoring output (your headphones)</span><select class="i3" data-mirror="#monDev"></select></div>
-</div><p class="n2">Monitoring lets you hear an input in your headphones. Use headphones, or the microphone will pick up the speakers. Turn it on for each input in the Studio's mixer (Listen).</p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="video" role="tabpanel" aria-label="Video"><div class="s2h"><h2>Video</h2></div><div class="g2"><h3>What viewers get</h3><div class="c2">
+</div><p class="n2">Hear an input in your headphones. Turn it on for each input with Listen in the Studio's mixer. Use headphones, or the microphone will pick up the speakers.</p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="video" role="tabpanel" aria-label="Video"><div class="s2h"><h2>Video</h2></div><div class="g2"><h3>What viewers get</h3><div class="c2">
   <div class="r2"><span class="l">Quality</span><select class="i3" data-mirror="#outQ"></select></div>
   <div class="r2"><span class="l">Bitrate (kbps)</span><input class="i3" type="number" min="1000" max="60000" step="500" data-mirror="#outKbps"></div>
   <div class="r2"><span class="l">Encoder</span><span class="v2" id="s2Enc">...</span></div>
   <div class="r2"><span class="l">Keyframes</span><span class="v2">Every 2 seconds (what YouTube and Facebook ask for)</span></div>
 </div><p class="n2" id="s2OutNote"></p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="hotkeys" role="tabpanel" aria-label="Hotkeys"><div class="s2h"><h2>Hotkeys</h2><label class="hks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="hkQ" placeholder="Search hotkeys" aria-label="Search hotkeys"></label></div><div class="hkl" id="hkList"></div></section><section class="pane" data-pane="advanced" role="tabpanel" aria-label="Advanced"><div class="s2h"><h2>Advanced</h2></div><div class="g2"><div class="c2">
-  <div class="r2"><span class="l">A channel that drops</span><span class="v2">Started again after 3, 6, 9 ... up to 30 seconds, 10 tries, then it says so.</span></div>
+  <div class="r2"><span class="l">If a channel drops</span><span class="v2">It reconnects by itself (up to 10 tries, a bit longer apart each time), then tells you.</span></div>
   <div class="r2"><span class="l">Reset the Studio settings</span><button type="button" class="b3" data-click="#resetStudio">Reset</button></div>
-</div><p class="n2">Reset puts the video size, recording quality, transition, monitoring output and the Studio options back to how they started. Your scenes, sources and channels are kept.</p></div></section><section class="pane" data-pane="system" role="tabpanel" aria-label="System"><div class="s2h"><h2>System</h2></div><div class="g2"><div class="c2">
+</div><p class="n2">Puts the video size, recording quality, transition, headphone output and Studio options back to how they started. Your scenes, sources and channels stay.</p></div></section><section class="pane" data-pane="system" role="tabpanel" aria-label="System"><div class="s2h"><h2>System</h2></div><div class="g2"><div class="c2">
   <div class="r2"><span class="l">Version</span><span class="v2" id="s2Ver">...</span></div>
-  <div class="r2"><span class="l">Updates</span><span class="v2">The app looks for a new version by itself and tells you when one is ready.</span></div>
+  <div class="r2"><span class="l">Updates</span><span class="v2">Checks automatically and tells you when one is ready</span></div>
   <div class="r2"><span class="l">This computer</span><span class="v2" id="s2Sys">...</span></div>
 </div></div></section></div>
       <div class="swin-f"><button class="b2 ghost3" id="hkReset" type="button" hidden>Reset to default</button><span class="sp2"></span><button class="b2" id="setCancel" type="button">Cancel</button><button class="b2" id="setApply" type="button" disabled>Apply</button><button class="b2 pri" id="setOk" type="button">OK</button><button class="swin-x" id="setX" type="button" aria-label="Close without saving" hidden>×</button></div>
