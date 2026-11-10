@@ -179,65 +179,78 @@ const ENCODERS = [
   'jim_nvenc', 'obs_nvenc_h264_tex', 'ffmpeg_nvenc', 'h264_texture_amf', 'amd_amf_h264', 'obs_qsv11_v2', 'obs_qsv11',
   'obs_x264',
 ];
-function pickEncoder() {
+// every way this computer has, best first (if one does not work here, the next one is tried)
+function encoderChoices() {
   let types = [];
   try { types = osn.VideoEncoderFactory.types() || []; } catch (e) {}
-  return ENCODERS.find((t) => types.includes(t)) || types.find((t) => /h264|avc|x264/i.test(t)) || 'obs_x264';
+  console.log('[engine] video makers on this computer:', types.join(', '));
+  const list = ENCODERS.filter((t) => types.includes(t));
+  types.filter((t) => /h264|avc/i.test(t) && !list.includes(t)).forEach((t) => list.splice(list.length - (list.includes('obs_x264') ? 1 : 0), 0, t));
+  if (!list.includes('obs_x264')) list.push('obs_x264');
+  return list;
 }
 
 // out: { server, key, w, h, fps, kbps }
 function startStream(out) {
   if (!started) return { ok: false, error: 'The engine is not on' };
   stopStream();
-  try {
-    // frames a second
-    const fps = Number(out.fps) === 60 ? 60 : 30;
-    if (video.video.fpsNum !== fps) video.video = { ...video.video, fpsNum: fps, fpsDen: 1 };
-
-    const id = pickEncoder();
-    const kbps = Math.max(500, Math.min(50000, Number(out.kbps) || 6000));
-    const settings = { rate_control: 'CBR', bitrate: kbps, keyint_sec: 2, profile: 'high' };
-    if (id === 'obs_x264') settings.preset = 'veryfast';
-    encoder = osn.VideoEncoderFactory.create(id, 'ms-video-encoder', settings);
-    sendState = { sending: false, error: '', encoder: id };
-    console.log('[engine] making video with', id, kbps + ' kbps', out.w + 'x' + out.h, fps + ' fps');
-
-    stream = osn.AdvancedStreamingFactory.create();
-    stream.videoEncoder = encoder;
-    stream.service = osn.ServiceFactory.create('rtmp_custom', 'ms-service', { server: out.server, key: out.key, use_auth: false });
-    stream.enforceServiceBitrate = false;
-    stream.video = video;
-    // a smaller picture than the scenes (720p from a 1080p scene): the engine makes it smaller
-    const [bw, bh] = [video.video.baseWidth, video.video.baseHeight];
-    if (out.w && out.h && (out.w !== bw || out.h !== bh)) {
-      stream.rescaling = true;
-      stream.rescaleFilter = 3; // bilinear
-      stream.outputWidth = out.w;
-      stream.outputHeight = out.h;
+  // frames a second
+  const fps = Number(out.fps) === 60 ? 60 : 30;
+  try { if (video.video.fpsNum !== fps) video.video = { ...video.video, fpsNum: fps, fpsDen: 1 }; } catch (e) {}
+  let lastError = '';
+  for (const id of encoderChoices()) {
+    try {
+      startWith(id, out, fps);
+      return { ok: true, encoder: id };
+    } catch (e) {
+      lastError = e.message;
+      console.log('[engine] ' + id + ' did not work here:', e.message);
+      stopStream();
     }
-    stream.delay = osn.DelayFactory.create();
-    const re = osn.ReconnectFactory.create();
-    re.enabled = true; re.retryDelay = 2; re.maxRetries = 1000;
-    stream.reconnect = re;
-    stream.network = osn.NetworkFactory.create();
-    const track = osn.AudioTrackFactory.create(160, 'ms-sound');
-    osn.AudioTrackFactory.setAtIndex(track, 1);
-    stream.audioTrack = 1;
-    stream.signalHandler = (sig) => {
-      if (!sig || sig.type !== 'streaming') return;
-      if (sig.signal === 'start' || sig.signal === 'activate') sendState = { ...sendState, sending: true, error: '' };
-      if (sig.signal === 'reconnect') sendState = { ...sendState, sending: false, error: 'Reconnecting...' };
-      if (sig.signal === 'reconnect_success') sendState = { ...sendState, sending: true, error: '' };
-      if (sig.signal === 'stop') sendState = { ...sendState, sending: false, error: sig.code ? (sig.error || 'The engine stopped sending (' + sig.code + ')') : '' };
-    };
-    stream.start();
-    return { ok: true, encoder: id };
-  } catch (e) {
-    console.error('[engine] could not go live:', e.message);
-    sendState = { sending: false, error: e.message, encoder: '' };
-    stopStream();
-    return { ok: false, error: e.message };
   }
+  console.error('[engine] could not go live:', lastError);
+  sendState = { sending: false, error: lastError, encoder: '' };
+  return { ok: false, error: lastError };
+}
+
+function startWith(id, out, fps) {
+  const kbps = Math.max(500, Math.min(50000, Number(out.kbps) || 6000));
+  const settings = { rate_control: 'CBR', bitrate: kbps, keyint_sec: 2, profile: 'high' };
+  if (id === 'obs_x264') settings.preset = 'veryfast';
+  encoder = osn.VideoEncoderFactory.create(id, 'ms-video-encoder', settings);
+  if (!encoder) throw new Error('could not make the video maker');
+  sendState = { sending: false, error: '', encoder: id };
+  console.log('[engine] making video with', id, kbps + ' kbps', out.w + 'x' + out.h, fps + ' fps');
+
+  stream = osn.AdvancedStreamingFactory.create();
+  stream.videoEncoder = encoder;
+  stream.service = osn.ServiceFactory.create('rtmp_custom', 'ms-service', { server: out.server, key: out.key, use_auth: false });
+  stream.enforceServiceBitrate = false;
+  stream.video = video;
+  // a smaller picture than the scenes (720p from a 1080p scene): the engine makes it smaller
+  const [bw, bh] = [video.video.baseWidth, video.video.baseHeight];
+  if (out.w && out.h && (out.w !== bw || out.h !== bh)) {
+    stream.rescaling = true;
+    stream.rescaleFilter = 3; // bilinear
+    stream.outputWidth = out.w;
+    stream.outputHeight = out.h;
+  }
+  stream.delay = osn.DelayFactory.create();
+  const re = osn.ReconnectFactory.create();
+  re.enabled = true; re.retryDelay = 2; re.maxRetries = 1000;
+  stream.reconnect = re;
+  stream.network = osn.NetworkFactory.create();
+  const track = osn.AudioTrackFactory.create(160, 'ms-sound');
+  osn.AudioTrackFactory.setAtIndex(track, 1);
+  stream.audioTrack = 1;
+  stream.signalHandler = (sig) => {
+    if (!sig || sig.type !== 'streaming') return;
+    if (sig.signal === 'start' || sig.signal === 'activate') sendState = { ...sendState, sending: true, error: '' };
+    if (sig.signal === 'reconnect') sendState = { ...sendState, sending: false, error: 'Reconnecting...' };
+    if (sig.signal === 'reconnect_success') sendState = { ...sendState, sending: true, error: '' };
+    if (sig.signal === 'stop') sendState = { ...sendState, sending: false, error: sig.code ? (sig.error || 'The engine stopped sending (' + sig.code + ')') : '' };
+  };
+  stream.start();
 }
 
 function stopStream() {
