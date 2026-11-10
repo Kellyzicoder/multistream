@@ -173,10 +173,11 @@ let stream = null;
 let encoder = null;
 let sendState = { sending: false, error: '', encoder: '' };
 
-// the best way to make video on this computer: its video chip first, the processor (x264) last
+// the best way to make video on this computer: its video chip first, the processor (x264) last.
+// Only the ones the engine allows for going live and recording (others are refused when starting).
 const ENCODERS = [
-  'com.apple.videotoolbox.videoencoder.ave.avc', 'com.apple.videotoolbox.videoencoder.h264.gva', 'com.apple.videotoolbox.videoencoder.h264',
-  'jim_nvenc', 'obs_nvenc_h264_tex', 'ffmpeg_nvenc', 'h264_texture_amf', 'amd_amf_h264', 'obs_qsv11_v2', 'obs_qsv11',
+  'com.apple.videotoolbox.videoencoder.ave.avc', 'com.apple.videotoolbox.videoencoder.h264.gva', // Apple
+  'obs_nvenc_h264_tex', 'ffmpeg_nvenc', 'h264_texture_amf', 'obs_qsv11_v2',                     // NVIDIA, AMD, Intel
   'obs_x264',
 ];
 // every way this computer has, best first (if one does not work here, the next one is tried)
@@ -185,7 +186,6 @@ function encoderChoices() {
   try { types = osn.VideoEncoderFactory.types() || []; } catch (e) {}
   console.log('[engine] video makers on this computer:', types.join(', '));
   const list = ENCODERS.filter((t) => types.includes(t));
-  types.filter((t) => /h264|avc/i.test(t) && !list.includes(t)).forEach((t) => list.splice(list.length - (list.includes('obs_x264') ? 1 : 0), 0, t));
   if (!list.includes('obs_x264')) list.push('obs_x264');
   return list;
 }
