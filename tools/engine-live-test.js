@@ -43,8 +43,10 @@ app.whenReady().then(async () => {
     await wait(1500);
     out('move a picture:', engine.showDisplay(bw, 'test-scene', { x: 340, y: 200, width: 400, height: 225 }, { scene: 'One' }));
     engine.hideDisplay('test-program'); engine.hideDisplay('test-scene');
+    app.on('window-all-closed', () => {}); // keep the test going after the window closes
     bw.close();
-    out('pictures test: OK');
+    await wait(1000);
+    out('pictures test: OK (window closed, engine still answers: ' + JSON.stringify(engine.streamState()) + ')');
     const port = 19350 + Math.floor(Math.random() * 500);
     rx = spawn(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-listen', '1', '-f', 'flv', '-i', `rtmp://127.0.0.1:${port}/live/test`, '-c', 'copy', '-y', file], { stdio: ['ignore', 'ignore', 'pipe'] });
     rx.stderr.on('data', (d) => out('receiver:', String(d).trim().slice(0, 200)));

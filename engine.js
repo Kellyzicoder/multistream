@@ -167,8 +167,8 @@ function showDisplay(win, key, rect, src) {
       osn.NodeObs.OBS_content_setPaddingColor(id, 0, 0, 0);
       d = { key, id, win, src, name, rect, macSurface: false, hidden: false };
       displays.set(key, d);
-      // a window that closes: its pictures are forgotten (the window took them with it)
-      if (!win.__msDisplays) { win.__msDisplays = true; win.once('closed', () => { displays.forEach((x) => { if (x.win === win) { macOff(x); displays.delete(x.key); } }); }); }
+      // a window about to close: its pictures are parked first, while the window is still there
+      if (!win.__msDisplays) { win.__msDisplays = true; win.once('close', () => { displays.forEach((x) => { if (x.win === win) { park(x); displays.delete(x.key); } }); }); }
     }
     d.src = src; d.rect = rect;
     placeDisplay(d);
