@@ -463,7 +463,9 @@ app.get('/api/state', (req, res) => {
     facebook: fbView(),
     youtube: ytView(),
     recording: recView(),
-    session: { youtube: Boolean(session.youtube), facebook: Boolean(session.facebook), fbAlso: session.fbAlso.map((a) => a.pageId) },
+    session: { youtube: Boolean(session.youtube), facebook: Boolean(session.facebook), fbAlso: session.fbAlso.map((a) => a.pageId),
+      // links to the live videos on Facebook (main Page, then each extra Page by its id)
+      fbLink: session.facebook ? session.fbLink || '' : '', fbLinks: Object.fromEntries(session.fbAlso.map((a) => [a.pageId, a.link || ''])) },
   });
 });
 
@@ -966,7 +968,14 @@ async function fbNewLive(pageId, token, status, title, description) {
   // Facebook gives one full address. Split it into the URL and the key the relay already uses.
   const [addr, query] = streamUrl.split('?');
   const idx = addr.lastIndexOf('/');
-  return { id: j.id || '', url: addr.slice(0, idx), key: addr.slice(idx + 1) + (query ? '?' + query : '') };
+  // where the live video is on Facebook (for the "Open on Facebook" link on Go Live)
+  let link = '';
+  try {
+    const pr = await fetch(`${GRAPH}/${j.id}?${new URLSearchParams({ fields: 'permalink_url', access_token: token })}`);
+    const pj = await pr.json().catch(() => ({}));
+    if (pj.permalink_url) link = /^https?:/i.test(pj.permalink_url) ? pj.permalink_url : 'https://www.facebook.com' + (pj.permalink_url.startsWith('/') ? '' : '/') + pj.permalink_url;
+  } catch {}
+  return { id: j.id || '', url: addr.slice(0, idx), key: addr.slice(idx + 1) + (query ? '?' + query : ''), link };
 }
 async function fbStartAlso(p) {
   const m = session.fbMeta || { status: 'LIVE_NOW', title: 'Live', description: '' };
@@ -977,7 +986,7 @@ async function fbStartAlso(p) {
   save();
   startDestination(pd);
   session.fbAlso = session.fbAlso.filter((a) => a.pageId !== p.pageId);
-  session.fbAlso.push({ pageId: p.pageId, id: l.id, destId: pd.id });
+  session.fbAlso.push({ pageId: p.pageId, id: l.id, destId: pd.id, link: l.link });
 }
 async function fbEndAlso(pageId) {
   const a = session.fbAlso.find((x) => x.pageId === pageId);
@@ -1068,6 +1077,7 @@ app.post('/api/facebook/live', async (req, res) => {
   save();
   startDestination(d);
   session.facebook = main.id;
+  session.fbLink = main.link;
   chat.startFacebook(main.id);
   // the extra Pages that are switched on: the same video, each with its own live and its own channel
   session.fbMeta = { status, title, description };
