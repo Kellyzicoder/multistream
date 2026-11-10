@@ -78,7 +78,7 @@
   .pane { display:none; } .pane.on { display:block; }
   .grp { border:1px solid var(--line); border-radius:12px; padding:2px 16px 8px; margin:0 0 16px; position:relative; }
   .grp > h4 { margin:0; padding:12px 0 4px; font-size:11px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); }
-  .grp > p { margin:4px 0 8px; color:var(--muted); font-size:12.5px; line-height:1.5; }
+  .grp > p { margin:4px 0 8px; color:var(--muted); font-size:14px; line-height:1.55; }
   .srow { display:grid; grid-template-columns:170px minmax(0,1fr); gap:6px 18px; align-items:center; padding:9px 0; }
   .srow > .lb { text-align:right; font-size:13px; color:var(--soft); margin:0; }
   .srow > .lb small { display:block; font-size:11px; color:var(--muted); margin-top:2px; }
@@ -944,6 +944,10 @@
   .asrun.mini .as-r1 { flex-wrap:nowrap !important; } .asrun.mini .as-min { margin-left:10px; }
   /* Start / Stop streaming keeps the main colour you picked (Settings, Appearance) while live, instead of turning red */
   .hb.sb.stop { background:var(--blue) !important; color:var(--onblue) !important; box-shadow:0 8px 24px color-mix(in srgb, var(--blue) 40%, transparent) !important; }
+  /* sign-in messages (YouTube and Facebook): big enough to read, in the main text colour */
+  #yt-status, #yt-msg, #fbStatus, #fbCode, #fb-saved, #fb-msg, #fb-appmsg, #fbCodeLeft { font-size:14px; line-height:1.5; color:var(--text); }
+  #yt-status.bad, #yt-msg.bad, #fbCode.bad, #fb-msg.bad, #fb-appmsg.bad { color:var(--red); }
+  .note.conn-ok { display:inline-block; font-weight:600; color:var(--green) !important; background:color-mix(in srgb, var(--green) 14%, transparent); padding:6px 12px; border-radius:999px; margin:0 0 8px; }
   /* Facebook sign-in: the code and the Page list, in the app's style */
   .fbbtns { display:flex; gap:8px; flex-wrap:wrap; }
   .fbcode { margin:8px 0 14px; padding:16px; border:1px solid var(--line); border-radius:16px; background:var(--field); display:grid; gap:10px; }
@@ -1301,7 +1305,7 @@
           <div class="grp"><h4>Sign in with Facebook</h4>
             <p>Sign in, then pick the Page. Nothing to copy. If Facebook shows an error later, sign in again here and it picks the Page up again.</p>
             <div class="srow"><p class="lb">Facebook</p>
-              <div class="ctl"><div class="fbbtns"><button class="b2 pri" id="fbSignIn" type="button">Sign in with Facebook</button><button class="b2" id="fbChange" type="button" hidden>Change Page</button></div><p class="note" id="fbCode" hidden></p></div></div>
+              <div class="ctl"><p class="note" id="fbStatus" hidden></p><div class="fbbtns"><button class="b2 pri" id="fbSignIn" type="button">Sign in with Facebook</button><button class="b2" id="fbChange" type="button" hidden>Change Page</button></div><p class="note" id="fbCode" hidden></p></div></div>
             <!-- the code to type on Facebook: big, with Copy and Open buttons and the steps -->
             <div class="fbcode" id="fbCodeBox" hidden>
               <p class="fbc-lb">Your code</p>
@@ -2716,8 +2720,14 @@ async function loadFb() {
   $('#fb-appid').value = s.appId || ''; $('#fb-ct').value = ''; $('#fb-ct').placeholder = s.hasClientToken ? 'Saved (paste a new one to change it)' : 'Paste the client token';
   $('#fb-page').value = s.pageId || '';
   $('#fb-token').value = '';
-  fbNoteSet('#fb-saved', s.hasToken ? `Saved: ${s.pageName || 'Page ' + s.pageId} (token ends ${s.tokenEnd})` : 'No Page saved yet.', false);
+  fbNoteSet('#fb-saved', s.hasToken ? `\u2713 Connected to ${s.pageName || 'Page ' + s.pageId}` : 'No Page saved yet.', false);
+  $('#fb-saved').classList.toggle('conn-ok', Boolean(s.hasToken));
   $('#fbChange').hidden = !s.hasToken;
+  // once a Page is connected, the button says so (instead of asking to sign in as if it had not worked)
+  $('#fbSignIn').textContent = s.hasToken ? 'Sign in again' : 'Sign in with Facebook';
+  $('#fbSignIn').classList.toggle('pri', !s.hasToken);
+  fbNoteSet('#fbStatus', s.hasToken ? `\u2713 Connected to ${s.pageName || 'your Page'}` : '', false);
+  $('#fbStatus').classList.toggle('conn-ok', Boolean(s.hasToken));
   fbNoteSet('#fb-msg', '', false);
 }
 async function saveFb() {
@@ -2810,8 +2820,17 @@ $('#fbLive').onclick = async () => {
 
 // YouTube
 function ytNote(id, text, bad) { const n = $(id); n.textContent = text; n.hidden = !text; n.className = 'note' + (bad ? ' bad' : ''); }
+// once YouTube is connected, the button and the line under it say so clearly (so it never looks like it did not work)
+function ytShow(s) {
+  if (!s) return;
+  ytNote('#yt-status', ytStatusText(s), false);
+  $('#yt-status').classList.toggle('conn-ok', Boolean(s.connected));
+  const b = $('#yt-connect');
+  b.textContent = s.connected ? 'Switch YouTube account' : 'Connect YouTube';
+  b.classList.toggle('pri', !s.connected);
+}
 function ytStatusText(s) {
-  if (s.connected) return `Connected${s.channelTitle ? ': ' + s.channelTitle : ''}.`;
+  if (s.connected) return `\u2713 Connected${s.channelTitle ? ' to ' + s.channelTitle : ''}`;
   return s.hasClient ? 'File added. Click Connect YouTube to sign in.' : 'No file added yet.';
 }
 function renderYt(ytState, live, inSession) {
@@ -2819,10 +2838,10 @@ function renderYt(ytState, live, inSession) {
   $('#ytLive').disabled = inSession ? false : !(live && ytState && ytState.connected);
   $('#ytSub').textContent = ytState && ytState.connected ? (ytState.channelTitle || 'Connected') : 'Not connected';
   $('#ytLive').title = inSession ? 'Stop sending and end the live broadcast on YouTube' : !live ? 'Start Streaming in the Studio first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
-  if (settingsPane() === 'youtube' && ytState) ytNote('#yt-status', ytStatusText(ytState), false);
+  if (settingsPane() === 'youtube' && ytState) ytShow(ytState);
 }
 async function loadYt() {
-  ytNote('#yt-status', ytStatusText(await api('/api/youtube')), false);
+  ytShow(await api('/api/youtube'));
   ytNote('#yt-msg', '', false);
 }
 $('#yt-file').onchange = async (e) => {
@@ -2834,7 +2853,7 @@ $('#yt-file').onchange = async (e) => {
   e.target.value = '';
   if (r.error) return ytNote('#yt-msg', r.error, true);
   ytNote('#yt-msg', 'File added.', false);
-  ytNote('#yt-status', ytStatusText(r), false);
+  ytShow(r);
 };
 $('#yt-connect').onclick = async () => {
   const r = await api('/api/youtube/login');
