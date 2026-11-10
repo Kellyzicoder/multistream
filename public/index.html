@@ -1056,7 +1056,7 @@
     </section>
     <section class="card cht" id="chatCard" aria-label="Live chat" hidden>
       <div class="chs-h"><button type="button" class="cht-b" id="chatBack" title="Back to the channels" aria-label="Back to the channels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="chs-t">Live chat</span><span class="grow"></span><span class="cnt" id="chatCnt"></span></div>
-      <div class="chat" id="chatList" role="log" aria-live="polite"><p class="none" id="chatNone">Comments from YouTube and Facebook show here while you are live. Reading only: you cannot reply from here.</p></div>
+      <div class="chat" id="chatList" role="log" aria-live="polite"><p class="none" id="chatNone">YouTube and Facebook comments show here while you're live. You can read them, but not reply.</p></div>
       <p class="note" id="chatSt" hidden></p>
     </section>
   </aside>
@@ -1148,8 +1148,8 @@
       <dt>The meters move but nobody hears me</dt><dd>Check the input is heard in the scene (the eye next to its name in the mixer) and not muted. Check the channel is live on Go Live.</dd>
       <dt>Echo or feedback</dt><dd>Turn off Listen in headphones, or use headphones. If two inputs pick up the same sound, mute one.</dd>
       <dt>Camera not found</dt><dd>Close other apps that use the camera (Zoom, Teams, the Camera app), unplug it and plug it in again, then pick it again in its settings.</dd>
-      <dt>A channel keeps dropping</dt><dd>Open Stream health. If Sending goes up and down, lower the quality in Studio Settings, Output, or use a cable instead of Wi-Fi.</dd>
-      <dt>Screen or window is black on a Mac</dt><dd>System Settings, Privacy and Security, Screen Recording: turn on Multistream, then open the app again.</dd>
+      <dt>A channel keeps dropping</dt><dd>Open Stream health. If Sending goes up and down, lower the quality in Settings → Video, or use a network cable instead of Wi-Fi.</dd>
+      <dt>Screen or window is black on a Mac</dt><dd>In System Settings → Privacy & Security → Screen Recording, turn on Multistream, then reopen the app.</dd>
       <dt>Facebook says the stream is too big</dt><dd>Facebook takes 1080p at most. The app sends Facebook a smaller copy by itself; keep the cap on in the channel's settings.</dd>
       <dt>Wrong video played at the start</dt><dd>Open Auto start on Go Live and check the steps, or keep Ask me first each time turned on.</dd>
     </dl></div>
@@ -1161,7 +1161,7 @@
       <tr><td><kbd>Ctrl</kbd> + <kbd>F</kbd> / <kbd>S</kbd></td><td>Fit / stretch the selected item to the screen</td></tr>
       <tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td>Undo</td></tr>
       <tr><td><kbd>F11</kbd></td><td>Full screen Studio</td></tr>
-    </table><p class="hp-n">All keys: Studio, Settings, Hotkeys.</p></div>
+    </table><p class="hp-n">See every key in Settings → Hotkeys.</p></div>
     <div class="card hp-c"><h3>Good to know</h3><ul>
       <li><b>Private test:</b> turn it on before a real service to check everything without anyone seeing it.</li>
       <li><b>Recordings</b> are saved on this computer. Find them on the Recordings page.</li>
@@ -1193,7 +1193,7 @@
 <div class="overlay" id="overlay">
   <div class="modal">
     <h3>Add Channel</h3>
-    <p>Paste the stream URL and key from the platform.</p>
+    <p>Paste the server address and stream key from the site.</p>
     <div class="form">
       <label>Name (for example Facebook, YouTube or TikTok)</label>
       <input class="t" id="n-name" type="text" placeholder="YouTube">
@@ -1475,7 +1475,7 @@ function setPreviewMsg(text) { const m = $('#pvMsg'); m.textContent = text; m.hi
 
 function startPreview() {
   if (player) return;
-  if (!window.flvjs || !flvjs.isSupported()) { setPreviewMsg(window.DEMO ? 'Demo preview. The live video shows in the real app.' : 'Preview is not available (video player not loaded). Run npm install.'); return; }
+  if (!window.flvjs || !flvjs.isSupported()) { setPreviewMsg(window.DEMO ? 'Demo preview. The live video shows in the real app.' : 'Preview is not available. Restart the app.'); return; }
   const i = last.ingest;
   setPreviewMsg('Starting preview…');
   player = flvjs.createPlayer(
@@ -2103,7 +2103,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       } else {
         box.appendChild(keyForm(true));
         const n = document.createElement('p'); n.className = 'note';
-        n.textContent = pick === 'ig' ? 'In the Instagram app, start a live with "Streaming software". It shows a server and a stream key. Both change each time.' : pick === 'tt' ? 'TikTok LIVE Studio or LIVE Producer shows a server and a stream key.' : pick === 'tw' ? 'Twitch Dashboard, Settings, Stream: copy the Primary Stream key.' : 'Any site that takes RTMP: paste its server and stream key.';
+        n.textContent = pick === 'ig' ? 'In the Instagram app, start a live with "Streaming software". It shows a server and a stream key. Both change each time.' : pick === 'tt' ? 'TikTok LIVE Studio or LIVE Producer shows a server and a stream key.' : pick === 'tw' ? 'In Twitch: Creator Dashboard → Settings → Stream. Copy the Primary Stream key.' : 'Any site that takes RTMP: paste its server and stream key.';
         box.appendChild(n);
       }
     }
@@ -2126,7 +2126,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       const fbk = ch.site === 'facebook';
       f.innerHTML = '<label>Name shown in Multistream<input type="text" class="e1"></label>' + (fbk ? '<label>Page<select class="e4" disabled></select></label>' : '') + '<div><div style="font-size:12.5px;color:var(--muted);margin-bottom:6px">Who can watch</div><div class="seg3"></div></div><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
       f.querySelector('.e1').value = ch.name;
-      if (fbk) { const o = new Option(ch.sub || 'Your Page', ''); f.querySelector('.e4').add(o); f.querySelector('.e4').title = 'To use another Page, press Sign in again.'; }
+      if (fbk) { const o = new Option(ch.sub || 'Your Page', ''); f.querySelector('.e4').add(o); f.querySelector('.e4').title = 'To use another Page, press Change Page in Settings → Stream.'; }
       let pick = who[ch.site] || 'public';
       const opts = fbk ? [['public', 'Public'], ['self', 'Only me (test)']] : [['public', 'Public'], ['unlisted', 'Unlisted'], ['private', 'Private (test)']];
       const sg = f.querySelector('.seg3');
@@ -2327,7 +2327,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const f = $('#scFile').files[0]; if (!f) return;
     const text = await f.text(); let j; try { j = JSON.parse(text); } catch { alert('That file could not be read.'); return; }
     if (Array.isArray(j.sources) || obsMode) {
-      if (!Array.isArray(j.sources)) { alert('That is not an OBS scene collection file. In OBS: Scene Collection, Export.'); return; }
+      if (!Array.isArray(j.sources)) { alert('That is not an OBS scene collection file. In OBS, use Scene Collection → Export.'); return; }
       try { localStorage.setItem('ms_pending_obs', text); } catch { alert('That file is too big.'); return; }
       const w = (() => { try { return document.querySelector('#studioView iframe').contentWindow; } catch { return null; } })();
       if (w && w.importObsText) { localStorage.removeItem('ms_pending_obs'); showPage('studio'); w.importObsText(text); } else showPage('studio');
@@ -2385,7 +2385,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     if (!(r.files || []).length) box.innerHTML = '<div class="rc-empty">No recordings yet. Press Start recording in the Studio.</div>';
     $('#rcYt').innerHTML = tileHTML('yt');
     const tg = $('#rcAuto'); tg.classList.toggle('on', Boolean(r.auto)); tg.setAttribute('aria-checked', String(Boolean(r.auto)));
-    $('#rcAutoN').textContent = r.youtube ? '' : 'Connect YouTube on the Go Live page first.';
+    $('#rcAutoN').textContent = r.youtube ? '' : 'Connect YouTube first (Settings → Stream).';
     $('#rcPriv').value = r.privacy || 'unlisted';
   }
   async function tick() { try { data = await api('/api/recordings'); } catch { return; } draw(); }
@@ -2808,7 +2808,7 @@ $('#fbLive').onclick = async () => {
   btn.dataset.busy = '1';
   btn.textContent = 'Going live...';
   const test = $('#fbTest').checked;
-  if (!test && !confirm('Test mode is off. This will go live publicly on the Facebook Page. Continue?')) {
+  if (!test && !confirm('Private test is off. This goes live publicly on the Facebook Page. Continue?')) {
     delete btn.dataset.busy;
     return refresh();
   }
@@ -2831,7 +2831,7 @@ function ytShow(s) {
 }
 function ytStatusText(s) {
   if (s.connected) return `\u2713 Connected${s.channelTitle ? ' to ' + s.channelTitle : ''}`;
-  return s.hasClient ? 'File added. Click Connect YouTube to sign in.' : 'No file added yet.';
+  return s.hasClient ? 'File added. Now press Connect YouTube.' : 'No file added yet.';
 }
 function renderYt(ytState, live, inSession) {
   goBtn('#ytLive', Boolean(inSession));
@@ -2868,7 +2868,7 @@ $('#ytLive').onclick = async () => {
   btn.dataset.busy = '1';
   btn.textContent = 'Going live...';
   const test = $('#fbTest').checked;
-  if (!test && !confirm('Test mode is off. This will go live publicly on YouTube. Continue?')) {
+  if (!test && !confirm('Private test is off. This goes live publicly on YouTube. Continue?')) {
     delete btn.dataset.busy;
     return refresh();
   }
@@ -3139,7 +3139,7 @@ setInterval(refresh, 2000);
     if (n === 3) fillCheck();
   }
   // the sites, as in the design: sign in for YouTube and Facebook, a stream key for the others
-  const WHERE = { ig: 'In the Instagram app: + then Live, then "Streaming software". It shows a server and a stream key (they change each time).', tt: 'TikTok LIVE Studio or LIVE Producer (tiktok.com/live/producer) shows a server and a stream key.', tw: 'Twitch Dashboard, Settings, Stream: copy the Primary Stream key.' };
+  const WHERE = { ig: 'In the Instagram app: + then Live, then "Streaming software". It shows a server and a stream key (they change each time).', tt: 'TikTok LIVE Studio or LIVE Producer (tiktok.com/live/producer) shows a server and a stream key.', tw: 'In Twitch: Creator Dashboard → Settings → Stream. Copy the Primary Stream key.' };
   function fillChannels() {
     const g = $('#gsGrid'); if (!g) return; g.textContent = '';
     const ds = last.destinations || [], yt = last.youtube || {}, fbs = last.facebook || {};
