@@ -896,8 +896,12 @@ app.post('/api/facebook/login', async (req, res) => {
   const a = fbApp();
   if (!a.id || !a.ct) return res.status(400).json({ error: 'Add the Meta app ID and client token first (below)' });
   try {
-    const r = await fetch(`${GRAPH}/device/login`, { method: 'POST', body: new URLSearchParams({ access_token: `${a.id}|${a.ct}`, scope: 'pages_show_list,pages_read_engagement,pages_manage_posts' }) });
-    const j = await r.json().catch(() => ({}));
+    // business_management: Pages run through a Meta Business account (Business Suite) are only listed with it.
+    // If Facebook does not allow it for this app, sign-in is asked again without it.
+    const ask = (scope) => fetch(`${GRAPH}/device/login`, { method: 'POST', body: new URLSearchParams({ access_token: `${a.id}|${a.ct}`, scope }) });
+    let r = await ask('pages_show_list,pages_read_engagement,pages_manage_posts,business_management');
+    let j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.code) { r = await ask('pages_show_list,pages_read_engagement,pages_manage_posts'); j = await r.json().catch(() => ({})); }
     if (!r.ok || !j.code) return res.status(502).json({ error: (j.error && (j.error.error_user_msg || j.error.message)) || 'Facebook did not start the sign-in' });
     fbLogin = { code: j.code, until: Date.now() + (Number(j.expires_in) || 420) * 1000 };
     res.json({ userCode: j.user_code, uri: j.verification_uri || 'https://www.facebook.com/device', interval: Number(j.interval) || 5, expires: Number(j.expires_in) || 420 });
@@ -918,10 +922,20 @@ app.get('/api/facebook/login', async (req, res) => {
       if ([1349174, 1349172].includes(e.error_subcode)) return res.json({ pending: true }); // still waiting for the person / asking too often
       fbLogin = null; return res.json({ error: e.error_user_msg || e.message || 'Facebook did not finish the sign-in' });
     }
-    const pr = await fetch(`${GRAPH}/me/accounts?fields=id,name,access_token&limit=100&access_token=${encodeURIComponent(j.access_token)}`);
+    const tok = encodeURIComponent(j.access_token);
+    const pr = await fetch(`${GRAPH}/me/accounts?fields=id,name,access_token&limit=100&access_token=${tok}`);
     const pj = await pr.json().catch(() => ({}));
     if (!pr.ok) { fbLogin = null; return res.json({ error: (pj.error && pj.error.message) || 'Facebook did not list your Pages' }); }
-    fbLogin = { pages: (pj.data || []).filter((p) => p.id && p.access_token) };
+    const list = (pj.data || []).filter((p) => p.id && p.access_token);
+    // Pages run through a Meta Business account (owned by it, or shared with it) are listed there, not always above
+    try {
+      const br = await fetch(`${GRAPH}/me/businesses?fields=owned_pages.limit(100){id,name,access_token},client_pages.limit(100){id,name,access_token}&limit=50&access_token=${tok}`);
+      const bj = await br.json().catch(() => ({}));
+      (bj.data || []).forEach((b) => [b.owned_pages, b.client_pages].forEach((g) => ((g && g.data) || []).forEach((p) => {
+        if (p.id && p.access_token && !list.some((x) => x.id === p.id)) list.push(p);
+      })));
+    } catch {}
+    fbLogin = { pages: list };
     if (!fbLogin.pages.length) { fbLogin = null; return res.json({ error: 'Signed in, but no Pages were shared. Sign in again and tick the Page when Facebook asks.' }); }
     res.json({ done: true, pages: pages() });
   } catch { res.json({ pending: true }); }
