@@ -944,6 +944,16 @@
   .asrun.mini .as-r1 { flex-wrap:nowrap !important; } .asrun.mini .as-min { margin-left:10px; }
   /* Start / Stop streaming keeps the main colour you picked (Settings, Appearance) while live, instead of turning red */
   .hb.sb.stop { background:var(--blue) !important; color:var(--onblue) !important; box-shadow:0 8px 24px color-mix(in srgb, var(--blue) 40%, transparent) !important; }
+  /* Facebook sign-in: the code and the Page list, in the app's style */
+  .fbbtns { display:flex; gap:8px; flex-wrap:wrap; }
+  .fbcode { margin:8px 0 14px; padding:16px; border:1px solid var(--line); border-radius:16px; background:var(--field); display:grid; gap:10px; }
+  .fbc-lb { margin:0; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .fbc-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .fbc-v { font:700 30px/1.1 ui-monospace, Menlo, Consolas, monospace; letter-spacing:.14em; color:var(--text); user-select:all; }
+  .fbc-steps { margin:0; padding-left:20px; display:grid; gap:8px; font-size:13px; color:var(--text); }
+  .fbpages { display:grid; gap:8px; margin-bottom:8px; }
+  .fbpages button { text-align:left; padding:12px 16px; border-radius:14px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:14px; font-weight:500; cursor:pointer; }
+  .fbpages button[aria-checked="true"] { background:var(--blue); border-color:var(--blue); color:var(--onblue, #fff); font-weight:600; }
 </style>
 </head>
 <body>
@@ -1291,9 +1301,22 @@
           <div class="grp"><h4>Sign in with Facebook</h4>
             <p>Sign in, then pick the Page. Nothing to copy. If Facebook shows an error later, sign in again here and it picks the Page up again.</p>
             <div class="srow"><p class="lb">Facebook</p>
-              <div class="ctl"><button class="b2 pri" id="fbSignIn" type="button">Sign in with Facebook</button><p class="note" id="fbCode" hidden></p></div></div>
-            <div class="srow" id="fbPickRow" hidden><label class="lb" for="fbPick">Page</label>
-              <div class="ctl"><select class="t" id="fbPick"></select><button class="b2 pri" id="fbUse" type="button">Use this Page</button></div></div>
+              <div class="ctl"><div class="fbbtns"><button class="b2 pri" id="fbSignIn" type="button">Sign in with Facebook</button><button class="b2" id="fbChange" type="button" hidden>Change Page</button></div><p class="note" id="fbCode" hidden></p></div></div>
+            <!-- the code to type on Facebook: big, with Copy and Open buttons and the steps -->
+            <div class="fbcode" id="fbCodeBox" hidden>
+              <p class="fbc-lb">Your code</p>
+              <div class="fbc-row"><output id="fbCodeVal" class="fbc-v" aria-live="polite"></output><button class="b2" id="fbCopy" type="button">Copy</button></div>
+              <ol class="fbc-steps">
+                <li><button class="b2 pri" id="fbOpen" type="button">Open facebook.com/device</button></li>
+                <li>Paste or type the code above, then press Continue.</li>
+                <li>Tick every Page you might stream to, then finish. This window updates by itself.</li>
+              </ol>
+              <p class="note" id="fbCodeLeft"></p>
+            </div>
+            <div class="srow" id="fbPickRow" hidden><p class="lb" id="fbPickLb">Page</p>
+              <div class="ctl"><div class="fbpages" id="fbPick" role="radiogroup" aria-labelledby="fbPickLb"></div>
+                <p class="note">Only the Pages you ticked on Facebook show here. To add one, press Sign in with Facebook again and on Facebook choose <b>Edit access</b> (or <b>Choose Pages</b>) and tick it.</p>
+                <button class="b2 pri" id="fbUse" type="button">Use this Page</button></div></div>
           </div>
           <div class="grp"><h4>Meta app (set once)</h4>
             <p>On developers.facebook.com, open your app. App ID: App settings, Basic. Client token: App settings, Advanced. Also turn on <b>Login from devices</b> in Facebook Login, Settings.</p>
@@ -2694,6 +2717,7 @@ async function loadFb() {
   $('#fb-page').value = s.pageId || '';
   $('#fb-token').value = '';
   fbNoteSet('#fb-saved', s.hasToken ? `Saved: ${s.pageName || 'Page ' + s.pageId} (token ends ${s.tokenEnd})` : 'No Page saved yet.', false);
+  $('#fbChange').hidden = !s.hasToken;
   fbNoteSet('#fb-msg', '', false);
 }
 async function saveFb() {
@@ -2712,30 +2736,60 @@ $('#fbAppSave').onclick = async () => {
   const r = await api('/api/facebook/app', 'PUT', { appId: $('#fb-appid').value.trim(), clientToken: $('#fb-ct').value.trim() });
   fbNoteSet('#fb-appmsg', r.error || 'Saved.', Boolean(r.error)); if (!r.error) loadFb();
 };
+let fbPageId = '', fbLeftT = 0;
+// the list of Pages as buttons (one can be picked), in the app's style
+async function fbShowPages(pages) {
+  const box = $('#fbPick'); box.textContent = '';
+  const cur = (await api('/api/facebook')).pageId;
+  fbPageId = pages.some((p) => p.id === cur) ? cur : (pages[0] || {}).id || '';
+  pages.forEach((p) => {
+    const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio'); b.textContent = p.name; b.dataset.id = p.id;
+    const mark = () => box.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x.dataset.id === fbPageId)));
+    b.onclick = () => { fbPageId = p.id; mark(); };
+    box.appendChild(b); mark();
+  });
+  $('#fbPickRow').hidden = false;
+}
+function fbCodeOff() { clearInterval(fbLeftT); $('#fbCodeBox').hidden = true; }
 $('#fbSignIn').onclick = async () => {
-  clearTimeout(fbPollT); $('#fbPickRow').hidden = true;
-  fbNoteSet('#fbCode', 'Asking Facebook...', false);
+  clearTimeout(fbPollT); fbCodeOff(); $('#fbPickRow').hidden = true;
+  fbNoteSet('#fbCode', 'Asking Facebook for a code...', false);
   const r = await api('/api/facebook/login', 'POST', {});
   if (r.error) { fbNoteSet('#fbCode', r.error, true); return; }
-  fbNoteSet('#fbCode', 'Your browser opens facebook.com/device. Type this code there: ' + r.userCode + '. Then choose the Page and press Continue. Waiting...', false);
-  window.open(r.uri, '_blank');
+  fbNoteSet('#fbCode', 'Waiting for you to finish on Facebook...', false);
+  $('#fbCodeVal').textContent = r.userCode;
+  $('#fbCodeBox').hidden = false;
+  $('#fbCopy').textContent = 'Copy';
+  $('#fbCopy').onclick = async () => { try { await navigator.clipboard.writeText(r.userCode); $('#fbCopy').textContent = 'Copied'; } catch { $('#fbCopy').textContent = 'Select it and copy'; } };
+  $('#fbOpen').onclick = () => window.open(r.uri, '_blank');
+  // the code works for a few minutes; the time left is shown, and an old code is taken away
+  const until = Date.now() + (r.expires || 420) * 1000;
+  const left = () => {
+    const s2 = Math.max(0, Math.round((until - Date.now()) / 1000));
+    if (!s2) { fbCodeOff(); clearTimeout(fbPollT); fbNoteSet('#fbCode', 'That code ran out. Press Sign in with Facebook for a new one.', true); return; }
+    $('#fbCodeLeft').textContent = 'The code works for ' + Math.floor(s2 / 60) + ':' + String(s2 % 60).padStart(2, '0') + ' more.';
+  };
+  left(); fbLeftT = setInterval(left, 1000);
   const poll = async () => {
     const s = await api('/api/facebook/login');
     if (s.pending) { fbPollT = setTimeout(poll, (r.interval || 5) * 1000); return; }
+    fbCodeOff();
     if (s.error) { fbNoteSet('#fbCode', s.error, true); return; }
-    if (s.done) {
-      const sel = $('#fbPick'); sel.textContent = '';
-      s.pages.forEach((p) => sel.add(new Option(p.name, p.id)));
-      const cur = (await api('/api/facebook')).pageId; if (cur && s.pages.some((p) => p.id === cur)) sel.value = cur;
-      $('#fbPickRow').hidden = false; fbNoteSet('#fbCode', 'Signed in. Pick the Page and press Use this Page.', false);
-    }
+    if (s.done) { await fbShowPages(s.pages); fbNoteSet('#fbCode', 'Signed in. Pick the Page and press Use this Page.', false); }
   };
   fbPollT = setTimeout(poll, (r.interval || 5) * 1000);
 };
+// pick another Page later (from the Pages shared at the last sign-in, while the app is open)
+$('#fbChange').onclick = async () => {
+  const s = await api('/api/facebook/login');
+  if (s.done && s.pages && s.pages.length) { await fbShowPages(s.pages); fbNoteSet('#fbCode', 'Pick the Page and press Use this Page.', false); }
+  else fbNoteSet('#fbCode', 'Press Sign in with Facebook to see your Pages again.', false);
+};
 $('#fbUse').onclick = async () => {
-  const r = await api('/api/facebook', 'PUT', { pageId: $('#fbPick').value });
+  if (!fbPageId) return;
+  const r = await api('/api/facebook', 'PUT', { pageId: fbPageId });
   if (r.error) { fbNoteSet('#fbCode', r.error, true); return; }
-  $('#fbPickRow').hidden = true; fbNoteSet('#fbCode', 'Using ' + (r.pageName || 'the Page') + '.', false); loadFb(); refresh();
+  $('#fbPickRow').hidden = true; fbNoteSet('#fbCode', 'Using ' + (r.pageName || 'the Page') + '. You can change it any time with Change Page.', false); loadFb(); refresh();
 };
 $('#fbLive').onclick = async () => {
   const btn = $('#fbLive');

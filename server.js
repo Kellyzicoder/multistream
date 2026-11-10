@@ -900,7 +900,7 @@ app.post('/api/facebook/login', async (req, res) => {
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.code) return res.status(502).json({ error: (j.error && (j.error.error_user_msg || j.error.message)) || 'Facebook did not start the sign-in' });
     fbLogin = { code: j.code, until: Date.now() + (Number(j.expires_in) || 420) * 1000 };
-    res.json({ userCode: j.user_code, uri: j.verification_uri || 'https://www.facebook.com/device', interval: Number(j.interval) || 5 });
+    res.json({ userCode: j.user_code, uri: j.verification_uri || 'https://www.facebook.com/device', interval: Number(j.interval) || 5, expires: Number(j.expires_in) || 420 });
   } catch { res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' }); }
 });
 app.get('/api/facebook/login', async (req, res) => {
@@ -955,7 +955,7 @@ app.put('/api/facebook', async (req, res) => {
     const j = await r.json();
     if (!r.ok || !j.id) return res.status(400).json({ error: (j.error && j.error.message) || 'Facebook did not accept this Page ID and token' });
     fb = { ...fb, pageId, pageName: j.name || '', token: newToken };
-    saveFb(); if (fromLogin) fbLogin = null;
+    saveFb(); // the Pages from this sign-in stay (in memory, until the app closes) so Change Page can switch without signing in again
     res.json(fbView());
   } catch {
     res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' });
