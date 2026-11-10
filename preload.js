@@ -37,4 +37,6 @@ if (location.protocol === 'app:') contextBridge.exposeInMainWorld('msNative', {
   engineSend: (o) => ipcRenderer.invoke('ms-engine-send', o),
   engineUnsend: () => ipcRenderer.invoke('ms-engine-unsend'),
   engineSendState: () => ipcRenderer.invoke('ms-engine-sendstate'),
+  engineRecord: (o) => ipcRenderer.invoke('ms-engine-record', o),
+  engineUnrecord: () => ipcRenderer.invoke('ms-engine-unrecord'),
 });

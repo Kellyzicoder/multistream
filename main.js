@@ -218,6 +218,23 @@ handleIpc('ms-engine-unsend', () => {
   try { if (relay && relay.engineIngestStop) relay.engineIngestStop(); } catch (e) {}
   return true;
 });
+// Recording with the engine. o: { w, h, fps, kbps }
+let engineRecFile = '';
+handleIpc('ms-engine-record', (e, o) => {
+  if (!relay || !relay.engineRecName || !engine().isStarted()) return { ok: false, error: 'The OBS engine is not on' };
+  try {
+    const n = relay.engineRecName();
+    const r = engine().startRecord({ ...(o || {}), dir: n.dir, base: n.base });
+    if (r.ok) engineRecFile = n.name;
+    return r;
+  } catch (err) { return { ok: false, error: String(err && err.message ? err.message : err) }; }
+});
+handleIpc('ms-engine-unrecord', async () => {
+  const r = await engine().stopRecord();
+  const name = engineRecFile; engineRecFile = '';
+  if (r.ok && name) { relay.engineRecSaved(name); return { ok: true, saved: name }; }
+  return r;
+});
 handleIpc('ms-engine-sendstate', () => (engineMod ? engine().streamState() : { sending: false, active: false }));
 // the Studio's transition (Cut, Fade, Slide, Dip to black) and how long it takes
 handleIpc('ms-engine-trans', (e, t) => {

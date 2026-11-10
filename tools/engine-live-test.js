@@ -30,6 +30,18 @@ app.whenReady().then(async () => {
     const r = engine.startStream({ server: `rtmp://127.0.0.1:${port}/live`, key: 'test', w: 1280, h: 720, fps: 30, kbps: 3000 });
     out('go live:', JSON.stringify(r));
     for (let i = 0; i < 8; i++) { await wait(1000); out('state:', JSON.stringify(engine.streamState())); }
+    // record at the same time, at 1080p
+    const recDir = app.getPath('temp');
+    const base = 'ms-engine-rec-' + Date.now();
+    out('record:', JSON.stringify(engine.startRecord({ dir: recDir, base, w: 1920, h: 1080, fps: 30, kbps: 8000 })));
+    await wait(4000);
+    out('record stop:', JSON.stringify(await engine.stopRecord()));
+    const recFile = path.join(recDir, base + '.mkv');
+    const recSize = fs.existsSync(recFile) ? fs.statSync(recFile).size : 0;
+    out('recording bytes:', recSize);
+    const rp = spawnSync(ffmpeg, ['-hide_banner', '-i', recFile], { encoding: 'utf8' });
+    String(rp.stderr || '').split('\n').filter((l) => /Stream #|Duration/.test(l)).forEach((l) => out('recording:', l.trim()));
+    out(recSize > 50000 ? 'record test: OK' : 'record test: FAILED');
     engine.stopStream();
     await wait(1500);
     try { rx.kill('SIGINT'); } catch (e) {}
