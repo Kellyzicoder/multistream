@@ -4,6 +4,8 @@
 // web pages and phone cameras are still drawn only by the Studio for now; they move to the engine next.
 //
 // What viewers see (Program) is a transition in the engine, so changing scene can fade like in the Studio.
+// Sound inputs (microphones, the computer's sound) are put in the scenes that use them, so a scene's sound is
+// only heard while that scene is on air, the same as in the Studio.
 
 const NATIVE = new Set(['camera', 'screen', 'window', 'image', 'video', 'color']);
 const TRANS = { cut: 'cut_transition', fade: 'fade_transition', slide: 'slide_transition', dip: 'fade_to_color_transition' };
@@ -86,6 +88,51 @@ function colorInt(hex) {
   const v = m ? m[1] : '000000';
   const r = parseInt(v.slice(0, 2), 16), g = parseInt(v.slice(2, 4), 16), b = parseInt(v.slice(4, 6), 16);
   return ((0xff << 24) | (b << 16) | (g << 8) | r) >>> 0; // the engine wants alpha, blue, green, red
+}
+
+// ---- sound inputs ----
+function micType() { return mac() ? 'coreaudio_input_capture' : 'wasapi_input_capture'; }
+function deskType() {
+  if (!mac()) return 'wasapi_output_capture';
+  return has('sck_audio_capture') ? 'sck_audio_capture' : 'coreaudio_output_capture';
+}
+let mics = null;
+function micList() {
+  if (mics) return mics;
+  mics = [];
+  let probe = null;
+  try {
+    probe = osn.InputFactory.create(micType(), 'ms-mic-list', {});
+    const l = listOf(probe, ['device_id']);
+    if (l) mics = l.items.filter((i) => i.value);
+  } catch (e) { console.log('[engine] microphone list:', e.message); }
+  if (probe) try { probe.release(); } catch (e) {}
+  return mics;
+}
+function audioKey(a) { return a.kind === 'desktop' ? 'desktop' : 'mic|' + clean(a.label); }
+function audioFor(a) {
+  const key = audioKey(a);
+  let s = inputs.get(key);
+  if (!s) {
+    let input = null;
+    try {
+      if (a.kind === 'desktop') input = osn.InputFactory.create(deskType(), 'ms-sound-' + (++n), mac() ? {} : { device_id: 'default' });
+      else {
+        // the microphone with the same name, or the computer's normal microphone
+        const w = clean(a.label);
+        const dev = w ? micList().find((i) => clean(i.name) === w) || micList().find((i) => clean(i.name).includes(w) || w.includes(clean(i.name))) : null;
+        input = osn.InputFactory.create(micType(), 'ms-mic-' + (++n), { device_id: dev ? dev.value : 'default' });
+      }
+    } catch (e) { console.log('[engine] could not add sound', a.name + ':', e.message); }
+    s = { input, used: true };
+    inputs.set(key, s);
+  }
+  s.used = true;
+  if (s.input) {
+    try { s.input.volume = a.vol == null ? 1 : Math.max(0, Math.min(4, Number(a.vol) || 0)); } catch (e) {}
+    try { s.input.muted = Boolean(a.muted); } catch (e) {}
+  }
+  return s.input ? { key, input: s.input } : null;
 }
 
 function makeInput(l, name) {
@@ -195,13 +242,20 @@ function sceneFor(name) {
   return s;
 }
 
-function buildScene(sc) {
+function buildScene(sc, audio) {
   const s = sceneFor(sc.name);
   const want = [];
   (sc.layers || []).forEach((l) => {
     if (!NATIVE.has(l.type)) return;
     const got = inputFor(l);
     if (got) want.push({ id: l.id, key: got.key, input: got.input, l });
+  });
+  // the sound inputs this scene uses (they have no picture, so where they sit does not matter)
+  (sc.audio || []).forEach((id) => {
+    const a = (audio || []).find((x) => x.id === id);
+    if (!a) return;
+    const got = audioFor(a);
+    if (got && !want.some((w) => w.key === got.key)) want.push({ id: 'sound-' + id, key: got.key, input: got.input, sound: true });
   });
   // the same sources in the same order: only move them; otherwise build the scene again
   const same = want.length === s.items.length && want.every((w, i) => s.items[i].id === w.id && s.items[i].key === w.key);
@@ -212,7 +266,7 @@ function buildScene(sc) {
       try { s.items.push({ id: w.id, key: w.key, item: s.scene.add(w.input) }); } catch (e) { console.log('[engine] add to scene:', e.message); }
     });
   }
-  s.items.forEach((it, i) => place(it.item, want[i].l, want[i].input));
+  s.items.forEach((it, i) => { if (!want[i].sound) place(it.item, want[i].l, want[i].input); });
   s.used = true;
 }
 
@@ -252,7 +306,7 @@ function sync(data, video) {
   let remake = resize(data.w || 1920, data.h || 1080, video);
   inputs.forEach((s) => { s.used = false; });
   scenes.forEach((s) => { s.used = false; });
-  (data.scenes || []).forEach(buildScene);
+  (data.scenes || []).forEach((sc) => buildScene(sc, data.audio));
   if (!data.scenes || !data.scenes.length) sceneFor('');
   if (setTransition((data.trans && data.trans.type) || 'fade')) remake = true;
 
@@ -304,7 +358,7 @@ function clear() {
   inputs.forEach((s) => { if (s.input) try { s.input.release(); } catch (e) {} });
   inputs.clear();
   if (transition) try { transition.release(); } catch (e) {}
-  transition = null; transType = ''; onAir = ''; cameras = null; last = null; size = [1920, 1080];
+  transition = null; transType = ''; onAir = ''; cameras = null; mics = null; last = null; size = [1920, 1080];
 }
 
 module.exports = { init, sync, refresh, clear, programName: () => (transition ? transition.name : PROGRAM), NATIVE };

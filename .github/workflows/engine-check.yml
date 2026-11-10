@@ -4,7 +4,7 @@ name: OBS engine check
 on:
   workflow_dispatch:
   push:
-    branches: [feat/obs-engine, feat/engine-scenes]
+    branches: [feat/obs-engine, feat/engine-scenes, feat/engine-live]
 permissions:
   contents: read
 jobs:
@@ -44,8 +44,14 @@ jobs:
         shell: bash
         run: npx electron tools/engine-test.js 2>&1 | tee engine.txt
         timeout-minutes: 5
+      - name: Go live with the engine (to a receiver on this computer)
+        shell: bash
+        run: npx electron tools/engine-live-test.js 2>&1 | tee live.txt
+        timeout-minutes: 5
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: engine-${{ matrix.os }}
-          path: engine.txt
+          path: |
+            engine.txt
+            live.txt

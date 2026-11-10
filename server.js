@@ -1498,6 +1498,54 @@ studioWss.on('connection', (w, req) => {
   w.on('close', () => { try { ff.stdin.end(); setTimeout(() => ff.kill('SIGKILL'), 1500); } catch {} });
 });
 
+// ---- the OBS engine's video (when the engine is on) ----
+// The engine makes the video itself and sends it to a receiver on this computer only (127.0.0.1, a free port,
+// a new secret name each time). ffmpeg only passes it on (no second encode) into the same hub as the Studio's
+// video, so every channel gets it the same way as before.
+let engineIn = null; // { want, ff, port, key }
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const srv = require('net').createServer();
+    srv.unref(); srv.on('error', reject);
+    srv.listen(0, '127.0.0.1', () => { const { port } = srv.address(); srv.close(() => resolve(port)); });
+  });
+}
+async function engineIngest(o) {
+  engineIngestStop();
+  const port = await freePort();
+  const key = crypto.randomBytes(12).toString('hex');
+  const out = outargs.parseOut(new URLSearchParams({ h: String(o.h || 720), fps: String(o.fps || 30), kbps: String(o.kbps || 4500), shape: String(o.shape || 'landscape') }));
+  const me = { want: true, ff: null, port, key };
+  engineIn = me;
+  studioOut = out; studioInfo.out = outargs.label(out) + ' (OBS engine)'; studioInfo.error = '';
+  const listen = () => {
+    if (!me.want || engineIn !== me) return;
+    const ff = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-listen', '1', '-f', 'flv', '-i', `rtmp://127.0.0.1:${port}/live/${key}`,
+      '-c', 'copy', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    me.ff = ff; studioFf = ff;
+    const unfeed = feedHub(ff.stdout);
+    ff.stdout.once('data', () => { studioInfo.sending = true; studioInfo.error = ''; });
+    ff.on('close', unfeed);
+    ff.stderr.on('data', (d) => { studioInfo.error = String(d).trim().split('\n').pop().slice(0, 200); });
+    ff.on('exit', () => {
+      if (studioFf === ff) { studioFf = null; studioInfo.sending = false; }
+      // the engine reconnects by itself; the receiver waits for it again
+      if (me.want && engineIn === me) setTimeout(listen, 300);
+    });
+  };
+  listen();
+  await new Promise((r) => setTimeout(r, 400)); // ffmpeg is listening before the engine knocks
+  return { server: `rtmp://127.0.0.1:${port}/live`, key, w: out.w, h: out.h, fps: out.fps, kbps: out.kbps };
+}
+function engineIngestStop() {
+  const me = engineIn;
+  engineIn = null;
+  if (!me) return;
+  me.want = false;
+  if (me.ff) { try { me.ff.kill('SIGKILL'); } catch {} }
+  if (studioFf === me.ff) { studioFf = null; studioInfo.sending = false; }
+}
+
 // ---- for the desktop app (main.js) ----
 // A request from an app window, answered with no network: { method, url, headers, body } -> { status, headers, body }
 function handle(r) { return inject(app, r); }
@@ -1519,6 +1567,7 @@ function openPipe(p, toWindow) {
 }
 function shutdown() {
   stopAll();
+  engineIngestStop();
   try { if (studioFf) studioFf.kill('SIGKILL'); } catch {}
   try { vcam.quit(); } catch {}
   try { loginServer && loginServer.close(); } catch {}
@@ -1538,4 +1587,6 @@ module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => {
   // scene collections for the menu bar
   collections: () => ({ current: coll.current, names: collNames() }), onCollections: (fn) => { collHook = fn; },
   // the Studio's scenes as saved, for the OBS engine (rev changes whenever they change)
-  studioNow: () => ({ studio, rev: studioRev, assets: ASSET_DIR }) };
+  studioNow: () => ({ studio, rev: studioRev, assets: ASSET_DIR }),
+  // the OBS engine's video comes in here (see engineIngest)
+  engineIngest, engineIngestStop };

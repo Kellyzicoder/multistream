@@ -146,6 +146,7 @@ async function setEngine(on) {
     if (!ok) dialog.showMessageBox({ type: 'warning', message: 'The OBS engine could not start.', detail: 'The app keeps working as before. Help > Developer tools shows the reason.' });
   } else {
     engine().stop();
+    try { if (relay && relay.engineIngestStop) relay.engineIngestStop(); } catch (e) {}
   }
   if (win && !win.isDestroyed()) win.webContents.send('ms-engine', engineState());
   setMenu();
@@ -188,7 +189,7 @@ async function engineSend(force) {
       return x;
     }),
   }));
-  engine().sync({ w, h, scenes, current: String(st.current || ''), trans: engineTrans });
+  engine().sync({ w, h, scenes, audio: st.audio || [], current: String(st.current || ''), trans: engineTrans });
 }
 function engineFollow(on) {
   if (engineTimer) { clearInterval(engineTimer); engineTimer = null; }
@@ -197,6 +198,27 @@ function engineFollow(on) {
   engineSend(true);
   engineTimer = setInterval(() => { engineSend(false).catch(() => {}); }, 400);
 }
+// Going live with the engine: the Studio asks, the app opens its receiver, and the engine sends to it.
+// o: { h, fps, kbps, shape } (the Studio's Output settings)
+handleIpc('ms-engine-send', async (e, o) => {
+  if (!relay || !relay.engineIngest || !engine().isStarted()) return { ok: false, error: 'The OBS engine is not on' };
+  try {
+    await engineSend(true);
+    const ing = await relay.engineIngest(o || {});
+    const r = engine().startStream(ing);
+    if (!r.ok) relay.engineIngestStop();
+    return r;
+  } catch (err) {
+    try { relay.engineIngestStop(); } catch (_) {}
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+});
+handleIpc('ms-engine-unsend', () => {
+  try { engine().stopStream(); } catch (e) {}
+  try { if (relay && relay.engineIngestStop) relay.engineIngestStop(); } catch (e) {}
+  return true;
+});
+handleIpc('ms-engine-sendstate', () => (engineMod ? engine().streamState() : { sending: false, active: false }));
 // the Studio's transition (Cut, Fade, Slide, Dip to black) and how long it takes
 handleIpc('ms-engine-trans', (e, t) => {
   if (t && typeof t === 'object') engineTrans = { type: String(t.type || 'fade'), ms: Math.max(0, Math.min(5000, Number(t.ms) || 0)) };

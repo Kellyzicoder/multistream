@@ -65,6 +65,9 @@ function start() {
       outputFormat: 2, colorspace: 2, range: 1, scaleType: 3, fpsType: 2,
     };
 
+    // sound: 48 kHz stereo (the engine's numbers: stereo = 2)
+    try { osn.AudioFactory.audioContext = { sampleRate: 48000, speakers: 2 }; } catch (e) { console.log('[engine] sound settings:', e.message); }
+
     // the Studio's scenes come in through sync(); until then the picture is black
     scenes.init(osn);
     scenes.sync({ w: 1920, h: 1080, scenes: [], current: '', trans: { type: 'cut', ms: 0 } }, video);
@@ -162,7 +165,112 @@ function sync(data) {
   return true;
 }
 
+// ---- going live ----
+// The engine makes the video once (on the graphics card's video chip when there is one) and sends it to the app's
+// own receiver on this computer. From there the app sends it to every channel, as before (so a channel that needs
+// a smaller copy, like Facebook, still gets one).
+let stream = null;
+let encoder = null;
+let sendState = { sending: false, error: '', encoder: '' };
+
+// the best way to make video on this computer: its video chip first, the processor (x264) last
+const ENCODERS = [
+  'com.apple.videotoolbox.videoencoder.ave.avc', 'com.apple.videotoolbox.videoencoder.h264.gva', 'com.apple.videotoolbox.videoencoder.h264',
+  'jim_nvenc', 'obs_nvenc_h264_tex', 'ffmpeg_nvenc', 'h264_texture_amf', 'amd_amf_h264', 'obs_qsv11_v2', 'obs_qsv11',
+  'obs_x264',
+];
+// every way this computer has, best first (if one does not work here, the next one is tried)
+function encoderChoices() {
+  let types = [];
+  try { types = osn.VideoEncoderFactory.types() || []; } catch (e) {}
+  console.log('[engine] video makers on this computer:', types.join(', '));
+  const list = ENCODERS.filter((t) => types.includes(t));
+  types.filter((t) => /h264|avc/i.test(t) && !list.includes(t)).forEach((t) => list.splice(list.length - (list.includes('obs_x264') ? 1 : 0), 0, t));
+  if (!list.includes('obs_x264')) list.push('obs_x264');
+  return list;
+}
+
+// out: { server, key, w, h, fps, kbps }
+function startStream(out) {
+  if (!started) return { ok: false, error: 'The engine is not on' };
+  stopStream();
+  // frames a second
+  const fps = Number(out.fps) === 60 ? 60 : 30;
+  try { if (video.video.fpsNum !== fps) video.video = { ...video.video, fpsNum: fps, fpsDen: 1 }; } catch (e) {}
+  let lastError = '';
+  for (const id of encoderChoices()) {
+    try {
+      startWith(id, out, fps);
+      return { ok: true, encoder: id };
+    } catch (e) {
+      lastError = e.message;
+      console.log('[engine] ' + id + ' did not work here:', e.message);
+      stopStream();
+    }
+  }
+  console.error('[engine] could not go live:', lastError);
+  sendState = { sending: false, error: lastError, encoder: '' };
+  return { ok: false, error: lastError };
+}
+
+function startWith(id, out, fps) {
+  const kbps = Math.max(500, Math.min(50000, Number(out.kbps) || 6000));
+  const settings = { rate_control: 'CBR', bitrate: kbps, keyint_sec: 2, profile: 'high' };
+  if (id === 'obs_x264') settings.preset = 'veryfast';
+  encoder = osn.VideoEncoderFactory.create(id, 'ms-video-encoder', settings);
+  if (!encoder) throw new Error('could not make the video maker');
+  sendState = { sending: false, error: '', encoder: id };
+  console.log('[engine] making video with', id, kbps + ' kbps', out.w + 'x' + out.h, fps + ' fps');
+
+  stream = osn.AdvancedStreamingFactory.create();
+  stream.videoEncoder = encoder;
+  stream.service = osn.ServiceFactory.create('rtmp_custom', 'ms-service', { server: out.server, key: out.key, use_auth: false });
+  stream.enforceServiceBitrate = false;
+  stream.video = video;
+  // a smaller picture than the scenes (720p from a 1080p scene): the engine makes it smaller
+  const [bw, bh] = [video.video.baseWidth, video.video.baseHeight];
+  if (out.w && out.h && (out.w !== bw || out.h !== bh)) {
+    stream.rescaling = true;
+    stream.rescaleFilter = 3; // bilinear
+    stream.outputWidth = out.w;
+    stream.outputHeight = out.h;
+  }
+  stream.delay = osn.DelayFactory.create();
+  const re = osn.ReconnectFactory.create();
+  re.enabled = true; re.retryDelay = 2; re.maxRetries = 1000;
+  stream.reconnect = re;
+  stream.network = osn.NetworkFactory.create();
+  const track = osn.AudioTrackFactory.create(160, 'ms-sound');
+  osn.AudioTrackFactory.setAtIndex(track, 1);
+  stream.audioTrack = 1;
+  stream.signalHandler = (sig) => {
+    if (!sig || sig.type !== 'streaming') return;
+    if (sig.signal === 'start' || sig.signal === 'activate') sendState = { ...sendState, sending: true, error: '' };
+    if (sig.signal === 'reconnect') sendState = { ...sendState, sending: false, error: 'Reconnecting...' };
+    if (sig.signal === 'reconnect_success') sendState = { ...sendState, sending: true, error: '' };
+    if (sig.signal === 'stop') sendState = { ...sendState, sending: false, error: sig.code ? (sig.error || 'The engine stopped sending (' + sig.code + ')') : '' };
+  };
+  stream.start();
+}
+
+function stopStream() {
+  if (stream) {
+    try { stream.stop(true); } catch (e) {}
+    try { osn.AdvancedStreamingFactory.destroy(stream); } catch (e) {}
+    stream = null;
+  }
+  if (encoder) { try { encoder.release(); } catch (e) {} encoder = null; }
+  sendState = { ...sendState, sending: false };
+}
+
+function streamState() {
+  let stats = {};
+  if (stream) { try { stats = { kbps: Math.round(stream.kbitsPerSec || 0), dropped: stream.droppedFrames || 0, frames: stream.totalFrames || 0 }; } catch (e) {} }
+  return { ...sendState, active: Boolean(stream), ...stats };
+}
+
 function stop() {
+  stopStream();
   hidePreview();
   if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
   if (!osn) return;
@@ -176,4 +284,4 @@ function stop() {
   started = false;
 }
 
-module.exports = { available, start, stop, askMacCamera, showPreview, hidePreview, sync, isStarted: () => started };
+module.exports = { available, start, stop, askMacCamera, showPreview, hidePreview, sync, startStream, stopStream, streamState, isStarted: () => started };
