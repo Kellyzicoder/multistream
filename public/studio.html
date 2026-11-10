@@ -2672,8 +2672,27 @@ async function startSend() {
   $('#sendBtn').textContent = 'Stop streaming'; $('#sendBtn').className = 'stop'; $('#liveTag').hidden = false; liveT0 = liveT0 || Date.now();
   await connectSend();
 }
+// The OBS engine (Help > Use the OBS engine (test)): when it is on, the engine makes and sends the video itself,
+// and this page only says start and stop. Otherwise the page records its own picture, as before.
+let engineSending = false, engineWatch = 0;
+async function engineReady() {
+  try { const s = window.msNative && window.msNative.engineState ? await window.msNative.engineState() : null; return Boolean(s && s.on && s.started && window.msNative.engineSend); } catch { return false; }
+}
 async function connectSend() {
   clearTimeout(retryT);
+  if (await engineReady()) {
+    const r = await window.msNative.engineSend({ h: OUT.h, fps: OUT.fps, kbps: OUT.kbps, shape: SHAPE_OF() }).catch((e) => ({ ok: false, error: e.message }));
+    if (!wantSend) { window.msNative.engineUnsend(); return; }
+    if (!r || !r.ok) { flash('The OBS engine could not go live: ' + ((r && r.error) || 'no answer') + '. Trying again...', false); scheduleRetry(); return; }
+    engineSending = true; cv.classList.add('live');
+    clearInterval(engineWatch);
+    engineWatch = setInterval(async () => {
+      if (!engineSending) return;
+      const st = await window.msNative.engineSendState().catch(() => null);
+      if (st && !st.active && wantSend) { dropSend(); scheduleRetry(); }
+    }, 2000);
+    return;
+  }
   try { ensureAudio(); await syncAudio(); } catch {}
   const out = new MediaStream(cv.captureStream(OUT.fps).getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
@@ -2693,6 +2712,7 @@ async function connectSend() {
   wsOut.onclose = () => { if (wsOut !== mine) return; dropSend(); if (wantSend) scheduleRetry(); };
 }
 function dropSend() {
+  if (engineSending) { engineSending = false; clearInterval(engineWatch); try { window.msNative.engineUnsend(); } catch {} }
   try { rec && rec.state !== 'inactive' && rec.stop(); } catch {}
   try { wsOut && wsOut.close(); } catch {}
   rec = wsOut = null; cv.classList.remove('live');
