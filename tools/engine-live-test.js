@@ -53,7 +53,8 @@ app.whenReady().then(async () => {
     String(rp.stderr || '').split('\n').filter((l) => /Stream #|Duration/.test(l)).forEach((l) => out('recording:', l.trim()));
     out(recSize > 50000 ? 'record test: OK' : 'record test: FAILED');
     // the countdown's green background (drawn by the graphics page in the engine) must be in the picture
-    const px = spawnSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-ss', '3', '-i', recFile, '-frames:v', '1', '-vf', 'crop=1:1:20:20', '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1']);
+    const px = spawnSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-ss', '3', '-i', recFile, '-frames:v', '1', '-vf', 'crop=4:4:20:20,scale=1:1', '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1']);
+    if (px.stderr && px.stderr.length) out('pixel read:', String(px.stderr).slice(0, 300));
     const rgb = px.stdout && px.stdout.length >= 3 ? [px.stdout[0], px.stdout[1], px.stdout[2]] : [];
     out('pixel at 20,20:', rgb.join(','), rgb.length && rgb[1] > 180 && rgb[0] < 90 ? 'graphics test: OK (green from the graphics page)' : 'graphics test: FAILED (expected green)');
     engine.stopStream();
