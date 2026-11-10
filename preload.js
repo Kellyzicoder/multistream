@@ -32,6 +32,7 @@ if (location.protocol === 'app:') contextBridge.exposeInMainWorld('msNative', {
   // the OBS engine (test, switched on in the Help menu)
   engineState: () => ipcRenderer.invoke('ms-engine-state'),
   enginePreview: (rect) => ipcRenderer.invoke('ms-engine-preview', rect),
+  engineDisplay: (key, rect, src) => ipcRenderer.invoke('ms-engine-display', key, rect, src),
   onEngine: (cb) => { ipcRenderer.on('ms-engine', (e, st) => cb(st)); },
   engineTrans: (t) => ipcRenderer.invoke('ms-engine-trans', t),
   engineSend: (o) => ipcRenderer.invoke('ms-engine-send', o),

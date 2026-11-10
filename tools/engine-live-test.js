@@ -33,6 +33,20 @@ app.whenReady().then(async () => {
       audio: [{ id: 's1', name: 'Computer sound', kind: 'desktop', vol: 1 }],
       scenes: [{ name: 'One', audio: ['s1'], layers: [{ id: 'a', type: 'color', color: '#fb923c', x: 0, y: 0, w: 1920, h: 1080 }, timer] }],
     });
+    // pictures on a page: the Program and one scene, in a window
+    const { BrowserWindow } = require('electron');
+    const bw = new BrowserWindow({ width: 800, height: 600, show: true });
+    await bw.loadURL('data:text/html,<body style="background:#123">');
+    out('picture of Program:', engine.showDisplay(bw, 'test-program', { x: 10, y: 10, width: 320, height: 180 }, 'program'));
+    out('picture of scene One:', engine.showDisplay(bw, 'test-scene', { x: 340, y: 10, width: 320, height: 180 }, { scene: 'One' }));
+    out('picture of a missing scene (hidden):', engine.showDisplay(bw, 'test-none', { x: 10, y: 200, width: 320, height: 180 }, { scene: 'Nope' }));
+    await wait(1500);
+    out('move a picture:', engine.showDisplay(bw, 'test-scene', { x: 340, y: 200, width: 400, height: 225 }, { scene: 'One' }));
+    engine.hideDisplay('test-program'); engine.hideDisplay('test-scene');
+    app.on('window-all-closed', () => {}); // keep the test going after the window closes
+    bw.close();
+    await wait(1000);
+    out('pictures test: OK (window closed, engine still answers: ' + JSON.stringify(engine.streamState()) + ')');
     const port = 19350 + Math.floor(Math.random() * 500);
     rx = spawn(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-listen', '1', '-f', 'flv', '-i', `rtmp://127.0.0.1:${port}/live/test`, '-c', 'copy', '-y', file], { stdio: ['ignore', 'ignore', 'pipe'] });
     rx.stderr.on('data', (d) => out('receiver:', String(d).trim().slice(0, 200)));

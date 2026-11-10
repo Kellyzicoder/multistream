@@ -406,4 +406,7 @@ function clear() {
   transition = null; transType = ''; onAir = ''; cameras = null; mics = null; last = null; size = [1920, 1080];
 }
 
-module.exports = { init, sync, refresh, clear, programName: () => (transition ? transition.name : PROGRAM), NATIVE };
+// the engine's name for a Studio scene (for a picture of that scene on a page), or '' if it is not built
+function sceneName(n) { const sc = scenes.get(n); try { return sc ? sc.scene.name : ''; } catch (e) { return ''; } }
+
+module.exports = { init, sync, refresh, clear, sceneName, programName: () => (transition ? transition.name : PROGRAM), NATIVE };

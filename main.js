@@ -251,6 +251,14 @@ function engineState() {
 handleIpc('ms-engine-state', () => engineState());
 // the page tells where its preview box is (or null when it is hidden); the engine draws its picture there
 handleIpc('ms-engine-preview', (e, rect) => (win && e.sender === win.webContents ? engine().showPreview(win, rect) : false));
+// any box on the app's own windows (the Studio's Program, the Multiview): key, where it is, and what it shows
+handleIpc('ms-engine-display', (e, key, rect, src) => {
+  const w = BrowserWindow.fromWebContents(e.sender);
+  if (!w || (w !== win && w !== crWin) || !engineMod || !engine().isStarted()) return false;
+  const k = 'w' + e.sender.id + '-' + String(key || '').replace(/[^\w-]/g, '').slice(0, 40);
+  const what = src && typeof src === 'object' && src.scene ? { scene: String(src.scene) } : 'program';
+  return engine().showDisplay(w, k, rect && typeof rect === 'object' ? { x: +rect.x || 0, y: +rect.y || 0, width: +rect.width || 0, height: +rect.height || 0 } : null, what);
+});
 
 // ---- Studio helpers ----
 let studioWin = null;
