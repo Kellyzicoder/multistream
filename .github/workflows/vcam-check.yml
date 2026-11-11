@@ -1,0 +1,46 @@
+name: Virtual camera check
+# Builds Multistream Camera the same way as the app, adds it to Windows, and opens it with nothing being sent:
+# it must give the Multistream resting picture (not an error or black), like OBS's virtual camera does.
+on:
+  push:
+    branches: [fix/virtual-camera-like-obs]
+    paths: ['vcam/**', 'scripts/patch-softcam.py', '.github/workflows/vcam-check.yml']
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: tshino/softcam
+          ref: 6f5d8f9b5f7dc37a86a119b881bc75e1860fb3ec
+          path: softcam-src
+      - uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1
+        with: { arch: x64 }
+      - name: Build the camera (as the app does)
+        shell: pwsh
+        run: |
+          (Get-Content softcam-src/src/softcam/softcam.cpp) -replace 'L"DirectShow Softcam"', 'L"Multistream Camera"' | Set-Content softcam-src/src/softcam/softcam.cpp
+          python scripts/patch-softcam.py softcam-src
+          Push-Location softcam-src
+          nuget restore softcam.sln
+          msbuild /m /p:Configuration=Release /p:Platform=x64 softcam.sln
+          msbuild /m /p:Configuration=Release /p:Platform=x64 examples/softcam_installer/softcam_installer.sln
+          Pop-Location
+      - name: Add it to Windows and open it with nothing sent
+        shell: pwsh
+        run: |
+          $inst = Get-ChildItem -Recurse softcam-src/examples/softcam_installer -Filter softcam_installer.exe | Select-Object -First 1
+          & $inst.FullName register (Resolve-Path softcam-src/dist/bin/x64/softcam.dll)
+          Invoke-WebRequest https://github.com/GyanD/codexffmpeg/releases/download/6.1.1/ffmpeg-6.1.1-essentials_build.zip -OutFile ff.zip
+          Expand-Archive ff.zip -DestinationPath ff
+          $ff = (Get-ChildItem -Recurse ff -Filter ffmpeg.exe | Select-Object -First 1).FullName
+          & $ff -hide_banner -list_devices true -f dshow -i dummy 2>&1 | Select-String "Multistream"
+          & $ff -hide_banner -loglevel warning -f dshow -i video="Multistream Camera" -frames:v 5 -update 1 -y camera.png 2>&1
+          & $ff -hide_banner -i camera.png -vf "crop=4:4:620:200,scale=1:1" -f rawvideo -pix_fmt rgb24 pix.raw -y 2>&1 | Out-Null
+          $b = [IO.File]::ReadAllBytes("pix.raw"); "pixel in the logo: $($b[0]),$($b[1]),$($b[2])"
+          & $ff -hide_banner -i camera.png 2>&1 | Select-String "Stream #"
+      - uses: actions/upload-artifact@v4
+        with: { name: camera-picture, path: camera.png }
