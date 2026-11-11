@@ -1,0 +1,40 @@
+name: Click speed check
+# Opens the real app on Mac and Windows and measures how quickly it answers clicks right after opening
+# (Studio <-> Go Live), with and without the OBS engine. It changes nothing in the app.
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/engine-always-on]
+permissions:
+  contents: read
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-2022]
+        engine: [on, off]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install the app
+        run: npm install --no-audit --no-fund
+      - name: Get the OBS engine
+        shell: bash
+        run: bash scripts/get-obs-engine.sh
+      - name: Measure clicks right after the app opens
+        shell: bash
+        env:
+          MULTISTREAM_ENGINE: ${{ matrix.engine }}
+        run: node tools/click-lag-test.js 2>&1 | tee lag.txt
+        timeout-minutes: 8
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lag-${{ matrix.os }}-engine-${{ matrix.engine }}
+          path: |
+            lag.txt
+            lag-trace.json

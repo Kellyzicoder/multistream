@@ -1,7 +1,7 @@
 // The OBS engine (obs-studio-node, the same engine Streamlabs Desktop uses).
 // It draws the picture on the graphics card, inside the app, so the app's own pages stay exactly as designed.
 // It is optional: if the engine is not installed with this copy of the app, nothing here runs and the app
-// works as before. For now it is a test you switch on from the Help menu.
+// works the older way (the Studio makes the video). When it is there, it is always on.
 // The Studio's scenes are built in the engine by engine-scenes.js.
 const path = require('path');
 const { app } = require('electron');

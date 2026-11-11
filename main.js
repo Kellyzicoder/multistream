@@ -129,27 +129,20 @@ function createWindow() {
 }
 
 
-// ---- OBS engine (test) ----
-// The engine draws the picture on the graphics card inside the app (see engine.js). It is off unless switched on
-// in the Help menu, and only exists in copies of the app built with it.
+// ---- OBS engine ----
+// The engine draws the picture on the graphics card inside the app (see engine.js), the way OBS does, and it
+// makes the video that goes live and into recordings. It is always on in copies of the app built with it.
+// If it cannot start on a computer, the app works the older way: the Studio makes the video itself.
+// (MULTISTREAM_ENGINE=off turns it off, for tests and for help with problems.)
 let engineMod = null;
 const engine = () => engineMod || (engineMod = require('./engine'));
-const engineFile = () => path.join(app.getPath('userData'), 'engine-settings.json');
-function engineOn() {
-  try { return JSON.parse(fs.readFileSync(engineFile(), 'utf8')).on === true; } catch (e) { return false; }
-}
-async function setEngine(on) {
-  try { fs.writeFileSync(engineFile(), JSON.stringify({ on: Boolean(on) })); } catch (e) {}
-  if (on) {
-    const ok = engine().start();
-    if (ok) await engine().askMacCamera();
-    if (!ok) dialog.showMessageBox({ type: 'warning', message: 'The OBS engine could not start.', detail: 'The app keeps working the usual way. You can turn this test off in the Help menu.' });
-  } else {
-    engine().stop();
-    try { if (relay && relay.engineIngestStop) relay.engineIngestStop(); } catch (e) {}
-  }
+const engineOn = () => process.env.MULTISTREAM_ENGINE !== 'off';
+async function startEngine() {
+  if (!engineOn() || !engine().available() || engine().isStarted()) return;
+  const ok = engine().start();
+  if (ok) await engine().askMacCamera();
+  else console.error('Engine: could not start, the Studio makes the video itself');
   if (win && !win.isDestroyed()) win.webContents.send('ms-engine', engineState());
-  setMenu();
   engineFollow(engine().isStarted());
 }
 
@@ -519,10 +512,6 @@ function buildMenu() {
     { label: 'Help', submenu: [
       { label: 'Download page (latest version)', click: () => shell.openExternal(RELEASE_PAGE) },
       { label: 'Developer tools (for problems)', accelerator: 'F12', click: () => { const w = focusedWin(); if (w) w.webContents.toggleDevTools(); } },
-      ...(engine().available() ? [
-        { type: 'separator' },
-        { label: 'Use the OBS engine (test)', type: 'checkbox', checked: engineOn(), click: (item) => setEngine(item.checked) },
-      ] : []),
     ] },
   ];
   return Menu.buildFromTemplate(template);
@@ -550,7 +539,9 @@ async function start() {
   setMenu(); screen.on('display-added', setMenu); screen.on('display-removed', setMenu); // the Multiview list follows the screens
   createWindow();
   startUpdates();
-  if (engineOn() && engine().available()) setEngine(true);
+  // the engine starts once the window has drawn, so the app shows straight away
+  const goEngine = () => setTimeout(() => { startEngine().catch((e) => console.error('Engine:', e && e.message)); }, 300);
+  if (win && win.webContents.isLoading()) win.webContents.once('did-finish-load', goEngine); else goEngine();
 }
 
 // only one copy at a time
