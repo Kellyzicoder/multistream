@@ -10,6 +10,23 @@ function findDir() {
   return tries.filter(Boolean).find((d) => { try { return fs.existsSync(path.join(d, 'vcam.exe')); } catch { return false; } }) || '';
 }
 
+// The camera driver's id (softcam) and the folder version. A new version goes in its own folder, so a copy that
+// Zoom or Teams has open is never in the way, and nobody has to close Zoom first.
+const CLSID = '{AEF3B972-5FA5-4647-9571-358EB472BC9E}';
+const CAMERA_VERSION = 'v2';
+
+// Is Multistream Camera already added to Windows (this version)? Then Start virtual camera needs no permission box.
+function registered(platform = process.platform) {
+  if (platform !== 'win32') return false;
+  try {
+    const reg = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'reg.exe');
+    const r = spawnSync(reg, ['query', `HKLM\\SOFTWARE\\Classes\\CLSID\\${CLSID}\\InprocServer32`, '/ve'], { encoding: 'utf8', windowsHide: true });
+    const m = /REG_\w+\s+(.+\.dll)/i.exec(String(r.stdout || ''));
+    const dll = m ? m[1].trim() : '';
+    return Boolean(dll) && dll.toLowerCase().includes(`\\camera\\${CAMERA_VERSION}\\`) && fs.existsSync(dll);
+  } catch { return false; }
+}
+
 function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe, exeArgs, logoPath } = {}) {
   const helper = exe || (dir && path.join(dir, 'vcam.exe'));
   const available = Boolean(helper) && (platform === 'win32' || Boolean(exe));
@@ -98,25 +115,30 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
   function install(unregister = false) {
     return new Promise((resolve) => {
       if (platform !== 'win32' || !dir) return resolve({ error: 'The virtual camera is only in the Windows app' });
+      if (!unregister && registered(platform)) return resolve({ ok: true, already: true }); // nothing to do, no permission box
       const inst = path.join(dir, 'softcam_installer.exe'), dll = path.join(dir, 'softcam.dll');
       if (!fs.existsSync(inst) || !fs.existsSync(dll)) return resolve({ error: 'The virtual camera files are missing from this install' });
       const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
       const powershell = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-      const safe = "$d = Join-Path $env:ProgramFiles 'Multistream\\Camera'; $i = Join-Path $d 'softcam_installer.exe'; $l = Join-Path $d 'softcam.dll'";
+      const safe = `$d = Join-Path $env:ProgramFiles 'Multistream\\Camera\\${CAMERA_VERSION}'; $i = Join-Path $d 'softcam_installer.exe'; $l = Join-Path $d 'softcam.dll'`;
       // the part that runs as administrator (a copy that Zoom has open is kept, and registered again)
       const admin = unregister
         ? `${safe}; if (Test-Path $i) { & $i unregister $l } else { & ${q(inst)} unregister ${q(dll)} }; exit $LASTEXITCODE`
-        : `${safe}; New-Item -ItemType Directory -Force -Path $d | Out-Null; Copy-Item -Force -ErrorAction SilentlyContinue ${q(inst)}, ${q(dll)} -Destination $d; if (!(Test-Path $i) -or !(Test-Path $l)) { exit 2 }; if ((Get-FileHash $l).Hash -ne (Get-FileHash ${q(dll)}).Hash) { exit 3 }; & $i register $l; exit $LASTEXITCODE`;
+        // its own new folder (only administrators can change Program Files): a copy already there that Zoom has open
+        // is the same version, so it is simply kept and registered again
+        : `${safe}; New-Item -ItemType Directory -Force -Path $d | Out-Null; Copy-Item -Force -ErrorAction SilentlyContinue ${q(inst)}, ${q(dll)} -Destination $d; if (!(Test-Path $i) -or !(Test-Path $l)) { exit 2 }; & $i register $l; exit $LASTEXITCODE`;
       const enc = Buffer.from(admin, 'utf16le').toString('base64');
       // if the Windows permission box is cancelled, Start-Process fails: report it, not success
       const ps = `$ErrorActionPreference = 'Stop'; try { $p = Start-Process -FilePath ${q(powershell)} -ArgumentList @('-NoProfile','-NonInteractive','-EncodedCommand',${q(enc)}) -Verb RunAs -WindowStyle Hidden -Wait -PassThru; if ($null -eq $p) { exit 1 }; exit $p.ExitCode } catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }`;
       const p = spawn(powershell, ['-NoProfile', '-NonInteractive', '-Command', ps], { windowsHide: true });
       let err = ''; p.stderr.on('data', (d) => { err += d; });
       p.on('error', (e) => resolve({ error: e.message }));
-      p.on('close', (code) => resolve(code ? { error: err.trim().split('\n')[0] || (code === 2 ? 'The camera files could not be copied' : code === 3 ? 'Zoom (or Teams, OBS) is using the camera. Quit it fully: at the bottom right of the screen, click the small ^ arrow, right-click the Zoom icon and choose Exit, then press Start Virtual Camera again' : 'Windows did not allow it') } : { ok: true }));
+      p.on('close', (code) => resolve(code
+        ? { error: code === 2 ? 'The camera could not be added. Close Multistream, open it again and press Start virtual camera.' : 'Windows did not allow it. Press Start virtual camera again and choose Yes in the Windows box.' }
+        : { ok: true }));
     });
   }
-  return { available, start, stop, quit, install, state: () => ({ available, ...info }) };
+  return { available, start, stop, quit, install, state: () => ({ available, registered: registered(platform), ...info }) };
 }
 
 module.exports = { createVcam };

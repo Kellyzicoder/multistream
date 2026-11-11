@@ -68,6 +68,10 @@ jobs:
           (Get-Content softcam-src/src/softcamcore/DShowSoftcam.cpp) -replace 'NAME\("DirectShow Softcam"\)', 'NAME("Multistream Camera")' -replace 'L"DirectShow Softcam Stream"', 'L"Multistream Camera Stream"' | Set-Content softcam-src/src/softcamcore/DShowSoftcam.cpp
           $n = (Get-ChildItem softcam-src/src -Recurse -Include *.cpp | Select-String -Pattern 'Multistream Camera').Count
           if ($n -lt 3) { throw "camera rename did not apply ($n)" }
+      - name: Show the Multistream picture when nothing is sent (like OBS)
+        if: matrix.name == 'Windows'
+        shell: pwsh
+        run: python scripts/patch-softcam.py softcam-src
       - name: Build the virtual camera
         if: matrix.name == 'Windows'
         shell: pwsh
