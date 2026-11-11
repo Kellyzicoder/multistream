@@ -81,14 +81,18 @@ function pickItem(items, want, index) {
   return ok[0];
 }
 
+const step = process.env.MULTISTREAM_ENGINE_LOG === '1' ? (m) => console.log('[engine] step: ' + m + ' ' + Date.now() % 100000) : () => {};
 function cameraType() { return mac() ? (has('av_capture_input') ? 'av_capture_input' : 'macos_avcapture') : 'dshow_input'; }
 function cameraList() {
   if (cameras) return cameras;
   cameras = [];
   let probe = null;
   try {
+    step('camera list: make');
     probe = osn.InputFactory.create(cameraType(), 'ms-camera-list', {});
+    step('camera list: read');
     const l = listOf(probe, ['device', 'video_device_id']);
+    step('camera list: done');
     if (l) cameras = l.items.filter((i) => i.value);
   } catch (e) { console.log('[engine] camera list:', e.message); }
   if (probe) try { probe.release(); } catch (e) {}
@@ -163,7 +167,7 @@ function audioFor(a) {
 }
 
 function makeInput(l, name) {
-  const mk = (type, settings) => osn.InputFactory.create(type, name, settings || {});
+  const mk = (type, settings) => { step('make ' + type + ' ' + name); const r = osn.InputFactory.create(type, name, settings || {}); step('made ' + name); return r; };
   if (GFX.has(l.type)) {
     if (!ov) return null;
     return mk('browser_source', { url: ov + '/page?id=' + encodeURIComponent(l.id), is_local_file: false, width: size[0], height: size[1], fps: 30, fps_custom: true, shutdown: false, restart_when_active: false, reroute_audio: false, css: '' });

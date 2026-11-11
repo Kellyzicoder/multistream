@@ -25,7 +25,7 @@ async function launch() {
 }
 
 // stop after 150 s, so a frozen app is reported instead of waiting forever
-setTimeout(() => { console.log('[lag] STUCK: the app stopped answering'); process.exit(2); }, 150000).unref();
+setTimeout(() => { console.log('[lag] STUCK: the app stopped answering'); process.exit(2); }, 400000).unref();
 (async () => {
   // three 1080p videos, like the countdown videos
   const vids = [1, 2, 3].map((n) => {

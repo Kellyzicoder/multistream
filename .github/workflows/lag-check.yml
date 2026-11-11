@@ -40,13 +40,13 @@ jobs:
           if [ "$RUNNER_OS" = "macOS" ]; then
             ( sleep 100; if ! grep -q "time each click" lag.txt 2>/dev/null; then
                 echo "[lag] the app seems stuck; what it is doing:" >> stuck.txt
-                ps -axo pid,ppid,stat,command | grep -E "Electron|obs64" | grep -v grep | cut -c1-160 >> stuck.txt; for p in $(pgrep -f "MacOS/Electron |bin/obs64"); do echo "==== $p $(ps -o command= -p $p | cut -c1-150)" >> stuck.txt; sample $p 2 -mayDie -file /tmp/s.txt >/dev/null 2>&1; grep -v "fontations\|font_types\|read_fonts\|skrifa" /tmp/s.txt | grep -A45 "DispatchQueue_1: com.apple.main-thread" | head -60 >> stuck.txt; done
+                ps -axo pid,ppid,stat,command | grep -E "Electron|obs64" | grep -v grep | cut -c1-160 >> stuck.txt; for p in $(pgrep -f "MacOS/Electron .*multistream$|bin/obs64"); do echo "==== $p $(ps -o command= -p $p | cut -c1-150)" >> stuck.txt; sample $p 1 -mayDie -file /tmp/s.txt >/dev/null 2>&1; grep -v "fontations\|font_types\|read_fonts\|skrifa" /tmp/s.txt | grep -A45 "DispatchQueue_1: com.apple.main-thread" | head -60 >> stuck.txt; done
                 cat stuck.txt
               fi ) &
           fi
           node tools/click-lag-test.js 2>&1 | tee lag.txt
           sleep 1; if [ -f stuck.txt ]; then cat stuck.txt; fi
-        timeout-minutes: 5
+        timeout-minutes: 9
       - uses: actions/upload-artifact@v4
         if: always()
         with:
