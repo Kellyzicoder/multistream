@@ -152,9 +152,10 @@ function setStatus(id, state, message = '') {
   status.set(id, { state, message });
   const d = destinations.find((x) => x.id === id), name = d ? d.name : 'A channel';
   if (state === 'live' && before !== 'live') { if (!liveSince.has(id)) liveSince.set(id, Date.now()); logHealth(before === 'error' ? `${name} dropped and reconnected by itself.` : `${name} is live.`, before === 'error' ? 'warn' : ''); }
-  if (state === 'error' && before !== 'error') { if (obsLive) reconnects.set(id, (reconnects.get(id) || 0) + 1); logHealth(`${name} dropped: ${message || 'no reason given'}`, 'warn'); }
+  if (state === 'error' && before !== 'error') { if (obsLive) reconnects.set(id, (reconnects.get(id) || 0) + 1); logHealth(`${name} dropped: ${message || 'the connection dropped'}`, 'warn'); }
   if (state === 'off' && before && before !== 'off') liveSince.delete(id);
-  if (state === 'error' && (before !== 'error' || message)) sendAlert('stream', name, `stopped receiving: ${message || 'no reason given'}`);
+  if (state === 'error' && (before !== 'error' || message)) sendAlert('stream', name, message || 'The connection dropped');
+  else if (state === 'starting' && before === 'error') sendAlert('stream', name, 'Reconnecting now…');
   else if (state === 'live' && before !== 'live') resolveAlert('stream', name, 'back on air');
 }
 
@@ -231,11 +232,21 @@ function stopMonitor() {
   m.stop();
 }
 
+// ffmpeg's own words ("[flv @ 0x13…] Failed to update header…") in plain English for the person streaming
+function plainReason(reason) {
+  const r = String(reason || '');
+  if (/40[13]|forbidden|unauthori[sz]ed|access denied/i.test(r)) return 'The site did not accept the stream key';
+  if (/404|not found|no such/i.test(r)) return 'The site could not find this stream key or address';
+  if (/invalid data|codec|unsupported/i.test(r)) return 'The site did not accept the video';
+  if (/resolve|getaddrinfo|name or service|nodename/i.test(r)) return 'No internet connection';
+  if (!r || /^\[|header|connection|reset|refused|timed? ?out|unreachable|broken pipe|i\/o error|end of file|eof|server returned/i.test(r)) return 'The connection dropped';
+  return r.length > 80 ? 'The connection dropped' : r;
+}
 // a destination that drops while the Studio is still sending starts again by itself
 const autoRetry = createAutoRetry({
   restart: (id) => { const d = destinations.find((x) => x.id === id); if (d && obsLive) startDestination(d); },
-  onWait: (id, reason, ms, n, max) => setStatus(id, 'error', `${reason || 'Dropped'} - trying again in ${Math.round(ms / 1000)} s (try ${n} of ${max})`),
-  onGiveUp: (id, reason, max) => setStatus(id, 'error', `${reason || 'Stopped'} - gave up after ${max} tries. Press Restart.`),
+  onWait: (id, reason, ms, n, max) => setStatus(id, 'error', `${plainReason(reason)}. Reconnecting… (${n} of ${max})`),
+  onGiveUp: (id, reason, max) => setStatus(id, 'error', `${plainReason(reason)}. Could not reconnect after ${max} tries. Press Restart.`),
 });
 
 function targetOf(d) {
