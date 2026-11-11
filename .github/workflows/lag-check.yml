@@ -1,10 +1,8 @@
 name: Click speed check
 # Opens the real app on Mac and Windows and measures how quickly it answers clicks right after opening
-# (Studio <-> Go Live), with and without the OBS engine. It changes nothing in the app.
+# (Studio <-> Go Live), with and without the OBS engine. It changes nothing in the app. Run it from the Actions tab.
 on:
   workflow_dispatch:
-  push:
-    branches: [feat/engine-always-on]
 permissions:
   contents: read
 jobs:
@@ -15,15 +13,6 @@ jobs:
         os: [macos-latest, windows-2022]
         engine: [on, off]
         try: [1]
-        include:
-          - { os: macos-latest, engine: on, try: 2 }
-          - { os: macos-latest, engine: on, try: 3 }
-          - { os: macos-latest, engine: on, try: 4 }
-          - { os: macos-latest, engine: on, try: 5 }
-          - { os: macos-latest, engine: on, try: 6 }
-          - { os: macos-latest, engine: on, try: 7 }
-          - { os: macos-latest, engine: on, try: 8 }
-          - { os: macos-latest, engine: on, try: 9 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

@@ -131,12 +131,13 @@ function createWindow() {
 
 // ---- OBS engine ----
 // The engine draws the picture on the graphics card inside the app (see engine.js), the way OBS does, and it
-// makes the video that goes live and into recordings. It is always on in copies of the app built with it.
-// If it cannot start on a computer, the app works the older way: the Studio makes the video itself.
-// (MULTISTREAM_ENGINE=off turns it off, for tests and for help with problems.)
+// makes the video that goes live and into recordings. On Windows it is always on in copies of the app built with it.
+// On the Mac it stays off for now: in tests it sometimes froze the app just after opening (about 1 start in 5),
+// so the Mac keeps the older way. If it cannot start on a computer, the Studio makes the video itself.
+// (MULTISTREAM_ENGINE=off or =on changes this, for tests and for help with problems.)
 let engineMod = null;
 const engine = () => engineMod || (engineMod = require('./engine'));
-const engineOn = () => process.env.MULTISTREAM_ENGINE !== 'off';
+const engineOn = () => (process.env.MULTISTREAM_ENGINE === 'off' ? false : process.env.MULTISTREAM_ENGINE === 'on' ? true : process.platform === 'win32');
 // Starting the engine keeps the app busy for a second or two, so it is done before the window shows:
 // then the window answers clicks straight away, instead of freezing just after it opens.
 function startEngineFirst() {
