@@ -143,7 +143,7 @@ async function setEngine(on) {
   if (on) {
     const ok = engine().start();
     if (ok) await engine().askMacCamera();
-    if (!ok) dialog.showMessageBox({ type: 'warning', message: 'The OBS engine could not start.', detail: 'The app keeps working as before. Help > Developer tools shows the reason.' });
+    if (!ok) dialog.showMessageBox({ type: 'warning', message: 'The OBS engine could not start.', detail: 'The app keeps working the usual way. You can turn this test off in the Help menu.' });
   } else {
     engine().stop();
     try { if (relay && relay.engineIngestStop) relay.engineIngestStop(); } catch (e) {}
@@ -540,7 +540,7 @@ async function start() {
     if (relay.setShowFile) relay.setShowFile((p) => shell.showItemInFolder(p));
     if (relay.onCollections) relay.onCollections(() => setMenu()); // the menu shows the scene collections
   } catch (err) {
-    dialog.showErrorBox('Multistream cannot start', String(err && err.message ? err.message : err));
+    dialog.showErrorBox('Multistream cannot start', require('./public/plain').plain(String(err && err.message ? err.message : err)));
     app.quit();
     return;
   }
@@ -563,7 +563,7 @@ if (!app.requestSingleInstanceLock()) {
       win.focus();
     }
   });
-  app.whenReady().then(start).catch((e) => { console.error('Multistream failed to start:', e && e.stack || e); dialog.showErrorBox('Multistream cannot start', String(e && e.message || e)); app.quit(); });
+  app.whenReady().then(start).catch((e) => { console.error('Multistream failed to start:', e && e.stack || e); dialog.showErrorBox('Multistream cannot start', require('./public/plain').plain(String(e && e.message || e))); app.quit(); });
 }
 
 // stop every platform stream when the app closes

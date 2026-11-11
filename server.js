@@ -26,6 +26,7 @@ function openKept(name, v) { const o = secret.open(v); if (o === null) { keptSea
 function sealKept(name, v) { if (v) { keptSealed.delete(name); return secret.seal(v); } return keptSealed.get(name) || ''; }
 const { detectEncoder } = require('./encoder');
 const outargs = require('./outargs');
+const { plain } = require('./public/plain'); // error messages in plain words
 const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker, makeFlvInfo } = require('./stats');
 const { Writable } = require('stream');
 
@@ -116,6 +117,7 @@ function alertBroadcast(group, msg) {
   for (const [c, g] of alertClients) if (g === group) { try { c.send(data); } catch {} }
 }
 function sendAlert(group, source, text, ok = false) {
+  if (!ok) text = /^(could not upload|connected, but|the video stopped)/i.test(String(text)) ? String(text) : plain(text);
   const a = { group, source, text, at: Date.now(), ok };
   alertNow[group].set(source, a);
   alertBroadcast(group, a);
@@ -148,6 +150,7 @@ function logHealth(text, kind) { healthLog.push({ t: Date.now(), text, kind: kin
 const reconnects = new Map(); // id -> times a channel dropped and was started again
 const liveSince = new Map(); // id -> when it went live
 function setStatus(id, state, message = '') {
+  if (state === 'error') message = plain(message || 'The connection to the site dropped.');
   const before = (status.get(id) || {}).state;
   status.set(id, { state, message });
   const d = destinations.find((x) => x.id === id), name = d ? d.name : 'A channel';
@@ -232,21 +235,11 @@ function stopMonitor() {
   m.stop();
 }
 
-// ffmpeg's own words ("[flv @ 0x13…] Failed to update header…") in plain English for the person streaming
-function plainReason(reason) {
-  const r = String(reason || '');
-  if (/40[13]|forbidden|unauthori[sz]ed|access denied/i.test(r)) return 'The site did not accept the stream key';
-  if (/404|not found|no such/i.test(r)) return 'The site could not find this stream key or address';
-  if (/invalid data|codec|unsupported/i.test(r)) return 'The site did not accept the video';
-  if (/resolve|getaddrinfo|name or service|nodename/i.test(r)) return 'No internet connection';
-  if (!r || /^\[|header|connection|reset|refused|timed? ?out|unreachable|broken pipe|i\/o error|end of file|eof|server returned/i.test(r)) return 'The connection dropped';
-  return r.length > 80 ? 'The connection dropped' : r;
-}
 // a destination that drops while the Studio is still sending starts again by itself
 const autoRetry = createAutoRetry({
   restart: (id) => { const d = destinations.find((x) => x.id === id); if (d && obsLive) startDestination(d); },
-  onWait: (id, reason, ms, n, max) => setStatus(id, 'error', `${plainReason(reason)}. Reconnecting… (${n} of ${max})`),
-  onGiveUp: (id, reason, max) => setStatus(id, 'error', `${plainReason(reason)}. Could not reconnect after ${max} tries. Press Restart.`),
+  onWait: (id, reason, ms, n, max) => setStatus(id, 'error', `${plain(reason).replace(/\.$/, '')}. Reconnecting… (${n} of ${max})`),
+  onGiveUp: (id, reason, max) => setStatus(id, 'error', `${plain(reason).replace(/\.$/, '')}. Could not reconnect after ${max} tries. Press Restart.`),
 });
 
 function targetOf(d) {
@@ -419,6 +412,18 @@ app.use((req, res, next) => {
   res.status(403).type('text').send('Not allowed');
 });
 app.use(express.json({ limit: '8mb' }));
+// every error or warning sent to the app's pages is put into plain words first
+app.use((req, res, next) => {
+  const json = res.json.bind(res);
+  res.json = (b) => {
+    if (b && typeof b === 'object' && !Array.isArray(b)) {
+      if (typeof b.error === 'string' && b.error) b = { ...b, error: plain(b.error) };
+      if (typeof b.warning === 'string' && b.warning) b = { ...b, warning: plain(b.warning) };
+    }
+    return json(b);
+  };
+  next();
+});
 
 app.use(express.static(path.join(__dirname, 'public')));
 // the small video-player library used by the preview
@@ -666,7 +671,7 @@ async function runUploads() {
         const id = await ytUpload(f, name, upCfg.privacy || 'unlisted', (pct) => { job.pct = pct; });
         upCfg.done[name] = { id, privacy: upCfg.privacy || 'unlisted', at: Date.now() }; saveUp(); recJobs.delete(name);
         logHealth('Recording ' + name + ' is on YouTube (' + (upCfg.privacy || 'unlisted') + ').');
-      } catch (e) { job.error = e.message; job.pct = 0; sendAlert('stream', 'YouTube upload', 'could not upload ' + name + ': ' + e.message); }
+      } catch (e) { job.error = plain(e.message); job.pct = 0; sendAlert('stream', 'YouTube upload', 'could not upload ' + name + ': ' + plain(e.message)); }
     }
   } finally { uploading = false; }
 }
@@ -990,8 +995,9 @@ async function fbNewLive(pageId, token, status, title, description) {
       // say exactly what Facebook gave at sign-in, and what it needs for a live video
       const need = ['pages_manage_posts', 'pages_read_engagement', 'pages_show_list'];
       const missing = need.filter((x) => !(fb.granted || []).includes(x));
-      msg = 'Facebook refused (' + msg + (e.code ? ', code ' + e.code + (e.error_subcode ? '/' + e.error_subcode : '') : '') + '). '
-        + (fb.granted ? (missing.length ? 'Missing at sign-in: ' + missing.join(', ') + '. ' : 'All needed permissions were given at sign-in, so check that you are a full admin of this Page. ') : '')
+      // in plain words (Facebook's own text is computer words): what is missing and what to do
+      msg = 'Facebook did not let the app go live on this Page. '
+        + (fb.granted ? (missing.length ? 'Not given at sign-in: ' + missing.join(', ') + '. ' : 'Everything needed was given at sign-in, so check you are a full admin of this Page. ') : '')
         + 'Fix it in your Meta app, then Settings → Stream → Sign in again.';
     }
     throw new Error(msg);
@@ -1143,7 +1149,7 @@ function ytView() {
 function ytDestination() {
   return destinations.find((d) => /youtube/i.test(d.name));
 }
-const plain = (s) => String(s).replace(/[<>&"']/g, '');
+const noTags = (s) => String(s).replace(/[<>&"']/g, '');
 async function googleToken(params) {
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -1211,7 +1217,7 @@ app.get('/api/youtube/login', (req, res) => {
 app.get('/api/youtube/callback', async (req, res) => {
   const page = (title, text) => res.type('html').send(simplePage(title, `<p>${text}</p>`));
   const { code, state, error } = req.query;
-  if (error) return page('YouTube not connected', `Google said: ${plain(error)}. You can close this tab and try again.`);
+  if (error) return page('YouTube not connected', `Google said: ${noTags(plain(error))}. You can close this tab and try again.`);
   if (!ytLoginState || state !== ytLoginState) return page('YouTube not connected', 'This sign-in link is old. Go back to the app and click Connect YouTube again.');
   ytLoginState = '';
   const verifier = ytVerifier; ytVerifier = '';
@@ -1223,9 +1229,9 @@ app.get('/api/youtube/callback', async (req, res) => {
     const ch = await ytApi('GET', 'channels', { part: 'snippet', mine: 'true' });
     yt.channelTitle = (ch.items && ch.items[0] && ch.items[0].snippet && ch.items[0].snippet.title) || '';
     saveYt();
-    page('YouTube connected', `Connected${yt.channelTitle ? ' to ' + plain(yt.channelTitle) : ''}. You can close this tab and go back to the app.`);
+    page('YouTube connected', `Connected${yt.channelTitle ? ' to ' + noTags(yt.channelTitle) : ''}. You can close this tab and go back to the app.`);
   } catch (e) {
-    page('YouTube not connected', plain(e.message));
+    page('YouTube not connected', noTags(plain(e.message)));
   }
   closeLoginListener();
 });
