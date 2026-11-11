@@ -14,6 +14,11 @@ jobs:
       matrix:
         os: [macos-latest, windows-2022]
         engine: [on, off]
+        try: [1]
+        include:
+          - { os: macos-latest, engine: on, try: 2 }
+          - { os: macos-latest, engine: on, try: 3 }
+          - { os: macos-latest, engine: on, try: 4 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -29,13 +34,24 @@ jobs:
         shell: bash
         env:
           MULTISTREAM_ENGINE: ${{ matrix.engine }}
-        run: node tools/click-lag-test.js 2>&1 | tee lag.txt
-        timeout-minutes: 8
+        run: |
+          # Mac: if the app stops answering, write down what each of its parts is doing (to find a freeze)
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            ( sleep 100; if ! grep -q "time each click" lag.txt 2>/dev/null; then
+                echo "[lag] the app seems stuck; what it is doing:" >> stuck.txt
+                for p in $(pgrep -f "Electron|obs64|obs-studio-node"); do echo "==== $p $(ps -o command= -p $p | cut -c1-150)" >> stuck.txt; sample $p 2 -mayDie -file /tmp/s.txt >/dev/null 2>&1; grep -A40 "Thread_.*DispatchQueue_1:\|Thread_.*main-thread\|CrBrowserMain" /tmp/s.txt | head -80 >> stuck.txt; done
+                cat stuck.txt
+              fi ) &
+          fi
+          node tools/click-lag-test.js 2>&1 | tee lag.txt
+          sleep 1; if [ -f stuck.txt ]; then cat stuck.txt; fi
+        timeout-minutes: 5
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: lag-${{ matrix.os }}-engine-${{ matrix.engine }}
+          name: lag-${{ matrix.os }}-engine-${{ matrix.engine }}-${{ matrix.try }}
           path: |
             lag.txt
             lag-trace.json
             lag-start.png
+            stuck.txt
