@@ -3095,7 +3095,7 @@ document.addEventListener('click', () => ensureAudio(), { once: true });
 
 // ---------------- virtual camera (Zoom) ----------------
 // Sends the Studio picture to the Windows virtual camera. In Zoom, pick the camera called "Multistream Camera".
-let vcWs = null, vcMr = null;
+let vcWs = null, vcMr = null, vcFirst = false;
 fetch('/api/vcam').then((r) => r.json()).then((s) => { if (s.available) $('#vcBtn').hidden = false; }).catch(() => {});
 function vcOff(msg) {
   try { vcMr && vcMr.state !== 'inactive' && vcMr.stop(); } catch {}
@@ -3105,12 +3105,14 @@ function vcOff(msg) {
 }
 $('#vcBtn').onclick = async () => {
   if (vcWs) { vcOff(); $('#st').textContent = 'Virtual camera is off.'; $('#st').className = 'stat'; return; }
-  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok4') === '1'; } catch {}
-  if (!ok) {
-    if (!confirm('Windows will ask for permission one time, to add the camera called Multistream Camera (it replaces the old DirectShow Softcam name). Quit Zoom fully first: at the bottom right of the screen, click the small ^ arrow, right-click the Zoom icon and choose Exit. Continue?')) return;
+  // Multistream Camera is added to Windows once (Windows asks for permission one time). Zoom can stay open.
+  const st0 = await fetch('/api/vcam').then((x) => x.json()).catch(() => ({}));
+  if (!st0.registered) {
+    if (!confirm('Windows will ask for permission one time, to add the camera called Multistream Camera. Zoom can stay open. Continue?')) return;
+    $('#st').textContent = 'Adding Multistream Camera… press Yes in the Windows box.'; $('#st').className = 'stat';
     const r = await fetch('/api/vcam/install', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then((x) => x.json()).catch(() => ({ error: 'Could not reach the app' }));
-    if (r.error) { $('#st').textContent = 'Virtual camera setup: ' + r.error; $('#st').className = 'stat bad'; return; }
-    try { localStorage.setItem('ms_vcam_ok4', '1'); } catch {}
+    if (r.error) { $('#st').textContent = 'Virtual camera: ' + r.error; $('#st').className = 'stat bad'; return; }
+    vcFirst = true;
   }
   const ws = vcWs = openPipe('/studio-vcam');
   ws.binaryType = 'arraybuffer';
@@ -3121,7 +3123,10 @@ $('#vcBtn').onclick = async () => {
     vcMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     vcMr.start(100);
     $('#vcBtn').textContent = 'Stop virtual camera'; $('#vcBtn').className = 'stop';
-    $('#st').textContent = 'Virtual camera is on. In Zoom, choose the camera called Multistream Camera.'; $('#st').className = 'stat ok';
+    $('#st').textContent = vcFirst
+      ? 'Virtual camera is on. In Zoom, choose Multistream Camera (Settings → Video → Camera). If Zoom was already open and does not list it, close Zoom and open it again.'
+      : 'Virtual camera is on. In Zoom, choose the camera called Multistream Camera.';
+    $('#st').className = 'stat ok'; vcFirst = false;
   };
   ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) vcOff('Virtual camera: ' + j.error); } catch {} };
   ws.onclose = () => { if (vcWs === ws) vcOff('Virtual camera stopped.'); };
