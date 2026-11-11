@@ -252,6 +252,8 @@ handleIpc('ms-engine-state', () => engineState());
 // the page tells where its preview box is (or null when it is hidden); the engine draws its picture there
 handleIpc('ms-engine-preview', (e, rect) => (win && e.sender === win.webContents ? engine().showPreview(win, rect) : false));
 // any box on the app's own windows (the Studio's Program, the Multiview): key, where it is, and what it shows
+// Copy buttons: the app's own clipboard (the page's clipboard needs a permission the app does not give)
+handleIpc('ms-copy', (e, text) => { require('electron').clipboard.writeText(String(text || '').slice(0, 10000)); return true; });
 handleIpc('ms-engine-display', (e, key, rect, src) => {
   const w = BrowserWindow.fromWebContents(e.sender);
   if (!w || (w !== win && w !== crWin) || !engineMod || !engine().isStarted()) return false;
