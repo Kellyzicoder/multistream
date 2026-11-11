@@ -3,7 +3,7 @@ name: Virtual camera check
 # it must give the Multistream resting picture (not an error or black), like OBS's virtual camera does.
 on:
   push:
-    branches: [fix/virtual-camera-like-obs]
+    branches: [v3]
     paths: ['vcam/**', 'scripts/patch-softcam.py', '.github/workflows/vcam-check.yml']
   workflow_dispatch:
 jobs:
