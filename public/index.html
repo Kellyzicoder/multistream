@@ -1963,7 +1963,8 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const sub = r.querySelector('.sub');
     if (small) sub.remove();
     else if (s2.msg) { sub.textContent = s2.msg; sub.title = s2.msg; sub.style.color = '#ff8a90'; }
-    else sub.textContent = ch.page ? ch.sub : ch.kind === 'api' ? (titleFor(ch.c).title || ch.sub) : (live ? '' : ch.dest.hasKey ? '' : 'Add its stream key');
+    // sign-in channels show which account or Page they go to (like Restream); the title is on the preview
+    else sub.textContent = ch.kind === 'api' ? (ch.sub || titleFor(ch.c).title) : (live ? '' : ch.dest.hasKey ? '' : 'Add its stream key');
     if (!sub.textContent) sub.remove();
     // while live on Facebook: a link straight to the live video, to check it arrived
     if (!small && ch.session && ch.site === 'facebook') {
