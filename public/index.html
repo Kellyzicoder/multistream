@@ -1370,6 +1370,17 @@
   </div>
 </div>
 
+<script src="/plain.js"></script>
+<script>
+// every pop-up message in plain words (see plain.js); a short "YouTube: " in front is kept
+(function () {
+  const P = window.msPlain || ((t) => t);
+  const nice = (t) => { const s = String(t == null ? '' : t); const m = /^([^:]{1,45}): ([\s\S]+)$/.exec(s); return m && !/https?$/i.test(m[1]) ? m[1] + ': ' + P(m[2]) : P(s); };
+  window.msNice = nice;
+  const a = window.alert.bind(window);
+  window.alert = (t) => a(nice(t));
+})();
+</script>
 <script src="/vendor/flv.min.js"></script>
 <script src="/demo.js"></script>
 <script>

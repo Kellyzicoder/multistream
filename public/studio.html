@@ -618,6 +618,17 @@
 </style>
 </head>
 <body>
+<script src="/plain.js"></script>
+<script>
+// every pop-up message in plain words (see plain.js); a short "YouTube: " in front is kept
+(function () {
+  const P = window.msPlain || ((t) => t);
+  const nice = (t) => { const s = String(t == null ? '' : t); const m = /^([^:]{1,45}): ([\s\S]+)$/.exec(s); return m && !/https?$/i.test(m[1]) ? m[1] + ': ' + P(m[2]) : P(s); };
+  window.msNice = nice;
+  const a = window.alert.bind(window);
+  window.alert = (t) => a(nice(t));
+})();
+</script>
 <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');
 // Inside the app window the Studio sometimes misses the app's helpers (it then tries a connection that does not exist
 // in the desktop app and never sends any video). The window around it has them, so it uses those.
@@ -2745,7 +2756,7 @@ if (/[?&]same=1/.test(location.search) && window.msNative) {
 }
 // a message (like "Recording saved") stays on the status line for a few seconds
 let stHold = 0;
-function flash(text, ok) { $('#st').textContent = text; $('#st').className = 'stat ' + (ok ? 'ok' : 'bad'); stHold = Date.now() + 6000; }
+function flash(text, ok) { if (!ok && window.msNice) text = window.msNice(text); $('#st').textContent = text; $('#st').className = 'stat ' + (ok ? 'ok' : 'bad'); stHold = Date.now() + 6000; }
 
 // ---------------- OBS engine: the Program box ----------------
 // When the engine is on (Help > Use the OBS engine (test)), the engine paints the Program box itself, so it shows
