@@ -2818,7 +2818,8 @@ async function connectSend() {
   wsOut.binaryType = 'arraybuffer';
   wsOut.onopen = () => {
     // fast: the browser's bitrate is the one we send, so it is set to the target exactly
-    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: fast ? OUT.kbps * 1000 : Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: 128000 });
+    // a keyframe every 2 seconds: Facebook needs it to play the live, and a channel that reconnects can join straight away
+    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: fast ? OUT.kbps * 1000 : Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: 128000, videoKeyFrameIntervalDuration: 2000 });
     rec.ondataavailable = async (e) => { if (e.data.size && wsOut && wsOut.readyState === 1) wsOut.send(await e.data.arrayBuffer()); };
     rec.start(250);
     cv.classList.add('live');
@@ -3051,7 +3052,7 @@ async function startRec() {
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
     // fast (encode once): the file is exactly what the browser makes, so use the chosen size. Normal way: give ffmpeg a bit more to work from.
-    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: (fast ? mb : Math.min(80, Math.max(mb, 6))) * 1000000, audioBitsPerSecond: 160000 });
+    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: (fast ? mb : Math.min(80, Math.max(mb, 6))) * 1000000, audioBitsPerSecond: 160000, videoKeyFrameIntervalDuration: 2000 });
     recMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     recMr.start(500);
     recT0 = Date.now(); $('#recBtn').textContent = 'Stop recording'; $('#recBtn').className = 'stop';
@@ -3105,7 +3106,7 @@ $('#vcBtn').onclick = async () => {
   ws.onopen = () => {
     const mt = ['video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
     vcOn = true;
-    vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000 });
+    vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000, videoKeyFrameIntervalDuration: 2000 });
     vcMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
     vcMr.start(100);
     $('#vcBtn').textContent = 'Stop virtual camera'; $('#vcBtn').className = 'stop';
