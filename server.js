@@ -1280,12 +1280,17 @@ app.post('/api/youtube/live', async (req, res) => {
     try { await ytSetThumbnail(b.id); } catch (e) { thumbnailError = e.message; }
     // 4. send the video to that stream
     const info = stream.cdn.ingestionInfo;
-    stopDestination(d.id);
-    d.url = info.ingestionAddress;
-    d.key = info.streamName;
+    // the same stream address and key as the channel already sends to: keep sending (no drop before going live);
+    // only a new address or key restarts the channel
+    const same = d.url === info.ingestionAddress && d.key === info.streamName && procs.has(d.id);
     d.enabled = true;
-    save();
-    startDestination(d);
+    if (!same) {
+      stopDestination(d.id);
+      d.url = info.ingestionAddress;
+      d.key = info.streamName;
+      save();
+      startDestination(d);
+    } else save();
     // the chat id is on the broadcast. If it was not in the first answer, ask for it.
     let liveChatId = (b.snippet || {}).liveChatId;
     if (!liveChatId) {
