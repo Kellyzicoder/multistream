@@ -112,6 +112,17 @@
   .dlg-h button { background:none; border:0; font-size:18px; padding:0 6px; }
   .dlg-b { padding:12px; overflow:auto; }
   .dlg-b .f { grid-template-columns:140px 1fr; }
+  /* Missing files window and the red ! on a source whose file is not found */
+  #layers .lyr button.miss { width:22px; height:22px; border-radius:50%; border:0; padding:0; background:#e5484d; color:#fff; font-weight:800; font-size:13px; display:grid; place-items:center; flex:none; }
+  .missw .dlg { width:min(640px, 94vw); }
+  .mw-lead { margin:0 0 12px; font-size:14px; line-height:1.5; }
+  .mw-list { display:grid; gap:8px; }
+  .mw-r { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; }
+  .mw-t { flex:1; min-width:0; display:grid; gap:2px; }
+  .mw-t b { font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mw-t small { color:var(--muted); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mw-ft { display:flex; align-items:center; gap:12px; padding:12px; border-top:1px solid var(--line); }
+  .mw-ft span { flex:1; font-size:13px; color:var(--muted); }
   .dlg-b h3 { margin:14px 0 6px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
   .dlg-b h3:first-child { margin-top:0; }
   #ev { touch-action:none; }
@@ -817,9 +828,13 @@ const $ = (s) => document.querySelector(s);
 const cv = $('#cv'), ctx = cv.getContext('2d'), ev = $('#ev'), ectx = ev.getContext('2d');
 // the scene collection's shape: wide (16:9), tall (9:16) or square (1:1)
 let collNames = [];
+let collSeen = '';
 async function showColl() {
   const el = $('#pColl'); if (!el) return;
-  try { const r = await fetch('/api/collections').then((x) => x.json()); collNames = r.names || []; el.textContent = 'Scene collection: '; const b = document.createElement('b'); b.textContent = r.current || ''; el.append(b); if (SH >= SW) { const t = document.createElement('i'); t.textContent = SH > SW ? '9:16' : '1:1'; el.append(' ', t); } el.append(' \u25BE'); } catch {}
+  try { const r = await fetch('/api/collections').then((x) => x.json());
+    // another scene collection was opened: check its files too
+    if (collSeen && r.current !== collSeen) setTimeout(() => checkMissing(true), 1000);
+    collSeen = r.current || ''; collNames = r.names || []; el.textContent = 'Scene collection: '; const b = document.createElement('b'); b.textContent = r.current || ''; el.append(b); if (SH >= SW) { const t = document.createElement('i'); t.textContent = SH > SW ? '9:16' : '1:1'; el.append(' ', t); } el.append(' \u25BE'); } catch {}
 }
 function applyShape(shape) {
   const [w, h] = shape === 'portrait' ? [1080, 1920] : shape === 'square' ? [1080, 1080] : [1920, 1080];
@@ -834,6 +849,7 @@ function applyShape(shape) {
 let studio = { scenes: [], audio: [], current: '' };
 let editing = '';        // scene being edited
 let sel = '';            // layer being edited
+let missing = [], missingIds = new Set(); // sources whose picture or video file is not on this computer
 let saveT = 0, lastRev = 0, dirtyCurrent = false, serverPreview = '';
 const uid = () => Math.random().toString(36).slice(2, 8);
 const byName = (n) => studio.scenes.find((s) => s.name === n);
@@ -2130,7 +2146,9 @@ function renderLayers() {
     const cog = document.createElement('button'); cog.className = 'cog'; cog.textContent = '\u2699'; cog.title = 'Settings for ' + (l.name || l.type); cog.setAttribute('aria-label', cog.title);
     cog.onclick = (e) => { e.stopPropagation(); sel = l.id; propsOpen = true; renderLayers(); };
     if (l.visible === false) d.classList.add('hid');
-    d.append(ti, n, eye, lockBtn(l)); d.onclick = () => { sel = l.id; renderLayers(); };
+    // a picture or video whose file is not on this computer: a red mark, and a click opens Missing files
+    if (missingIds.has(l.id)) { const w = document.createElement('button'); w.type = 'button'; w.className = 'miss'; w.textContent = '!'; w.title = 'File not found. Click to find it.'; w.setAttribute('aria-label', w.title); w.onclick = (e) => { e.stopPropagation(); openMissing(); }; n.title = n.textContent + ' (file not found)'; d.append(ti, n, w, eye, lockBtn(l)); }
+    else d.append(ti, n, eye, lockBtn(l)); d.onclick = () => { sel = l.id; renderLayers(); };
     d.addEventListener('contextmenu', (e) => showSourceMenu(e, l, n));
     d.ondblclick = () => { sel = l.id; propsOpen = true; renderLayers(); };
     box.appendChild(d);
@@ -2398,13 +2416,81 @@ function camSound(l) {
   studio.audio.push(n); const sc = byName(editing); if (sc) (sc.audio = sc.audio || []).push(n.id);
   l.camSoundId = n.id; save(); renderAudio(); syncAudio(); flash(n.name + ' added to the Audio Mixer.', true);
 }
+// ---------------- Missing files (like OBS) ----------------
+// When the Studio opens (or another scene collection is opened), it checks that every picture and video file is
+// on this computer. If some are not, a window lists them: find each one, search a folder for all of them at once,
+// or leave them for now. Sources with a missing file also get a red ! in the Sources list.
+async function checkMissing(show) {
+  try { missing = (await fetch('/api/studio/missing').then((r) => r.json())).missing || []; } catch { return; }
+  const before = [...missingIds].join(',');
+  missingIds = new Set(missing.map((m) => m.id));
+  if ([...missingIds].join(',') !== before) renderLayers();
+  if (show && missing.length) openMissing();
+}
+function layerById(id) { for (const sc of studio.scenes) for (const l of sc.layers) if (l.id === id) return l; return null; }
+// copy the chosen file into the app (like Choose in a source's settings) and use it for that source
+async function useFileFor(m, file) {
+  const l = layerById(m.id); if (!l) return false;
+  const r = await fetch('/api/studio/asset/' + encodeURIComponent(uid() + '-' + file.name), { method: 'PUT', body: file }).then((x) => x.json()).catch(() => ({}));
+  if (!r.url) return false;
+  if (m.part === 'bg') { l.bg.url = r.url; l.bg.file = ''; }
+  else if (m.part === 'pic') { l.picUrl = r.url; l.pic = ''; }
+  else { l.url = r.url; l.file = ''; }
+  save(); return true;
+}
+function openMissing() {
+  if (document.querySelector('.modal.missw')) return;
+  const m = document.createElement('div'); m.className = 'modal missw';
+  const dlg = document.createElement('div'); dlg.className = 'dlg'; dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-label', 'Missing files');
+  dlg.innerHTML = '<div class="dlg-h"><b>Missing files</b><button type="button" aria-label="Close">×</button></div><div class="dlg-b"><p class="mw-lead"></p><div class="mw-list"></div></div><div class="mw-ft"><button type="button" class="mw-dir">Search a folder…</button><span></span><button type="button" class="mw-later">Not now</button></div>';
+  m.appendChild(dlg); document.body.appendChild(m);
+  const close = () => { m.remove(); document.removeEventListener('keydown', esc); };
+  const esc = (e) => { if (e.key === 'Escape') close(); };
+  dlg.querySelector('.dlg-h button').onclick = close; dlg.querySelector('.mw-later').onclick = close; document.addEventListener('keydown', esc);
+  const draw = () => {
+    if (!missing.length) { close(); flash('All files found.', true); return; }
+    dlg.querySelector('.mw-lead').textContent = (missing.length === 1 ? '1 file' : missing.length + ' files') + ' used in your scenes cannot be found on this computer, so they show black. They may have moved, or be on a drive that is not plugged in.';
+    const list = dlg.querySelector('.mw-list'); list.textContent = '';
+    missing.forEach((x) => {
+      const r = document.createElement('div'); r.className = 'mw-r';
+      const t = document.createElement('div'); t.className = 'mw-t';
+      const b = document.createElement('b'); b.textContent = x.file;
+      const sm = document.createElement('small'); sm.textContent = 'Scene: ' + x.scene + ' · ' + x.name + (x.where ? ' · was at ' + x.where : '');
+      t.append(b, sm);
+      const f = document.createElement('button'); f.type = 'button'; f.textContent = 'Find…';
+      f.onclick = () => {
+        const inp = $('#file'); inp.value = ''; inp.accept = x.type === 'video' || (x.part === 'bg' && /\.(mp4|mov|webm|mkv|m4v)$/i.test(x.file)) ? 'video/*' : 'image/*,video/*';
+        inp.onchange = async () => { const file = inp.files[0]; if (!file) return; f.textContent = 'Copying…'; await useFileFor(x, file); await checkMissing(false); draw(); };
+        inp.click();
+      };
+      r.append(t, f); list.appendChild(r);
+    });
+  };
+  // a whole folder: every missing file with the same name in it (or its folders) is used
+  dlg.querySelector('.mw-dir').onclick = () => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.webkitdirectory = true; inp.multiple = true;
+    inp.onchange = async () => {
+      const files = [...inp.files], note = dlg.querySelector('.mw-ft span');
+      let found = 0;
+      for (const x of missing.slice()) {
+        const hit = files.find((f) => f.name.toLowerCase() === x.file.toLowerCase());
+        if (hit) { note.textContent = 'Copying ' + hit.name + '…'; if (await useFileFor(x, hit)) found++; }
+      }
+      note.textContent = found ? 'Found ' + found + '.' : 'None of the missing files are in that folder.';
+      await checkMissing(false); draw();
+    };
+    inp.click();
+  };
+  draw();
+}
+
 let posOpen = false;
 function pickFile(l, accept, done) {
   const f = $('#file'); f.value = ''; f.accept = accept || (l.type === 'video' ? 'video/*' : 'image/*');
   f.onchange = async () => {
     const file = f.files[0]; if (!file) return;
     const r = await fetch('/api/studio/asset/' + encodeURIComponent(uid() + '-' + file.name), { method: 'PUT', body: file }).then((x) => x.json());
-    if (r.url) { l.url = r.url; l.file = ''; save(); if (done) done(); else { renderLayers(); renderProps(); } }
+    if (r.url) { l.url = r.url; l.file = ''; save(); if (done) done(); else { renderLayers(); renderProps(); } setTimeout(() => checkMissing(false), 800); }
   }; f.click();
 }
 function newLayer(t) {
@@ -3546,6 +3632,7 @@ async function shots() {
   editing = studio.current;
   renderAll(); await loadDevices(); ensureAudio();
   setInterval(poll, 700); setInterval(shots, 200); // Multiview pictures 5 times a second (only while a Multiview is open)
+  setTimeout(() => checkMissing(true), 1500); // files that are not on this computer: the Missing files window
 })();
 </script>
 <div id="keysBox" hidden style="position:fixed;right:12px;top:52px;z-index:50;background:var(--card,#101814);border:1px solid var(--line);border-radius:10px;padding:12px 14px;max-width:300px;font-size:13px;line-height:1.7;box-shadow:0 8px 30px #0008">
