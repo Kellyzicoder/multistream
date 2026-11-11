@@ -18,7 +18,9 @@ const ENV = { ...process.env, MULTISTREAM_DATA: DATA, MULTISTREAM_RECORDINGS: pa
 
 async function launch() {
   const app = await electron.launch({ args: ARGS, env: ENV, timeout: 90000 });
-  app.process().stderr.on('data', (d) => { const t = String(d); if (/engine|error/i.test(t)) process.stdout.write('[app err] ' + t.slice(0, 300)); });
+  app.process().stderr.on('data', (d) => { const t = String(d); if (/\[engine\]|uncaught|crash|fatal/i.test(t)) process.stdout.write('[app err] ' + t.slice(0, 300)); });
+  app.process().stdout.on('data', (d) => { String(d).split('\n').filter((x) => /\[engine\]/.test(x)).forEach((x) => log('app:', x.slice(0, 200))); });
+  app.process().on('exit', (code, sig) => log('the app closed: code', code, 'signal', sig));
   return app;
 }
 

@@ -12,6 +12,8 @@ let nwr = null; // Mac only: puts the engine's picture on top of the window
 let started = false;
 let video = null;
 let refreshTimer = null;
+// MULTISTREAM_ENGINE_LOG=1: write each step to the log (to find where it stops, if it ever does)
+const step = process.env.MULTISTREAM_ENGINE_LOG === '1' ? (m) => console.log('[engine] step: ' + m + ' ' + Date.now() % 100000) : () => {};
 
 // Where the engine lives: next to the app when installed, in node_modules while developing
 function enginePath(name) {
@@ -41,9 +43,11 @@ function start() {
   if (started) return true;
   if (!load()) return false;
   try {
+    step('host');
     const hosted = osn.NodeObs.IPC.host('multistream-' + process.pid);
     if (hosted !== 0) throw new Error('engine process did not start (' + hosted + ')');
     osn.NodeObs.SetWorkingDirectory(enginePath('obs-studio-node'));
+    step('init');
     const result = osn.NodeObs.OBS_API_initAPI({
       language: 'en-US',
       appDataPath: path.join(app.getPath('userData'), 'engine'),
@@ -52,6 +56,7 @@ function start() {
     });
     if (result !== 0) throw new Error('engine did not start (' + result + ')');
 
+    step('video');
     // the picture: 1920 x 1080, 30 frames a second
     video = osn.VideoFactory.create();
     video.video = {
@@ -70,6 +75,7 @@ function start() {
     scenes.sync({ w: 1920, h: 1080, scenes: [], current: '', trans: { type: 'cut', ms: 0 } }, video);
     refreshTimer = setInterval(() => { try { scenes.refresh(); } catch (e) {} }, 2000);
     started = true;
+    step('done');
     console.log('[engine] started');
     return true;
   } catch (e) {
@@ -115,6 +121,7 @@ function macOff(d) {
 function park(d) {
   if (d.hidden) return;
   d.hidden = true;
+  step('park ' + d.id);
   try {
     if (process.platform === 'darwin') macOff(d);
     else osn.NodeObs.OBS_content_moveDisplay(d.id, -30000, -30000);
@@ -130,6 +137,7 @@ function placeDisplay(d) {
   const w = Math.max(2, Math.round(rect.width * zoom));
   const h = Math.max(2, Math.round(rect.height * zoom));
   d.hidden = false;
+  step('place ' + id + ' ' + [x, y, w, h].join(','));
   if (process.platform === 'darwin') {
     // Mac: sizes are in points; the picture is a surface placed over the window, measured from the bottom
     osn.NodeObs.OBS_content_resizeDisplay(id, w, h);
@@ -161,6 +169,7 @@ function showDisplay(win, key, rect, src) {
     if (d && (d.name !== name || d.win !== win)) { park(d); displays.delete(key); d = null; }
     if (!d) {
       const id = key + '~' + (++dn);
+      step('new picture ' + id);
       osn.NodeObs.OBS_content_createSourcePreviewDisplay(win.getNativeWindowHandle(), name, id, false, video);
       osn.NodeObs.OBS_content_setShouldDrawUI(id, false);
       osn.NodeObs.OBS_content_setPaddingSize(id, 0);
@@ -194,6 +203,7 @@ function hidePreview() { hideDisplay('golive'); }
 function sync(data) {
   if (!started) return false;
   let remake = false;
+  step('sync');
   try { remake = scenes.sync(data, video); } catch (e) { console.error('[engine] scenes:', e.message); }
   // pictures whose scene was built again, or all of them when the size or transition changed, are made again
   [...displays.values()].forEach((d) => {
