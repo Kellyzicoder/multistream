@@ -19,6 +19,11 @@ jobs:
           - { os: macos-latest, engine: on, try: 2 }
           - { os: macos-latest, engine: on, try: 3 }
           - { os: macos-latest, engine: on, try: 4 }
+          - { os: macos-latest, engine: on, try: 5 }
+          - { os: macos-latest, engine: on, try: 6 }
+          - { os: macos-latest, engine: on, try: 7 }
+          - { os: macos-latest, engine: on, try: 8 }
+          - { os: macos-latest, engine: on, try: 9 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
