@@ -1,0 +1,28 @@
+name: ffmpeg check
+on:
+  push:
+    branches: [test/ffmpeg-tls]
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install --no-audit --no-fund
+        shell: bash
+      - run: bash scripts/get-ffmpeg.sh
+        shell: bash
+      - name: what the app's ffmpeg can do
+        shell: bash
+        run: |
+          F=node_modules/ffmpeg-static/ffmpeg; [ -f $F.exe ] && F=$F.exe
+          $F -hide_banner -version | head -3
+          $F -hide_banner -buildconf | tr ' ' '\n' | grep -iE "tls|ssl|gnutls|mbedtls|schannel|securetransport" || echo "no TLS library listed"
+          echo "--- protocols"; $F -hide_banner -protocols 2>/dev/null | tr -s ' ' | grep -iE "^ ?(rtmps|tls|https)$" || echo "rtmps/tls missing"
+          echo "--- try a TLS connection to Facebook's live server"
+          $F -hide_banner -loglevel info -f lavfi -i testsrc2=size=1280x720:rate=30 -f lavfi -i sine -t 6 -c:v libx264 -preset veryfast -g 60 -c:a aac -f flv rtmps://live-api-s.facebook.com:443/rtmp/FAKEKEY 2>&1 | tail -6 || true
