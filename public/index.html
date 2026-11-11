@@ -1612,12 +1612,16 @@ $('#add').onclick = async () => {
 };
 
 
-// copy buttons
+// copy buttons: the app's own clipboard first, then the page's
+async function copyText(v) {
+  try { if (window.msNative && window.msNative.copyText) { await window.msNative.copyText(v); return true; } } catch {}
+  try { await navigator.clipboard.writeText(v); return true; } catch {}
+  return false;
+}
 document.querySelectorAll('[data-copy]').forEach((b) => {
   b.onclick = async () => {
     const v = document.getElementById(b.dataset.copy).value;
-    try { await navigator.clipboard.writeText(v); }
-    catch { const i = document.getElementById(b.dataset.copy); i.select(); document.execCommand('copy'); }
+    if (!(await copyText(v))) { const i = document.getElementById(b.dataset.copy); i.select(); document.execCommand('copy'); }
     b.innerHTML = CHECK_ICON;
     setTimeout(() => (b.innerHTML = COPY_ICON), 1200);
   };
@@ -2858,7 +2862,11 @@ $('#fbSignIn').onclick = async () => {
   $('#fbCodeVal').textContent = r.userCode;
   $('#fbCodeBox').hidden = false;
   $('#fbCopy').textContent = 'Copy';
-  $('#fbCopy').onclick = async () => { try { await navigator.clipboard.writeText(r.userCode); $('#fbCopy').textContent = 'Copied'; } catch { $('#fbCopy').textContent = 'Select it and copy'; } };
+  $('#fbCopy').onclick = async () => {
+    const ok = await copyText(r.userCode);
+    $('#fbCopy').textContent = ok ? 'Copied \u2713' : 'Select it and copy';
+    if (ok) setTimeout(() => { $('#fbCopy').textContent = 'Copy'; }, 2000);
+  };
   $('#fbOpen').onclick = () => window.open(r.uri, '_blank');
   // the code works for a few minutes; the time left is shown, and an old code is taken away
   const until = Date.now() + (r.expires || 420) * 1000;

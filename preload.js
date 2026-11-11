@@ -35,6 +35,7 @@ if (location.protocol === 'app:') contextBridge.exposeInMainWorld('msNative', {
   engineDisplay: (key, rect, src) => ipcRenderer.invoke('ms-engine-display', key, rect, src),
   onEngine: (cb) => { ipcRenderer.on('ms-engine', (e, st) => cb(st)); },
   engineTrans: (t) => ipcRenderer.invoke('ms-engine-trans', t),
+  copyText: (t) => ipcRenderer.invoke('ms-copy', t),
   engineSend: (o) => ipcRenderer.invoke('ms-engine-send', o),
   engineUnsend: () => ipcRenderer.invoke('ms-engine-unsend'),
   engineSendState: () => ipcRenderer.invoke('ms-engine-sendstate'),
