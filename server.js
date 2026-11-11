@@ -246,8 +246,17 @@ function targetOf(d) {
   return `${d.url.replace(/\/+$/, '')}/${d.key}`;
 }
 
+// A YouTube or Facebook channel the app signs in to gets a new live (and a fresh key) each time. Until that live is
+// made, its saved key belongs to the last live, which the site has closed, so sending to it only fails and drops.
+function waitingForLive(d) {
+  if (yt.refreshToken && d === ytDestination()) return !session.youtube && 'YouTube';
+  if (fb.token && d === fbDestination()) return !session.facebook && 'Facebook';
+  if (d.fbPage) return !session.fbAlso.some((a) => a.destId === d.id) && 'Facebook';
+  return false;
+}
 function startDestination(d) {
   if (!obsLive || !d.enabled || procs.has(d.id)) return;
+  if (waitingForLive(d)) { setStatus(d.id, 'starting', 'Making the live on ' + waitingForLive(d) + '…'); return; }
   if (!d.url || !d.key) {
     setStatus(d.id, 'error', 'Add the stream URL and key first');
     return;
@@ -288,22 +297,30 @@ function startDestination(d) {
     })
   );
   let lastLine = '';
-  // ffmpeg prints nothing at "warning" level while healthy, so mark live after a short wait
-  const liveTimer = setTimeout(() => {
-    if (procs.get(d.id) === p) setStatus(d.id, 'live', cv.capped ? 'Sent as 1080p, the most this site takes' : '');
-  }, 3000);
+  // live only once the site is really taking the video (bytes going out for 3 seconds), not just because it started
+  let sentAt = 0;
+  const liveTimer = setInterval(() => {
+    if (procs.get(d.id) !== p) return clearInterval(liveTimer);
+    const st = destStats.get(d.id);
+    if (st && st.kbps > 0) {
+      if (!sentAt) sentAt = Date.now();
+      else if (Date.now() - sentAt >= 3000) { clearInterval(liveTimer); setStatus(d.id, 'live', cv.capped ? 'Sent as 1080p, the most this site takes' : ''); }
+    } else if (Date.now() - startedAt > 20000 && (status.get(d.id) || {}).state === 'starting') {
+      setStatus(d.id, 'starting', 'Waiting for the site to take the video…');
+    }
+  }, 500);
   p.stderr.on('data', (chunk) => {
     const text = chunk.toString().trim().split('\n').pop();
     if (text) lastLine = hideKey(text, d.key); // never show the key
   });
   p.on('error', (err) => {
-    clearTimeout(liveTimer);
+    clearInterval(liveTimer);
     procs.delete(d.id);
     destStats.delete(d.id);
     setStatus(d.id, 'error', err.message);
   });
   p.on('close', (code, signal) => {
-    clearTimeout(liveTimer);
+    clearInterval(liveTimer);
     if (procs.get(d.id) === p) {
       procs.delete(d.id);
       destStats.delete(d.id);
@@ -1021,9 +1038,9 @@ async function fbStartAlso(p) {
   stopDestination(pd.id);
   pd.url = l.url; pd.key = l.key; pd.enabled = true;
   save();
-  startDestination(pd);
   session.fbAlso = session.fbAlso.filter((a) => a.pageId !== p.pageId);
   session.fbAlso.push({ pageId: p.pageId, id: l.id, destId: pd.id, link: l.link });
+  startDestination(pd);
 }
 async function fbEndAlso(pageId) {
   const a = session.fbAlso.find((x) => x.pageId === pageId);
@@ -1112,8 +1129,8 @@ app.post('/api/facebook/live', async (req, res) => {
   stopDestination(d.id);
   d.url = main.url; d.key = main.key; d.enabled = true;
   save();
+  session.facebook = main.id; // the live is made: the channel may send now
   startDestination(d);
-  session.facebook = main.id;
   session.fbLink = main.link;
   chat.startFacebook(main.id);
   // the extra Pages that are switched on: the same video, each with its own live and its own channel
@@ -1284,6 +1301,7 @@ app.post('/api/youtube/live', async (req, res) => {
     // only a new address or key restarts the channel
     const same = d.url === info.ingestionAddress && d.key === info.streamName && procs.has(d.id);
     d.enabled = true;
+    session.youtube = b.id; // the live is made: the channel may send now
     if (!same) {
       stopDestination(d.id);
       d.url = info.ingestionAddress;
