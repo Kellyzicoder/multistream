@@ -1327,6 +1327,14 @@ function paint(c, scale, now) {
   }
 }
 let engineLive = false; // the OBS engine is running and draws the live picture
+const lightMode = () => engineLive && engineFails < 2 && !wsOut && !recW && !vcOn;
+// Is the Studio on screen? (In the app it keeps running behind the other pages.) Checked twice a second.
+let studioShown = true;
+setInterval(() => {
+  let on = !document.hidden;
+  try { if (on && window.frameElement && window.frameElement.checkVisibility) on = window.frameElement.checkVisibility({ visibilityProperty: true }); } catch {}
+  studioShown = on;
+}, 500);
 function frame() {
   const now = performance.now();
   if (shown === null) shown = studio.current;
@@ -1337,7 +1345,7 @@ function frame() {
   if (trans && now - trans.t0 >= trCfg.ms) trans = null;
   // The engine makes the live picture. When nothing here needs this page's own copy of it (not going live or
   // recording the older way, no virtual camera), it is drawn only 5 times a second, so the app stays quick.
-  if (engineLive && engineFails < 2 && !wsOut && !recW && !vcOn && (++lightTick % 6)) return;
+  if (lightMode() && (++lightTick % 6)) return;
   paint(ctx, PW / SW, now);
   // the recording and the virtual camera copy the finished Program picture when it is the same size or bigger (much less work than drawing the scene again)
   if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); }
@@ -1744,7 +1752,7 @@ let meterT = performance.now();
 function drawMeters(now) {
   requestAnimationFrame(drawMeters);
   const dt = Math.min(0.2, (now - meterT) / 1000); meterT = now;
-  if (document.hidden) return;
+  if (document.hidden || !studioShown) return;
   document.querySelectorAll('#audio .au[data-id]').forEach((d) => {
     const bars = d.querySelectorAll('.mt'); if (!bars.length) return;
     const n = asrc.get(d.dataset.id);
@@ -3311,8 +3319,9 @@ function drawSelection() {
 // When you edit the scene that is on air, the finished Program picture is copied (one quick copy)
 // instead of drawing every item of the scene a second time.
 setInterval(() => {
+  if (!studioShown) return; // nobody sees the edit preview while another page is open
   const s = byName(editing);
-  if (s && editing === shown && !trans && cv.width >= ev.width) { ectx.save(); ectx.setTransform(1, 0, 0, 1, 0, 0); ectx.drawImage(cv, 0, 0, ev.width, ev.height); ectx.restore(); }
+  if (s && editing === shown && !trans && cv.width >= ev.width && !lightMode()) { ectx.save(); ectx.setTransform(1, 0, 0, 1, 0, 0); ectx.drawImage(cv, 0, 0, ev.width, ev.height); ectx.restore(); }
   else drawScene(ectx, s, ev.width / SW, false);
   drawSelection();
 }, 50);
