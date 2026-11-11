@@ -113,7 +113,7 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
       const p = spawn(powershell, ['-NoProfile', '-NonInteractive', '-Command', ps], { windowsHide: true });
       let err = ''; p.stderr.on('data', (d) => { err += d; });
       p.on('error', (e) => resolve({ error: e.message }));
-      p.on('close', (code) => resolve(code ? { error: err.trim().split('\n')[0] || (code === 2 ? 'The camera files could not be copied' : code === 3 ? 'Zoom (or Teams, OBS) is using the camera. Quit it fully, also from the icons next to the clock, then press Start Virtual Camera again' : 'Windows did not allow it') } : { ok: true }));
+      p.on('close', (code) => resolve(code ? { error: err.trim().split('\n')[0] || (code === 2 ? 'The camera files could not be copied' : code === 3 ? 'Zoom (or Teams, OBS) is using the camera. Quit it fully: at the bottom right of the screen, click the small ^ arrow, right-click the Zoom icon and choose Exit, then press Start Virtual Camera again' : 'Windows did not allow it') } : { ok: true }));
     });
   }
   return { available, start, stop, quit, install, state: () => ({ available, ...info }) };
