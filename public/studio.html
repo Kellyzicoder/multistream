@@ -3619,7 +3619,8 @@ async function poll() {
 const small = document.createElement('canvas'); small.width = 960; small.height = 540;
 const sctx = small.getContext('2d');
 const tiny = document.createElement('canvas'); tiny.width = 480; tiny.height = 270; const tctx = tiny.getContext('2d');
-let thumbs = {}, thumbAt = 0, shotBusy = false, watching = true, pingAt = 0;
+// watching starts false: the app first says whether the Multiview is open, so nothing is drawn for it while the app opens
+let thumbs = {}, thumbAt = 0, shotBusy = false, watching = false, pingAt = 0;
 async function shots() {
   if (shotBusy) return; shotBusy = true;
   try {

@@ -137,11 +137,15 @@ function createWindow() {
 let engineMod = null;
 const engine = () => engineMod || (engineMod = require('./engine'));
 const engineOn = () => process.env.MULTISTREAM_ENGINE !== 'off';
-async function startEngine() {
+// Starting the engine keeps the app busy for a second or two, so it is done before the window shows:
+// then the window answers clicks straight away, instead of freezing just after it opens.
+function startEngineFirst() {
   if (!engineOn() || !engine().available() || engine().isStarted()) return;
-  const ok = engine().start();
-  if (ok) await engine().askMacCamera();
-  else console.error('Engine: could not start, the Studio makes the video itself');
+  if (!engine().start()) console.error('Engine: could not start, the Studio makes the video itself');
+}
+async function startEngine() {
+  if (!engine().isStarted()) return;
+  await engine().askMacCamera();
   if (win && !win.isDestroyed()) win.webContents.send('ms-engine', engineState());
   engineFollow(engine().isStarted());
 }
@@ -537,10 +541,10 @@ async function start() {
   setupAppSession(session.defaultSession);
   setupScreenCapture(session.defaultSession);
   setMenu(); screen.on('display-added', setMenu); screen.on('display-removed', setMenu); // the Multiview list follows the screens
+  try { startEngineFirst(); } catch (e) { console.error('Engine:', e && e.message); }
   createWindow();
   startUpdates();
-  // the engine starts once the window has drawn, so the app shows straight away
-  const goEngine = () => setTimeout(() => { startEngine().catch((e) => console.error('Engine:', e && e.message)); }, 300);
+  const goEngine = () => { startEngine().catch((e) => console.error('Engine:', e && e.message)); };
   if (win && win.webContents.isLoading()) win.webContents.once('did-finish-load', goEngine); else goEngine();
 }
 
