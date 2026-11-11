@@ -69,6 +69,9 @@ async function launch() {
     let last = performance.now();
     setInterval(() => { const n = performance.now(); if (n - last > 100) window.__gaps.push({ at: Math.round(n), ms: Math.round(n - last) }); last = n; }, 25);
   });
+  // the welcome screen shows each time the app opens: choose Go Live, like a person
+  await dash.evaluate(() => { const b = document.getElementById('wlLive'); if (b && document.getElementById('welcome').classList.contains('open')) b.click(); }).catch(() => {});
+  await sleep(300);
   const results = [];
   for (let i = 0; i < 10; i++) {
     const to = i % 2 === 0 ? 'studio' : 'dash';
@@ -107,7 +110,7 @@ async function launch() {
     const main = tr.filter((e) => e.ph === 'X' && e.dur > 60000 && /RunTask|ThreadControllerImpl|TaskQueueManager/.test(e.name) && /CrBrowserMain|CrRendererMain/.test(names[e.pid + ':' + e.tid] || ''));
     main.sort((a, b) => b.dur - a.dur);
     log('--- the 15 longest busy moments, and what ran inside ---');
-    const ts0 = Math.min(...tr.filter((e) => e.ts).map((e) => e.ts));
+    const ts0 = tr.reduce((m, e) => (e.ts && e.ts < m ? e.ts : m), Infinity);
     for (const t of main.slice(0, 15)) {
       const inner = tr.filter((e) => e.ph === 'X' && e.pid === t.pid && e.tid === t.tid && e.ts >= t.ts && e.ts + (e.dur || 0) <= t.ts + t.dur && e !== t && e.dur > 15000);
       const what = new Map();
