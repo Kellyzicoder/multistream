@@ -73,8 +73,11 @@ async function launch() {
   for (let i = 0; i < 10; i++) {
     const to = i % 2 === 0 ? 'studio' : 'dash';
     const c0 = Date.now();
-    await dash.click(`#sideNav [data-page=${to}]`, { timeout: 30000 }).catch((e) => log('click failed:', e.message));
-    await dash.waitForFunction((p) => document.querySelector(`#sideNav [data-page=${p}]`).getAttribute('aria-current') === 'page', to, { timeout: 30000, polling: 16 }).catch(() => {});
+    // a real mouse click where the button is (no waiting for the page to be ready, like a person)
+    const r = await dash.evaluate((p) => { const b = document.querySelector(`#sideNav [data-page=${p}]`); if (!b) return null; const x = b.getBoundingClientRect(); return { x: x.left + x.width / 2, y: x.top + x.height / 2, top: (document.elementFromPoint(x.left + x.width / 2, x.top + x.height / 2) || {}).outerHTML }; }, to).catch((e) => ({ err: e.message }));
+    if (i === 0) { log('button:', JSON.stringify(r).slice(0, 300)); await dash.screenshot({ path: path.join(ROOT, 'lag-start.png') }).catch(() => {}); }
+    if (r && r.x != null) await dash.mouse.click(r.x, r.y).catch((e) => log('click failed:', e.message));
+    await dash.waitForFunction((p) => document.querySelector(`#sideNav [data-page=${p}]`).getAttribute('aria-current') === 'page', to, { timeout: 15000, polling: 16 }).catch(() => {});
     results.push({ at: c0 - t0, to, ms: Date.now() - c0 });
     await sleep(1800);
   }
