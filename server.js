@@ -895,7 +895,7 @@ function saveFb() {
 }
 const GRAPH = 'https://graph.facebook.com/v26.0';
 function fbView() {
-  return { pageId: fb.pageId, pageName: fb.pageName, hasToken: Boolean(fb.token), tokenEnd: fb.token ? fb.token.slice(-4) : '', appId: fb.appId || '', hasClientToken: Boolean(fb.clientToken),
+  return { granted: fb.granted || null, pageId: fb.pageId, pageName: fb.pageName, hasToken: Boolean(fb.token), tokenEnd: fb.token ? fb.token.slice(-4) : '', appId: fb.appId || '', hasClientToken: Boolean(fb.clientToken),
     also: (fb.also || []).map((p) => ({ pageId: p.pageId, pageName: p.pageName, on: p.on !== false })) };
 }
 // ---- Sign in with Facebook (Facebook Login for Devices) ----
@@ -955,6 +955,14 @@ app.get('/api/facebook/login', async (req, res) => {
         if (p.id && p.access_token && !list.some((x) => x.id === p.id)) list.push(p);
       })));
     } catch {}
+    // what Facebook really gave at this sign-in (shown with a Permissions error, so it is clear what is missing)
+    try {
+      const qr = await fetch(`${GRAPH}/me/permissions?access_token=${tok}`);
+      const qj = await qr.json().catch(() => ({}));
+      fb.granted = (qj.data || []).filter((x) => x.status === 'granted').map((x) => x.permission);
+      fb.declined = (qj.data || []).filter((x) => x.status !== 'granted').map((x) => x.permission);
+      saveFb();
+    } catch {}
     fbLogin = { pages: list };
     if (!fbLogin.pages.length) { fbLogin = null; return res.json({ error: 'Signed in, but no Pages were shared. Sign in again and tick the Page when Facebook asks.' }); }
     res.json({ done: true, pages: pages() });
@@ -975,7 +983,19 @@ async function fbNewLive(pageId, token, status, title, description) {
   const r = await fetch(`${GRAPH}/${pageId}/live_videos`, { method: 'POST', body: new URLSearchParams({ access_token: token, status, title, ...(description ? { description } : {}) }) });
   const j = await r.json();
   const streamUrl = j.secure_stream_url || j.stream_url;
-  if (!r.ok || !streamUrl) throw new Error((j.error && j.error.message) || 'Facebook did not create the live video');
+  if (!r.ok || !streamUrl) {
+    const e = j.error || {};
+    let msg = e.message || 'Facebook did not create the live video';
+    if (e.code === 200 || e.code === 10 || /permission/i.test(msg)) {
+      // say exactly what Facebook gave at sign-in, and what it needs for a live video
+      const need = ['pages_manage_posts', 'pages_read_engagement', 'pages_show_list'];
+      const missing = need.filter((x) => !(fb.granted || []).includes(x));
+      msg = 'Facebook refused (' + msg + (e.code ? ', code ' + e.code + (e.error_subcode ? '/' + e.error_subcode : '') : '') + '). '
+        + (fb.granted ? (missing.length ? 'Missing at sign-in: ' + missing.join(', ') + '. ' : 'All needed permissions were given at sign-in, so check that you are a full admin of this Page. ') : '')
+        + 'Fix it in your Meta app, then Settings → Stream → Sign in again.';
+    }
+    throw new Error(msg);
+  }
   // Facebook gives one full address. Split it into the URL and the key the relay already uses.
   const [addr, query] = streamUrl.split('?');
   const idx = addr.lastIndexOf('/');
