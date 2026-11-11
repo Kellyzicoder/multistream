@@ -1471,6 +1471,31 @@ app.get('/api/studio/asset/:name', (req, res) => {
 });
 
 // local files named in an imported OBS scene file (pictures and videos). Only this PC can ask for them.
+// Files the Studio's sources use that are not on this computer (moved, deleted, on a drive that is not plugged in,
+// or from OBS on another computer). The Studio lists them in its Missing files window, like OBS.
+function studioFileOf(o) {
+  if (!o) return '';
+  if (o.file && path.isAbsolute(String(o.file))) return String(o.file);
+  const m = /^\/api\/studio\/asset\/(.+)$/.exec(String(o.url || ''));
+  if (m) { try { return path.join(ASSET_DIR, path.basename(decodeURIComponent(m[1]))); } catch { return ''; } }
+  return '';
+}
+app.get('/api/studio/missing', (req, res) => {
+  if (!isLocal(req)) return res.status(403).end();
+  const out = [];
+  for (const sc of studio.scenes || []) for (const l of sc.layers || []) {
+    const checks = [];
+    if (l.type === 'image' || l.type === 'video') checks.push(['', l]);
+    if ((l.type === 'timer' || l.type === 'duo') && l.bg && (l.bg.kind === 'picture' || l.bg.kind === 'video')) checks.push(['bg', l.bg]);
+    if (l.type === 'lower' && l.pic) checks.push(['pic', { file: l.pic, url: l.picUrl }]);
+    for (const [part, o] of checks) {
+      const f = studioFileOf(o);
+      if (f && !fs.existsSync(f)) out.push({ scene: sc.name, id: l.id, part, name: l.name || path.basename(f), type: l.type, file: path.basename(f), where: o.file ? f : '' });
+    }
+  }
+  res.json({ missing: out });
+});
+
 app.get('/api/studio/file', (req, res) => {
   if (!isLocal(req)) return res.status(403).end();
   const p = String((req.query || {}).p || '');
