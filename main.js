@@ -129,27 +129,25 @@ function createWindow() {
 }
 
 
-// ---- OBS engine (test) ----
-// The engine draws the picture on the graphics card inside the app (see engine.js). It is off unless switched on
-// in the Help menu, and only exists in copies of the app built with it.
+// ---- OBS engine ----
+// The engine draws the picture on the graphics card inside the app (see engine.js), the way OBS does, and it
+// makes the video that goes live and into recordings. On Windows it is always on in copies of the app built with it.
+// On the Mac it stays off for now: in tests it sometimes froze the app just after opening (about 1 start in 5),
+// so the Mac keeps the older way. If it cannot start on a computer, the Studio makes the video itself.
+// (MULTISTREAM_ENGINE=off or =on changes this, for tests and for help with problems.)
 let engineMod = null;
 const engine = () => engineMod || (engineMod = require('./engine'));
-const engineFile = () => path.join(app.getPath('userData'), 'engine-settings.json');
-function engineOn() {
-  try { return JSON.parse(fs.readFileSync(engineFile(), 'utf8')).on === true; } catch (e) { return false; }
+const engineOn = () => (process.env.MULTISTREAM_ENGINE === 'off' ? false : process.env.MULTISTREAM_ENGINE === 'on' ? true : process.platform === 'win32');
+// Starting the engine keeps the app busy for a second or two, so it is done before the window shows:
+// then the window answers clicks straight away, instead of freezing just after it opens.
+function startEngineFirst() {
+  if (!engineOn() || !engine().available() || engine().isStarted()) return;
+  if (!engine().start()) console.error('Engine: could not start, the Studio makes the video itself');
 }
-async function setEngine(on) {
-  try { fs.writeFileSync(engineFile(), JSON.stringify({ on: Boolean(on) })); } catch (e) {}
-  if (on) {
-    const ok = engine().start();
-    if (ok) await engine().askMacCamera();
-    if (!ok) dialog.showMessageBox({ type: 'warning', message: 'The OBS engine could not start.', detail: 'The app keeps working the usual way. You can turn this test off in the Help menu.' });
-  } else {
-    engine().stop();
-    try { if (relay && relay.engineIngestStop) relay.engineIngestStop(); } catch (e) {}
-  }
+async function startEngine() {
+  if (!engine().isStarted()) return;
+  await engine().askMacCamera();
   if (win && !win.isDestroyed()) win.webContents.send('ms-engine', engineState());
-  setMenu();
   engineFollow(engine().isStarted());
 }
 
@@ -519,10 +517,6 @@ function buildMenu() {
     { label: 'Help', submenu: [
       { label: 'Download page (latest version)', click: () => shell.openExternal(RELEASE_PAGE) },
       { label: 'Developer tools (for problems)', accelerator: 'F12', click: () => { const w = focusedWin(); if (w) w.webContents.toggleDevTools(); } },
-      ...(engine().available() ? [
-        { type: 'separator' },
-        { label: 'Use the OBS engine (test)', type: 'checkbox', checked: engineOn(), click: (item) => setEngine(item.checked) },
-      ] : []),
     ] },
   ];
   return Menu.buildFromTemplate(template);
@@ -548,9 +542,11 @@ async function start() {
   setupAppSession(session.defaultSession);
   setupScreenCapture(session.defaultSession);
   setMenu(); screen.on('display-added', setMenu); screen.on('display-removed', setMenu); // the Multiview list follows the screens
+  try { startEngineFirst(); } catch (e) { console.error('Engine:', e && e.message); }
   createWindow();
   startUpdates();
-  if (engineOn() && engine().available()) setEngine(true);
+  const goEngine = () => { startEngine().catch((e) => console.error('Engine:', e && e.message)); };
+  if (win && win.webContents.isLoading()) win.webContents.once('did-finish-load', goEngine); else goEngine();
 }
 
 // only one copy at a time

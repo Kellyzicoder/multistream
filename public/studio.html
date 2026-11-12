@@ -1326,6 +1326,15 @@ function paint(c, scale, now) {
     c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#000'; c.fillRect(0, 0, W, H); c.drawImage(v, (W - dw) / 2, (H - dh) / 2, dw, dh); c.restore();
   }
 }
+let engineLive = false; // the OBS engine is running and draws the live picture
+const lightMode = () => engineLive && engineFails < 2 && !wsOut && !recW && !vcOn;
+// Is the Studio on screen? (In the app it keeps running behind the other pages.) Checked twice a second.
+let studioShown = true;
+setInterval(() => {
+  let on = !document.hidden;
+  try { if (on && window.frameElement && window.frameElement.checkVisibility) on = window.frameElement.checkVisibility({ visibilityProperty: true }); } catch {}
+  studioShown = on;
+}, 500);
 function frame() {
   const now = performance.now();
   if (shown === null) shown = studio.current;
@@ -1334,6 +1343,9 @@ function frame() {
     shown = studio.current;
   }
   if (trans && now - trans.t0 >= trCfg.ms) trans = null;
+  // The engine makes the live picture. When nothing here needs this page's own copy of it (not going live or
+  // recording the older way, no virtual camera), it is drawn only 5 times a second, so the app stays quick.
+  if (lightMode() && (++lightTick % 6)) return;
   paint(ctx, PW / SW, now);
   // the recording and the virtual camera copy the finished Program picture when it is the same size or bigger (much less work than drawing the scene again)
   if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); }
@@ -1346,7 +1358,7 @@ const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#tr
 setTimeout(trTell, 0);
 $('#trType').onchange = saveTr; $('#trMs').onchange = saveTr;
 // not requestAnimationFrame, so it keeps running if the window is covered
-let frameT = 0, frameFps = 0;
+let frameT = 0, frameFps = 0, lightTick = 0;
 function setFps(f) { if (f === frameFps) return; frameFps = f; clearInterval(frameT); frameT = setInterval(frame, 1000 / f); }
 setFps(30);
 // The Program picture is small while nothing is sent (saves the computer's work) and full size while sending.
@@ -1740,7 +1752,7 @@ let meterT = performance.now();
 function drawMeters(now) {
   requestAnimationFrame(drawMeters);
   const dt = Math.min(0.2, (now - meterT) / 1000); meterT = now;
-  if (document.hidden) return;
+  if (document.hidden || !studioShown) return;
   document.querySelectorAll('#audio .au[data-id]').forEach((d) => {
     const bars = d.querySelectorAll('.mt'); if (!bars.length) return;
     const n = asrc.get(d.dataset.id);
@@ -2759,14 +2771,14 @@ let stHold = 0;
 function flash(text, ok) { if (!ok && window.msNice) text = window.msNice(text); $('#st').textContent = text; $('#st').className = 'stat ' + (ok ? 'ok' : 'bad'); stHold = Date.now() + 6000; }
 
 // ---------------- OBS engine: the Program box ----------------
-// When the engine is on (Help > Use the OBS engine (test)), the engine paints the Program box itself, so it shows
+// When the engine is on, the engine paints the Program box itself, so it shows
 // exactly what viewers get. Its picture sits on top of the page, so it is taken away while a menu or window is open.
 // The Preview box (the scene you are editing) stays drawn here, because you move and resize items on it.
 (function () {
   const nat = window.msNative;
   if (!nat || !nat.engineDisplay) return;
   let on = false, last = '';
-  const poll = () => nat.engineState().then((s) => { on = Boolean(s && s.on && s.started); }).catch(() => {});
+  const poll = () => nat.engineState().then((s) => { on = Boolean(s && s.on && s.started); engineLive = on; }).catch(() => {});
   poll(); setInterval(poll, 2000);
   const send = (rect) => {
     const k = rect ? [rect.x, rect.y, rect.width, rect.height].join(',') : '';
@@ -2799,10 +2811,11 @@ async function startSend() {
   $('#sendBtn').textContent = 'Stop streaming'; $('#sendBtn').className = 'stop'; $('#liveTag').hidden = false; liveT0 = liveT0 || Date.now();
   await connectSend();
 }
-// The OBS engine (Help > Use the OBS engine (test)): when it is on, the engine makes and sends the video itself,
-// and this page only says start and stop. Otherwise the page records its own picture, as before.
-let engineSending = false, engineWatch = 0;
+// The OBS engine makes and sends the video itself, and this page only says start and stop. If the engine is not
+// there, or fails twice in a row, this page makes the video itself (the older way), so the service still goes out.
+let engineSending = false, engineWatch = 0, engineFails = 0;
 async function engineReady() {
+  if (engineFails >= 2) return false;
   try { const s = window.msNative && window.msNative.engineState ? await window.msNative.engineState() : null; return Boolean(s && s.on && s.started && window.msNative.engineSend); } catch { return false; }
 }
 async function connectSend() {
@@ -2810,8 +2823,13 @@ async function connectSend() {
   if (await engineReady()) {
     const r = await window.msNative.engineSend({ h: OUT.h, fps: OUT.fps, kbps: OUT.kbps, shape: SHAPE_OF() }).catch((e) => ({ ok: false, error: e.message }));
     if (!wantSend) { window.msNative.engineUnsend(); return; }
-    if (!r || !r.ok) { flash('The OBS engine could not go live: ' + ((r && r.error) || 'no answer') + '. Trying again...', false); scheduleRetry(); return; }
-    engineSending = true; cv.classList.add('live');
+    if (!r || !r.ok) {
+      engineFails++;
+      if (engineFails < 2) { flash('Could not go live: ' + ((r && r.error) || 'no answer') + '. Trying again...', false); scheduleRetry(); return; }
+      flash('Going live the other way, because the engine did not work.', false);
+      return connectSend();
+    }
+    engineFails = 0; engineSending = true; cv.classList.add('live');
     clearInterval(engineWatch);
     engineWatch = setInterval(async () => {
       if (!engineSending) return;
@@ -3047,7 +3065,7 @@ async function startRec() {
   if (await engineReady() && window.msNative.engineRecord) {
     const [w, h] = outSize(res);
     const r = await window.msNative.engineRecord({ w, h, fps: OUT.fps === 60 ? 60 : 30, kbps: mb * 1000 }).catch((e) => ({ ok: false, error: e.message }));
-    if (!r || !r.ok) { flash('The OBS engine could not record: ' + ((r && r.error) || 'no answer'), false); return; }
+    if (!r || !r.ok) { engineFails = 2; flash('Recording the other way, because the engine did not work.', false); return startRec(); }
     recWs = { engine: true, readyState: 1, send() {}, close() {} };
     recT0 = Date.now(); $('#recBtn').textContent = 'Stop recording'; $('#recBtn').className = 'stop';
     return;
@@ -3301,8 +3319,9 @@ function drawSelection() {
 // When you edit the scene that is on air, the finished Program picture is copied (one quick copy)
 // instead of drawing every item of the scene a second time.
 setInterval(() => {
+  if (!studioShown) return; // nobody sees the edit preview while another page is open
   const s = byName(editing);
-  if (s && editing === shown && !trans && cv.width >= ev.width) { ectx.save(); ectx.setTransform(1, 0, 0, 1, 0, 0); ectx.drawImage(cv, 0, 0, ev.width, ev.height); ectx.restore(); }
+  if (s && editing === shown && !trans && cv.width >= ev.width && !lightMode()) { ectx.save(); ectx.setTransform(1, 0, 0, 1, 0, 0); ectx.drawImage(cv, 0, 0, ev.width, ev.height); ectx.restore(); }
   else drawScene(ectx, s, ev.width / SW, false);
   drawSelection();
 }, 50);
@@ -3609,7 +3628,8 @@ async function poll() {
 const small = document.createElement('canvas'); small.width = 960; small.height = 540;
 const sctx = small.getContext('2d');
 const tiny = document.createElement('canvas'); tiny.width = 480; tiny.height = 270; const tctx = tiny.getContext('2d');
-let thumbs = {}, thumbAt = 0, shotBusy = false, watching = true, pingAt = 0;
+// watching starts false: the app first says whether the Multiview is open, so nothing is drawn for it while the app opens
+let thumbs = {}, thumbAt = 0, shotBusy = false, watching = false, pingAt = 0;
 async function shots() {
   if (shotBusy) return; shotBusy = true;
   try {
