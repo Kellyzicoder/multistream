@@ -460,6 +460,7 @@ function publicView(d) {
     enabled: d.enabled,
     fbPage: d.fbPage || '',
     cap1080: d.cap1080 === undefined ? null : d.cap1080,
+    tall: d.tall || '', // Instagram: how a wide picture is made tall ('' = sent as it is)
     status: status.get(d.id) || { state: 'off', message: '' },
     stats: destStats.get(d.id) || null,
   };
@@ -1382,14 +1383,16 @@ app.post('/api/destinations', (req, res) => {
 app.put('/api/destinations/:id', (req, res) => {
   const d = destinations.find((x) => x.id === req.params.id);
   if (!d) return res.status(404).json({ error: 'Not found' });
-  const { name, key, enabled, cap1080 } = req.body || {};
+  const { name, key, enabled, cap1080, tall } = req.body || {};
   const url = req.body && req.body.url !== undefined ? String(req.body.url).trim() : undefined;
   if (url !== undefined && !okStreamUrl(url)) return res.status(400).json({ error: 'The server address must start with rtmp:// or rtmps://' });
   // moving a channel to a different server needs its key typed again, so a saved key is never sent somewhere new
   const hasKey = Boolean(d.key || keptSealed.has('dest:' + d.id));
   if (url !== undefined && hasKey && hostOf(url) !== hostOf(d.url) && !(key !== undefined && key !== '')) return res.status(400).json({ error: 'You changed the server. Type the stream key again.' });
   if (cap1080 !== undefined) d.cap1080 = cap1080 === null ? undefined : Boolean(cap1080);
-  const changedTarget = (url !== undefined && url !== d.url) || (key !== undefined && key !== '' && key !== d.key);
+  const tallWas = d.tall || '';
+  if (tall !== undefined) { if (['fill', 'blur', 'bars'].includes(tall)) d.tall = tall; else delete d.tall; }
+  const changedTarget = (url !== undefined && url !== d.url) || (key !== undefined && key !== '' && key !== d.key) || (d.tall || '') !== tallWas;
   if (name !== undefined) d.name = String(name);
   if (url !== undefined) d.url = String(url);
   if (key !== undefined && key !== '') d.key = String(key); // empty = keep the old key

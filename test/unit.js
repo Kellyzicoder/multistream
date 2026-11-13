@@ -105,7 +105,9 @@ function outTests() {
   assert.deepStrictEqual(oa.parseOut(q({ h: '2160', fps: '30', kbps: '20000' })), { h: 2160, w: 3840, fps: 30, kbps: 20000 });
   assert.deepStrictEqual(oa.parseOut(q({ h: '1440' })), { h: 1440, w: 2560, fps: 30, kbps: 12000 });
   assert.deepStrictEqual(oa.parseOut(q({ h: '1080', fps: '60' })), { h: 1080, w: 1920, fps: 60, kbps: 9000 });
-  assert.deepStrictEqual(oa.parseOut(q({ h: '999', fps: '24', kbps: '9' })), { h: 720, w: 1280, fps: 30, kbps: 1000 }, 'nonsense falls back to safe values');
+  assert.deepStrictEqual(oa.parseOut(q({ h: '99999', fps: '240', kbps: '9' })), { h: 720, w: 1280, fps: 30, kbps: 1000 }, 'nonsense falls back to safe values');
+  assert.deepStrictEqual(oa.parseOut(q({ h: '900', fps: '25', kbps: '5000' })), { h: 900, w: 1600, fps: 25, kbps: 5000 }, 'your own numbers are used');
+  assert.strictEqual(oa.parseOut(q({ h: '901' })).h, 900, 'an odd height is made even');
   assert.strictEqual(oa.parseOut(q({ h: '1080', kbps: '999999' })).kbps, 60000);
   ok('output sizes: 720p, 1080p, 1440p, 4K and safe fallbacks');
   // ingest + record arguments carry the size
@@ -147,6 +149,19 @@ function outTests() {
   const e = spawnSync(FF, ['-hide_banner', '-i', dst, '-f', 'null', '-'], { encoding: 'utf8' }).stderr;
   assert.ok(/Video: h264[^\n]*1920x1080/.test(e), 'capped copy is 1080p: ' + e.split('\n').filter((l) => /Video:/.test(l)).join(' '));
   ok('a 1440p picture really is turned into a 1080p copy for Facebook');
+  // Instagram: a wide picture made tall, three ways; each really runs and comes out 720 x 1280
+  const wide = oa.parseOut(q({ h: '1080', fps: '30', kbps: '6000' }));
+  assert.strictEqual(oa.channelVideoArgs({ url: 'rtmps://live-upload.instagram.com/rtmp' }, wide, 'software').capped, false, 'no choice = sent as it is');
+  for (const mode of ['fill', 'blur', 'bars']) {
+    const tv = oa.channelVideoArgs({ url: 'rtmps://live-upload.instagram.com/rtmp', tall: mode }, wide, 'software');
+    const td = path.join(tmp, 'tall-' + mode + '.flv');
+    r = spawnSync(FF, ['-loglevel', 'error', '-i', src, ...tv.args, '-f', 'flv', '-y', td]);
+    assert.strictEqual(r.status, 0, mode + ': ' + String(r.stderr));
+    const te = spawnSync(FF, ['-hide_banner', '-i', td, '-f', 'null', '-'], { encoding: 'utf8' }).stderr;
+    assert.ok(/Video: h264[^\n]*720x1280/.test(te), mode + ' is 720x1280: ' + te.split('\n').filter((l) => /Video:/.test(l)).join(' '));
+  }
+  assert.strictEqual(oa.channelVideoArgs({ tall: 'fill' }, oa.parseOut(q({ h: '1080', shape: 'portrait' })), 'software').capped, false, 'a tall Studio picture is left alone');
+  ok('Instagram: a wide picture is made tall (fill, blur, bars)');
 }
 
 // The virtual camera helper must stay running when the Studio stops, and only get whole pictures

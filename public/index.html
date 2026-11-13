@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multistream</title>
+<script>
+// the welcome screen is decided before anything is drawn, so the page behind it never flashes first
+try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#control-room' && !/[?&]demo/.test(location.search)) document.documentElement.classList.add('wl-first'); } catch (e) {}
+</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
   :root {
@@ -43,6 +47,8 @@
   html.a-contrast .b2, html.a-contrast .bt { outline:1px solid var(--line); }
   html.a-cb { --green:#56b4e9; --red:#ff8a1e; --amber:#f0e442; }
   html.a-bigbtn button, html.a-bigbtn .bt, html.a-bigbtn .b2 { min-height:44px; min-width:44px; }
+  /* Less colour: a plain background with no coloured glows, so the screen is calmer */
+  html.a-calm { --glow:transparent; } html.a-calm body { background:var(--bg) !important; }
   html.a-nomotion *, html.a-nomotion *::before, html.a-nomotion *::after { animation:none !important; transition:none !important; }
   .opt { display:flex; flex-wrap:wrap; gap:6px; }
   .opt button { border:1px solid var(--line); background:transparent; border-radius:4px; padding:8px 12px; font-size:12px; color:var(--text); }
@@ -607,6 +613,7 @@
   /* ---------- Welcome screen and Get started (3 steps) ---------- */
   .wl { position:fixed; inset:0; z-index:60; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px; background:radial-gradient(700px 420px at 50% 42%, color-mix(in srgb, var(--blue) 18%, transparent), transparent), var(--bg); }
   .wl.open { display:flex; animation:wlIn .4s ease both; }
+  html.wl-first #welcome { display:flex; animation:none; }
   @keyframes wlIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
   .wl-logo { display:flex; flex-direction:column; align-items:center; gap:6px; font-weight:700; font-size:16px; margin-bottom:48px; }
   .wl-logo svg { width:48px; height:58px; color:var(--blue); }
@@ -999,7 +1006,7 @@
   <span class="gl-acts" id="scActs" hidden><button type="button" class="hb pl" id="scObs">Import from OBS</button><button type="button" class="hb pl" id="scImp">Import file</button><button type="button" class="hb sb" id="scNew">+ New collection</button></span>
   <span class="gl-acts" id="glActs">
     <button type="button" class="hb" id="glUpd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Update title for all channels</button>
-    <button type="button" class="hb" id="ptBtn" title="Private test: only you can see the live">Private test: on</button>
+    <button type="button" class="hb" id="ptBtn" title="Private test: only you can see the live" hidden>Private test: on</button>
     <button type="button" class="hb as-tg" id="asBtn" title="Auto start: what happens when you press Start streaming"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Auto start: Off</span></button>
     <button type="button" class="hb sb" id="sbBtn"><i></i><span>Start streaming</span></button>
   </span>
@@ -1172,7 +1179,7 @@
       <tr><td><kbd>F11</kbd></td><td>Full screen Studio</td></tr>
     </table><p class="hp-n">See every key in Settings → Hotkeys.</p></div>
     <div class="card hp-c"><h3>Good to know</h3><ul>
-      <li><b>Private test:</b> turn it on before a real service to check everything without anyone seeing it.</li>
+      <li><b>Private test:</b> turn it on in Settings → Stream before a real service to check everything without anyone seeing it.</li>
       <li><b>Recordings</b> are saved on this computer. Find them on the Recordings page.</li>
       <li><b>Tall video (9:16)</b> for Instagram or TikTok: make a Portrait collection on the Scene collections page.</li>
       <li><b>Zoom:</b> in the Studio, start the virtual camera, then pick Multistream Camera in Zoom.</li>
@@ -1283,6 +1290,8 @@
                 <button data-v="" type="button">Normal</button><button data-v="large" type="button">Large</button><button data-v="xlarge" type="button">Extra large</button></div></div>
             <div class="srow"><p class="lb">High contrast<small>Stronger text and borders</small></p>
               <div class="ctl"><label class="sw"><input type="checkbox" data-key="contrast" aria-label="High contrast"><span></span></label></div></div>
+            <div class="srow"><p class="lb">Less colour<small>A plain background with no coloured glows</small></p>
+              <div class="ctl"><label class="sw"><input type="checkbox" data-key="calm" aria-label="Less colour"><span></span></label></div></div>
             <div class="srow"><p class="lb">Colour-blind colours<small>Blue and orange, not green and red</small></p>
               <div class="ctl"><label class="sw"><input type="checkbox" data-key="cb" aria-label="Colour-blind friendly colours"><span></span></label></div></div>
           </div>
@@ -1301,6 +1310,11 @@
 </div></div>
 <div class="g2"><h3>Theme</h3><div class="seg2" id="themes"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button><button type="button" data-v="system">Match computer</button></div></div>
 <div class="g2"><h3>Colour</h3><div class="sws2" id="sws"></div></div></section><section class="pane" data-pane="stream" role="tabpanel" aria-label="Stream"><div class="s2h"><h2>Stream</h2></div><div class="g2 old2">
+          <div class="grp"><h4>Private test</h4>
+            <div class="srow"><p class="lb">Private test<small>Only you can see the live on YouTube and Facebook. Turn it off for real services.</small></p>
+              <div class="ctl"><label class="sw"><input type="checkbox" id="setPt" aria-label="Private test"><span></span></label></div></div>
+          </div>
+        </div><div class="g2 old2">
           <div class="grp"><h4>YouTube account</h4>
             <p>Add the file from Google, then sign in with the church YouTube account. Both stay on this computer only.</p>
             <div class="srow"><label class="lb" for="yt-file">1. File from Google</label>
@@ -1356,6 +1370,8 @@
   <div class="r2"><span class="l">Monitoring output (your headphones)</span><select class="i3" data-mirror="#monDev"></select></div>
 </div><p class="n2">Hear an input in your headphones. Turn it on for each input with Listen in the Studio's mixer. Use headphones, or the microphone will pick up the speakers.</p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="video" role="tabpanel" aria-label="Video"><div class="s2h"><h2>Video</h2></div><div class="g2"><h3>What viewers get</h3><div class="c2">
   <div class="r2"><span class="l">Quality</span><select class="i3" data-mirror="#outQ"></select></div>
+  <div class="r2"><span class="l">Picture height (pixels)</span><input class="i3" type="number" min="360" max="2160" step="2" data-mirror="#outH"></div>
+  <div class="r2"><span class="l">Frames a second</span><input class="i3" type="number" min="10" max="60" step="1" data-mirror="#outFps"></div>
   <div class="r2"><span class="l">Bitrate (kbps)</span><input class="i3" type="number" min="1000" max="60000" step="500" data-mirror="#outKbps"></div>
   <div class="r2"><span class="l">Encoder</span><span class="v2" id="s2Enc">...</span></div>
   <div class="r2"><span class="l">Keyframes</span><span class="v2">Every 2 seconds (what YouTube and Facebook ask for)</span></div>
@@ -1952,7 +1968,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const yt = s.youtube || {}, fbs = s.facebook || {};
     const keyOf = (re) => s.destinations.find((d) => re.test(d.name) && !d.fbPage);
     if (yt.connected) { const d = keyOf(/youtube/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'youtube', c: 'yt', name: names.youtube || 'YouTube', on: apiOn('youtube'), dest: d, session: Boolean(s.session && s.session.youtube), sub: yt.channelTitle || '', link: (s.session && s.session.ytLink) || '' }); }
-    if (fbs.hasToken && fbs.pageId) { const d = keyOf(/facebook/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'facebook', c: 'fb', name: names.facebook || 'Facebook', on: apiOn('facebook'), dest: d, session: Boolean(s.session && s.session.facebook), sub: fbs.pageName || '', link: (s.session && s.session.fbLink) || '' }); }
+    if (fbs.hasToken && fbs.pageId) { const d = keyOf(/facebook/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'facebook', c: 'fb', name: fbs.pageName || 'Facebook', on: apiOn('facebook'), dest: d, session: Boolean(s.session && s.session.facebook), sub: 'Facebook Page', link: (s.session && s.session.fbLink) || '' }); }
     // every extra Facebook Page is its own channel (like Restream): its own switch and its own state
     if (fbs.hasToken && fbs.pageId) (fbs.also || []).forEach((p) => {
       const d = s.destinations.find((x) => x.fbPage === p.pageId);
@@ -2098,9 +2114,14 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   };
 
   // ---------- Private test ----------
-  const paintPt = () => { const on = $('#fbTest').checked; $('#ptBtn').textContent = 'Private test: ' + (on ? 'on' : 'off'); $('#ptBtn').classList.toggle('pt-on', on); $('#ptBtn').title = on ? 'Only you can see the live on YouTube and Facebook. Turn off for the real thing.' : 'Everyone can watch when you go live'; };
+  // The switch is in Settings → Stream and is remembered. Go Live only shows a "Private test: on" button
+  // while it is on (so nobody goes live privately by mistake); pressing it turns the test off.
+  try { $('#fbTest').checked = localStorage.getItem('ms_ptest') !== '0'; $('#fbTest').dispatchEvent(new Event('change')); } catch {}
+  $('#fbTest').addEventListener('change', () => { try { localStorage.setItem('ms_ptest', $('#fbTest').checked ? '1' : '0'); } catch {} paintPt(); });
+  const paintPt = () => { const on = $('#fbTest').checked; $('#ptBtn').hidden = !on; const s2 = $('#setPt'); if (s2) s2.checked = on; $('#ptBtn').textContent = 'Private test: ' + (on ? 'on' : 'off'); $('#ptBtn').classList.toggle('pt-on', on); $('#ptBtn').title = on ? 'Only you can see the live on YouTube and Facebook. Turn off for the real thing.' : 'Everyone can watch when you go live'; };
   $('#ptBtn').onclick = () => { $('#fbTest').checked = !$('#fbTest').checked; $('#fbTest').dispatchEvent(new Event('change')); paintPt(); };
   paintPt();
+  $('#setPt').onchange = () => { $('#fbTest').checked = $('#setPt').checked; $('#fbTest').dispatchEvent(new Event('change')); };
 
   // ---------- Start / Stop streaming ----------
   async function goLiveOn(site) {
@@ -2230,9 +2251,11 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       };
     } else if (ch.kind === 'api') {
       const fbk = ch.site === 'facebook';
-      f.innerHTML = '<label>Name shown in Multistream<input type="text" class="e1"></label>' + (fbk ? '<label>Page<select class="e4" disabled></select></label>' : '') + '<div><div style="font-size:12.5px;color:var(--muted);margin-bottom:6px">Who can watch</div><div class="seg3"></div></div><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
-      f.querySelector('.e1').value = ch.name;
-      if (fbk) { const o = new Option(ch.sub || 'Your Page', ''); f.querySelector('.e4').add(o); f.querySelector('.e4').title = 'To change Pages, press Change Pages in Settings → Stream.'; }
+      // Facebook: the name is the Page's own name (it cannot be renamed here); the box is for the title and description
+      f.innerHTML = (fbk ? '<label>Title on Facebook<input type="text" class="e5" maxlength="250" placeholder="Same as All channels"></label><label>Description on Facebook<textarea class="e6" rows="3" maxlength="5000" placeholder="Same as All channels"></textarea></label><label>Page<select class="e4" disabled></select></label>' : '<label>Name shown in Multistream<input type="text" class="e1"></label>') + '<div><div style="font-size:12.5px;color:var(--muted);margin-bottom:6px">Who can watch</div><div class="seg3"></div></div><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
+      if (!fbk) f.querySelector('.e1').value = ch.name;
+      if (fbk) { if (tab === 'fb') titles.fb = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() }; f.querySelector('.e5').value = (titles.fb && titles.fb.t) || ''; f.querySelector('.e6').value = (titles.fb && titles.fb.d) || ''; }
+      if (fbk) { const o = new Option(ch.name || 'Your Page', ''); f.querySelector('.e4').add(o); f.querySelector('.e4').title = 'To change Pages, press Change Pages in Settings → Stream.'; }
       let pick = who[ch.site] || 'public';
       const opts = fbk ? [['public', 'Public'], ['self', 'Only me (test)']] : [['public', 'Public'], ['unlisted', 'Unlisted'], ['private', 'Private (test)']];
       const sg = f.querySelector('.seg3');
@@ -2240,17 +2263,29 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       drawSeg();
       f.querySelector('.sa').onclick = () => { close(); openSettings(ch.site); };
       d.querySelector('.rm').onclick = () => { if (confirm('Remove ' + ch.name + '? You can sign in again later.')) { prefs[ch.site] = false; savePrefs(); close(); openSettings(ch.site); refresh(); } };
-      d.querySelector('.o').onclick = () => { const n = f.querySelector('.e1').value.trim(); if (n && n !== (ch.site === 'youtube' ? 'YouTube' : 'Facebook')) names[ch.site] = n; else delete names[ch.site]; who[ch.site] = pick; try { localStorage.setItem('ms_names', JSON.stringify(names)); localStorage.setItem('ms_who', JSON.stringify(who)); } catch {} close(); refresh(); };
+      d.querySelector('.o').onclick = () => {
+        if (fbk) { titles.fb = { t: f.querySelector('.e5').value.trim(), d: f.querySelector('.e6').value.trim() }; saveTitles(); if (tab === 'fb') { $('#glTitle').value = titles.fb.t; $('#glDesc').value = titles.fb.d; } delete names.facebook; }
+        else { const n = f.querySelector('.e1').value.trim(); if (n && n !== 'YouTube') names[ch.site] = n; else delete names[ch.site]; }
+        who[ch.site] = pick; try { localStorage.setItem('ms_names', JSON.stringify(names)); localStorage.setItem('ms_who', JSON.stringify(who)); } catch {} close(); refresh(); };
     } else {
       const x = ch.dest;
       f.innerHTML = '<label>Name shown in Multistream<input type="text" class="e1"></label><label>Server<input type="text" class="e2" placeholder="rtmps://..."></label><label>Stream key<input type="password" class="e3" autocomplete="off"></label><p class="note"></p>';
       f.querySelector('.e1').value = x.name; f.querySelector('.e2').value = x.url || '';
+      // Instagram is watched on an upright phone: choose how the wide picture is shown there
+      const insta = /instagram/i.test((x.name || '') + ' ' + (x.url || ''));
+      if (insta) {
+        const lb = document.createElement('label'); lb.textContent = 'How the picture is shown on Instagram';
+        const sl = document.createElement('select'); sl.className = 'e7';
+        [['', 'Wide, as it is'], ['fill', 'Tall: fill the screen (the sides are cut off)'], ['blur', 'Tall: the whole picture, blurred behind'], ['bars', 'Tall: the whole picture, black bars']].forEach(([v, t]) => sl.add(new Option(t, v)));
+        sl.value = x.tall || ''; lb.appendChild(sl); f.querySelector('.note').before(lb);
+        const n2 = document.createElement('p'); n2.className = 'note'; n2.textContent = 'A tall picture is made as a second copy (720 × 1280), so it uses more of the computer. YouTube and Facebook keep the wide picture.'; f.querySelector('.note').before(n2);
+      }
       f.querySelector('.e3').placeholder = x.hasKey ? 'Saved, ends in ' + x.keyEnd + ' (leave empty to keep it)' : 'Paste the stream key';
       f.querySelector('.note').textContent = st2.msg || '';
       if (x.status && x.status.state === 'error') { const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'btn'; rs.textContent = 'Restart'; rs.onclick = async () => { await api('/api/destinations/' + x.id + '/restart', 'POST'); close(); refresh(); }; d.querySelector('.c').before(rs); }
       d.querySelector('.rm').onclick = async () => { if (!confirm('Remove ' + x.name + '?')) return; await api('/api/destinations/' + x.id, 'DELETE'); close(); refresh(); };
       d.querySelector('.o').onclick = async () => {
-        const r = await api('/api/destinations/' + x.id, 'PUT', { name: f.querySelector('.e1').value.trim() || x.name, url: f.querySelector('.e2').value.trim(), key: f.querySelector('.e3').value.trim() });
+        const r = await api('/api/destinations/' + x.id, 'PUT', { name: f.querySelector('.e1').value.trim() || x.name, url: f.querySelector('.e2').value.trim(), key: f.querySelector('.e3').value.trim(), ...(f.querySelector('.e7') ? { tall: f.querySelector('.e7').value } : {}) });
         if (r && r.error) { alert(r.error); return; } close(); refresh();
       };
     }
@@ -2769,6 +2804,7 @@ function applyAcc(a) {
   if (a.cb) cl.add('a-cb');
   if (a.bigbtn) cl.add('a-bigbtn');
   if (a.nomotion) cl.add('a-nomotion');
+  if (a.calm) cl.add('a-calm');
   if (validHex(a.accent || '')) {
     // a white main colour on the light (white) theme would not show: it becomes dark there
     const acc = light && lum(a.accent) > 0.8 ? '#1f2933' : a.accent;
@@ -3094,6 +3130,14 @@ document.querySelectorAll('#setOverlay [data-mirror]').forEach((el) => {
   if (el.classList.contains('tg2')) el.onclick = () => { el.classList.toggle('on'); set(el.classList.contains('on')); };
   else el.onchange = () => set(el.value);
 });
+// Settings → Video: picking a ready-made quality fills in its numbers; typing your own numbers shows "Custom"
+(function () {
+  const g = (sel) => document.querySelector('#setOverlay [data-mirror="' + sel + '"]');
+  const q = g('#outQ'), h = g('#outH'), f = g('#outFps'), k = g('#outKbps'); if (!q || !h || !f || !k) return;
+  q.addEventListener('change', () => { if (q.value === 'custom') return; const [hh, ff, kk] = q.value.split('-'); h.value = hh; f.value = ff; k.value = kk; });
+  const own = () => { const m = [...q.options].find((o) => o.value.startsWith(h.value + '-' + f.value + '-')); q.value = m ? m.value : 'custom'; };
+  h.addEventListener('change', own); f.addEventListener('change', own);
+})();
 document.querySelectorAll('#setOverlay [data-click]').forEach((el) => { el.onclick = () => { const w = stuWin(); const b = w && w.document.querySelector(el.dataset.click); if (b) b.click(); }; });
 async function mirrorSave() {
   const w = stuWin(); if (!w) { mirrorPend.clear(); return true; }
@@ -3304,8 +3348,8 @@ setInterval(refresh, 2000);
   if (!wl || !gs) return;
   let seen = false; try { seen = sessionStorage.getItem('ms_welcomed') === '1'; } catch {}
   const isMv = location.hash === '#control-room';
-  const closeWl = () => { wl.classList.remove('open'); try { sessionStorage.setItem('ms_welcomed', '1'); } catch {} };
-  if (!seen && !isMv && !window.DEMO) wl.classList.add('open');
+  const closeWl = () => { document.documentElement.classList.remove('wl-first'); wl.classList.remove('open'); try { sessionStorage.setItem('ms_welcomed', '1'); } catch {} };
+  if (!seen && !isMv && !window.DEMO) wl.classList.add('open'); else document.documentElement.classList.remove('wl-first');
   $('#wlLive').onclick = closeWl;
   $('#wlStudio').onclick = () => { closeWl(); showPage('studio'); };
   $('#wlStart').onclick = () => { closeWl(); openSetup(); };

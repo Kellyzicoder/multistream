@@ -102,7 +102,7 @@ async function until(fn, ms, what) {
   // 4b. the Studio opens inside the same window (it keeps running in the background on other pages)
   await dash.evaluate(() => localStorage.removeItem('ms_studio_window'));
   // close the Welcome screen that a new start shows, so the side menu can be clicked
-  await dash.evaluate(() => { try { sessionStorage.setItem('ms_welcomed', '1'); } catch {} const w = document.getElementById('welcome'); if (w) w.classList.remove('open'); });
+  await dash.evaluate(() => { try { sessionStorage.setItem('ms_welcomed', '1'); } catch {} const w = document.getElementById('welcome'); if (w) w.classList.remove('open'); document.documentElement.classList.remove('wl-first'); });
   await dash.click('#pageTabs [data-page=studio]');
   await until(() => dash.evaluate(() => { const f = document.querySelector('#studioView iframe'); try { return Boolean(f && f.contentWindow && typeof f.contentWindow.msStart === 'function'); } catch { return false; } }), 30000, 'the Studio inside the window');
   assert.strictEqual(app.windows().length, 1, 'no second window was opened');

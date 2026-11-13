@@ -439,6 +439,10 @@
   .dock h2 .mxl { margin-left:auto; }
   .dock .list, .dock .pad { background:transparent !important; }
   /* dragging a scene or a source to another place in its list */
+html.a-calm body { background:var(--bg) !important; }
+  .srcbar { display:flex; align-items:center; gap:8px; padding:4px 14px; min-height:34px; flex:none; font-size:13px; color:var(--muted); }
+  .srcbar .sb-n { margin-right:6px; max-width:38ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .srcbar .sb-n.has { color:var(--text); font-weight:600; }
+  .srcbar button { padding:4px 12px; border-radius:999px; border:1px solid var(--line); background:var(--field); color:var(--text); font:inherit; font-size:12.5px; cursor:pointer; } .srcbar button:hover { border-color:var(--sel); }
   .scn.drag, .lyr.drag { opacity:.45; } .scn.dropA, .lyr.dropA { box-shadow:inset 0 3px 0 var(--sel) !important; } .scn.dropB, .lyr.dropB { box-shadow:inset 0 -3px 0 var(--sel) !important; }
   #scenes { padding:4px 0; } #scenes .scn { margin:3px 8px; padding:9px 12px; border-radius:10px; font-size:14px; background:transparent; }
   #scenes .scn.on { background:var(--sel); color:var(--onsel); font-weight:600; } #scenes .scn .dot { display:none; }
@@ -660,6 +664,8 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
     <div class="screen"><div class="cap">Program <span id="airName"></span> <b class="livetag" id="liveTag" hidden>● LIVE</b></div><canvas id="cv" class="v" width="1280" height="720"></canvas></div>
   </div>
   <div class="split v" id="splitR" title="Drag to make the right panels wider or narrower" hidden></div><aside class="sdock" id="dockR" aria-label="Panels on the right"></aside></div>
+  <!-- the source bar under the picture, like OBS: what you can do with the source you picked -->
+  <div class="srcbar" id="srcBar" aria-label="The source you picked"><span class="sb-n" id="sbName">No source picked</span><button type="button" id="sbProps" hidden>Properties</button><button type="button" id="sbFilters" hidden>Filters</button><button type="button" id="sbOff" hidden>Deactivate</button></div>
   <div class="split h" id="splitB" title="Drag to make the bottom panels taller or shorter"></div>
 
   <!-- docks along the bottom, like OBS -->
@@ -746,6 +752,8 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
         <section class="sp" data-sp="video">
           <h3>What viewers get</h3>
           <div class="f"><label>Quality</label><select id="outQ"></select></div>
+          <div class="f"><label>Picture height (pixels)</label><input id="outH" type="number" min="360" max="2160" step="2"></div>
+          <div class="f"><label>Frames a second</label><input id="outFps" type="number" min="10" max="60" step="1"></div>
           <div class="f"><label>Bitrate (kbps)</label><input id="outKbps" type="number" min="1000" max="60000" step="500"></div>
           <p class="note" id="outNote"></p>
           <div class="f"><label>Canvas</label><span>1920 x 1080 (the size scenes are built at)</span></div>
@@ -818,6 +826,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
     const light = t === 'light' || (t === 'system' && dark && !dark.matches);
     document.documentElement.classList.toggle('t-light', light);
     document.documentElement.classList.toggle('glass-off', Boolean(a.contrast));
+    document.documentElement.classList.toggle('a-calm', Boolean(a.calm));
     ['clear', 'blur', 'solid'].forEach((k) => document.documentElement.classList.toggle('ps-' + k, a.panel === k));
     const r = document.documentElement.style;
     // a white main colour on the light (white) theme would not show: it becomes dark there
@@ -903,6 +912,10 @@ function camShowing(l) {
   return studio.scenes.some((sc) => names.has(sc.name) && sc.layers.some((x) => x.id === l.id));
 }
 const camWanted = (l) => !l.off && (!l.idleOff || camShowing(l));
+const CAP_OFF = { ready: false, off: true, v: document.createElement('video'), err: '' };
+// the kinds of source that can be deactivated (the device or screen is let go) and activated again
+const CAN_OFF = new Set(['camera', 'screen', 'window']);
+function toggleOff(l) { if (l.off) delete l.off; else l.off = true; save(); renderLayers(); }
 const CAM_OFF = { ready: false, off: true, v: document.createElement('video'), err: '' };
 function getCam(l) {
   const key = camKey(l);
@@ -938,7 +951,7 @@ setInterval(() => {
   cams.forEach((c, k) => { if (c.dead && used.has(k) && Date.now() - c.seen > 4000) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} cams.delete(k); } });
   // screens, windows, web pages and phone cameras that no scene uses any more are let go the same way
   const usedCap = new Set(), usedBoard = new Set(), usedIp = new Set();
-  allLayers().forEach((l) => { usedCap.add(capKey(l)); if (l.type === 'duo') usedCap.add(capKey(duoScr(l))); if (l.url) { usedBoard.add(boardKey(l)); usedIp.add(l.url); } });
+  allLayers().forEach((l) => { if (!l.off) usedCap.add(capKey(l)); if (l.type === 'duo') usedCap.add(capKey(duoScr(l))); if (l.url) { usedBoard.add(boardKey(l)); usedIp.add(l.url); } });
   const later = (o) => { if (!o.unusedAt) o.unusedAt = Date.now(); return Date.now() - o.unusedAt > 2500; };
   caps.forEach((c, k) => { if (usedCap.has(k)) { c.unusedAt = 0; return; } if (later(c)) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(k); } });
   boards.forEach((b, k) => { if (usedBoard.has(k)) { b.unusedAt = 0; return; } if (later(b)) { if (window.msNative) window.msNative.browserClose(k); boards.delete(k); } });
@@ -950,6 +963,7 @@ const serial = (fn) => { const p = capQ.then(fn); capQ = p.catch(() => {}); retu
 const caps = new Map();
 const capKey = (l) => l.type + '|' + (l.display || '') + '|' + (l.winName || '');
 function getCapture(l) {
+  if (l.off) return CAP_OFF; // deactivated: the screen or window is not captured
   const key = capKey(l);
   let c = caps.get(key); if (c) return c;
   c = { v: document.createElement('video'), ready: false }; c.v.muted = true; caps.set(key, c);
@@ -1265,7 +1279,7 @@ function drawLayer(c, l, live) {
     } else if (l.type === 'screen' || l.type === 'window') {
       const sc = getCapture(l), nm = l.type === 'window' ? 'Window' : 'Screen';
       if (sc.ready && sc.v.videoWidth) { pic(c, l, sc.v, sc.v.videoWidth, sc.v.videoHeight); }
-      else note(c, l, sc.err ? nm + ': ' + sc.err : 'Starting ' + nm.toLowerCase() + ' capture...');
+      else note(c, l, sc.off ? nm + ': deactivated' : sc.err ? nm + ': ' + sc.err : 'Starting ' + nm.toLowerCase() + ' capture...');
     } else if (l.type === 'browser') {
       if (!window.msNative) { note(c, l, 'Web pages need the Multistream desktop app'); }
       else { const b = getBoard(l); if (b.ready) { pic(c, l, b.c, b.c.width, b.c.height); } }
@@ -1965,6 +1979,7 @@ const MEDIA = new Set(['image', 'video', 'camera', 'screen', 'window', 'browser'
 // ---------------- sources: icons, lock, right-click menu, Add Source window (like OBS) ----------------
 const SVG = (p) => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
 const SRC_ICON = {
+  card: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="10" rx="1.5"/><path d="M7 16v3M11 16v3M15 16v3M7 10h4"/><circle cx="16.5" cy="11" r="1.5"/></svg>',
   pptx: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4M7 8h6M7 11h4"/></svg>',
   duo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="13" height="10" rx="1.5"/><rect x="17" y="8" width="5" height="6" rx="1"/><path d="M6 20h5M8.5 16v4"/></svg>',
   mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
@@ -2036,6 +2051,7 @@ function showSourceMenu(ev, l, nameEl) {
     box.appendChild(b);
   };
   [['Properties', () => { propsOpen = true; renderLayers(); }], ['Filters', () => openFilters(l)],
+    ...(CAN_OFF.has(l.type) ? [[l.off ? 'Activate' : 'Deactivate', () => toggleOff(l)]] : []),
     ['Rename', () => { const n = document.querySelector('#layers .lyr.on .n'); if (n) renameInPlace(n, l.name || ICON[l.type] || l.type, (v) => { if (v) { l.name = v; save(); } renderLayers(); }); }],
     [l.locked ? 'Unlock' : 'Lock', () => { l.locked = !l.locked; save(); renderLayers(); }], null,
     ['Order', order], ['Transform', transform],
@@ -2052,7 +2068,7 @@ function showSourceMenu(ev, l, nameEl) {
 // Add a source: the kinds in groups on the left; on the right a live preview and its settings,
 // then Reset, Cancel and Add source at the bottom. A source already in another scene can be added as a copy.
 const ADD_GROUPS = [
-  ['Cameras and screens', [['camera', 'Camera', 'A webcam, ATEM Mini or capture card'], ['ipcam', 'Phone camera', 'A phone camera app on the Wi-Fi'], ['screen', 'Whole screen', 'Show a display, like slides'], ['window', 'One window', 'Just one program, like ProPresenter'], ['duo', 'Speaker + screen', 'A camera and a screen side by side']]],
+  ['Cameras and screens', [['camera', 'Camera', 'A webcam or USB camera'], ['card', 'Video capture card', 'A capture card or box: Blackmagic, ATEM Mini, Elgato'], ['ipcam', 'Phone camera', 'A phone camera app on the Wi-Fi'], ['screen', 'Whole screen', 'Show a display, like slides'], ['window', 'One window', 'Just one program, like ProPresenter'], ['duo', 'Speaker + screen', 'A camera and a screen side by side']]],
   ['Pictures and video', [['image', 'Picture', 'A logo, poster or overlay'], ['pptx', 'PowerPoint slides', 'The slideshow window'], ['video', 'Video file', 'Announcements or an intro'], ['browser', 'Web page (lyrics, slides)', 'Lyrics, slides or a website'], ['color', 'Colour', 'A plain background']]],
   ['Text', [['text', 'Text', 'Any words on screen'], ['lower', 'Name bar', "A speaker's name and role"], ['timer', 'Countdown', 'Before you start'], ['clock', 'Clock', 'The time now']]],
   ['Sound', [['mic', 'Microphone', 'A microphone or sound desk']]],
@@ -2064,6 +2080,7 @@ function openAddSource() {
   const makeDraft = (t) => {
     if (t === 'mic') return { mic: true, name: 'Microphone', device: '', vol: 0.8, nr: true, mono: false };
     if (t === 'pptx') { const l = newLayer('window'); l.name = 'PowerPoint slides'; return l; }
+    if (t === 'card') { const l = newLayer('camera'); l.name = 'Video Capture Card'; l.card = true; return l; }
     const l = newLayer(t); l.name = kindInfo(t)[1]; return l;
   };
   let draft = makeDraft(pick); addDraft = draft.mic ? null : draft;
@@ -2141,7 +2158,7 @@ function openAddSource() {
     head.querySelector('.as-ic').innerHTML = SRC_ICON[pick] || SRC_ICON.window || ''; head.querySelector('b').textContent = k[1];
     main.textContent = '';
     // the same kind already in other scenes: "Use one you have"
-    const want = pick === 'pptx' ? 'window' : pick;
+    const want = pick === 'pptx' ? 'window' : pick === 'card' ? 'camera' : pick;
     const seen = new Set(), have = [];
     if (pick !== 'mic') studio.scenes.forEach((sc) => (sc.layers || []).forEach((l) => { if (l.type !== want || s.layers.some((x) => x.id === l.id)) return; const key = (l.name || '') + '|' + (l.url || l.src || l.device || l.text || ''); if (seen.has(key)) return; seen.add(key); have.push({ l, scene: sc.name }); }));
     if (have.length) {
@@ -2190,7 +2207,7 @@ function renderLayers() {
     const l = s.layers[i];
     const d = document.createElement('div'); d.className = 'lyr' + (l.id === sel ? ' on' : '');
     const eye = eyeBtn(l.visible !== false, 'Show or hide', (v) => { l.visible = v; save(); });
-    const ti = document.createElement('span'); ti.className = 'tico'; ti.innerHTML = SRC_ICON[l.type] || ''; ti.title = ICON[l.type] || l.type;
+    const ti = document.createElement('span'); ti.className = 'tico'; ti.innerHTML = (l.card && SRC_ICON.card) || SRC_ICON[l.type] || ''; ti.title = l.card ? 'Video capture card' : ICON[l.type] || l.type;
     const n = document.createElement('span'); n.className = 'n'; n.textContent = l.name || ICON[l.type] || l.type; n.title = n.textContent;
     const up = document.createElement('button'); up.className = 'sm'; up.textContent = '\u2191'; up.title = 'Move in front'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
     const x = document.createElement('button'); x.className = 'sm'; x.textContent = '\u00d7'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
@@ -2211,7 +2228,15 @@ function renderLayers() {
     box.appendChild(d);
   }
   renderProps();
+  // the source bar under the picture
+  const cur = s.layers.find((x) => x.id === sel);
+  $('#sbName').textContent = cur ? (cur.name || ICON[cur.type] || cur.type) : 'No source picked'; $('#sbName').classList.toggle('has', Boolean(cur));
+  $('#sbProps').hidden = $('#sbFilters').hidden = !cur;
+  $('#sbOff').hidden = !(cur && CAN_OFF.has(cur.type)); if (cur) $('#sbOff').textContent = cur.off ? 'Activate' : 'Deactivate';
 }
+$('#sbProps').onclick = () => { if (curLayer()) { propsOpen = true; renderLayers(); } };
+$('#sbFilters').onclick = () => { const l = curLayer(); if (l) openFilters(l); };
+$('#sbOff').onclick = () => { const l = curLayer(); if (l) toggleOff(l); };
 function field(label, el) { const d = document.createElement('div'); d.className = 'f'; const l = document.createElement('label'); l.textContent = label; d.append(l, el); return d; }
 let pfxOpen = false;
 // the Properties window (opens on double-click, the gear button, or when you add a source, like OBS)
@@ -2344,6 +2369,7 @@ function renderProps(target, draft) {
     const sl = document.createElement('select'); sl.add(new Option('Default camera', ''));
     devices.video.forEach((x) => sl.add(new Option(x.label || 'Camera', x.deviceId)));
     sl.title = 'ATEM Mini or a capture box: plug its USB cable into this computer, then choose it here. It appears by itself within a few seconds.';
+    if (l.card) { const cn = document.createElement('p'); cn.className = 'note'; cn.textContent = 'Plug the card or box into this computer, then choose it under Device. Only one app can use a capture card at a time, so close other apps that show it.'; box.append(cn); }
     sl.value = pickDevice('video', l.label, l.device); sl.onchange = () => { l.device = sl.value; l.label = ''; save(); }; box.append(field('Device', sl));
     const rs = document.createElement('select'); [['auto', 'Automatic (best)'], ['2160', '3840 × 2160 (4K)'], ['1440', '2560 × 1440'], ['1080', '1920 × 1080'], ['720', '1280 × 720']].forEach(([v, t]) => rs.add(new Option(t, v)));
     rs.value = l.res || 'auto'; rs.onchange = () => { l.res = rs.value; save(); }; box.append(field('Size', rs));
@@ -2352,7 +2378,7 @@ function renderProps(target, draft) {
     // like OBS: Deactivate lets the device go (the picture stops); Activate opens it again
     const ab = document.createElement('button'); ab.type = 'button'; ab.className = 'sm';
     const abT = () => { ab.textContent = l.off ? 'Activate' : 'Deactivate'; ab.title = l.off ? 'Open the device again' : 'Let the device go, so another app can use it. The picture stops.'; };
-    abT(); ab.onclick = () => { if (l.off) delete l.off; else l.off = true; abT(); save(); };
+    abT(); ab.onclick = () => { if (l.off) delete l.off; else l.off = true; abT(); save(); if (!draft) renderLayers(); };
     box.append(field('Device on or off', ab));
     box.append(field('Deactivate when not showing', tick(l.idleOff, (v) => { if (v) l.idleOff = true; else delete l.idleOff; }, true)));
     box.append(field("Use the camera's sound", tick(l.camSound, (v) => { l.camSound = v; if (!draft) camSound(l); }, true)));
@@ -3380,6 +3406,7 @@ const PRESETS = [
   ['1080-60-9000', '1080p, 60 frames (fast movement)'],
   ['1440-30-12000', '1440p, 30 frames'],
   ['2160-30-20000', '4K, 30 frames (needs a strong computer)'],
+  ['custom', 'Custom (your own numbers below)'],
 ];
 function outNote() {
   const name = OUT.h === 2160 ? '4K' : OUT.h + 'p';
@@ -3391,16 +3418,22 @@ function outNote() {
 }
 function saveOut() { try { localStorage.setItem('ms_out', JSON.stringify(OUT)); } catch {} outNote(); }
 function lockOut() {
-  $('#outQ').disabled = $('#outKbps').disabled = wantSend;
+  $('#outQ').disabled = $('#outKbps').disabled = $('#outH').disabled = $('#outFps').disabled = wantSend;
   if (wantSend) $('#outNote').textContent = 'Stop streaming to change the video size.'; else outNote();
 }
 (function () {
   const q = $('#outQ'); PRESETS.forEach(([v, t]) => q.add(new Option(t, v)));
-  const cur = PRESETS.find((x) => x[0].startsWith(OUT.h + '-' + OUT.fps + '-'));
-  q.value = cur ? cur[0] : '1080-30-6000';
-  if (!cur) { OUT.h = 1080; OUT.fps = 30; OUT.kbps = 6000; }
-  $('#outKbps').value = OUT.kbps; outNote();
-  q.onchange = () => { const [h, f, k] = q.value.split('-').map(Number); OUT.h = h; OUT.fps = f; OUT.kbps = k; $('#outKbps').value = k; saveOut(); };
+  // numbers that make sense: a height from 360 to 2160 (even), 10 to 60 frames a second
+  const okH = (v) => { const n = Math.round(Number(v)); return n >= 360 && n <= 2160 ? n - (n % 2) : 0; };
+  const okF = (v) => { const n = Math.round(Number(v)); return n >= 10 && n <= 60 ? n : 0; };
+  if (!okH(OUT.h) || !okF(OUT.fps)) { OUT.h = 1080; OUT.fps = 30; OUT.kbps = 6000; }
+  OUT.h = okH(OUT.h); OUT.fps = okF(OUT.fps);
+  // the list shows a ready-made choice when the numbers match one, otherwise "Custom"
+  const show = () => { const cur = PRESETS.find((x) => x[0].startsWith(OUT.h + '-' + OUT.fps + '-')); q.value = cur ? cur[0] : 'custom'; $('#outH').value = OUT.h; $('#outFps').value = OUT.fps; $('#outKbps').value = OUT.kbps; };
+  show(); outNote();
+  q.onchange = () => { if (q.value !== 'custom') { const [h, f, k] = q.value.split('-').map(Number); OUT.h = h; OUT.fps = f; OUT.kbps = k; } show(); saveOut(); };
+  $('#outH').onchange = () => { OUT.h = okH($('#outH').value) || OUT.h; show(); saveOut(); };
+  $('#outFps').onchange = () => { OUT.fps = okF($('#outFps').value) || OUT.fps; show(); saveOut(); };
   $('#outKbps').onchange = () => { OUT.kbps = Math.min(60000, Math.max(1000, Math.round(Number($('#outKbps').value)) || OUT.kbps)); $('#outKbps').value = OUT.kbps; saveOut(); };
 })();
 function fillMon() {

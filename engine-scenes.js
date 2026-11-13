@@ -187,6 +187,7 @@ function makeInput(l, name) {
     return mk(cameraType(), { [mac() ? 'device' : 'video_device_id']: dev.value, ...(mac() ? {} : { deactivate_when_not_showing: Boolean(l.idleOff) }) });
   }
   if (l.type === 'screen' || l.type === 'window') {
+    if (l.off) return null; // deactivated in the Studio
     const win = l.type === 'window';
     let input;
     if (mac()) {

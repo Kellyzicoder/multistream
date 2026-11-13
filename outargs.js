@@ -8,14 +8,18 @@ const widthFor = (h) => Math.round((h * 16) / 9 / 2) * 2; // 720 -> 1280, 1080 -
 
 // a sensible bitrate when the Studio does not say (YouTube's own advice for H.264 is the guide)
 function defaultKbps(h, fps) {
-  const base = { 720: 4500, 1080: 6000, 1440: 12000, 2160: 20000 }[h] || 4500;
-  return fps === 60 ? Math.round(base * 1.5) : base;
+  const base = { 720: 4500, 1080: 6000, 1440: 12000, 2160: 20000 }[h] || (h > 1440 ? 20000 : h > 1080 ? 12000 : h > 720 ? 6000 : 4500);
+  return fps >= 50 ? Math.round(base * 1.5) : base;
 }
+// The Studio's own numbers (Settings → Video → Custom) are taken when they make sense:
+// a height from 360 to 2160 (made even), and 10 to 60 frames a second.
+const heightOf = (v) => { const n = Math.round(Number(v)); return n >= 360 && n <= 2160 ? n - (n % 2) : 720; };
+const fpsOf = (v) => { const n = Math.round(Number(v)); return n >= 10 && n <= 60 ? n : 30; };
 
 // q: URLSearchParams from /studio-ingest?h=1080&fps=30&kbps=6000
 function parseOut(q) {
-  const h = SIZES.includes(Number(q.get('h'))) ? Number(q.get('h')) : 720;
-  const fps = Number(q.get('fps')) === 60 ? 60 : 30;
+  const h = heightOf(q.get('h'));
+  const fps = fpsOf(q.get('fps'));
   const kbps = Math.min(60000, Math.max(1000, Math.round(Number(q.get('kbps'))) || defaultKbps(h, fps)));
   // a tall (9:16) or square scene collection: "1080p" means 1080 wide
   const shape = q.get('shape');
@@ -63,7 +67,21 @@ function needsCap(dest, out) {
   return limited && (resOf(out) > LIMIT.h || out.kbps > LIMIT.kbps);
 }
 // the ffmpeg arguments for the video part of a channel: copy as is, or a smaller copy for a limited site
+// Instagram is watched on a phone held upright. A wide picture can be sent as it is, or made tall (9:16):
+//   fill = cut the sides off; blur = the whole picture with a blurred copy behind it; bars = the whole picture with black bars
+const TALL = { w: 720, h: 1280, kbps: 4000 };
+function tallFilter(mode) {
+  const { w, h } = TALL;
+  if (mode === 'fill') return `scale=-2:${h},crop=${w}:${h}`;
+  if (mode === 'bars') return `scale=${w}:-2,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2:black`;
+  if (mode === 'blur') return `split[a][b];[a]scale=-2:${h},crop=${w}:${h},boxblur=24:4[bg];[b]scale=${w}:-2[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2`;
+  return '';
+}
 function channelVideoArgs(dest, out, encKey) {
+  // a tall copy only makes sense when the Studio's picture is wide
+  const tall = !out.shape && tallFilter(dest.tall);
+  if (tall) return { capped: true, tall: dest.tall,
+    args: ['-vf', tall, ...videoArgs(encKey, Math.min(out.kbps, TALL.kbps), out.fps * 2), '-pix_fmt', 'yuv420p', '-r', String(out.fps), '-c:a', 'copy'] };
   if (!needsCap(dest, out)) return { args: ['-c', 'copy'], capped: false };
   return {
     capped: true,
@@ -71,4 +89,4 @@ function channelVideoArgs(dest, out, encKey) {
   };
 }
 
-module.exports = { SIZES, widthFor, defaultKbps, parseOut, label, ingestArgs, recordArgs, needsCap, channelVideoArgs, LIMIT };
+module.exports = { tallFilter, TALL, SIZES, widthFor, defaultKbps, parseOut, label, ingestArgs, recordArgs, needsCap, channelVideoArgs, LIMIT };
