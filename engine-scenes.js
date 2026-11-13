@@ -181,9 +181,10 @@ function makeInput(l, name) {
     return mk('ffmpeg_source', { is_local_file: false, input: l.url, looping: false, restart_on_activate: false, close_when_inactive: false, reconnect_delay_sec: 3, hw_decode: true });
   }
   if (l.type === 'camera') {
+    if (l.off) return null; // deactivated in the Studio (like OBS's Deactivate)
     const dev = pickItem(cameraList(), l.label);
     if (!dev) return null;
-    return mk(cameraType(), { [mac() ? 'device' : 'video_device_id']: dev.value });
+    return mk(cameraType(), { [mac() ? 'device' : 'video_device_id']: dev.value, ...(mac() ? {} : { deactivate_when_not_showing: Boolean(l.idleOff) }) });
   }
   if (l.type === 'screen' || l.type === 'window') {
     const win = l.type === 'window';

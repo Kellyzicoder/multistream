@@ -438,6 +438,8 @@
   .dock h2 .hb2.wide { width:auto; padding:0 8px; gap:5px; display:flex; align-items:center; font-size:11px; font-weight:600; letter-spacing:0; text-transform:none; margin-left:8px; }
   .dock h2 .mxl { margin-left:auto; }
   .dock .list, .dock .pad { background:transparent !important; }
+  /* dragging a scene or a source to another place in its list */
+  .scn.drag, .lyr.drag { opacity:.45; } .scn.dropA, .lyr.dropA { box-shadow:inset 0 3px 0 var(--sel) !important; } .scn.dropB, .lyr.dropB { box-shadow:inset 0 -3px 0 var(--sel) !important; }
   #scenes { padding:4px 0; } #scenes .scn { margin:3px 8px; padding:9px 12px; border-radius:10px; font-size:14px; background:transparent; }
   #scenes .scn.on { background:var(--sel); color:var(--onsel); font-weight:600; } #scenes .scn .dot { display:none; }
   #layers { padding:4px 0; } #layers .lyr { margin:2px 8px; padding:6px 6px 6px 12px; gap:10px; border-radius:10px; font-size:14px; background:transparent; }
@@ -894,9 +896,18 @@ let addDraft = null;
 const allLayers = () => { const a = []; studio.scenes.forEach((sc) => a.push(...sc.layers)); if (addDraft) a.push(addDraft); return a; };
 const RES = { auto: [1920, 1080], '720': [1280, 720], '1080': [1920, 1080], '1440': [2560, 1440], '2160': [3840, 2160] };
 const camKey = (l) => [l.label || '', l.device || '', l.res || 'auto', l.fps || 'auto'].join('|');
+// Like OBS: a camera can be deactivated (the device is let go, so another app can use it), and it can be set to
+// "deactivate when not showing" (it is only open while its scene is on air, being edited, or in a transition).
+function camShowing(l) {
+  const names = new Set([studio.current, editing, shown]); if (trans) { names.add(trans.from); names.add(trans.to); }
+  return studio.scenes.some((sc) => names.has(sc.name) && sc.layers.some((x) => x.id === l.id));
+}
+const camWanted = (l) => !l.off && (!l.idleOff || camShowing(l));
+const CAM_OFF = { ready: false, off: true, v: document.createElement('video'), err: '' };
 function getCam(l) {
   const key = camKey(l);
-  let c = cams.get(key); if (c) { c.seen = Date.now(); return c; }
+  let c = cams.get(key); if (c && (camWanted(l) || !l.off)) { c.seen = Date.now(); return c; }
+  if (!camWanted(l)) return CAM_OFF;
   c = { v: document.createElement('video'), ready: false, seen: Date.now(), info: '' };
   c.v.muted = true; c.v.playsInline = true; cams.set(key, c);
   const id = pickDevice('video', l.label, l.device);
@@ -917,7 +928,7 @@ function getCam(l) {
 // cameras nobody uses any more (removed, or changed to another setting) are released so the device is free again
 setInterval(() => {
   const used = new Set();
-  allLayers().forEach((l) => { if (l.type === 'camera') used.add(camKey(l)); if (l.type === 'duo') used.add(camKey(duoCam(l))); });
+  allLayers().forEach((l) => { if (l.type === 'camera' && camWanted(l)) used.add(camKey(l)); if (l.type === 'duo') used.add(camKey(duoCam(l))); });
   cams.forEach((c, k) => {
     if (used.has(k)) return;
     if (!c.unusedAt) c.unusedAt = Date.now();
@@ -1250,7 +1261,7 @@ function drawLayer(c, l, live) {
     } else if (l.type === 'camera') {
       const cm = getCam(l);
       if (cm.ready && cm.v.videoWidth) { pic(c, l, cm.v, cm.v.videoWidth, cm.v.videoHeight); }
-      else note(c, l, cm.err ? 'Video capture device: ' + cm.err : 'Starting the video capture device...');
+      else note(c, l, cm.off ? (l.off ? 'Video capture device: deactivated' : 'Video capture device: off until this scene is shown') : cm.err ? 'Video capture device: ' + cm.err : 'Starting the video capture device...');
     } else if (l.type === 'screen' || l.type === 'window') {
       const sc = getCapture(l), nm = l.type === 'window' ? 'Window' : 'Screen';
       if (sc.ready && sc.v.videoWidth) { pic(c, l, sc.v, sc.v.videoWidth, sc.v.videoHeight); }
@@ -1784,6 +1795,18 @@ function emptyPanel(title, sub, btn, fn) {
   if (btn) { const k = document.createElement('button'); k.type = 'button'; k.textContent = '+ ' + btn; k.onclick = (e) => { e.stopPropagation(); fn(); }; d.appendChild(k); }
   return d;
 }
+// Drag a row of a list (scenes, sources) to another place in it. kind keeps the two lists apart.
+let dragRowKey = '';
+function dragRow(d, kind, key, onDrop) {
+  d.draggable = true;
+  const clear = () => d.classList.remove('dropA', 'dropB');
+  const below = (e) => { const r = d.getBoundingClientRect(); return e.clientY > r.top + r.height / 2; };
+  d.addEventListener('dragstart', (e) => { if (e.target.closest && e.target.closest('input')) { e.preventDefault(); return; } dragRowKey = kind + ':' + key; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', key); } catch {} d.classList.add('drag'); });
+  d.addEventListener('dragend', () => { dragRowKey = ''; d.classList.remove('drag'); document.querySelectorAll('.dropA, .dropB').forEach((x) => x.classList.remove('dropA', 'dropB')); });
+  d.addEventListener('dragover', (e) => { if (!dragRowKey.startsWith(kind + ':') || dragRowKey === kind + ':' + key) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; const b = below(e); d.classList.toggle('dropA', !b); d.classList.toggle('dropB', b); });
+  d.addEventListener('dragleave', clear);
+  d.addEventListener('drop', (e) => { clear(); if (!dragRowKey.startsWith(kind + ':')) return; e.preventDefault(); const from = dragRowKey.slice(kind.length + 1); dragRowKey = ''; if (from !== key) onDrop(from, below(e)); });
+}
 function renderScenes() {
   const box = $('#scenes'); box.textContent = '';
   if (!studio.scenes.length) box.appendChild(emptyPanel('No scenes yet', 'A scene is one picture: a camera, slides or a welcome screen.', 'Add a scene', () => $('#addScene').click()));
@@ -1796,6 +1819,11 @@ function renderScenes() {
     // the click before the double-click draws the list again, so find the name again
     d.ondblclick = () => renameInPlace([...document.querySelectorAll('#scenes .scn .n')].find((x) => x.textContent === s.name) || n, s.name, (v) => { if (v && v !== s.name && !studio.scenes.some((x) => x.name === v)) { if (studio.current === s.name) { studio.current = v; dirtyCurrent = true; } s.name = v; editing = v; save(); } renderAll(); });
     d.addEventListener('contextmenu', (e) => showSceneMenu(e, s));
+    dragRow(d, 'scene', s.name, (from, below) => {
+      const a = studio.scenes, i = a.findIndex((x) => x.name === from); if (i < 0) return;
+      const [it] = a.splice(i, 1); const t = a.findIndex((x) => x.name === s.name);
+      a.splice(below ? t + 1 : t, 0, it); save(); renderAll();
+    });
     box.appendChild(d);
   });
 }
@@ -2174,6 +2202,12 @@ function renderLayers() {
     else d.append(ti, n, eye, lockBtn(l)); d.onclick = () => { sel = l.id; renderLayers(); };
     d.addEventListener('contextmenu', (e) => showSourceMenu(e, l, n));
     d.ondblclick = () => { sel = l.id; propsOpen = true; renderLayers(); };
+    // the list shows the front item at the top, so "above" in the list is later in the scene's own order
+    dragRow(d, 'source', l.id, (from, below) => {
+      const a = s.layers, k = a.findIndex((x) => x.id === from); if (k < 0) return;
+      const [it] = a.splice(k, 1); const t = a.findIndex((x) => x.id === l.id);
+      a.splice(below ? t : t + 1, 0, it); sel = it.id; save(); renderLayers();
+    });
     box.appendChild(d);
   }
   renderProps();
@@ -2315,6 +2349,12 @@ function renderProps(target, draft) {
     rs.value = l.res || 'auto'; rs.onchange = () => { l.res = rs.value; save(); }; box.append(field('Size', rs));
     const fp = document.createElement('select'); [['auto', 'Automatic'], ['30', '30'], ['60', '60'], ['25', '25'], ['24', '24'], ['50', '50']].forEach(([v, t]) => fp.add(new Option(t, v)));
     fp.value = l.fps || 'auto'; fp.onchange = () => { l.fps = fp.value; save(); }; box.append(field('Frame rate', fp));
+    // like OBS: Deactivate lets the device go (the picture stops); Activate opens it again
+    const ab = document.createElement('button'); ab.type = 'button'; ab.className = 'sm';
+    const abT = () => { ab.textContent = l.off ? 'Activate' : 'Deactivate'; ab.title = l.off ? 'Open the device again' : 'Let the device go, so another app can use it. The picture stops.'; };
+    abT(); ab.onclick = () => { if (l.off) delete l.off; else l.off = true; abT(); save(); };
+    box.append(field('Device on or off', ab));
+    box.append(field('Deactivate when not showing', tick(l.idleOff, (v) => { if (v) l.idleOff = true; else delete l.idleOff; }, true)));
     box.append(field("Use the camera's sound", tick(l.camSound, (v) => { l.camSound = v; if (!draft) camSound(l); }, true)));
     const ci = document.createElement('p'); ci.className = 'note'; ci.id = 'camInfo'; left.append(ci);
   }
@@ -3625,7 +3665,8 @@ async function poll() {
   } catch {}
 }
 // Multiview pictures: Preview and Program at 960x540 (sharp on a big screen), scene pictures at 480x270
-const small = document.createElement('canvas'); small.width = 960; small.height = 540;
+// the Program and Preview pictures for the Multiview: 1280 x 720, so the big box looks sharp
+const small = document.createElement('canvas'); small.width = 1280; small.height = 720;
 const sctx = small.getContext('2d');
 const tiny = document.createElement('canvas'); tiny.width = 480; tiny.height = 270; const tctx = tiny.getContext('2d');
 // watching starts false: the app first says whether the Multiview is open, so nothing is drawn for it while the app opens
@@ -3639,9 +3680,9 @@ async function shots() {
       pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;
     }
     // the Program picture is a small copy of what is on air (one quick copy, not drawing the scene again)
-    if (SW > SH && cv.width >= 960) sctx.drawImage(cv, 0, 0, 960, 540); else if (cv.width >= 540) copyFit(sctx, 960, 540, cv); else drawFit(sctx, 960, 540, byName(studio.current), true);
-    const prog = small.toDataURL('image/jpeg', 0.8);
-    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawFit(sctx, 960, 540, byName(serverPreview), false); pv = small.toDataURL('image/jpeg', 0.8); }
+    if (SW > SH && cv.width >= 1280) sctx.drawImage(cv, 0, 0, 1280, 720); else if (cv.width >= 540) copyFit(sctx, 1280, 720, cv); else drawFit(sctx, 1280, 720, byName(studio.current), true);
+    const prog = small.toDataURL('image/jpeg', 0.86);
+    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawFit(sctx, 1280, 720, byName(serverPreview), false); pv = small.toDataURL('image/jpeg', 0.86); }
     const body = { prog, pv };
     // the small scene pictures are sent only when one of them changed (a scene with a camera changes each time)
     if (Date.now() - thumbAt > 1500 || !Object.keys(thumbs).length) {

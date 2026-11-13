@@ -125,19 +125,34 @@ function createWindow() {
     if (/^https?:\/\//i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
-  win.on('closed', () => { win = null; });
+  // closing the main window closes the whole app, with any Multiview or other window that is still open
+  win.on('closed', () => { win = null; app.quit(); });
 }
 
 
-// ---- OBS engine ----
+// ---- OBS engine (test) ----
 // The engine draws the picture on the graphics card inside the app (see engine.js), the way OBS does, and it
-// makes the video that goes live and into recordings. On Windows it is always on in copies of the app built with it.
-// On the Mac it stays off for now: in tests it sometimes froze the app just after opening (about 1 start in 5),
-// so the Mac keeps the older way. If it cannot start on a computer, the Studio makes the video itself.
+// makes the video that goes live and into recordings.
+// It is off unless switched on in the Help menu (Windows). Why: on Windows a camera or capture card
+// (like a Blackmagic) can be open in one place only, and both the engine and the Studio page open it, so one of
+// them can get a black picture. On the Mac it sometimes froze the app just after opening. Until both are fixed,
+// the Studio makes the video itself, as before.
 // (MULTISTREAM_ENGINE=off or =on changes this, for tests and for help with problems.)
 let engineMod = null;
 const engine = () => engineMod || (engineMod = require('./engine'));
-const engineOn = () => (process.env.MULTISTREAM_ENGINE === 'off' ? false : process.env.MULTISTREAM_ENGINE === 'on' ? true : process.platform === 'win32');
+const engineFile = () => path.join(app.getPath('userData'), 'engine-settings.json');
+function engineOn() {
+  if (process.env.MULTISTREAM_ENGINE === 'off') return false;
+  if (process.env.MULTISTREAM_ENGINE === 'on') return true;
+  if (process.platform !== 'win32') return false;
+  try { return JSON.parse(fs.readFileSync(engineFile(), 'utf8')).test === true; } catch (e) { return false; }
+}
+// the Help menu switch: it is used the next time the app opens (the engine starts before the window shows)
+function setEngine(on) {
+  try { fs.writeFileSync(engineFile(), JSON.stringify({ test: Boolean(on) })); } catch (e) {}
+  setMenu();
+  dialog.showMessageBox({ type: 'info', message: on ? 'The OBS engine (test) is on.' : 'The OBS engine (test) is off.', detail: 'Close Multistream and open it again to use this.' });
+}
 // Starting the engine keeps the app busy for a second or two, so it is done before the window shows:
 // then the window answers clicks straight away, instead of freezing just after it opens.
 function startEngineFirst() {
@@ -517,6 +532,10 @@ function buildMenu() {
     { label: 'Help', submenu: [
       { label: 'Download page (latest version)', click: () => shell.openExternal(RELEASE_PAGE) },
       { label: 'Developer tools (for problems)', accelerator: 'F12', click: () => { const w = focusedWin(); if (w) w.webContents.toggleDevTools(); } },
+      ...(process.platform === 'win32' && engine().available() ? [
+        { type: 'separator' },
+        { label: 'Use the OBS engine (test)', type: 'checkbox', checked: engineOn(), click: (item) => setEngine(item.checked) },
+      ] : []),
     ] },
   ];
   return Menu.buildFromTemplate(template);
@@ -557,7 +576,7 @@ if (!app.requestSingleInstanceLock()) {
     if (win) {
       if (win.isMinimized()) win.restore();
       win.focus();
-    }
+    } else if (app.isReady()) createWindow(); // the main window was closed but the app was still there
   });
   app.whenReady().then(start).catch((e) => { console.error('Multistream failed to start:', e && e.stack || e); dialog.showErrorBox('Multistream cannot start', require('./public/plain').plain(String(e && e.message || e))); app.quit(); });
 }
