@@ -1316,7 +1316,8 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
 <div class="g2"><h3>Theme</h3><div class="seg2" id="themes"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button><button type="button" data-v="system">Match computer</button></div></div>
 <div class="g2"><h3>Colour</h3><div class="sws2" id="sws"></div></div></section><section class="pane" data-pane="stream" role="tabpanel" aria-label="Stream"><div class="s2h"><h2>Stream</h2></div><div class="g2 old2">
           <div class="grp"><h4>Private test</h4>
-            <div class="srow"><p class="lb">Private test<small>Only you can see the live on YouTube and Facebook. Turn it off for real services.</small></p>
+            <p>On: only you can see the live on YouTube and Facebook. Turn it off for real services: then everyone can watch.</p>
+            <div class="srow"><p class="lb">Private test</p>
               <div class="ctl"><label class="sw"><input type="checkbox" id="setPt" aria-label="Private test"><span></span></label></div></div>
           </div>
         </div><div class="g2 old2">
@@ -1975,11 +1976,11 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const yt = s.youtube || {}, fbs = s.facebook || {};
     const keyOf = (re) => s.destinations.find((d) => re.test(d.name) && !d.fbPage);
     if (yt.connected) { const d = keyOf(/youtube/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'youtube', c: 'yt', name: names.youtube || 'YouTube', on: apiOn('youtube'), dest: d, session: Boolean(s.session && s.session.youtube), sub: yt.channelTitle || '', link: (s.session && s.session.ytLink) || '' }); }
-    if (fbs.hasToken && fbs.pageId) { const d = keyOf(/facebook/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'facebook', c: 'fb', name: fbs.pageName || 'Facebook', on: apiOn('facebook'), dest: d, session: Boolean(s.session && s.session.facebook), sub: 'Facebook Page', link: (s.session && s.session.fbLink) || '' }); }
+    if (fbs.hasToken && fbs.pageId) { const d = keyOf(/facebook/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'facebook', c: 'fb', name: fbs.pageName || 'Facebook', on: apiOn('facebook'), dest: d, session: Boolean(s.session && s.session.facebook), sub: 'Facebook', link: (s.session && s.session.fbLink) || '' }); }
     // every extra Facebook Page is its own channel (like Restream): its own switch and its own state
     if (fbs.hasToken && fbs.pageId) (fbs.also || []).forEach((p) => {
       const d = s.destinations.find((x) => x.fbPage === p.pageId);
-      out.push({ kind: 'api', site: 'facebook', page: p.pageId, c: 'fb', name: p.pageName || 'Facebook Page', on: p.on !== false && apiOn('facebook'), dest: d, session: Boolean(s.session && (s.session.fbAlso || []).includes(p.pageId)), sub: 'Facebook Page', link: ((s.session && s.session.fbLinks) || {})[p.pageId] || '', title: p.title || '', description: p.description || '' });
+      out.push({ kind: 'api', site: 'facebook', page: p.pageId, c: 'fb', name: p.pageName || 'Facebook Page', on: p.on !== false && apiOn('facebook'), dest: d, session: Boolean(s.session && (s.session.fbAlso || []).includes(p.pageId)), sub: 'Facebook', link: ((s.session && s.session.fbLinks) || {})[p.pageId] || '', title: p.title || '', description: p.description || '' });
     });
     s.destinations.forEach((d) => { if (d.fbPage) hid.add(d.id); });
     s.destinations.forEach((d) => { if (!hid.has(d.id)) out.push({ kind: 'key', c: platform(d.name).c, name: d.name, on: d.enabled, dest: d }); });
