@@ -821,6 +821,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .fbl .pg b { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; } .fbl .pg small { color:var(--muted); font-size:12.5px; }
   .fbcd { display:flex; align-items:center; gap:12px; flex-wrap:wrap; } .fbcd output { font:700 26px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.12em; padding:10px 14px; border-radius:12px; background:var(--field); }
   details.adv2 { margin-top:6px; } details.adv2 > summary { cursor:pointer; color:var(--muted); font-size:13px; padding:8px 0; } details.adv2[open] > summary { margin-bottom:8px; }
+  #sdTabs button.own::after { content:" ●"; font-size:9px; vertical-align:2px; color:var(--blue); }
   .pf-box { padding:20px; border-radius:20px; background:rgba(255,255,255,.05); display:flex; flex-direction:column; gap:14px; } .pf-box > b { font-size:15px; }
   .pf-two { display:grid; grid-template-columns:1fr 1fr; gap:16px; } .pf-two > div { padding:18px; border-radius:16px; border:1px solid var(--gl-line); display:flex; flex-direction:column; gap:10px; } .pf-two > div.on { border:1.5px solid var(--blue); }
   .mdl label { display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:var(--muted); }
@@ -1956,19 +1957,28 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   const allT = () => (tab === 'all' ? { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() } : titles.all || { t: '', d: '' });
   function titleFor(site) { const a = allT(), o = site === 'all' ? null : tab === site ? { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() } : titles[site]; return { title: (o && o.t) || a.t, description: (o && o.d) || a.d }; }
   function setTab(t) {
-    titles[tab] = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() };
+    if (tab === 'all' || $('#glTitle').value.trim() || $('#glDesc').value.trim()) titles[tab] = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() }; else delete titles[tab];
     tab = t; const v = titles[t] || { t: '', d: '' };
     $('#glTitle').value = v.t || ''; $('#glDesc').value = v.d || '';
-    $('#glTitle').placeholder = t === 'all' ? 'Title (the date is used if empty)' : 'Same as All channels: ' + ((titles.all && titles.all.t) || 'the date');
-    $('#glDesc').placeholder = t === 'all' ? 'What is this stream about?' : 'Same as All channels';
+    $('#glTitle').placeholder = t === 'all' ? 'Title (the date is used if empty)' : 'Uses All channels until you type here';
+    $('#glDesc').placeholder = t === 'all' ? 'What is this stream about?' : 'Uses All channels until you type here';
     $('#glTitleL').textContent = t === 'all' ? 'Title' : 'Title on ' + (t === 'yt' ? 'YouTube' : 'Facebook');
     document.querySelectorAll('#sdTabs button').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
-    saveTitles(); paintTitle();
+    saveTitles(); paintTitle(); paintTabs();
   }
   document.querySelectorAll('#sdTabs button').forEach((b) => { b.onclick = () => setTab(b.dataset.t); });
   setTimeout(() => { titles.all = titles.all || { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() }; }, 1600);
   const paintTitle = () => { const t = titleFor('all').title; $('#glpTitle').textContent = t || 'Live ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); $('#thBig').textContent = t || 'Your stream'; };
-  $('#glTitle').addEventListener('input', () => { if (tab === 'all') titles.all = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() }; else titles[tab] = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() }; saveTitles(); paintTitle(); });
+  // All channels and each site are kept apart: typing in YouTube or Facebook changes only that site.
+  // Typing in All channels changes every site, so any site's own title and description are cleared then.
+  const typed = () => {
+    const v = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() };
+    if (tab === 'all') { titles.all = v; delete titles.yt; delete titles.fb; } else titles[tab] = v;
+    saveTitles(); paintTitle(); paintTabs();
+  };
+  // a dot on a site's tab when it has its own title or description
+  const paintTabs = () => document.querySelectorAll('#sdTabs button').forEach((b) => { const o = titles[b.dataset.t]; b.classList.toggle('own', b.dataset.t !== 'all' && Boolean(o && (o.t || o.d))); b.title = b.dataset.t === 'all' ? 'Changes every channel' : (o && (o.t || o.d) ? 'Has its own title or description' : 'Uses All channels until you type here'); });
+  $('#glTitle').addEventListener('input', typed); $('#glDesc').addEventListener('input', typed); setTimeout(paintTabs, 1700);
 
   // ---------- the channels: one list (sign-in channels and stream-key channels together) ----------
   function channels(s) {
@@ -2320,7 +2330,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     } else if (ch.kind === 'api') {
       const fbk = ch.site === 'facebook';
       // Facebook: the name is the Page's own name (it cannot be renamed here); the box is for the title and description
-      f.innerHTML = (fbk ? '<label>Title on Facebook<input type="text" class="e5" maxlength="250" placeholder="Same as All channels"></label><label>Description on Facebook<textarea class="e6" rows="3" maxlength="5000" placeholder="Same as All channels"></textarea></label>' : '<label>Name shown in Multistream<input type="text" class="e1"></label>') + '<p class="note">Who can watch follows Private test (Settings → Stream): on, only you see it; off, everyone does.</p><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
+      f.innerHTML = (fbk ? '<label>Title on Facebook<input type="text" class="e5" maxlength="250" placeholder="Uses All channels until you type here"></label><label>Description on Facebook<textarea class="e6" rows="3" maxlength="5000" placeholder="Uses All channels until you type here"></textarea></label>' : '<label>Name shown in Multistream<input type="text" class="e1"></label>') + '<p class="note">Who can watch follows Private test (Settings → Stream): on, only you see it; off, everyone does.</p><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
       if (!fbk) f.querySelector('.e1').value = ch.name;
       if (fbk) { if (tab === 'fb') titles.fb = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() }; f.querySelector('.e5').value = (titles.fb && titles.fb.t) || ''; f.querySelector('.e6').value = (titles.fb && titles.fb.d) || ''; }
       f.querySelector('.sa').onclick = () => { close(); if (fbk) addChannel('fb'); else openSettings(ch.site); };
@@ -2331,7 +2341,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
         const r = await api('/api/facebook/main', 'DELETE'); if (r && r.error) { alert(r.error); return; } close(); refresh();
       };
       d.querySelector('.o').onclick = () => {
-        if (fbk) { titles.fb = { t: f.querySelector('.e5').value.trim(), d: f.querySelector('.e6').value.trim() }; saveTitles(); if (tab === 'fb') { $('#glTitle').value = titles.fb.t; $('#glDesc').value = titles.fb.d; } delete names.facebook; }
+        if (fbk) { titles.fb = { t: f.querySelector('.e5').value.trim(), d: f.querySelector('.e6').value.trim() }; if (!titles.fb.t && !titles.fb.d) delete titles.fb; saveTitles(); paintTabs(); if (tab === 'fb') { $('#glTitle').value = titles.fb.t; $('#glDesc').value = titles.fb.d; } delete names.facebook; }
         else { const n = f.querySelector('.e1').value.trim(); if (n && n !== 'YouTube') names[ch.site] = n; else delete names[ch.site]; }
         try { localStorage.setItem('ms_names', JSON.stringify(names)); } catch {} close(); refresh(); };
     } else {
