@@ -1,0 +1,22 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const o = process.argv[2];
+  const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+  p.on('dialog', d => { console.log('dialog:', d.message()); d.accept(); });
+  p.on('pageerror', e => console.log('pageerror:', e.message));
+  await p.goto('http://127.0.0.1:3917/'); await p.waitForTimeout(2500);
+  await p.evaluate(() => { document.getElementById('welcome').classList.remove('open'); document.documentElement.classList.remove('wl-first'); });
+  await p.screenshot({ path: o + '/golive.png' });
+  await p.click('#addBtn'); await p.waitForTimeout(300);
+  await p.locator('.mdl .pf-grid button', { hasText: 'Facebook' }).click(); await p.waitForTimeout(800);
+  await p.locator('.mdl > div').screenshot({ path: o + '/add.png' });
+  await p.locator('.mdl .pg', { hasText: 'FCC Test' }).locator('button').click(); await p.waitForTimeout(1200);
+  console.log(await p.evaluate(() => fetch('/api/facebook/pages').then(r => r.json()).then(JSON.stringify)));
+  await p.keyboard.press('Escape'); await p.evaluate(() => document.querySelectorAll('.mdl').forEach(x => x.remove()));
+  await p.waitForTimeout(2500);
+  await p.screenshot({ path: o + '/golive2.png' });
+  const fbRow = p.locator('.cc', { hasText: 'Favourite Child Church HQ' }).first();
+  await fbRow.locator('.ed').click(); await p.waitForTimeout(400);
+  await p.locator('.mdl > div').screenshot({ path: o + '/edit.png' });
+  await b.close();
+})().catch(e => { console.log('ERR', e.message); process.exit(1); });
