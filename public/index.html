@@ -949,8 +949,8 @@
   #yt-status, #yt-msg, #fbStatus, #fbCode, #fb-saved, #fb-msg, #fb-appmsg, #fbCodeLeft { font-size:14px; line-height:1.5; color:var(--text); }
   #yt-status.bad, #yt-msg.bad, #fbCode.bad, #fb-msg.bad, #fb-appmsg.bad { color:var(--red); }
   .note.conn-ok { display:inline-block; font-weight:600; color:var(--green) !important; background:color-mix(in srgb, var(--green) 14%, transparent); padding:6px 12px; border-radius:999px; margin:0 0 8px; }
-  /* "Open on Facebook" on a Facebook channel while live */
-  .cc .fblink { margin-top:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--blue); font-size:13px; font-weight:600; cursor:pointer; align-self:flex-start; }
+  /* "Open on Facebook" / "Open on YouTube" on a channel while live: always one line */
+  .cc .fblink { margin-top:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--blue); font-size:13px; font-weight:600; cursor:pointer; align-self:flex-start; white-space:nowrap; max-width:100%; }
   .cc .fblink:hover { background:var(--field); }
   /* Facebook sign-in: the code and the Page list, in the app's style */
   .fbbtns { display:flex; gap:8px; flex-wrap:wrap; }
@@ -1950,7 +1950,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const out = [], hid = new Set();
     const yt = s.youtube || {}, fbs = s.facebook || {};
     const keyOf = (re) => s.destinations.find((d) => re.test(d.name) && !d.fbPage);
-    if (yt.connected) { const d = keyOf(/youtube/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'youtube', c: 'yt', name: names.youtube || 'YouTube', on: apiOn('youtube'), dest: d, session: Boolean(s.session && s.session.youtube), sub: yt.channelTitle || '' }); }
+    if (yt.connected) { const d = keyOf(/youtube/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'youtube', c: 'yt', name: names.youtube || 'YouTube', on: apiOn('youtube'), dest: d, session: Boolean(s.session && s.session.youtube), sub: yt.channelTitle || '', link: (s.session && s.session.ytLink) || '' }); }
     if (fbs.hasToken && fbs.pageId) { const d = keyOf(/facebook/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'facebook', c: 'fb', name: names.facebook || 'Facebook', on: apiOn('facebook'), dest: d, session: Boolean(s.session && s.session.facebook), sub: fbs.pageName || '', link: (s.session && s.session.fbLink) || '' }); }
     // every extra Facebook Page is its own channel (like Restream): its own switch and its own state
     if (fbs.hasToken && fbs.pageId) (fbs.also || []).forEach((p) => {
@@ -1982,11 +1982,14 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     // sign-in channels show which account or Page they go to (like Restream); the title is on the preview
     else sub.textContent = ch.kind === 'api' ? (ch.sub || titleFor(ch.c).title) : (live ? '' : ch.dest.hasKey ? '' : 'Add its stream key');
     if (!sub.textContent) sub.remove();
-    // while live on Facebook: a link straight to the live video, to check it arrived
-    if (!small && ch.session && ch.site === 'facebook') {
+    // while live on Facebook or YouTube: a link straight to the live video, to check it arrived
+    if (!small && ch.session && (ch.site === 'facebook' || ch.site === 'youtube')) {
+      const fbk = ch.site === 'facebook';
+      const to = fbk ? (ch.link || 'https://www.facebook.com/live/producer') : (ch.link || 'https://studio.youtube.com/channel/UC/livestreaming');
       const a = document.createElement('button'); a.type = 'button'; a.className = 'fblink';
-      a.textContent = 'Open on Facebook \u2197'; a.title = ch.link ? 'Opens the live video in your browser' : 'Opens Live Producer, where every live video on your Pages is listed';
-      a.onclick = (e) => { e.stopPropagation(); window.open(ch.link || 'https://www.facebook.com/live/producer', '_blank'); };
+      a.textContent = (fbk ? 'Open on Facebook' : 'Open on YouTube') + '\u00a0\u2197';
+      a.title = ch.link ? 'Opens the live video in your browser' : (fbk ? 'Opens Live Producer, where every live video on your Pages is listed' : 'Opens YouTube Studio, where your live videos are listed');
+      a.onclick = (e) => { e.stopPropagation(); window.open(to, '_blank'); };
       r.querySelector('.cmn').appendChild(a);
     }
     const tg = r.querySelector('.tg2'); tg.classList.toggle('on', ch.on); tg.setAttribute('aria-checked', String(ch.on)); tg.setAttribute('aria-label', ch.name + (ch.on ? ' on' : ' off'));

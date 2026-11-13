@@ -498,6 +498,7 @@ app.get('/api/state', (req, res) => {
     recording: recView(),
     session: { youtube: Boolean(session.youtube), facebook: Boolean(session.facebook), fbAlso: session.fbAlso.map((a) => a.pageId),
       // links to the live videos on Facebook (main Page, then each extra Page by its id)
+      ytLink: session.youtube ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(session.youtube) : '',
       fbLink: session.facebook ? session.fbLink || '' : '', fbLinks: Object.fromEntries(session.fbAlso.map((a) => [a.pageId, a.link || ''])) },
   });
 });
