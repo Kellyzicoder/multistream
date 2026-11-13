@@ -1,7 +1,13 @@
 // Desktop app (Windows + Mac). Version 3: the windows talk to the app directly, with no localhost.
 // Pages load from app://multistream/... and every request is answered inside the app (server.js handle()).
 
-const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet, screen, Menu } = require('electron');
+const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet, screen, Menu, powerSaveBlocker } = require('electron');
+// During a service this window is usually behind OBS, Zoom or the Presenter. Without these, Windows and Chromium treat a covered or
+// minimised window as hidden and slow its drawing and timers, which shows as dropped video on the stream, the recording and the virtual camera.
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
 const path = require('path');
 const fs = require('fs');
 // The app was called "Multistream 3". Its saved settings (keys, scenes, sign-ins) are in a folder with that name:
@@ -571,6 +577,10 @@ async function start() {
     process.env.FFMPEG_PATH = ffmpegPath();
     process.env.MULTISTREAM_RECORDINGS = process.env.MULTISTREAM_RECORDINGS || path.join(app.getPath('videos'), 'Multistream');
     relay = require('./server');
+    // while streaming or recording, the computer must not go to sleep by itself (the screen may still turn off)
+    { let keep = null; const t = setInterval(() => { let busy = false; try { busy = relay.busy(); } catch {}
+        if (busy && keep === null) keep = powerSaveBlocker.start('prevent-app-suspension');
+        else if (!busy && keep !== null) { try { powerSaveBlocker.stop(keep); } catch {} keep = null; } }, 5000); if (t.unref) t.unref(); }
     relay.setOpenFolder((p) => shell.openPath(p));
     if (relay.setShowFile) relay.setShowFile((p) => shell.showItemInFolder(p));
     if (relay.onCollections) relay.onCollections(() => setMenu()); // the menu shows the scene collections

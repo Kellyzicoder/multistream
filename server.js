@@ -76,6 +76,10 @@ const REC_DIR = process.env.MULTISTREAM_RECORDINGS || path.join(DATA_DIR, 'recor
 const REC_FILE = path.join(DATA_DIR, 'recording.json');
 let recCfg = { auto: false };
 try { recCfg = { auto: Boolean(JSON.parse(fs.readFileSync(REC_FILE, 'utf8')).auto) }; } catch {}
+// The small ffmpeg programs that only pass video on (no encoding) get a little more priority, so a busy computer
+// (OBS, Zoom, the Presenter) does not hold the stream back. They use very little processor, so nothing else is slowed.
+function liftPriority(p) { try { if (p && p.pid) os.setPriority(p.pid, os.constants.priority.PRIORITY_ABOVE_NORMAL); } catch {} }
+let recActive = 0; // Studio recordings being written now
 const recorder = createRecorder({ ffmpeg: FFMPEG, input: HUB_IN, dir: REC_DIR, feed: (stdin) => hub.subscribe(stdin) });
 let openFolderHook = null;
 let showFileHook = null; // shows one file in the folder (Explorer or Finder)
@@ -274,6 +278,7 @@ function startDestination(d) {
     targetOf(d),
   ];
   const p = spawn(FFMPEG, args, { windowsHide: true });
+  if (!cv.capped) liftPriority(p);
   const startedAt = Date.now();
   procs.set(d.id, p);
   p.stdin.on('error', () => {});
@@ -1709,6 +1714,8 @@ studioRecWss.on('connection', (w, req) => {
   const copy = q.get('copy') === '1'; // the browser already made H.264 at the right size (encode once)
   const args = outargs.recordArgs(studioEncoder.key, { h: q.get('h'), mbit: q.get('mbit'), fps: q.get('fps'), shape: q.get('shape') }, path.join(REC_DIR, name), copy);
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
+  if (copy) liftPriority(ff);
+  recActive++; ff.once('exit', () => { recActive = Math.max(0, recActive - 1); });
   let last = '';
   ff.stderr.on('data', (c) => { last = String(c).trim().split('\n').pop().slice(0, 200); });
   ff.stdin.on('error', () => {});
@@ -1747,6 +1754,7 @@ studioWss.on('connection', (w, req) => {
   studioOut = out; studioInfo.out = outargs.label(out) + (copy ? ' (fast)' : '');
   const args = outargs.ingestArgs(studioEncoder.key, out, copy);
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+  if (copy) liftPriority(ff);
   studioFf = ff; studioInfo.sending = true; studioInfo.error = '';
   const unfeed = feedHub(ff.stdout);
   ff.on('close', unfeed);
@@ -1893,7 +1901,9 @@ if (STANDALONE) {
 }
 
 // used by the desktop app (main.js)
-module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => { openFolderHook = fn; }, setShowFile: (fn) => { showFileHook = fn; },
+module.exports = { stopAll, shutdown, handle, openPipe,
+  // streaming or recording now (the computer is kept awake)
+  busy: () => Boolean(obsLive || studioFf || recActive || recorder.state().on), setOpenFolder: (fn) => { openFolderHook = fn; }, setShowFile: (fn) => { showFileHook = fn; },
   // scene collections for the menu bar
   collections: () => ({ current: coll.current, names: collNames() }), onCollections: (fn) => { collHook = fn; },
   // the Studio's scenes as saved, for the OBS engine (rev changes whenever they change)
