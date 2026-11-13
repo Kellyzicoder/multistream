@@ -2464,7 +2464,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const moved = pct - p.pct0, secs = (now - p.t0) / 1000;
     if (moved < 2 || secs < 5 || pct >= 100) return '';
     const left = (100 - pct) * (secs / moved);
-    return ' · about ' + (left < 60 ? 'under a minute' : left < 3600 ? Math.round(left / 60) + ' min' : Math.floor(left / 3600) + ' h ' + Math.round((left % 3600) / 60) + ' min') + ' left';
+    return ' · ' + (left < 60 ? 'under a minute' : 'about ' + (left < 3600 ? Math.round(left / 60) + ' min' : Math.floor(left / 3600) + ' h ' + Math.round((left % 3600) / 60) + ' min')) + ' left';
   }
   const act = (a, name) => api('/api/recordings/' + a, 'POST', { name }).then((r) => { if (r && r.error) alert(r.error); tick(); });
   function draw() {
