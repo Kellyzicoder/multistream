@@ -831,6 +831,7 @@
   .mv2 button.mvt { cursor:pointer; } .mv2 button.mvt:hover { border-color:rgba(255,255,255,.3); }
   .mv2 .mvt.prog, .mv2 .mvt.on { border-color:#ff4d5a; }
   .mv2 .mvt.empty { background:rgba(10,14,31,.5); border-style:dashed; box-shadow:none; }
+  .mv2 .mvt canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
   .mv2 .mvt img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; } .mv2 .mvt img:not([src]) { visibility:hidden; }
   .mv2 .mvt .lb { position:absolute; left:8px; right:8px; bottom:8px; padding:7px 11px; border-radius:10px; font-size:14px; font-weight:600; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.14); display:flex; align-items:center; gap:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .mv2 .mvt .lb small { margin-left:auto; color:#cdd3e4; font-weight:500; font-size:12px; }
@@ -1193,7 +1194,7 @@
   <div class="an-msg" id="anNone" hidden></div>
 </section>
 <div class="cr mv2" id="crView" hidden>
-  <div class="mv-top"><div class="mvt prog" id="crProgBox"><img id="crProg" alt="Program, what is on air" draggable="false"><span class="mv-tag" id="crLive" hidden>● LIVE</span><div class="lb"><span id="crProgL">Program</span><small id="crTime"></small></div></div></div>
+  <div class="mv-top"><div class="mvt prog" id="crProgBox"><img id="crProg" alt="Program, what is on air" draggable="false"><canvas id="crProgC" aria-hidden="true" hidden></canvas><span class="mv-tag" id="crLive" hidden>● LIVE</span><div class="lb"><span id="crProgL">Program</span><small id="crTime"></small></div></div></div>
   <div class="mv-grid" id="crTiles"></div>
 </div>
 
@@ -2687,6 +2688,40 @@ async function pollCr() {
   crBusy = false;
 }
 setInterval(pollCr, 200); // 5 pictures a second
+// The big Program picture is copied straight from the Studio's own picture, 30 times a second, so it moves
+// smoothly (no photos in between). The Studio is inside the main window: this page is that window, or a
+// Multiview window opened from it. If the Studio cannot be reached, the photos above are shown instead.
+(function () {
+  const out = $('#crProgC'); if (!out) return;
+  const g = out.getContext('2d');
+  const studioCanvas = () => {
+    for (const w of [window, window.opener]) {
+      try { const f = w && w.document.querySelector('#studioView iframe'); const c = f && f.contentWindow.document.getElementById('cv'); if (c && c.width > 16) return c; } catch {}
+    }
+    return null;
+  };
+  let src = null, lookAt = 0, shown = false, last = 0;
+  const show = (v) => { if (v === shown) return; shown = v; out.hidden = !v; };
+  const loop = (t) => {
+    requestAnimationFrame(loop);
+    if (page !== 'cr' || document.hidden) return;
+    if (t - last < 30) return; last = t; // 30 times a second is enough
+    if ((!src || !src.isConnected) && t - lookAt > 1000) { lookAt = t; src = studioCanvas(); }
+    if (!src || !src.isConnected) return show(false);
+    try {
+      const r = out.getBoundingClientRect(), k = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.min(1920, Math.round(r.width * k)), h = Math.min(1080, Math.round(r.height * k));
+      if (w < 8 || h < 8) return;
+      if (out.width !== w || out.height !== h) { out.width = w; out.height = h; }
+      // fill the box like the photo does (cover)
+      const sc = Math.max(w / src.width, h / src.height), dw = src.width * sc, dh = src.height * sc;
+      g.imageSmoothingQuality = 'high';
+      g.drawImage(src, (w - dw) / 2, (h - dh) / 2, dw, dh);
+      show(true);
+    } catch { src = null; show(false); }
+  };
+  requestAnimationFrame(loop);
+})();
 if (location.hash === '#control-room') setTimeout(() => showPage('cr'), 0);
 window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' ? 'cr' : XPAGES[location.hash.slice(1)] ? location.hash.slice(1) : 'dash'));
 if (XPAGES[location.hash.slice(1)]) setTimeout(() => showPage(location.hash.slice(1)), 0);
