@@ -816,6 +816,11 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .pf-grid button { display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:16px; border:1.5px solid transparent; background:rgba(255,255,255,.06); color:var(--text); text-align:left; }
   .pf-grid button.on { border-color:var(--blue); background:color-mix(in srgb, var(--blue) 12%, transparent); } .pf-grid b { display:block; font-size:15px; } .pf-grid small { display:block; color:var(--muted); font-size:12.5px; margin-top:2px; }
   .pf-grid .tile { width:38px; height:38px; border-radius:11px; }
+  /* Add channel → Facebook: the Pages, each with Add, and the sign-in code */
+  .fbl { display:flex; flex-direction:column; gap:8px; } .fbl .pg { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:14px; border:1px solid var(--gl-line); }
+  .fbl .pg b { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; } .fbl .pg small { color:var(--muted); font-size:12.5px; }
+  .fbcd { display:flex; align-items:center; gap:12px; flex-wrap:wrap; } .fbcd output { font:700 26px/1 ui-monospace,Menlo,Consolas,monospace; letter-spacing:.12em; padding:10px 14px; border-radius:12px; background:var(--field); }
+  details.adv2 { margin-top:6px; } details.adv2 > summary { cursor:pointer; color:var(--muted); font-size:13px; padding:8px 0; } details.adv2[open] > summary { margin-bottom:8px; }
   .pf-box { padding:20px; border-radius:20px; background:rgba(255,255,255,.05); display:flex; flex-direction:column; gap:14px; } .pf-box > b { font-size:15px; }
   .pf-two { display:grid; grid-template-columns:1fr 1fr; gap:16px; } .pf-two > div { padding:18px; border-radius:16px; border:1px solid var(--gl-line); display:flex; flex-direction:column; gap:10px; } .pf-two > div.on { border:1.5px solid var(--blue); }
   .mdl label { display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:var(--muted); }
@@ -1326,7 +1331,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
           </div>
         </div><div class="g2 old2">
           <div class="grp"><h4>Sign in with Facebook</h4>
-            <p>Sign in, then pick the Page to stream to. If Facebook shows an error later, just sign in again.</p>
+            <p>Add and remove Pages on Go Live with <b>Add channel → Facebook</b>. Sign in here only if Facebook shows an error.</p>
             <div class="srow"><p class="lb">Facebook</p>
               <div class="ctl"><p class="note" id="fbStatus" hidden></p><div class="fbbtns"><button class="b2 pri" id="fbSignIn" type="button">Sign in with Facebook</button><button class="b2" id="fbChange" type="button" hidden>Change Pages</button></div><p class="note" id="fbCode" hidden></p></div></div>
             <!-- the code to type on Facebook: big, with Copy and Open buttons and the steps -->
@@ -1346,6 +1351,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
                 <p class="note">Only the Pages you ticked on Facebook show here. To add one, press Sign in again and on Facebook choose <b>Edit access</b> (or <b>Choose Pages</b>) and tick it.</p>
                 <button class="b2 pri" id="fbUse" type="button">Save Pages</button></div></div>
           </div>
+          <details class="adv2"><summary>Advanced: Meta app and Page token</summary>
           <div class="grp"><h4>Meta app (set once)</h4>
             <p>On developers.facebook.com, open your app. The App ID is under App settings → Basic. The client token is under App settings → Advanced. Then turn on <b>Login from devices</b> under Facebook Login → Settings, and press Save changes.</p>
             <div class="srow"><label class="lb" for="fb-appid">App ID</label>
@@ -1362,6 +1368,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
             <div class="srow"><p class="lb">Status</p>
               <div class="ctl"><p class="note" id="fb-saved"></p><p class="note" id="fb-msg"></p></div></div>
           </div>
+          </details>
         </div></section><section class="pane" data-pane="recording" role="tabpanel" aria-label="Recording"><div class="s2h"><h2>Recording</h2></div><div class="g2"><div class="c2">
   <div class="r2"><span class="l">Quality</span><select class="i3" data-mirror="#recQ"></select></div>
   <div class="r2"><span class="l">Record automatically when the stream starts</span><button type="button" class="tg2" data-mirror="#recAuto2" aria-label="Record automatically"></button></div>
@@ -2126,7 +2133,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   // ---------- Start / Stop streaming ----------
   async function goLiveOn(site) {
     const t = titleFor(site === 'youtube' ? 'yt' : 'fb');
-    const r = await api('/api/' + site + '/live', 'POST', { test: $('#fbTest').checked, privacy: who[site] || 'public', title: t.title, description: t.description });
+    const r = await api('/api/' + site + '/live', 'POST', { test: $('#fbTest').checked, privacy: 'public', title: t.title, description: t.description });
     if (r && r.error) alert((site === 'youtube' ? 'YouTube' : 'Facebook') + ': ' + r.error);
     else if (r && r.thumbnailError) alert('You are live on YouTube, but YouTube did not take the thumbnail: ' + r.thumbnailError);
   }
@@ -2175,6 +2182,61 @@ window.askText = (title, value, hint) => new Promise((ok) => {
 
   // ---------- Add a channel ----------
   const KEYSRV = { yt: 'rtmp://a.rtmp.youtube.com/live2', fb: 'rtmps://live-api-s.facebook.com:443/rtmp/', tw: 'rtmp://live.twitch.tv/app', ig: '', tt: '', other: '' };
+  // Add channel → Facebook (like Restream): every Page you shared with Facebook, each with Add.
+  // Not signed in yet (or a Page is missing): Sign in with Facebook right here, with the code to type.
+  function fbAddBox(close) {
+    const f = document.createElement('div'); f.className = 'fbl';
+    const msg = (t, bad) => { let p = f.querySelector('.note'); if (!p) { p = document.createElement('p'); p.className = 'note'; f.appendChild(p); } p.textContent = t; p.style.color = bad ? '#ff8a90' : ''; };
+    let pollT = 0, leftT = 0;
+    const stop = () => { clearTimeout(pollT); clearInterval(leftT); };
+    const list = async () => {
+      stop(); f.textContent = '';
+      const r = await api('/api/facebook/pages');
+      if (r && r.error) return msg(r.error, true);
+      (r.pages || []).forEach((p) => {
+        const row = document.createElement('div'); row.className = 'pg'; row.innerHTML = tileHTML('fb') + '<b></b>';
+        row.querySelector('b').textContent = p.name || 'Facebook Page';
+        if (p.added) { const sm = document.createElement('small'); sm.textContent = 'Added \u2713'; row.appendChild(sm); }
+        else {
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'btn pri'; b.textContent = 'Add';
+          b.onclick = async () => { b.disabled = true; const a = await api('/api/facebook/pages/' + p.id, 'POST'); if (a && a.error) { b.disabled = false; return msg(a.error, true); } refresh(); list(); };
+          row.appendChild(b);
+        }
+        f.appendChild(row);
+      });
+      const sr = document.createElement('div'); sr.className = 'row';
+      sr.innerHTML = '<span class="note" style="flex:1"></span><button type="button" class="btn si"></button>';
+      sr.querySelector('.note').textContent = (r.pages || []).length ? 'Page missing? Sign in again and tick it on Facebook.' : 'Sign in to see your Pages.';
+      sr.querySelector('.si').textContent = (r.pages || []).length ? 'Sign in again' : 'Sign in with Facebook';
+      if (!(r.pages || []).length) sr.querySelector('.si').classList.add('pri');
+      sr.querySelector('.si').onclick = signIn; f.appendChild(sr);
+    };
+    const signIn = async () => {
+      stop(); f.textContent = ''; msg('Asking Facebook for a code...');
+      const r = await api('/api/facebook/login', 'POST', {});
+      if (r && r.error) { msg(r.error + ' (The Meta app is set once in Settings → Stream.)', true); return; }
+      f.textContent = '';
+      const cd = document.createElement('div'); cd.className = 'fbcd';
+      cd.innerHTML = '<output></output><button type="button" class="btn cp">Copy</button><button type="button" class="btn pri op">Open facebook.com/device</button>';
+      cd.querySelector('output').textContent = r.userCode;
+      cd.querySelector('.cp').onclick = async () => { const ok = await copyText(r.userCode); cd.querySelector('.cp').textContent = ok ? 'Copied \u2713' : 'Select it and copy'; };
+      cd.querySelector('.op').onclick = () => window.open(r.uri, '_blank');
+      f.appendChild(cd);
+      msg('Type this code on Facebook, tick every Page you stream to, and finish. This updates by itself.');
+      const until = Date.now() + (r.expires || 420) * 1000;
+      leftT = setInterval(() => { if (!f.isConnected) return stop(); if (Date.now() > until) { stop(); msg('That code ran out. Close this and try again.', true); } }, 1000);
+      const poll = async () => {
+        if (!f.isConnected) return stop();
+        const st2 = await api('/api/facebook/login');
+        if (st2.pending) { pollT = setTimeout(poll, (r.interval || 5) * 1000); return; }
+        if (st2.error) { stop(); msg(st2.error, true); return; }
+        if (st2.done) list();
+      };
+      pollT = setTimeout(poll, (r.interval || 5) * 1000);
+    };
+    list();
+    return f;
+  }
   function addChannel(pre) {
     let pick = pre || 'yt';
     const w = document.createElement('div'); w.className = 'mdl'; const d = document.createElement('div'); w.appendChild(d);
@@ -2200,6 +2262,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
         };
         return f;
       };
+      if (pick === 'fb') { box.appendChild(fbAddBox(close)); return; }
       if (pick === 'yt' || pick === 'fb') {
         const two = document.createElement('div'); two.className = 'pf-two';
         const a = document.createElement('div'); a.className = 'on'; a.innerHTML = '<b>Easy way: sign in</b> <button type="button" class="btn pri si" style="margin-left:6px"></button>';
@@ -2232,7 +2295,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     if (ch.page) {
       // an extra Facebook Page: its own title and description (empty = the same as the main Facebook), a link, remove
       d.querySelector('.who small').textContent = 'Facebook Page · ' + st2.t;
-      f.innerHTML = '<label>Title on this Page<input type="text" class="e1" maxlength="250" placeholder="Same as the main Facebook"></label><label>Description on this Page<textarea class="e2" rows="3" maxlength="5000" placeholder="Same as the main Facebook"></textarea></label><p class="note">Leave these empty to use the title and description from Stream details. Who can watch is the same as the main Facebook.</p><div class="signin"><span>On Facebook</span><span style="flex:1"></span><button type="button" class="btn of"></button></div>';
+      f.innerHTML = '<label>Title on this Page<input type="text" class="e1" maxlength="250" placeholder="Same as the main Facebook"></label><label>Description on this Page<textarea class="e2" rows="3" maxlength="5000" placeholder="Same as the main Facebook"></textarea></label><p class="note">Leave these empty to use the title and description from Stream details.</p><div class="signin"><span>On Facebook</span><span style="flex:1"></span><button type="button" class="btn of"></button></div>';
       f.querySelector('.e1').value = ch.title || ''; f.querySelector('.e2').value = ch.description || '';
       const of = f.querySelector('.of');
       of.textContent = ch.session ? 'Open the live video \u2197' : 'Open the Page \u2197';
@@ -2252,21 +2315,20 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     } else if (ch.kind === 'api') {
       const fbk = ch.site === 'facebook';
       // Facebook: the name is the Page's own name (it cannot be renamed here); the box is for the title and description
-      f.innerHTML = (fbk ? '<label>Title on Facebook<input type="text" class="e5" maxlength="250" placeholder="Same as All channels"></label><label>Description on Facebook<textarea class="e6" rows="3" maxlength="5000" placeholder="Same as All channels"></textarea></label><label>Page<select class="e4" disabled></select></label>' : '<label>Name shown in Multistream<input type="text" class="e1"></label>') + '<div><div style="font-size:12.5px;color:var(--muted);margin-bottom:6px">Who can watch</div><div class="seg3"></div></div><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
+      f.innerHTML = (fbk ? '<label>Title on Facebook<input type="text" class="e5" maxlength="250" placeholder="Same as All channels"></label><label>Description on Facebook<textarea class="e6" rows="3" maxlength="5000" placeholder="Same as All channels"></textarea></label>' : '<label>Name shown in Multistream<input type="text" class="e1"></label>') + '<p class="note">Who can watch follows Private test (Settings → Stream): on, only you see it; off, everyone does.</p><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
       if (!fbk) f.querySelector('.e1').value = ch.name;
       if (fbk) { if (tab === 'fb') titles.fb = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() }; f.querySelector('.e5').value = (titles.fb && titles.fb.t) || ''; f.querySelector('.e6').value = (titles.fb && titles.fb.d) || ''; }
-      if (fbk) { const o = new Option(ch.name || 'Your Page', ''); f.querySelector('.e4').add(o); f.querySelector('.e4').title = 'To change Pages, press Change Pages in Settings → Stream.'; }
-      let pick = who[ch.site] || 'public';
-      const opts = fbk ? [['public', 'Public'], ['self', 'Only me (test)']] : [['public', 'Public'], ['unlisted', 'Unlisted'], ['private', 'Private (test)']];
-      const sg = f.querySelector('.seg3');
-      const drawSeg = () => { sg.textContent = ''; opts.forEach(([v, t]) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.className = v === pick ? 'on' : ''; b.onclick = () => { pick = v; drawSeg(); }; sg.appendChild(b); }); };
-      drawSeg();
-      f.querySelector('.sa').onclick = () => { close(); openSettings(ch.site); };
-      d.querySelector('.rm').onclick = () => { if (confirm('Remove ' + ch.name + '? You can sign in again later.')) { prefs[ch.site] = false; savePrefs(); close(); openSettings(ch.site); refresh(); } };
+      f.querySelector('.sa').onclick = () => { close(); if (fbk) addChannel('fb'); else openSettings(ch.site); };
+      if (fbk) d.querySelector('.rm').textContent = 'Remove this Page';
+      d.querySelector('.rm').onclick = async () => {
+        if (!fbk) { if (confirm('Remove ' + ch.name + '? You can sign in again later.')) { prefs[ch.site] = false; savePrefs(); close(); openSettings(ch.site); refresh(); } return; }
+        if (!confirm('Remove ' + ch.name + '? You can add it again with Add channel.')) return;
+        const r = await api('/api/facebook/main', 'DELETE'); if (r && r.error) { alert(r.error); return; } close(); refresh();
+      };
       d.querySelector('.o').onclick = () => {
         if (fbk) { titles.fb = { t: f.querySelector('.e5').value.trim(), d: f.querySelector('.e6').value.trim() }; saveTitles(); if (tab === 'fb') { $('#glTitle').value = titles.fb.t; $('#glDesc').value = titles.fb.d; } delete names.facebook; }
         else { const n = f.querySelector('.e1').value.trim(); if (n && n !== 'YouTube') names[ch.site] = n; else delete names[ch.site]; }
-        who[ch.site] = pick; try { localStorage.setItem('ms_names', JSON.stringify(names)); localStorage.setItem('ms_who', JSON.stringify(who)); } catch {} close(); refresh(); };
+        try { localStorage.setItem('ms_names', JSON.stringify(names)); } catch {} close(); refresh(); };
     } else {
       const x = ch.dest;
       f.innerHTML = '<label>Name shown in Multistream<input type="text" class="e1"></label><label>Server<input type="text" class="e2" placeholder="rtmps://..."></label><label>Stream key<input type="password" class="e3" autocomplete="off"></label><p class="note"></p>';

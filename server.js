@@ -916,9 +916,12 @@ try {
   fb.token = openKept('fb.token', fb.token);
   try { fb.also = typeof fb.also === 'string' && fb.also ? JSON.parse(openKept('fb.also', fb.also) || '[]') : []; } catch { fb.also = []; }
   if (!Array.isArray(fb.also)) fb.also = [];
+  // every Page shared at the last sign-in (with its token), so Go Live can add one any time without signing in again
+  try { fb.known = typeof fb.known === 'string' && fb.known ? JSON.parse(openKept('fb.known', fb.known) || '[]') : []; } catch { fb.known = []; }
+  if (!Array.isArray(fb.known)) fb.known = [];
 } catch {}
 function saveFb() {
-  fs.writeFileSync(FB_FILE, JSON.stringify({ ...fb, token: sealKept('fb.token', fb.token), also: sealKept('fb.also', JSON.stringify(fb.also || [])) }, null, 2), { mode: 0o600 });
+  fs.writeFileSync(FB_FILE, JSON.stringify({ ...fb, token: sealKept('fb.token', fb.token), also: sealKept('fb.also', JSON.stringify(fb.also || [])), known: sealKept('fb.known', JSON.stringify(fb.known || [])) }, null, 2), { mode: 0o600 });
 }
 const GRAPH = 'https://graph.facebook.com/v26.0';
 function fbView() {
@@ -991,9 +994,37 @@ app.get('/api/facebook/login', async (req, res) => {
       saveFb();
     } catch {}
     fbLogin = { pages: list };
+    if (list.length) { fb.known = list.map((p) => ({ id: p.id, name: p.name || '', access_token: p.access_token })); saveFb(); }
     if (!fbLogin.pages.length) { fbLogin = null; return res.json({ error: 'Signed in, but no Pages were shared. Sign in again and tick the Page when Facebook asks.' }); }
     res.json({ done: true, pages: pages() });
   } catch { res.json({ pending: true }); }
+});
+// the Pages from the last sign-in: from this session, or the saved list
+const fbPagesNow = () => (fbLogin && fbLogin.pages ? fbLogin.pages : fb.known || []);
+// Go Live: the Pages you can stream to, and which are added (main, extra) or not
+app.get('/api/facebook/pages', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  const also = new Set((fb.also || []).map((x) => x.pageId));
+  res.json({ signedIn: fbPagesNow().length > 0, pages: fbPagesNow().map((p) => ({ id: p.id, name: p.name || '', added: p.id === fb.pageId ? 'main' : also.has(p.id) ? 'also' : '' })) });
+});
+// Go Live: remove the main Page. The next extra Page (if any) becomes the main one.
+app.delete('/api/facebook/main', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  if (session.facebook) return res.status(400).json({ error: 'Stop streaming first.' });
+  const next = (fb.also || [])[0];
+  if (next) { fb = { ...fb, pageId: next.pageId, pageName: next.pageName, token: next.token }; fb.also = fb.also.slice(1); const d = destinations.find((x) => x.fbPage === next.pageId); if (d) { stopDestination(d.id); status.delete(d.id); destinations = destinations.filter((x) => x !== d); save(); } }
+  else fb = { ...fb, pageId: '', pageName: '', token: '' };
+  saveFb(); res.json(fbView());
+});
+// Go Live: add one Page. The first one becomes the main Page; the others stream the same video.
+app.post('/api/facebook/pages/:id', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  const p = fbPagesNow().find((x) => x.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'That Page is not in the list. Sign in with Facebook again.' });
+  if (p.id === fb.pageId || (fb.also || []).some((x) => x.pageId === p.id)) return res.json(fbView());
+  if (!fb.pageId || !fb.token) { fb = { ...fb, pageId: p.id, pageName: p.name || '', token: p.access_token }; saveFb(); return res.json(fbView()); }
+  fb.also = [...(fb.also || []), { pageId: p.id, pageName: p.name || '', token: p.access_token, on: true, title: '', description: '' }].slice(0, 10);
+  saveFb(); res.json(fbView());
 });
 // the main Page's channel (the channels for the extra Pages carry the Page's id in fbPage)
 function fbDestination() {
@@ -1080,7 +1111,7 @@ app.put('/api/facebook', async (req, res) => {
   const token = String((req.body || {}).token || '').trim();
   if (!/^\d+$/.test(pageId)) return res.status(400).json({ error: 'The Page ID is only numbers' });
   // a Page picked after Sign in with Facebook brings its own token
-  const fromLogin = !token && fbLogin && fbLogin.pages ? fbLogin.pages.find((p) => p.id === pageId) : null;
+  const fromLogin = !token ? fbPagesNow().find((p) => p.id === pageId) || null : null;
   const newToken = token || (fromLogin && fromLogin.access_token) || fb.token;
   if (!newToken) return res.status(400).json({ error: 'Sign in with Facebook, or paste the Page access token' });
   try {
@@ -1093,7 +1124,7 @@ app.put('/api/facebook', async (req, res) => {
     if (Array.isArray(want)) {
       const next = [];
       want.map(String).filter((id) => /^\d+$/.test(id) && id !== pageId).slice(0, 10).forEach((id) => {
-        const p = fbLogin && fbLogin.pages ? fbLogin.pages.find((x) => x.id === id) : null;
+        const p = fbPagesNow().find((x) => x.id === id) || null;
         const kept = (fb.also || []).find((x) => x.pageId === id);
         if (p) next.push({ pageId: id, pageName: p.name || '', token: p.access_token, on: kept ? kept.on !== false : true, title: kept ? kept.title || '' : '', description: kept ? kept.description || '' : '' });
         else if (kept) next.push(kept);
