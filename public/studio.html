@@ -3703,7 +3703,7 @@ const small = document.createElement('canvas'); small.width = 1280; small.height
 const sctx = small.getContext('2d');
 const tiny = document.createElement('canvas'); tiny.width = 480; tiny.height = 270; const tctx = tiny.getContext('2d');
 // watching starts false: the app first says whether the Multiview is open, so nothing is drawn for it while the app opens
-let thumbs = {}, thumbAt = 0, shotBusy = false, watching = false, pingAt = 0;
+let thumbs = {}, thumbAt = 0, shotBusy = false, watching = false, pingAt = 0, mvLive = false;
 async function shots() {
   if (shotBusy) return; shotBusy = true;
   try {
@@ -3713,10 +3713,13 @@ async function shots() {
       pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;
     }
     // the Program picture is a small copy of what is on air (one quick copy, not drawing the scene again)
-    if (SW > SH && cv.width >= 1280) sctx.drawImage(cv, 0, 0, 1280, 720); else if (cv.width >= 540) copyFit(sctx, 1280, 720, cv); else drawFit(sctx, 1280, 720, byName(studio.current), true);
-    const prog = small.toDataURL('image/jpeg', 0.86);
-    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawFit(sctx, 1280, 720, byName(serverPreview), false); pv = small.toDataURL('image/jpeg', 0.86); }
-    const body = { prog, pv };
+    if (!mvLive) { if (SW > SH && cv.width >= 1280) sctx.drawImage(cv, 0, 0, 1280, 720); else if (cv.width >= 540) copyFit(sctx, 1280, 720, cv); else drawFit(sctx, 1280, 720, byName(studio.current), true); }
+    // the Multiview copies the live Program picture itself (mvLive): then no photo of it is made here (they are slow)
+    const body = {};
+    if (!mvLive) {
+      body.prog = small.toDataURL('image/jpeg', 0.86);
+      body.pv = body.prog; if (serverPreview && serverPreview !== studio.current) { drawFit(sctx, 1280, 720, byName(serverPreview), false); body.pv = small.toDataURL('image/jpeg', 0.86); }
+    }
     // the small scene pictures are sent only when one of them changed (a scene with a camera changes each time)
     if (Date.now() - thumbAt > 1500 || !Object.keys(thumbs).length) {
       thumbAt = Date.now(); const next = {};
@@ -3725,7 +3728,7 @@ async function shots() {
       thumbs = next;
       if (changed) body.thumbs = thumbs;
     }
-    const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); watching = Boolean(r && r.watching); pingAt = Date.now();
+    const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); watching = Boolean(r && r.watching); mvLive = Boolean(r && r.live); pingAt = Date.now();
     if (r && r.wantThumbs) thumbs = {}; // the app has none (it started again): send them next time
   } catch {}
   shotBusy = false;

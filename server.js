@@ -1660,11 +1660,13 @@ app.put('/api/studio/shots', (req, res) => {
     const gotThumbs = b.thumbs && typeof b.thumbs === 'object';
     studioShots = { ...studioShots, at: Date.now(), prog: String(b.prog || ''), pv: String(b.pv || ''), thumbs: gotThumbs ? b.thumbs : studioShots.thumbs, tv: studioShots.tv + (gotThumbs ? 1 : 0) };
   }
-  res.json({ ok: true, watching: Date.now() - studioShots.watched < 3000, wantThumbs: studioShots.tv === 0 });
+  // live: the Multiview copies the Program picture itself, so the Studio does not need to make photos of it
+  res.json({ ok: true, watching: Date.now() - studioShots.watched < 3000, live: Date.now() - (studioShots.liveAt || 0) < 3000, wantThumbs: studioShots.tv === 0 });
 });
 // ?tv=N: the Multiview already has the small scene pictures number N, so they are not sent again
 app.get('/api/studio/shots', (req, res) => {
   studioShots.watched = Date.now();
+  if ((req.query || {}).live === '1') studioShots.liveAt = Date.now();
   const tv = Number((req.query || {}).tv);
   res.json({ alive: Date.now() - studioShots.at < 5000, prog: studioShots.prog, pv: studioShots.pv, tv: studioShots.tv, rev: studioRev, thumbs: tv === studioShots.tv ? undefined : studioShots.thumbs });
 });
