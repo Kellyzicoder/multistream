@@ -1794,7 +1794,9 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const sg = $('#asRunSeg'), labels = r.labels || []; sg.textContent = '';
     labels.forEach((l, k) => { const d = document.createElement('div'); d.className = k === r.step - 1 ? 'cur' : ''; d.innerHTML = '<i></i><span></span>'; d.lastChild.textContent = l; const b = d.firstChild; if (k < r.step - 1) b.className = 'done'; else if (k === r.step - 1) b.style.background = 'linear-gradient(90deg,var(--blue) ' + Math.round((r.frac || 0) * 100) + '%,rgba(59,108,255,.25) ' + Math.round((r.frac || 0) * 100) + '%)'; sg.appendChild(d); });
   }
-  load(); setInterval(load, 1000);
+  let asTick = 0;
+  load(); setInterval(() => { if (document.hidden) return; if ((plan && plan.run && plan.run.running) || ++asTick % 5 === 0) load(); }, 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
   const setMini = (on) => { $('#asRun').classList.toggle('mini', on); const b = $('#asRunMin'); b.textContent = on ? '\u2197' : '\u2212'; b.title = on ? 'Make bigger' : 'Make smaller'; b.setAttribute('aria-label', b.title); try { localStorage.setItem('ms_as_mini', on ? '1' : '0'); } catch {} };
   try { if (localStorage.getItem('ms_as_mini') === '1') setMini(true); } catch {}
   $('#asRunMin').onclick = (e) => { e.stopPropagation(); setMini(!$('#asRun').classList.contains('mini')); };
@@ -2385,7 +2387,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   // ---------- stream health under the preview (while live) ----------
   const HS = { live: 'Good', starting: 'Starting', error: 'Trouble', off: 'Off' };
   setInterval(async () => {
-    if (page !== 'dash' || !(st && st.obsLive)) return;
+    if (page !== 'dash' || document.hidden || !(st && st.obsLive)) return;
     let h; try { h = await api('/api/health'); } catch { return; }
     health = h;
     const mb = (k) => (k / 1000).toFixed(1), bad = h.channels.some((c) => c.enabled && c.state === 'error'), drop = h.frames ? (h.drops / h.frames) * 100 : 0;
@@ -2403,6 +2405,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   $('#ghMore').onclick = () => showPage('health');
   setInterval(async () => {
     if (!(st && st.obsLive && st.session && (st.session.youtube || st.session.facebook))) { stats = null; return; }
+    if (document.hidden) return;
     try { stats = await api('/api/live/stats'); } catch { return; }
     const v = (stats.youtube ? stats.youtube.viewers : 0) + (stats.facebook ? stats.facebook.viewers : 0), l = (stats.youtube ? stats.youtube.likes : 0) + (stats.facebook ? stats.facebook.likes : 0);
     $('#glView').textContent = v.toLocaleString(); $('#glLikes').textContent = l.toLocaleString();
@@ -3402,11 +3405,13 @@ async function pollChat() {
     const n = $('#chatSt'); n.textContent = st; n.hidden = !st; n.className = 'note' + (/chat:|comments:/.test(st) && /\(#|error|permission|trying again|ended/i.test(st) ? ' bad' : '');
   } catch {}
 }
-setInterval(pollChat, 3000);
+setInterval(() => { if (!document.hidden) pollChat(); }, 3000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pollChat(); });
 
 async function refresh() { try { const s = await api('/api/state'); render(s); renderFb(s.facebook, s.obsLive, s.session && s.session.facebook); renderYt(s.youtube, s.obsLive, s.session && s.session.youtube); renderCr(); } catch {} }
 refresh();
-setInterval(refresh, 2000);
+setInterval(() => { if (!document.hidden) refresh(); }, 2000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 // scroll the right-hand column with the wheel even when the mouse is over the middle (when the middle has nothing to scroll itself)
 (function () {
   const stage = document.querySelector('.stage'), side = document.querySelector('.side'); if (!stage || !side) return;

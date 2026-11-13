@@ -1503,7 +1503,15 @@ try {
   }
 } catch {}
 let studioRev = 1;
-function saveStudio() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio)); } catch {} studioRev++; }
+// Saving is joined up: dragging an item sends many changes a second, but the file is written once, half a second after the last one
+// (and once more when the app closes). The new file is written beside the old one and swapped in, so a power cut cannot leave half a file.
+let studioTimer = null;
+function writeStudioNow() {
+  clearTimeout(studioTimer); studioTimer = null;
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STUDIO_FILE + '.tmp', JSON.stringify(studio)); fs.renameSync(STUDIO_FILE + '.tmp', STUDIO_FILE); } catch {}
+}
+function saveStudio() { studioRev++; if (!studioTimer) studioTimer = setTimeout(writeStudioNow, 500); }
+process.on('exit', () => { if (studioTimer) writeStudioNow(); });
 // ?rev=N: when nothing changed since N, a short answer (the Studio asks often)
 app.get('/api/studio', (req, res) => {
   if (req.query && String(req.query.rev) === String(studioRev)) return res.json({ same: true, rev: studioRev, preview: studio.preview || '' });
