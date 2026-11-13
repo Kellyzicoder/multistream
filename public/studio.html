@@ -1371,7 +1371,12 @@ function frame() {
   // The engine makes the live picture. When nothing here needs this page's own copy of it (not going live or
   // recording the older way, no virtual camera), it is drawn only 5 times a second, so the app stays quick.
   if (lightMode() && (++lightTick % 6)) return;
+  // the Multiview's big box is bigger than 720p: draw 1080p while it is open (back to 720p when it closes)
+  { const w = window.__mvWant, big = Boolean(w && Date.now() - w.at < 2000 && w.w > 1400), want = big ? 1920 : 1280;
+    if (SW > SH && !wsOut && !engineSending && !recW && PW !== want && (big || PW === 1920)) setProgramSize(want, want * 9 / 16); }
   paint(ctx, PW / SW, now);
+  window.__pf = (window.__pf | 0) + 1; // the Multiview copies the picture once for each new one
+  if (sendTrack) { try { sendTrack.requestFrame(); } catch {} } // each finished picture goes to the encoder exactly once
   // the recording and the virtual camera copy the finished Program picture when it is the same size or bigger (much less work than drawing the scene again)
   if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); }
   if (vcOn) { if (SW > SH && cv.width >= 1280) vctx.drawImage(cv, 0, 0, 1280, 720); else copyFit(vctx, 1280, 720, cv); }
@@ -1383,8 +1388,15 @@ const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#tr
 setTimeout(trTell, 0);
 $('#trType').onchange = saveTr; $('#trMs').onchange = saveTr;
 // not requestAnimationFrame, so it keeps running if the window is covered
-let frameT = 0, frameFps = 0, lightTick = 0;
-function setFps(f) { if (f === frameFps) return; frameFps = f; clearInterval(frameT); frameT = setInterval(frame, 1000 / f); }
+let frameT = 0, frameFps = 0, lightTick = 0, frameNext = 0, sendTrack = null;
+// A timer that keeps its own beat: each picture is due one step after the one before, so a late picture does not push all the next ones later (setInterval drifts)
+function frameLoop() {
+  frame();
+  const step = 1000 / frameFps, now = performance.now();
+  frameNext += step; if (frameNext < now - 2 * step) frameNext = now; // far behind: do not rush to catch up
+  frameT = setTimeout(frameLoop, Math.max(0, frameNext - now));
+}
+function setFps(f) { if (f === frameFps) return; frameFps = f; clearTimeout(frameT); frameNext = performance.now() + 1000 / f; frameT = setTimeout(frameLoop, 1000 / f); }
 setFps(30);
 // The Program picture is small while nothing is sent (saves the computer's work) and full size while sending.
 function setProgramSize(w, h) { if (cv.width === w && cv.height === h) return; cv.width = w; cv.height = h; PW = w; PH = h; }
@@ -2905,7 +2917,11 @@ async function connectSend() {
     return;
   }
   try { ensureAudio(); await syncAudio(); } catch {}
-  const out = new MediaStream(cv.captureStream(OUT.fps).getVideoTracks());
+  // 0 = the picture is taken only when frame() says so (requestFrame), so none is doubled or skipped; older Chromes keep the timed way
+  let capStream = cv.captureStream(0), capTrack = capStream.getVideoTracks()[0];
+  if (!capTrack || typeof capTrack.requestFrame !== 'function') { capStream = cv.captureStream(OUT.fps); capTrack = null; }
+  sendTrack = capTrack;
+  const out = new MediaStream(capStream.getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
   const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
   const fast = useFast(mt);
@@ -2927,7 +2943,7 @@ function dropSend() {
   if (engineSending) { engineSending = false; clearInterval(engineWatch); try { window.msNative.engineUnsend(); } catch {} }
   try { rec && rec.state !== 'inactive' && rec.stop(); } catch {}
   try { wsOut && wsOut.close(); } catch {}
-  rec = wsOut = null; cv.classList.remove('live');
+  rec = wsOut = null; sendTrack = null; cv.classList.remove('live');
 }
 function scheduleRetry() {
   $('#st').textContent = 'Connection lost. Reconnecting...'; $('#st').className = 'stat bad';
@@ -3689,6 +3705,7 @@ async function poll() {
       editing = byName(wasEditing) ? wasEditing : studio.current;
       renderAll();
     }
+    if (!rec) return;
     const e = await fetch('/api/studio/status').then((r) => r.json());
     if (rec && Date.now() > stHold) {
       $('#st').textContent = (e.sending ? 'Sending to the relay' + (e.encoder ? ' (using the ' + e.encoder + ')' : '') : 'Connecting...') + (e.error ? ' - ' + e.error : ''); $('#st').className = 'stat ' + (e.error ? 'bad' : 'ok');
@@ -3703,6 +3720,28 @@ async function poll() {
 const small = document.createElement('canvas'); small.width = 1280; small.height = 720;
 const sctx = small.getContext('2d');
 const tiny = document.createElement('canvas'); tiny.width = 480; tiny.height = 270; const tctx = tiny.getContext('2d');
+// Live pictures for the Multiview's scene boxes. When the Multiview can reach this page it copies these (about 3 times a second,
+// no JPEG photos, no trip through the app). They are drawn only while a Multiview is open and the OBS engine is not drawing them.
+const tileCv = new Map(); window.__tiles = tileCv; window.__tilesRev = 0;
+let tileLast = 0, tileTurn = 0;
+function tilesTick() {
+  const w = window.__mvWant;
+  if (!w || Date.now() - w.at > 1500 || engineLive) return;
+  const now = performance.now(); if (now - tileLast < 300) return; tileLast = now; tileTurn++;
+  const tw = SW > SH ? 640 : SW < SH ? 360 : 480, th = SW > SH ? 360 : SW < SH ? 640 : 480;
+  const list = studio.scenes.slice(0, 30), names = new Set(list.map((x) => x.name));
+  tileCv.forEach((c, k) => { if (!names.has(k)) tileCv.delete(k); });
+  const half = list.length > 10; // many scenes: half of them each time
+  list.forEach((sc, i) => {
+    let c = tileCv.get(sc.name); const fresh = !c || c.width !== tw || c.height !== th;
+    if (fresh) { c = document.createElement('canvas'); c.width = tw; c.height = th; tileCv.set(sc.name, c); }
+    if (half && !fresh && (i + tileTurn) % 2) return;
+    const cx = c.getContext('2d');
+    if (sc.name === studio.current && cv.width >= 320) copyFit(cx, tw, th, cv); else drawFit(cx, tw, th, sc, false);
+  });
+  window.__tilesRev++;
+}
+setInterval(tilesTick, 100);
 // watching starts false: the app first says whether the Multiview is open, so nothing is drawn for it while the app opens
 let thumbs = {}, thumbAt = 0, shotBusy = false, watching = false, pingAt = 0, mvLive = false;
 async function shots() {
@@ -3722,7 +3761,8 @@ async function shots() {
       body.pv = body.prog; if (serverPreview && serverPreview !== studio.current) { drawFit(sctx, 1280, 720, byName(serverPreview), false); body.pv = small.toDataURL('image/jpeg', 0.86); }
     }
     // the small scene pictures are sent only when one of them changed (a scene with a camera changes each time)
-    if (Date.now() - thumbAt > 1500 || !Object.keys(thumbs).length) {
+    const liveTiles = Boolean(window.__mvWant && Date.now() - window.__mvWant.at < 2000 && window.__mvWant.tiles); // the Multiview copies live pictures: no photos needed
+    if (!liveTiles && (Date.now() - thumbAt > 1500 || !Object.keys(thumbs).length)) {
       thumbAt = Date.now(); const next = {};
       studio.scenes.forEach((s) => { drawFit(tctx, 480, 270, s, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.75); });
       const names = Object.keys(next), changed = names.length !== Object.keys(thumbs).length || names.some((n) => next[n] !== thumbs[n]);
