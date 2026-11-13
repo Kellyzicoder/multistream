@@ -1,4 +1,4 @@
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-core');
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1400, height: 900 }, deviceScaleFactor: 1 });
   p.on('dialog', d => { console.log('dialog:', d.message()); d.accept(); });

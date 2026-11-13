@@ -10,7 +10,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --no-audit --no-fund --ignore-scripts && npx playwright install chromium
+      - run: npm install --no-audit --no-fund --ignore-scripts && npx playwright-core install chromium
       - run: |
           mkdir -p /tmp/d /tmp/o && cp tools/tmpcheck/facebook.json /tmp/d/
           (MULTISTREAM_DATA=/tmp/d PORT=3917 node server.js > /tmp/o/log.txt 2>&1 &)
