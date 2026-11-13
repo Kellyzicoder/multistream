@@ -918,7 +918,7 @@ function saveFb() {
 const GRAPH = 'https://graph.facebook.com/v26.0';
 function fbView() {
   return { granted: fb.granted || null, pageId: fb.pageId, pageName: fb.pageName, hasToken: Boolean(fb.token), tokenEnd: fb.token ? fb.token.slice(-4) : '', appId: fb.appId || '', hasClientToken: Boolean(fb.clientToken),
-    also: (fb.also || []).map((p) => ({ pageId: p.pageId, pageName: p.pageName, on: p.on !== false })) };
+    also: (fb.also || []).map((p) => ({ pageId: p.pageId, pageName: p.pageName, on: p.on !== false, title: p.title || '', description: p.description || '' })) };
 }
 // ---- Sign in with Facebook (Facebook Login for Devices) ----
 // Needs only the Meta app ID and its client token (both are meant to be inside apps; no app secret).
@@ -1033,7 +1033,8 @@ async function fbNewLive(pageId, token, status, title, description) {
 }
 async function fbStartAlso(p) {
   const m = session.fbMeta || { status: 'LIVE_NOW', title: 'Live', description: '' };
-  const l = await fbNewLive(p.pageId, p.token, m.status, m.title, m.description);
+  // this Page's own title and description, if it has them (otherwise the same as the main Page)
+  const l = await fbNewLive(p.pageId, p.token, m.status, p.title || m.title, p.description || m.description);
   const pd = fbAlsoDestination(p);
   stopDestination(pd.id);
   pd.url = l.url; pd.key = l.key; pd.enabled = true;
@@ -1089,7 +1090,7 @@ app.put('/api/facebook', async (req, res) => {
       want.map(String).filter((id) => /^\d+$/.test(id) && id !== pageId).slice(0, 10).forEach((id) => {
         const p = fbLogin && fbLogin.pages ? fbLogin.pages.find((x) => x.id === id) : null;
         const kept = (fb.also || []).find((x) => x.pageId === id);
-        if (p) next.push({ pageId: id, pageName: p.name || '', token: p.access_token, on: kept ? kept.on !== false : true });
+        if (p) next.push({ pageId: id, pageName: p.name || '', token: p.access_token, on: kept ? kept.on !== false : true, title: kept ? kept.title || '' : '', description: kept ? kept.description || '' : '' });
         else if (kept) next.push(kept);
       });
       fb.also = next;
@@ -1113,6 +1114,41 @@ app.put('/api/facebook/also/:pageId', async (req, res) => {
     else if (session.facebook && obsLive && !session.fbAlso.some((a) => a.pageId === p.pageId)) await fbStartAlso(p);
     res.json({ ok: true });
   } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// one extra Page's own title and description (empty = the same as the main Page). During a live, Facebook is told too.
+app.put('/api/facebook/also/:pageId/details', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  const p = (fb.also || []).find((x) => x.pageId === req.params.pageId);
+  if (!p) return res.status(404).json({ error: 'That Page is not saved' });
+  const b = req.body || {};
+  p.title = String(b.title || '').trim().slice(0, 250);
+  p.description = String(b.description || '').trim().slice(0, 5000);
+  saveFb();
+  const a = session.fbAlso.find((x) => x.pageId === p.pageId);
+  let warning = '';
+  if (a && a.id) {
+    const m = session.fbMeta || { title: 'Live', description: '' };
+    try {
+      const r = await fetch(`${GRAPH}/${a.id}`, { method: 'POST', body: new URLSearchParams({ access_token: p.token, title: p.title || m.title, description: p.description || m.description || '' }) });
+      if (!r.ok) warning = 'Saved, but Facebook did not change the title of the live that is on now. It is used next time.';
+    } catch { warning = 'Saved, but Facebook could not be reached to change the live that is on now. It is used next time.'; }
+  }
+  res.json({ ok: true, warning });
+});
+
+// remove one extra Page (during a live, its live ends first)
+app.delete('/api/facebook/also/:pageId', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  const p = (fb.also || []).find((x) => x.pageId === req.params.pageId);
+  if (!p) return res.status(404).json({ error: 'That Page is not saved' });
+  let warning = '';
+  try { warning = await fbEndAlso(p.pageId); } catch { warning = 'Could not reach Facebook to end the live on this Page. End it on Facebook.'; }
+  fb.also = fb.also.filter((x) => x !== p);
+  saveFb();
+  const d = destinations.find((x) => x.fbPage === p.pageId);
+  if (d) { stopDestination(d.id); status.delete(d.id); destinations = destinations.filter((x) => x !== d); save(); }
+  res.json({ ok: true, warning });
 });
 
 app.post('/api/facebook/live', async (req, res) => {
