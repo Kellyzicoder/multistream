@@ -2456,6 +2456,16 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   const title = (f) => group(f) + ' – ' + dayOf(f).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   const GR = ['linear-gradient(135deg,#262a63,#3a1f5e 60%,#14363a)', 'linear-gradient(135deg,#0f766e,#164e63)', 'linear-gradient(135deg,#b45309,#7c2d12)', 'linear-gradient(135deg,#1d4ed8,#312e81)', 'linear-gradient(135deg,#be185d,#4c1d95)'];
   const PRIV = { unlisted: 'Unlisted', private: 'Private', public: 'Public' };
+  // how long is left for an upload or an MP4: worked out from how fast the percentage has moved so far
+  const paceOf = new Map();
+  function leftText(key, pct) {
+    const now = Date.now(); let p = paceOf.get(key);
+    if (!p || pct < p.pct0) { p = { t0: now, pct0: pct }; paceOf.set(key, p); }
+    const moved = pct - p.pct0, secs = (now - p.t0) / 1000;
+    if (moved < 2 || secs < 5 || pct >= 100) return '';
+    const left = (100 - pct) * (secs / moved);
+    return ' · about ' + (left < 60 ? 'under a minute' : left < 3600 ? Math.round(left / 60) + ' min' : Math.floor(left / 3600) + ' h ' + Math.round((left % 3600) / 60) + ' min') + ' left';
+  }
   const act = (a, name) => api('/api/recordings/' + a, 'POST', { name }).then((r) => { if (r && r.error) alert(r.error); tick(); });
   function draw() {
     const r = data; if (!r) return;
@@ -2479,7 +2489,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
         const u = document.createElement('div'); u.className = 'up';
         u.innerHTML = '<div>' + (f.job.kind === 'upload' ? tileHTML('yt') : '') + '<span class="lb"></span><span class="pc"></span></div><div class="bar"><i></i></div>';
         u.querySelector('.lb').textContent = f.job.kind === 'upload' ? 'Uploading to YouTube · ' + (PRIV[r.privacy] || '') : 'Making the MP4';
-        u.querySelector('.pc').textContent = f.job.pct + '%'; u.querySelector('.bar i').style.width = f.job.pct + '%'; c.appendChild(u);
+        u.querySelector('.pc').textContent = f.job.pct + '% done' + leftText(f.name + '|' + f.job.kind, f.job.pct); u.querySelector('.bar i').style.width = f.job.pct + '%'; c.appendChild(u);
       } else if (f.queued) { const q = document.createElement('div'); q.className = 'okl'; q.style.color = 'var(--link)'; q.textContent = 'Waiting to upload to YouTube'; c.appendChild(q); }
       else if (f.youtube) { const o = document.createElement('div'); o.className = 'okl'; o.textContent = '\u2713 On YouTube · ' + (PRIV[f.youtube.privacy] || ''); if (f.youtube.id) { const a = document.createElement('a'); a.textContent = 'Open'; a.onclick = () => window.open('https://youtu.be/' + f.youtube.id, '_blank'); o.appendChild(a); } c.appendChild(o); }
       const bt = document.createElement('div'); bt.className = 'bt';
