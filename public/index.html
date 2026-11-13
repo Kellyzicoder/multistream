@@ -845,6 +845,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv2 .mvt.prog, .mv2 .mvt.on { border-color:#ff4d5a; }
   .mv2 .mvt.empty { background:rgba(10,14,31,.5); border-style:dashed; box-shadow:none; }
   .mv2 .mvt canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .mv2 .mvt.lv img { visibility:hidden; }
   .mv2 .mvt img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; } .mv2 .mvt img:not([src]) { visibility:hidden; }
   .mv2 .mvt .lb { position:absolute; left:8px; right:8px; bottom:8px; padding:7px 11px; border-radius:10px; font-size:14px; font-weight:600; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.14); display:flex; align-items:center; gap:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .mv2 .mvt .lb small { margin-left:auto; color:#cdd3e4; font-weight:500; font-size:12px; }
@@ -2821,31 +2822,50 @@ setInterval(pollCr, 200); // 5 pictures a second
 (function () {
   const out = $('#crProgC'); if (!out) return;
   const g = out.getContext('2d');
-  const studioCanvas = () => {
+  const studioWin = () => {
     for (const w of [window, window.opener]) {
-      try { const f = w && w.document.querySelector('#studioView iframe'); const c = f && f.contentWindow.document.getElementById('cv'); if (c && c.width > 16) return c; } catch {}
+      try { const f = w && w.document.querySelector('#studioView iframe'); const cw = f && f.contentWindow; const c = cw && cw.document.getElementById('cv'); if (c && c.width > 16) return cw; } catch {}
     }
     return null;
   };
-  let src = null, lookAt = 0, shown = false, last = 0;
+  let sw = null, src = null, lookAt = 0, shown = false, lastPf = -1, lastKey = '', tileRev = -1, tileAt = 0;
   const show = (v) => { crLiveCopy = v; if (v === shown) return; shown = v; out.hidden = !v; };
+  // the scene boxes: live pictures from the Studio (the photos stay as the fallback)
+  const paintTiles = () => {
+    const tiles = sw.__tiles, rev = sw.__tilesRev | 0; let any = false;
+    if (!tiles) return false;
+    document.querySelectorAll('#crTiles button.mvt[data-n]').forEach((b) => {
+      const t = tiles.get(b.dataset.n); if (!t) return; any = true;
+      let c = b._lv; if (!c) { c = b._lv = document.createElement('canvas'); b.insertBefore(c, b.firstChild); }
+      if (rev === tileRev && c.width === t.width && c.height === t.height) return;
+      if (c.width !== t.width || c.height !== t.height) { c.width = t.width; c.height = t.height; }
+      c.getContext('2d').drawImage(t, 0, 0); b.classList.add('lv');
+    });
+    tileRev = rev; return any;
+  };
   const loop = (t) => {
     requestAnimationFrame(loop);
     if (page !== 'cr' || document.hidden) return;
-    if (t - last < 30) return; last = t; // 30 times a second is enough
-    if ((!src || !src.isConnected) && t - lookAt > 1000) { lookAt = t; src = studioCanvas(); }
-    if (!src || !src.isConnected) return show(false);
+    if ((!sw || !src || !src.isConnected) && t - lookAt > 1000) { lookAt = t; sw = studioWin(); src = sw && sw.document.getElementById('cv'); }
+    if (!sw || !src || !src.isConnected) return show(false);
     try {
-      const r = out.getBoundingClientRect(), k = Math.min(window.devicePixelRatio || 1, 2);
+      const r = (out.parentElement || out).getBoundingClientRect(), k = Math.min(window.devicePixelRatio || 1, 2); // the box around it: the canvas itself has no size while it is hidden
       const w = Math.min(1920, Math.round(r.width * k)), h = Math.min(1080, Math.round(r.height * k));
       if (w < 8 || h < 8) return;
+      // tell the Studio how big the box is, so it draws 1080p when 720p would be soft
+      const want = sw.__mvWant || (sw.__mvWant = {}); want.w = Math.round(r.width * k); want.at = Date.now();
+      if (t - tileAt > 100) { tileAt = t; want.tiles = paintTiles(); }
+      // copy a picture once for each new one the Studio makes (not on a timer of our own, which would double or skip some)
+      const pf = sw.__pf | 0, key = w + 'x' + h + ':' + src.width + 'x' + src.height;
+      if (pf === lastPf && key === lastKey) return show(true);
+      lastPf = pf; lastKey = key;
       if (out.width !== w || out.height !== h) { out.width = w; out.height = h; }
       // fill the box like the photo does (cover)
       const sc = Math.max(w / src.width, h / src.height), dw = src.width * sc, dh = src.height * sc;
       g.imageSmoothingQuality = 'high';
       g.drawImage(src, (w - dw) / 2, (h - dh) / 2, dw, dh);
       show(true);
-    } catch { src = null; show(false); }
+    } catch { sw = src = null; show(false); }
   };
   requestAnimationFrame(loop);
 })();
