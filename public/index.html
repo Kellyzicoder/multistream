@@ -2486,6 +2486,8 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       const btn = (label, fn, pri) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'mini' + (pri ? ' pri' : ''); x.textContent = label; x.onclick = fn; bt.appendChild(x); };
       btn('Play', () => act('play', f.name), true); btn('Show file', () => act('show', f.name));
       if (/\.mkv$/i.test(f.name) && !f.hasMp4 && !(f.job && f.job.kind === 'mp4' && !f.job.error)) btn('Make MP4', () => act('mp4', f.name));
+      // upload this one recording to YouTube by hand (the same privacy as chosen at the bottom of this page)
+      if (r.youtube && !f.youtube && !f.queued && !(f.job && !f.job.error)) btn(f.job && f.job.error ? 'Try the upload again' : 'Upload to YouTube', () => { if (confirm('Upload "' + title(f) + '" to YouTube as ' + (PRIV[r.privacy] || 'Unlisted') + '?')) act('upload', f.name); });
       c.appendChild(bt); box.appendChild(c);
     });
     if (!(r.files || []).length) box.innerHTML = '<div class="rc-empty">No recordings yet. Press Start recording in the Studio.</div>';
