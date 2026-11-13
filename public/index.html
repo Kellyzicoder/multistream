@@ -812,7 +812,8 @@
   .pf-box { padding:20px; border-radius:20px; background:rgba(255,255,255,.05); display:flex; flex-direction:column; gap:14px; } .pf-box > b { font-size:15px; }
   .pf-two { display:grid; grid-template-columns:1fr 1fr; gap:16px; } .pf-two > div { padding:18px; border-radius:16px; border:1px solid var(--gl-line); display:flex; flex-direction:column; gap:10px; } .pf-two > div.on { border:1.5px solid var(--blue); }
   .mdl label { display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:var(--muted); }
-  .mdl input[type=text], .mdl input[type=password], .mdl select { padding:11px 14px; border-radius:12px; border:1px solid var(--gl-line); background:rgba(5,8,20,.55); color:var(--text); font-size:14px; }
+  .mdl input[type=text], .mdl input[type=password], .mdl select, .mdl textarea { padding:11px 14px; border-radius:12px; border:1px solid var(--gl-line); background:rgba(5,8,20,.55); color:var(--text); font-size:14px; }
+  .mdl textarea { font-family:inherit; resize:vertical; line-height:1.45; }
   .mdl .row { display:flex; align-items:center; gap:10px; } .mdl .row .grow { flex:1; }
   .mdl .btn { padding:11px 22px; border-radius:999px; border:0; font-size:14px; font-weight:600; background:rgba(255,255,255,.08); color:var(--text); }
   .mdl .btn.pri { background:var(--blue); color:var(--onblue); } .mdl .btn.del { background:transparent; border:1px solid rgba(255,77,90,.6); color:#ff8a90; }
@@ -917,7 +918,7 @@
   .asrun .as-r1 button { order:4; flex:1; padding:7px 10px !important; font-size:12.5px !important; }
   .asrun .as-seg { gap:4px !important; } .asrun .as-seg > div { gap:0 !important; } .asrun .as-seg span { display:none; } .asrun .as-seg i { height:4px !important; }
   /* windows (Add a channel, Edit a channel): text boxes and drop-downs as in the design */
-  .mdl input[type=text], .mdl input[type=password], .mdl select { padding:9px 12px !important; font-size:13px !important; border-radius:10px !important; }
+  .mdl input[type=text], .mdl input[type=password], .mdl select, .mdl textarea { padding:9px 12px !important; font-size:13px !important; border-radius:10px !important; }
   .mdl select { padding-right:34px !important; }
   /* Get started cards: the width in the design is the inside, the padding is added round it */
   .gs-card { box-sizing:content-box !important; max-width:calc(100vw - var(--navw, 0px) - 120px); }
@@ -1954,7 +1955,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     // every extra Facebook Page is its own channel (like Restream): its own switch and its own state
     if (fbs.hasToken && fbs.pageId) (fbs.also || []).forEach((p) => {
       const d = s.destinations.find((x) => x.fbPage === p.pageId);
-      out.push({ kind: 'api', site: 'facebook', page: p.pageId, c: 'fb', name: p.pageName || 'Facebook Page', on: p.on !== false && apiOn('facebook'), dest: d, session: Boolean(s.session && (s.session.fbAlso || []).includes(p.pageId)), sub: 'Facebook Page', link: ((s.session && s.session.fbLinks) || {})[p.pageId] || '' });
+      out.push({ kind: 'api', site: 'facebook', page: p.pageId, c: 'fb', name: p.pageName || 'Facebook Page', on: p.on !== false && apiOn('facebook'), dest: d, session: Boolean(s.session && (s.session.fbAlso || []).includes(p.pageId)), sub: 'Facebook Page', link: ((s.session && s.session.fbLinks) || {})[p.pageId] || '', title: p.title || '', description: p.description || '' });
     });
     s.destinations.forEach((d) => { if (d.fbPage) hid.add(d.id); });
     s.destinations.forEach((d) => { if (!hid.has(d.id)) out.push({ kind: 'key', c: platform(d.name).c, name: d.name, on: d.enabled, dest: d }); });
@@ -1972,7 +1973,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   function row(ch, live, small) {
     const r = document.createElement('div'); r.className = 'cc' + (small ? ' sm' : '') + (ch.on && !small ? ' on' : '');
     const s2 = stateOf(ch, live); if (s2.cls === 'bad' && !small) r.classList.add('err');
-    r.innerHTML = tileHTML(ch.c) + '<div class="cmn"><div class="nm"></div><div class="sub"></div></div>' + (small || ch.page ? '' : '<button type="button" class="ed" title="Edit">' + ICON_PEN + '</button>') + '<button type="button" class="tg2" role="switch"></button>';
+    r.innerHTML = tileHTML(ch.c) + '<div class="cmn"><div class="nm"></div><div class="sub"></div></div>' + (small ? '' : '<button type="button" class="ed" title="Edit">' + ICON_PEN + '</button>') + '<button type="button" class="tg2" role="switch"></button>';
     const nm = r.querySelector('.nm'); nm.textContent = ch.name;
     if (!small) { if (live && s2.cls === 'live') { const x = document.createElement('div'); x.className = 'st live'; x.textContent = s2.t; nm.after(x); } else { const x = document.createElement('small'); x.textContent = ' · ' + s2.t; nm.appendChild(x); } }
     const sub = r.querySelector('.sub');
@@ -1991,7 +1992,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const tg = r.querySelector('.tg2'); tg.classList.toggle('on', ch.on); tg.setAttribute('aria-checked', String(ch.on)); tg.setAttribute('aria-label', ch.name + (ch.on ? ' on' : ' off'));
     tg.onclick = () => toggleCh(ch, !ch.on);
     const ed = r.querySelector('.ed'); if (ed) ed.onclick = () => editChannel(ch);
-    if (small && !ch.page) r.onclick = (e) => { if (e.target !== tg) editChannel(ch); };
+    if (small) r.onclick = (e) => { if (e.target !== tg) editChannel(ch); };
     return r;
   }
   async function toggleCh(ch, on) {
@@ -2203,7 +2204,27 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     d.querySelector('.who small').textContent = ch.kind === 'api' ? 'Signed in' + (ch.sub ? ' · ' + ch.sub : '') : st2.t;
     d.querySelector('.x').onclick = close; d.querySelector('.c').onclick = close;
     const f = d.querySelector('.f');
-    if (ch.kind === 'api') {
+    if (ch.page) {
+      // an extra Facebook Page: its own title and description (empty = the same as the main Facebook), a link, remove
+      d.querySelector('.who small').textContent = 'Facebook Page · ' + st2.t;
+      f.innerHTML = '<label>Title on this Page<input type="text" class="e1" maxlength="250" placeholder="Same as the main Facebook"></label><label>Description on this Page<textarea class="e2" rows="3" maxlength="5000" placeholder="Same as the main Facebook"></textarea></label><p class="note">Leave these empty to use the title and description from Stream details. Who can watch is the same as the main Facebook.</p><div class="signin"><span>On Facebook</span><span style="flex:1"></span><button type="button" class="btn of"></button></div>';
+      f.querySelector('.e1').value = ch.title || ''; f.querySelector('.e2').value = ch.description || '';
+      const of = f.querySelector('.of');
+      of.textContent = ch.session ? 'Open the live video \u2197' : 'Open the Page \u2197';
+      of.onclick = () => window.open(ch.session ? (ch.link || 'https://www.facebook.com/live/producer') : 'https://www.facebook.com/' + encodeURIComponent(ch.page), '_blank');
+      d.querySelector('.rm').textContent = 'Remove this Page';
+      d.querySelector('.rm').onclick = async () => {
+        if (!confirm(ch.session ? 'Remove ' + ch.name + '? Its live ends now. You can add it again in Settings → Stream.' : 'Remove ' + ch.name + '? You can add it again in Settings → Stream.')) return;
+        const r = await api('/api/facebook/also/' + ch.page, 'DELETE');
+        if (r && r.error) { alert(r.error); return; } if (r && r.warning) alert(r.warning);
+        close(); refresh();
+      };
+      d.querySelector('.o').onclick = async () => {
+        const r = await api('/api/facebook/also/' + ch.page + '/details', 'PUT', { title: f.querySelector('.e1').value.trim(), description: f.querySelector('.e2').value.trim() });
+        if (r && r.error) { alert(r.error); return; } if (r && r.warning) alert(r.warning);
+        close(); refresh();
+      };
+    } else if (ch.kind === 'api') {
       const fbk = ch.site === 'facebook';
       f.innerHTML = '<label>Name shown in Multistream<input type="text" class="e1"></label>' + (fbk ? '<label>Page<select class="e4" disabled></select></label>' : '') + '<div><div style="font-size:12.5px;color:var(--muted);margin-bottom:6px">Who can watch</div><div class="seg3"></div></div><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
       f.querySelector('.e1').value = ch.name;
