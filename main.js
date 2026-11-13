@@ -122,6 +122,8 @@ function createWindow() {
   // links that leave the dashboard open in the normal browser
   win.webContents.setWindowOpenHandler(({ url }) => {
     const p = projectorOptions(url); if (p) return p;
+    // a Multiview window is opened from this window, so it can show the Studio's live picture smoothly
+    if (url === HOME + '/#control-room' && crNext) { const o = crNext.o; return { action: 'allow', overrideBrowserWindowOptions: o }; }
     if (/^https?:\/\//i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
@@ -313,20 +315,40 @@ function projectorOptions(url) {
 }
 let crWin = null;
 handleIpc('ms-open-cr', (e, displayId) => openMultiview(displayId));
+let crNext = null;
 function openMultiview(displayId) {
   const d = displayById(displayId);
   if (crWin && !crWin.isDestroyed()) crWin.close();
   const o = { width: 1280, height: 800, title: 'Multistream Multiview', autoHideMenuBar: true, backgroundColor: '#07090b', show: !d,
     webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(__dirname, 'preload.js') } };
   if (d) Object.assign(o, { x: d.bounds.x, y: d.bounds.y, width: d.bounds.width, height: d.bounds.height });
-  const w = crWin = new BrowserWindow(o);
-  if (d) {
-    w.once('ready-to-show', () => { w.setBounds(d.bounds); w.setFullScreen(true); w.show(); });
-    // Esc leaves full screen (the window stays, on that display)
-    w.webContents.on('before-input-event', (ev, input) => { if (input.type === 'keyDown' && input.key === 'Escape' && w.isFullScreen()) { w.setFullScreen(false); ev.preventDefault(); } });
+  const setup = (w) => {
+    crWin = w;
+    if (d) {
+      const go = () => { if (w.isDestroyed()) return; w.setBounds(d.bounds); w.setFullScreen(true); w.show(); };
+      w.once('ready-to-show', go); setTimeout(go, 1500); // in case the window was ready already
+      // Esc leaves full screen (the window stays, on that display)
+      w.webContents.on('before-input-event', (ev, input) => { if (input.type === 'keyDown' && input.key === 'Escape' && w.isFullScreen()) { w.setFullScreen(false); ev.preventDefault(); } });
+    }
+    w.on('closed', () => { if (crWin === w) crWin = null; });
+  };
+  // Opened from the main window (so the two can share the Studio's live picture). If that does not work,
+  // the window is made the plain way and shows photos of the picture instead.
+  if (win && !win.isDestroyed()) {
+    const mine = crNext = { o };
+    let made = false;
+    const onMade = (w) => { made = true; if (crNext === mine) crNext = null; setup(w); };
+    win.webContents.once('did-create-window', onMade);
+    win.webContents.executeJavaScript(`window.open(${JSON.stringify(HOME + '/#control-room')}, '_blank'); 0`, true).catch(() => {});
+    setTimeout(() => {
+      if (made) return;
+      win && !win.isDestroyed() && win.webContents.removeListener('did-create-window', onMade);
+      if (crNext === mine) crNext = null;
+      const w = new BrowserWindow(o); setup(w); w.loadURL(HOME + '/#control-room');
+    }, 2000);
+    return;
   }
-  w.loadURL(HOME + '/#control-room');
-  w.on('closed', () => { if (crWin === w) crWin = null; });
+  const w = new BrowserWindow(o); setup(w); w.loadURL(HOME + '/#control-room');
 }
 // A web page (like the lyrics page) is drawn off-screen. We pass each new picture of it to the studio page.
 const browsers = new Map();

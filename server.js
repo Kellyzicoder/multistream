@@ -675,7 +675,8 @@ function recordingSaved(name) {
   if (upCfg.auto && yt.refreshToken) queueUpload(name);
 }
 function queueUpload(name) {
-  if (upQueue.includes(name) || (recJobs.get(name) || {}).kind === 'upload') return;
+  const j = recJobs.get(name);
+  if (upQueue.includes(name) || (j && j.kind === 'upload' && !j.error)) return; // an upload that failed can be tried again
   upQueue.push(name); logHealth('Recording ' + name + ' will be uploaded to YouTube.'); runUploads();
 }
 let uploading = false;
@@ -697,7 +698,9 @@ async function runUploads() {
 async function ytUpload(file, name, privacy, onPct) {
   const size = fs.statSync(file).size;
   const d = new Date(fs.statSync(file).mtimeMs);
-  const title = (gl.title ? gl.title + ' - ' : 'Recording - ') + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  // the title the stream had when this was recorded, if it is known; otherwise the title on Go Live now
+  const was = (upCfg.titles || {})[name] || (upCfg.titles || {})[name.replace(/\.[^.]+$/, '') + '.mkv'] || gl.title || '';
+  const title = (was ? was + ' - ' : 'Recording - ') + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   const start = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
     method: 'POST',
     headers: { Authorization: `Bearer ${await ytAccessToken()}`, 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Length': String(size), 'X-Upload-Content-Type': /\.mp4$/i.test(file) ? 'video/mp4' : 'video/x-matroska' },

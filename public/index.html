@@ -831,6 +831,7 @@
   .mv2 button.mvt { cursor:pointer; } .mv2 button.mvt:hover { border-color:rgba(255,255,255,.3); }
   .mv2 .mvt.prog, .mv2 .mvt.on { border-color:#ff4d5a; }
   .mv2 .mvt.empty { background:rgba(10,14,31,.5); border-style:dashed; box-shadow:none; }
+  .mv2 .mvt canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
   .mv2 .mvt img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; } .mv2 .mvt img:not([src]) { visibility:hidden; }
   .mv2 .mvt .lb { position:absolute; left:8px; right:8px; bottom:8px; padding:7px 11px; border-radius:10px; font-size:14px; font-weight:600; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.14); display:flex; align-items:center; gap:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .mv2 .mvt .lb small { margin-left:auto; color:#cdd3e4; font-weight:500; font-size:12px; }
@@ -1193,7 +1194,7 @@
   <div class="an-msg" id="anNone" hidden></div>
 </section>
 <div class="cr mv2" id="crView" hidden>
-  <div class="mv-top"><div class="mvt prog" id="crProgBox"><img id="crProg" alt="Program, what is on air" draggable="false"><span class="mv-tag" id="crLive" hidden>● LIVE</span><div class="lb"><span id="crProgL">Program</span><small id="crTime"></small></div></div></div>
+  <div class="mv-top"><div class="mvt prog" id="crProgBox"><img id="crProg" alt="Program, what is on air" draggable="false"><canvas id="crProgC" aria-hidden="true" hidden></canvas><span class="mv-tag" id="crLive" hidden>● LIVE</span><div class="lb"><span id="crProgL">Program</span><small id="crTime"></small></div></div></div>
   <div class="mv-grid" id="crTiles"></div>
 </div>
 
@@ -2455,6 +2456,16 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   const title = (f) => group(f) + ' – ' + dayOf(f).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   const GR = ['linear-gradient(135deg,#262a63,#3a1f5e 60%,#14363a)', 'linear-gradient(135deg,#0f766e,#164e63)', 'linear-gradient(135deg,#b45309,#7c2d12)', 'linear-gradient(135deg,#1d4ed8,#312e81)', 'linear-gradient(135deg,#be185d,#4c1d95)'];
   const PRIV = { unlisted: 'Unlisted', private: 'Private', public: 'Public' };
+  // how long is left for an upload or an MP4: worked out from how fast the percentage has moved so far
+  const paceOf = new Map();
+  function leftText(key, pct) {
+    const now = Date.now(); let p = paceOf.get(key);
+    if (!p || pct < p.pct0) { p = { t0: now, pct0: pct }; paceOf.set(key, p); }
+    const moved = pct - p.pct0, secs = (now - p.t0) / 1000;
+    if (moved < 2 || secs < 5 || pct >= 100) return '';
+    const left = (100 - pct) * (secs / moved);
+    return ' · ' + (left < 60 ? 'under a minute' : 'about ' + (left < 3600 ? Math.round(left / 60) + ' min' : Math.floor(left / 3600) + ' h ' + Math.round((left % 3600) / 60) + ' min')) + ' left';
+  }
   const act = (a, name) => api('/api/recordings/' + a, 'POST', { name }).then((r) => { if (r && r.error) alert(r.error); tick(); });
   function draw() {
     const r = data; if (!r) return;
@@ -2478,13 +2489,15 @@ window.askText = (title, value, hint) => new Promise((ok) => {
         const u = document.createElement('div'); u.className = 'up';
         u.innerHTML = '<div>' + (f.job.kind === 'upload' ? tileHTML('yt') : '') + '<span class="lb"></span><span class="pc"></span></div><div class="bar"><i></i></div>';
         u.querySelector('.lb').textContent = f.job.kind === 'upload' ? 'Uploading to YouTube · ' + (PRIV[r.privacy] || '') : 'Making the MP4';
-        u.querySelector('.pc').textContent = f.job.pct + '%'; u.querySelector('.bar i').style.width = f.job.pct + '%'; c.appendChild(u);
+        u.querySelector('.pc').textContent = f.job.pct + '% done' + leftText(f.name + '|' + f.job.kind, f.job.pct); u.querySelector('.bar i').style.width = f.job.pct + '%'; c.appendChild(u);
       } else if (f.queued) { const q = document.createElement('div'); q.className = 'okl'; q.style.color = 'var(--link)'; q.textContent = 'Waiting to upload to YouTube'; c.appendChild(q); }
       else if (f.youtube) { const o = document.createElement('div'); o.className = 'okl'; o.textContent = '\u2713 On YouTube · ' + (PRIV[f.youtube.privacy] || ''); if (f.youtube.id) { const a = document.createElement('a'); a.textContent = 'Open'; a.onclick = () => window.open('https://youtu.be/' + f.youtube.id, '_blank'); o.appendChild(a); } c.appendChild(o); }
       const bt = document.createElement('div'); bt.className = 'bt';
       const btn = (label, fn, pri) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'mini' + (pri ? ' pri' : ''); x.textContent = label; x.onclick = fn; bt.appendChild(x); };
       btn('Play', () => act('play', f.name), true); btn('Show file', () => act('show', f.name));
       if (/\.mkv$/i.test(f.name) && !f.hasMp4 && !(f.job && f.job.kind === 'mp4' && !f.job.error)) btn('Make MP4', () => act('mp4', f.name));
+      // upload this one recording to YouTube by hand (the same privacy as chosen at the bottom of this page)
+      if (r.youtube && !f.youtube && !f.queued && !(f.job && !f.job.error)) btn(f.job && f.job.error ? 'Try the upload again' : 'Upload to YouTube', () => { if (confirm('Upload "' + title(f) + '" to YouTube as ' + (PRIV[r.privacy] || 'Unlisted') + '?')) act('upload', f.name); });
       c.appendChild(bt); box.appendChild(c);
     });
     if (!(r.files || []).length) box.innerHTML = '<div class="rc-empty">No recordings yet. Press Start recording in the Studio.</div>';
@@ -2687,6 +2700,40 @@ async function pollCr() {
   crBusy = false;
 }
 setInterval(pollCr, 200); // 5 pictures a second
+// The big Program picture is copied straight from the Studio's own picture, 30 times a second, so it moves
+// smoothly (no photos in between). The Studio is inside the main window: this page is that window, or a
+// Multiview window opened from it. If the Studio cannot be reached, the photos above are shown instead.
+(function () {
+  const out = $('#crProgC'); if (!out) return;
+  const g = out.getContext('2d');
+  const studioCanvas = () => {
+    for (const w of [window, window.opener]) {
+      try { const f = w && w.document.querySelector('#studioView iframe'); const c = f && f.contentWindow.document.getElementById('cv'); if (c && c.width > 16) return c; } catch {}
+    }
+    return null;
+  };
+  let src = null, lookAt = 0, shown = false, last = 0;
+  const show = (v) => { if (v === shown) return; shown = v; out.hidden = !v; };
+  const loop = (t) => {
+    requestAnimationFrame(loop);
+    if (page !== 'cr' || document.hidden) return;
+    if (t - last < 30) return; last = t; // 30 times a second is enough
+    if ((!src || !src.isConnected) && t - lookAt > 1000) { lookAt = t; src = studioCanvas(); }
+    if (!src || !src.isConnected) return show(false);
+    try {
+      const r = out.getBoundingClientRect(), k = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.min(1920, Math.round(r.width * k)), h = Math.min(1080, Math.round(r.height * k));
+      if (w < 8 || h < 8) return;
+      if (out.width !== w || out.height !== h) { out.width = w; out.height = h; }
+      // fill the box like the photo does (cover)
+      const sc = Math.max(w / src.width, h / src.height), dw = src.width * sc, dh = src.height * sc;
+      g.imageSmoothingQuality = 'high';
+      g.drawImage(src, (w - dw) / 2, (h - dh) / 2, dw, dh);
+      show(true);
+    } catch { src = null; show(false); }
+  };
+  requestAnimationFrame(loop);
+})();
 if (location.hash === '#control-room') setTimeout(() => showPage('cr'), 0);
 window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' ? 'cr' : XPAGES[location.hash.slice(1)] ? location.hash.slice(1) : 'dash'));
 if (XPAGES[location.hash.slice(1)]) setTimeout(() => showPage(location.hash.slice(1)), 0);
