@@ -185,6 +185,18 @@ async function vcamTests() {
   const last = fs.readFileSync(log + '.last'); assert.strictEqual(last.length, FR, 'last idle picture is one whole picture');
   assert.ok(new Set(last).size > 3, 'the idle picture shows the logo, not just one colour');
   assert.ok(!fs.existsSync(log + '.end'), 'the helper is still running after stop');
+  // the light way: raw pictures straight in, no ffmpeg
+  const r = vc.startRaw(W, H, 10);
+  r.write(Buffer.alloc(FR - 1, 9)); // not a whole picture: refused
+  r.write(Buffer.alloc(FR, 200));
+  await new Promise((x) => setTimeout(x, 400));
+  const rawN = +fs.readFileSync(log, 'utf8'), rawLast = fs.readFileSync(log + '.last');
+  assert.strictEqual(rawN % FR, 0, 'raw: only whole pictures: ' + rawN);
+  assert.ok(rawN > after && rawLast.length === FR && rawLast.every((v) => v === 200), 'raw: the picture reached the camera unchanged');
+  r.stop(); await new Promise((x) => setTimeout(x, 1200));
+  const rawAfter = +fs.readFileSync(log, 'utf8');
+  assert.ok(rawAfter > rawN && rawAfter % FR === 0, 'raw: the resting picture comes back after stop');
+  ok('virtual camera, light way: raw pictures go straight to the camera, whole pictures only');
   vc.quit(); await new Promise((r) => setTimeout(r, 400));
   ok('virtual camera stays in place when stopped, shows a dark picture, and only sends whole pictures');
 }
