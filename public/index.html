@@ -837,8 +837,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mdl .seg3 button { padding:9px 10px; border:0; border-radius:999px; background:transparent; color:var(--soft); font-size:13px; font-weight:600; } .mdl .seg3 button.on { background:var(--blue); color:var(--onblue); } .mdl .seg3 button:disabled { opacity:.45; }
   /* ---------- Multiview (as in the design) ---------- */
   .cr.mv2:not([hidden]) { display:flex; flex-direction:column; gap:10px; height:calc(100vh - 90px); padding:0 12px 12px; margin:0; max-width:none; background:transparent; overflow:hidden; box-sizing:border-box; align-items:stretch; justify-content:flex-start; }
-  .cr.mv2.tall:not([hidden]) { flex-direction:row; align-items:center; gap:24px; }
-  .mv2 .mv-top { flex:1; min-height:0; display:flex; justify-content:center; align-items:center; } .mv2.tall .mv-top { flex:none; height:100%; }
+  .mv2 .mv-top { flex:1; min-height:0; display:flex; justify-content:center; align-items:center; }
   .mv2 .mvt { position:relative; border-radius:16px; overflow:hidden; border:2px solid rgba(255,255,255,.1); box-shadow:0 10px 24px rgba(0,0,0,.35); background:linear-gradient(135deg,#1d2a5e,#0e1430); padding:0; margin:0; display:block; align-self:start; color:#eef1f8; text-align:left; font:inherit; min-width:0; box-sizing:border-box; }
   .mv2 .mv-grid .mvt { aspect-ratio:16/9; } .mv2.tall .mv-grid .mvt { aspect-ratio:9/16; } .mv2.sq .mv-grid .mvt { aspect-ratio:1; }
   .mv2 button.mvt { cursor:pointer; } .mv2 button.mvt:hover { border-color:rgba(255,255,255,.3); }
@@ -851,7 +850,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv2 .mvt .lb small { margin-left:auto; color:#cdd3e4; font-weight:500; font-size:12px; }
   .mv2 .mvt .nb { position:absolute; left:10px; top:10px; z-index:1; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.16); }
   .mv2 .mv-tag { position:absolute; right:12px; top:12px; z-index:1; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:.4px; background:#ff4d5a; }
-  .mv2 .mv-grid { flex:none; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; } .mv2.tall .mv-grid { flex:1; align-content:center; }
+  .mv2 .mv-grid { flex:none; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
   .mv-chip { display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#cdd3e4; font-size:13px; font-weight:600; margin-left:4px; }
   .mv-chip b { padding:1px 7px; border-radius:6px; background:rgba(255,255,255,.12); font-size:11px; }
   /* ---------- Settings (as in the design) ---------- */
@@ -920,29 +919,25 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .glp-off.empty .ring { display:none; } .glp-off.empty .glp-ic { display:grid; }
   /* nothing to show: a dark shade of the main colour (like OBS), everywhere a picture is missing */
   .mv2 .mvt { background:#000; }
-  /* Multiview layouts: Program + scenes, Gallery (all the same size), Custom (you place and size the boxes) */
+  /* Multiview layouts (like Zoom): Speaker, Gallery, Custom. Every box keeps the picture's own shape: nothing is stretched and there are no black sides. */
   .mv-views { display:inline-flex; gap:2px; padding:3px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); }
   .mv-views button { padding:6px 13px; border-radius:999px; border:0; background:transparent; color:#cdd3e4; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
   .mv-views button:hover { color:#fff; } .mv-views button.on { background:var(--sel, #3b6cff); color:#fff; }
-  .mv-add { padding:8px 12px; border-radius:999px; background:#1a2140; color:#e8ecf8; border:1px solid rgba(255,255,255,.14); font:inherit; font-size:13px; max-width:170px; }
-  /* the boxes fill the window: no empty space at the sides. The scene boxes share each row's whole width. */
-  .mv2.v-fill .mv-grid { display:flex; flex-wrap:wrap; gap:10px; flex:none; align-content:flex-start; overflow:hidden; }
-  .mv2.v-fill .mv-grid .mvt { flex:1 1 var(--tw); height:var(--th); aspect-ratio:auto !important; align-self:auto; min-width:0; }
-  .mv2.v-fill .mv-grid .mvt img, .mv2.v-fill .mv-grid .mvt canvas { object-fit:contain; background:#000; } /* a box can be any shape: its picture is never stretched or cut off */
-  .mv2.v-fill .mv-top { flex:none; }
-  .mv2.v-gallery .mv-top, .mv2.v-focus .mv-grid { display:none; }
-  .mv2.v-speaker .mv-grid { order:-1; flex-wrap:nowrap; }
-  .cr.mv2.v-side:not([hidden]) { flex-direction:row; }
-  .mv2 #crProg { object-fit:contain; background:#000; } /* the picture on air is never cut off */
-  .cr.mv2.v-custom:not([hidden]) { display:block; position:relative; padding:0; }
-  .mv2.v-custom .mv-top, .mv2.v-custom .mv-grid { display:contents; }
-  .mv2.v-custom .mvt { position:absolute; aspect-ratio:auto !important; }
-  .mv2.v-custom .mvt img, .mv2.v-custom .mvt canvas { object-fit:contain; background:#000; }
-  .mv2.v-custom .mvt.unplaced { display:none; }
-  .mv2 .mvh, .mv2 .mvx { display:none; }
-  .mv2.v-custom.mv-edit .mvt { cursor:move; outline:2px dashed rgba(255,255,255,.55); outline-offset:-2px; touch-action:none; user-select:none; }
-  .mv2.v-custom.mv-edit .mvh { display:block; position:absolute; right:0; bottom:0; width:22px; height:22px; cursor:nwse-resize; background:linear-gradient(135deg, transparent 50%, #fff 50%); z-index:4; }
-  .mv2.v-custom.mv-edit .mvx { display:grid; place-items:center; position:absolute; right:8px; top:8px; width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,.75); color:#fff; font-size:15px; line-height:1; cursor:pointer; z-index:4; }
+  .mv2 .mvt { width:var(--tw); height:var(--th); aspect-ratio:auto !important; flex:none; }
+  .mv2 #crProgBox { flex:none; align-self:center; }
+  /* Speaker: the row of scenes sits on one side (top, bottom, left or right); drag it to another side */
+  .mv2.v-speaker .mv-top { flex:1; min-width:0; min-height:0; height:auto; align-self:stretch; }
+  .mv2.v-speaker .mv-grid { align-self:center; }
+  .mv2.v-speaker .mv-grid { display:flex; gap:10px; flex:none; justify-content:center; align-items:center; cursor:grab; touch-action:none; }
+  .mv2.v-speaker.sp-top .mv-grid, .mv2.v-speaker.sp-left .mv-grid { order:-1; }
+  .cr.mv2.v-speaker.sp-left:not([hidden]), .cr.mv2.v-speaker.sp-right:not([hidden]) { flex-direction:row; }
+  .mv2.v-speaker.sp-left .mv-grid, .mv2.v-speaker.sp-right .mv-grid { flex-direction:column; }
+  .mv2.mv-moving .mv-grid { outline:2px dashed rgba(255,255,255,.5); outline-offset:4px; border-radius:18px; cursor:grabbing; }
+  /* Gallery and Custom: one grid of same-size boxes, in the middle of the window */
+  .cr.mv2.v-gallery:not([hidden]), .cr.mv2.v-custom:not([hidden]) { display:grid; justify-content:center; align-content:center; }
+  .mv2.v-gallery .mv-top, .mv2.v-gallery .mv-grid, .mv2.v-custom .mv-top, .mv2.v-custom .mv-grid { display:contents; }
+  .mv2.v-gallery #crProgBox { display:none; }
+  .mv2.v-custom .mvt { cursor:grab; touch-action:none; } .mv2.v-custom .mvt.drag { opacity:.45; outline:2px dashed #fff; outline-offset:-2px; }
   /* drop-downs as in the design: one small arrow, not the computer's own up and down arrows */
   select:not([multiple]) { -webkit-appearance:none; appearance:none; padding-right:36px !important; background-image:linear-gradient(45deg,transparent 50%,#a3abc4 50%),linear-gradient(135deg,#a3abc4 50%,transparent 50%) !important; background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50% !important; background-size:5px 5px,5px 5px !important; background-repeat:no-repeat !important; }
   html.t-light select:not([multiple]) { background-image:linear-gradient(45deg,transparent 50%,#5b6377 50%),linear-gradient(135deg,#5b6377 50%,transparent 50%) !important; }
@@ -1032,7 +1027,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <span class="sp"></span>
   <span class="gl-acts" id="rcActs" hidden><span class="rc-where" id="rcWhere"></span><button type="button" class="hb pl" id="rcOpen">Open folder</button><button type="button" class="hb pl" id="rcRemux">Remux to MP4</button></span>
   <span class="gl-acts" id="anActs" hidden><span class="rc-where" id="anAddr"></span><button type="button" class="hb pl" id="anEdit">Change address</button><button type="button" class="hb pl" id="anOpen">Open in browser</button></span>
-  <span class="gl-acts" id="mvActs" hidden><span class="mv-views" id="mvViews" role="group" aria-label="Multiview layout"><button type="button" data-mv="prog" title="The big Program picture with the scenes under it">Program</button><button type="button" data-mv="speaker" title="A thin row of scenes on top, the Program picture big under it">Speaker</button><button type="button" data-mv="side" title="The Program picture on the left, the scenes down the right side">Side by side</button><button type="button" data-mv="gallery" title="Every scene the same size">Gallery</button><button type="button" data-mv="focus" title="Only the Program picture">Focus</button><button type="button" data-mv="custom" title="Your own layout: place and size the boxes">Custom</button></span><button type="button" class="hb pl" id="mvEditB" hidden>Edit layout</button><select class="mv-add" id="mvAddS" aria-label="Add a box" hidden></select><button type="button" class="hb pl" id="mvResetB" hidden>Reset</button><button type="button" class="hb pl" id="mvDisp" hidden>Show on a display ▾</button><button type="button" class="hb pl" id="mvWin">New window</button></span>
+  <span class="gl-acts" id="mvActs" hidden><span class="mv-views" id="mvViews" role="group" aria-label="Multiview layout"><button type="button" data-mv="speaker" title="The Program picture big, with a row of scenes. Drag the row to another side.">Speaker</button><button type="button" data-mv="gallery" title="Every scene the same size">Gallery</button><button type="button" data-mv="custom" title="Like Gallery, in your own order: drag a box to move it">Custom</button></span><button type="button" class="hb pl" id="mvDisp" hidden>Show on a display ▾</button><button type="button" class="hb pl" id="mvWin">New window</button></span>
   <span class="gl-acts" id="scActs" hidden><button type="button" class="hb pl" id="scObs">Import from OBS</button><button type="button" class="hb pl" id="scImp">Import file</button><button type="button" class="hb sb" id="scNew">+ New collection</button></span>
   <span class="gl-acts" id="glActs">
     <button type="button" class="hb" id="glUpd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Update title for all channels</button>
@@ -2783,121 +2778,88 @@ function fitCrTiles() {
   const cr = $('#crView'); if (!cr || cr.hidden || !cr.clientWidth) return; cr.style.height = Math.max(300, innerHeight - cr.getBoundingClientRect().top - 4) + 'px';
   const tall = stu.shape === 'portrait', sq = stu.shape === 'square';
   cr.classList.toggle('tall', tall); cr.classList.toggle('sq', sq);
-  const ar = tall ? 9 / 16 : sq ? 1 : 16 / 9;
-  const g = $('#crTiles'), n = g.children.length, gap = 14;
-  MV_VIEWS.forEach((v) => cr.classList.toggle('v-' + v, mvView === v)); cr.classList.toggle('mv-edit', mvView === 'custom' && mvEdit);
-  const fill = mvView !== 'custom' && !((tall || sq) && mvView === 'prog'); cr.classList.toggle('v-fill', fill);
-  g.style.width = g.style.height = '';
-  if (mvView !== 'custom') mvBoxes().forEach((el) => { el.style.left = el.style.top = el.style.zIndex = ''; el.classList.remove('unplaced'); if (el.id !== 'crProgBox') el.style.width = el.style.height = ''; });
-  mvButtons();
-  if (mvView === 'custom') return fitMvAlt(ar);
-  if (fill) return fitMvFill(ar);
-  if (tall) { // Program on the left, the scenes 5 across to its right
-    const H = cr.clientHeight - 22; const pw = Math.floor(H * ar); $('#crProgBox').style.width = pw + 'px'; $('#crProgBox').style.height = H + 'px';
-    const W = cr.clientWidth - 48 - pw - 24, rows = Math.ceil(n / 5); let tw = (W - 4 * gap) / 5; const th = Math.min(tw / ar, (H - (rows - 1) * gap) / rows); tw = th * ar;
-    g.style.gridTemplateColumns = 'repeat(5,' + Math.floor(tw) + 'px)';
-  } else {
-    const cols = sq ? 5 : Number(g.dataset.cols) || 5, gp = 10;
-    const rows = Math.ceil(n / cols), tw = (cr.clientWidth - 24 - (cols - 1) * gp) / cols, th = tw / ar;
-    g.style.gridTemplateColumns = 'repeat(' + cols + ',minmax(0,1fr))';
-    const ph = Math.max(120, cr.clientHeight - 12 - rows * th - rows * gp); const pw = Math.min(cr.clientWidth - 24, ph * ar);
-    $('#crProgBox').style.width = Math.floor(pw) + 'px'; $('#crProgBox').style.height = Math.floor(pw / ar) + 'px';
+  const ar = tall ? 9 / 16 : sq ? 1 : 16 / 9; // every box has the picture's own shape
+  const g = $('#crTiles'), pb = $('#crProgBox'), n = g.children.length, gp = 10;
+  const W = cr.clientWidth - 24, H = cr.clientHeight - 12, lim = (v, a, b) => Math.max(a, Math.min(b, v));
+  MV_VIEWS.forEach((v) => cr.classList.toggle('v-' + v, mvView === v));
+  ['top', 'bottom', 'left', 'right'].forEach((d) => cr.classList.toggle('sp-' + d, mvView === 'speaker' && mvSide === d));
+  $('#mvViews').querySelectorAll('button').forEach((b) => { b.classList.toggle('on', b.dataset.mv === mvView); b.setAttribute('aria-pressed', String(b.dataset.mv === mvView)); });
+  g.style.gridTemplateColumns = ''; cr.style.gridTemplateColumns = '';
+  let tw, th, pw, ph;
+  if (mvView === 'speaker') {
+    if (mvSide === 'top' || mvSide === 'bottom') { // a row: as high as a sixth of the window, smaller if the scenes would not fit side by side
+      th = lim(H * 0.17, 70, 170); tw = th * ar; if (n * tw + gp * (n - 1) > W) { tw = (W - gp * (n - 1)) / Math.max(1, n); th = tw / ar; }
+      const rh = n ? H - th - gp : H; pw = Math.min(W, rh * ar); ph = pw / ar;
+    } else { // a column at the side
+      tw = lim(W * 0.17, 130, 300); th = tw / ar; if (n * th + gp * (n - 1) > H) { th = (H - gp * (n - 1)) / Math.max(1, n); tw = th * ar; }
+      const rw = n ? W - tw - gp : W; pw = Math.min(rw, H * ar); ph = pw / ar;
+    }
+    mvBoxes().forEach((el) => { el.style.order = ''; });
+  } else { // Gallery and Custom: the most boxes a row that keeps each box as big as it can be
+    const boxes = mvView === 'custom' ? n + 1 : n, m = Math.max(1, boxes); let cols = 1; tw = 0;
+    for (let c = 1; c <= m; c++) { const rows = Math.ceil(m / c), w = Math.min((W - gp * (c - 1)) / c, ((H - gp * (rows - 1)) / rows) * ar); if (w > tw) { tw = w; cols = c; } }
+    tw = Math.floor(tw); th = tw / ar; pw = tw; ph = th;
+    cr.style.gridTemplateColumns = 'repeat(' + cols + ',' + tw + 'px)';
+    if (mvView === 'custom') mvApplyOrder(); else mvBoxes().forEach((el) => { el.style.order = ''; });
   }
+  cr.style.setProperty('--tw', Math.floor(tw) + 'px'); cr.style.setProperty('--th', Math.floor(th) + 'px');
+  pb.style.width = Math.floor(pw) + 'px'; pb.style.height = Math.floor(ph) + 'px';
 }
 new ResizeObserver(() => fitCrTiles()).observe($('#crView')); addEventListener('resize', () => fitCrTiles());
 
-// ---- Multiview layouts ----
-// Program: the big Program picture with the scenes under it. Speaker: a thin row of scenes on top. Side by side: scenes down the right.
-// Gallery: every scene the same size (like Zoom's gallery). Focus: only the Program picture.
-// In all of these the boxes fill the whole window; the Program picture is shown whole inside its box.
-// Custom: your own layout. Press Edit layout, then drag a box to move it, drag its corner to size it, x to take it away.
-const MV_VIEWS = ['prog', 'speaker', 'side', 'gallery', 'focus', 'custom'], MVG = 24; // custom: the window is a 24 x 24 grid
-let mvView = 'prog', mvEdit = false, mvCustom = null;
-try { const v = localStorage.getItem('ms_mv_view'); if (MV_VIEWS.includes(v)) mvView = v; mvCustom = JSON.parse(localStorage.getItem('ms_mv_custom') || 'null'); } catch {}
-function mvSave() { try { localStorage.setItem('ms_mv_view', mvView); if (mvCustom) localStorage.setItem('ms_mv_custom', JSON.stringify(mvCustom)); else localStorage.removeItem('ms_mv_custom'); } catch {} }
+// ---- Multiview layouts (like Zoom) ----
+// Speaker: the Program picture big, with a row of scenes on one side. Drag the row to the top, bottom, left or right; it snaps there.
+// Gallery: every scene the same size. Custom: like Gallery with the Program picture too, in your own order: drag a box onto another to move it.
+// Boxes always keep the picture's shape. The layout, the side and the order are remembered on this computer.
+const MV_VIEWS = ['speaker', 'gallery', 'custom'];
+let mvView = 'speaker', mvSide = 'bottom', mvOrder = [];
+try {
+  const v = localStorage.getItem('ms_mv_view'); if (MV_VIEWS.includes(v)) mvView = v;
+  const sd = localStorage.getItem('ms_mv_side'); if (['top', 'bottom', 'left', 'right'].includes(sd)) mvSide = sd;
+  const o = JSON.parse(localStorage.getItem('ms_mv_order') || '[]'); if (Array.isArray(o)) mvOrder = o.map(String);
+} catch {}
+function mvSave() { try { localStorage.setItem('ms_mv_view', mvView); localStorage.setItem('ms_mv_side', mvSide); localStorage.setItem('ms_mv_order', JSON.stringify(mvOrder)); } catch {} }
 const mvKeyOf = (el) => (el.id === 'crProgBox' ? '*program' : el.dataset.n);
 function mvBoxes() { return [$('#crProgBox'), ...document.querySelectorAll('#crTiles button.mvt[data-n]')]; }
-function mvDefault(names) { // fills the window: Program big on the left, up to 4 scenes down the right side, the rest in a row along the bottom
-  const side = names.slice(0, 4), rest = names.slice(4, 16), ph = rest.length ? 16 : MVG, o = { '*program': { x: 0, y: 0, w: side.length ? 16 : MVG, h: ph } };
-  side.forEach((n, i) => { o[n] = { x: 16, y: i * ph / side.length, w: 8, h: ph / side.length }; });
-  rest.forEach((n, i) => { o[n] = { x: i * MVG / rest.length, y: 16, w: MVG / rest.length, h: 8 }; });
-  return o;
+function mvApplyOrder() { // your order first; boxes it does not know yet (new scenes) go to the end
+  const boxes = mvBoxes(), keys = boxes.map(mvKeyOf);
+  mvOrder = mvOrder.filter((k) => keys.includes(k)).concat(keys.filter((k) => !mvOrder.includes(k)));
+  boxes.forEach((el) => { el.style.order = String(mvOrder.indexOf(mvKeyOf(el))); });
 }
-function mvPlace(el, it) {
-  el.style.left = 'calc(' + (it.x / MVG * 100) + '% + 4px)'; el.style.top = 'calc(' + (it.y / MVG * 100) + '% + 4px)';
-  el.style.width = 'calc(' + (it.w / MVG * 100) + '% - 8px)'; el.style.height = 'calc(' + (it.h / MVG * 100) + '% - 8px)'; el.style.zIndex = String(it.z || 1);
-}
-function mvButtons() {
-  $('#mvViews').querySelectorAll('button').forEach((b) => { b.classList.toggle('on', b.dataset.mv === mvView); b.setAttribute('aria-pressed', String(b.dataset.mv === mvView)); });
-  const c = mvView === 'custom';
-  $('#mvEditB').hidden = !c; $('#mvEditB').textContent = mvEdit ? 'Done' : 'Edit layout';
-  $('#mvResetB').hidden = !(c && mvEdit); $('#mvAddS').hidden = !(c && mvEdit);
-}
-function fitMvFill(ar) {
-  const cr = $('#crView'), g = $('#crTiles'), pb = $('#crProgBox'), gp = 10, n = g.children.length;
-  const W = cr.clientWidth - 24, H = cr.clientHeight - 12, lim = (v, a, b) => Math.max(a, Math.min(b, v));
-  let pw = W, ph = H, tw = 0, th = 0, gw = 0, gh = 0;
-  if (mvView === 'focus' || !n) { /* only the Program picture */ }
-  else if (mvView === 'gallery') { // the number of boxes a row that keeps them closest to the picture's shape
-    let cols = 1, best = Infinity;
-    for (let c = 1; c <= n; c++) { const rows = Math.ceil(n / c), d = Math.abs(Math.log(((W - gp * (c - 1)) / c) / ((H - gp * (rows - 1)) / rows) / ar)); if (d < best) { best = d; cols = c; } }
-    const rows = Math.ceil(n / cols); tw = (W - gp * (cols - 1)) / cols; th = (H - gp * (rows - 1)) / rows; gw = W; gh = H; ph = 0;
-  } else if (mvView === 'speaker') { th = lim(H * 0.16, 80, 160); tw = (W - gp * (n - 1)) / n; gw = W; gh = th; ph = H - th - gp; }
-  else if (mvView === 'side') {
-    const sw = lim(W * 0.24, 200, 440), cols = n > 6 ? 2 : 1, rows = Math.ceil(n / cols);
-    tw = (sw - gp * (cols - 1)) / cols; th = (H - gp * (rows - 1)) / rows; gw = sw; gh = H; pw = W - sw - gp;
-  } else { // Program: scenes under the picture, in rows that are as wide as the window
-    const rows = Math.ceil(n / (Number(g.dataset.cols) || 5)), cols = Math.ceil(n / rows); // the same number in each row where it can be (6 scenes: 3 and 3, not 5 and 1)
-    tw = (W - gp * (cols - 1)) / cols; th = Math.min(tw / ar, (H * 0.4 - gp * (rows - 1)) / rows); gw = W; gh = rows * th + gp * (rows - 1); ph = H - gh - gp;
-  }
-  pb.style.width = Math.max(0, Math.floor(pw)) + 'px'; pb.style.height = Math.max(0, Math.floor(ph)) + 'px';
-  g.style.gridTemplateColumns = ''; g.style.setProperty('--tw', Math.max(40, Math.floor(tw) - 1) + 'px'); g.style.setProperty('--th', Math.max(30, Math.floor(th)) + 'px');
-  if (gw) { g.style.width = Math.floor(gw) + 'px'; g.style.height = Math.floor(gh) + 'px'; }
-}
-function fitMvAlt(ar) {
-  const cr = $('#crView'), g = $('#crTiles');
-  const boxes = mvBoxes(), names = boxes.slice(1).map((b) => b.dataset.n);
-  if (!mvCustom || !mvCustom.items || !Object.keys(mvCustom.items).length) mvCustom = { items: mvDefault(names) };
-  const left = [];
-  boxes.forEach((el) => {
-    const key = mvKeyOf(el), it = mvCustom.items[key];
-    el.classList.toggle('unplaced', !it);
-    if (!it) { left.push(key); return; }
-    mvPlace(el, it);
-    if (!el.querySelector('.mvh')) { const h = document.createElement('span'); h.className = 'mvh'; h.title = 'Drag to change the size'; const x = document.createElement('span'); x.className = 'mvx'; x.textContent = '×'; x.title = 'Take this box away'; el.append(h, x); }
-  });
-  const sel = $('#mvAddS'), want = left.join('\n');
-  if (sel.dataset.k !== want) { sel.dataset.k = want; sel.textContent = ''; sel.add(new Option(left.length ? 'Add a box…' : 'All boxes are placed', '')); left.forEach((k) => sel.add(new Option(k === '*program' ? 'Program' : k, k))); sel.disabled = !left.length; }
-}
-function mvSetView(v) { mvView = v; if (v !== 'custom') mvEdit = false; mvSave(); $('#crTiles').dataset.key = ''; renderCr(); fitCrTiles(); }
+function mvSetView(v) { mvView = v; mvSave(); fitCrTiles(); }
 $('#mvViews').onclick = (e) => { const b = e.target.closest('button[data-mv]'); if (b) mvSetView(b.dataset.mv); };
-$('#mvEditB').onclick = () => { mvEdit = !mvEdit; fitCrTiles(); };
-$('#mvResetB').onclick = () => { mvCustom = null; mvSave(); fitCrTiles(); };
-$('#mvAddS').onchange = (e) => {
-  const k = e.target.value; if (!k || !mvCustom) return;
-  const top = Math.max(1, ...Object.values(mvCustom.items).map((i) => i.z || 1));
-  mvCustom.items[k] = { x: 8, y: 8, w: 8, h: 8, z: top + 1 }; mvSave(); fitCrTiles();
-};
-// moving and sizing a box (Custom, while editing)
+// Dragging: in Speaker the whole row of scenes moves to the side you drag it to; in Custom a box moves to the place of the box you drag it onto.
+// A short press without moving is still a click (it switches the scene).
+let mvDragged = false;
 $('#crView').addEventListener('pointerdown', (e) => {
-  if (!(mvView === 'custom' && mvEdit) || e.button) return;
-  const box = e.target.closest('.mvt'); if (!box || !mvCustom) return;
-  const key = mvKeyOf(box), it = mvCustom.items[key]; if (!it) return;
-  e.preventDefault(); e.stopPropagation();
-  if (e.target.closest('.mvx')) { delete mvCustom.items[key]; mvSave(); fitCrTiles(); return; }
-  const size = Boolean(e.target.closest('.mvh')), r = $('#crView').getBoundingClientRect(), ux = r.width / MVG, uy = r.height / MVG;
-  const sx = e.clientX, sy = e.clientY, o = { ...it }, lim = (v, a, b) => Math.max(a, Math.min(b, v));
-  it.z = Math.max(1, ...Object.values(mvCustom.items).map((i) => i.z || 1)) + (it.z && Object.values(mvCustom.items).every((i) => i === it || (i.z || 1) < it.z) ? 0 : 1);
+  if (e.button || mvView === 'gallery') return;
+  const cr = $('#crView'), box = e.target.closest('.mvt');
+  const strip = mvView === 'speaker' && e.target.closest('#crTiles');
+  if (!(strip || (mvView === 'custom' && box))) return;
+  const sx = e.clientX, sy = e.clientY; let on = false;
   const move = (ev) => {
-    const dx = Math.round((ev.clientX - sx) / ux), dy = Math.round((ev.clientY - sy) / uy);
-    if (size) { it.w = lim(o.w + dx, 2, MVG - o.x); it.h = lim(o.h + dy, 2, MVG - o.y); } else { it.x = lim(o.x + dx, 0, MVG - o.w); it.y = lim(o.y + dy, 0, MVG - o.h); }
-    mvPlace(box, it);
+    if (!on) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 10) return; on = true; mvDragged = true; cr.classList.add('mv-moving'); if (!strip) box.classList.add('drag'); }
+    if (strip) { // the nearest side of the window
+      const r = cr.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
+      const d = { left: x, right: 1 - x, top: y, bottom: 1 - y }, side = Object.keys(d).sort((a, b) => d[a] - d[b])[0];
+      if (side !== mvSide) { mvSide = side; fitCrTiles(); }
+    } else {
+      const over = document.elementFromPoint(ev.clientX, ev.clientY), t = over && over.closest('#crView .mvt');
+      if (!t || t === box) return;
+      const a = mvKeyOf(box), b = mvKeyOf(t), from = mvOrder.indexOf(a), to = mvOrder.indexOf(b);
+      if (from < 0 || to < 0) return;
+      mvOrder.splice(from, 1); mvOrder.splice(to, 0, a); mvApplyOrder();
+    }
   };
-  const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); mvSave(); };
+  const up = () => {
+    removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+    cr.classList.remove('mv-moving'); if (box) box.classList.remove('drag');
+    if (on) { mvSave(); setTimeout(() => { mvDragged = false; }, 0); }
+  };
   addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
-}, true);
-// while editing, a click on a box does not switch the scene
-$('#crView').addEventListener('click', (e) => { if (mvView === 'custom' && mvEdit) { e.preventDefault(); e.stopPropagation(); } }, true);
+});
+// the click that ends a drag does not switch the scene
+$('#crView').addEventListener('click', (e) => { if (mvDragged) { e.preventDefault(); e.stopPropagation(); } }, true);
 function renderCr() {
   if (page !== 'cr') return;
   const d = crData(); const box = $('#crTiles');
@@ -2913,9 +2875,9 @@ function renderCr() {
       if (pw > best + 1) { best = pw; cols = c; slots = rows * c; }
     }
   }
-  if (mvView !== 'prog' || !(view.classList.contains('tall') || view.classList.contains('sq'))) slots = d.scenes.length; // only real scenes: no empty boxes
+  slots = d.scenes.length; // only real scenes: no empty boxes
   box.dataset.cols = cols;
-  const key = d.scenes.join('\n') + '\n' + slots + mvView;
+  const key = d.scenes.join('\n') + '\n' + slots;
   if (box.dataset.key !== key) {
     box.dataset.key = key; box.textContent = '';
     for (let k = 0; k < slots; k++) {
