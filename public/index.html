@@ -934,7 +934,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv2.v-speaker.sp-left .mv-grid, .mv2.v-speaker.sp-right .mv-grid { flex-direction:column; }
   .mv2.mv-moving .mv-grid { outline:2px dashed rgba(255,255,255,.5); outline-offset:4px; border-radius:18px; cursor:grabbing; }
   /* Gallery and Custom: one grid of same-size boxes, in the middle of the window */
-  .cr.mv2.v-gallery:not([hidden]), .cr.mv2.v-custom:not([hidden]) { display:grid; justify-content:center; align-content:center; }
+  .cr.mv2.v-gallery:not([hidden]), .cr.mv2.v-custom:not([hidden]) { display:flex; flex-direction:row; flex-wrap:wrap; justify-content:center; align-content:center; } /* a last row with fewer boxes sits in the middle too */
   .mv2.v-gallery .mv-top, .mv2.v-gallery .mv-grid, .mv2.v-custom .mv-top, .mv2.v-custom .mv-grid { display:contents; }
   .mv2.v-gallery #crProgBox { display:none; }
   .mv2.v-custom .mvt { cursor:grab; touch-action:none; } .mv2.v-custom .mvt.drag { opacity:.45; outline:2px dashed #fff; outline-offset:-2px; }
@@ -2784,7 +2784,7 @@ function fitCrTiles() {
   MV_VIEWS.forEach((v) => cr.classList.toggle('v-' + v, mvView === v));
   ['top', 'bottom', 'left', 'right'].forEach((d) => cr.classList.toggle('sp-' + d, mvView === 'speaker' && mvSide === d));
   $('#mvViews').querySelectorAll('button').forEach((b) => { b.classList.toggle('on', b.dataset.mv === mvView); b.setAttribute('aria-pressed', String(b.dataset.mv === mvView)); });
-  g.style.gridTemplateColumns = ''; cr.style.gridTemplateColumns = '';
+  g.style.gridTemplateColumns = ''; cr.style.paddingLeft = cr.style.paddingRight = '';
   let tw, th, pw, ph;
   if (mvView === 'speaker') {
     if (mvSide === 'top' || mvSide === 'bottom') { // a row: as high as a sixth of the window, smaller if the scenes would not fit side by side
@@ -2799,7 +2799,7 @@ function fitCrTiles() {
     const boxes = mvView === 'custom' ? n + 1 : n, m = Math.max(1, boxes); let cols = 1; tw = 0;
     for (let c = 1; c <= m; c++) { const rows = Math.ceil(m / c), w = Math.min((W - gp * (c - 1)) / c, ((H - gp * (rows - 1)) / rows) * ar); if (w > tw) { tw = w; cols = c; } }
     tw = Math.floor(tw); th = tw / ar; pw = tw; ph = th;
-    cr.style.gridTemplateColumns = 'repeat(' + cols + ',' + tw + 'px)';
+    { const side = 12 + Math.max(0, Math.floor((W - (cols * tw + gp * (cols - 1))) / 2)) + 'px'; cr.style.paddingLeft = cr.style.paddingRight = side; } // room for exactly this many boxes a row
     if (mvView === 'custom') mvApplyOrder(); else mvBoxes().forEach((el) => { el.style.order = ''; });
   }
   cr.style.setProperty('--tw', Math.floor(tw) + 'px'); cr.style.setProperty('--th', Math.floor(th) + 'px');
