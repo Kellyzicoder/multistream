@@ -443,7 +443,8 @@ html.a-calm body { background:var(--bg) !important; }
   .srcbar { display:flex; align-items:center; gap:8px; padding:4px 14px; min-height:34px; flex:none; font-size:13px; color:var(--muted); }
   .srcbar .sb-n { margin-right:6px; max-width:38ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .srcbar .sb-n.has { color:var(--text); font-weight:600; }
   .srcbar button { padding:4px 12px; border-radius:999px; border:1px solid var(--line); background:var(--field); color:var(--text); font:inherit; font-size:12.5px; cursor:pointer; } .srcbar button:hover { border-color:var(--sel); }
-  .scn.drag, .lyr.drag { opacity:.45; } .scn.dropA, .lyr.dropA { box-shadow:inset 0 3px 0 var(--sel) !important; } .scn.dropB, .lyr.dropB { box-shadow:inset 0 -3px 0 var(--sel) !important; }
+  .scn.drag, .lyr.drag { opacity:.45; }
+  body.rowdrag-scene .scn:not(.drag), body.rowdrag-source .lyr:not(.drag) { box-shadow:inset 0 2px 0 color-mix(in srgb, var(--sel) 35%, transparent), inset 0 -2px 0 color-mix(in srgb, var(--sel) 35%, transparent); } .scn.dropA, .lyr.dropA { box-shadow:inset 0 3px 0 var(--sel) !important; } .scn.dropB, .lyr.dropB { box-shadow:inset 0 -3px 0 var(--sel) !important; }
   #scenes { padding:4px 0; } #scenes .scn { margin:3px 8px; padding:9px 12px; border-radius:10px; font-size:14px; background:transparent; }
   #scenes .scn.on { background:var(--sel); color:var(--onsel); font-weight:600; } #scenes .scn .dot { display:none; }
   #layers { padding:4px 0; } #layers .lyr { margin:2px 8px; padding:6px 6px 6px 12px; gap:10px; border-radius:10px; font-size:14px; background:transparent; }
@@ -1845,8 +1846,8 @@ function dragRow(d, kind, key, onDrop) {
   d.draggable = true;
   const clear = () => d.classList.remove('dropA', 'dropB');
   const below = (e) => { const r = d.getBoundingClientRect(); return e.clientY > r.top + r.height / 2; };
-  d.addEventListener('dragstart', (e) => { if (e.target.closest && e.target.closest('input')) { e.preventDefault(); return; } dragRowKey = kind + ':' + key; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', key); } catch {} d.classList.add('drag'); });
-  d.addEventListener('dragend', () => { dragRowKey = ''; d.classList.remove('drag'); document.querySelectorAll('.dropA, .dropB').forEach((x) => x.classList.remove('dropA', 'dropB')); });
+  d.addEventListener('dragstart', (e) => { if (e.target.closest && e.target.closest('input')) { e.preventDefault(); return; } dragRowKey = kind + ':' + key; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', key); } catch {} d.classList.add('drag'); document.body.classList.add('rowdrag-' + kind); });
+  d.addEventListener('dragend', () => { dragRowKey = ''; d.classList.remove('drag'); document.body.classList.remove('rowdrag-scene', 'rowdrag-source'); document.querySelectorAll('.dropA, .dropB').forEach((x) => x.classList.remove('dropA', 'dropB')); });
   d.addEventListener('dragover', (e) => { if (!dragRowKey.startsWith(kind + ':') || dragRowKey === kind + ':' + key) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; const b = below(e); d.classList.toggle('dropA', !b); d.classList.toggle('dropB', b); });
   d.addEventListener('dragleave', clear);
   d.addEventListener('drop', (e) => { clear(); if (!dragRowKey.startsWith(kind + ':')) return; e.preventDefault(); const from = dragRowKey.slice(kind.length + 1); dragRowKey = ''; if (from !== key) onDrop(from, below(e)); });
