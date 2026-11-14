@@ -933,6 +933,14 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .cr.mv2.v-speaker.sp-left:not([hidden]), .cr.mv2.v-speaker.sp-right:not([hidden]) { flex-direction:row; }
   .mv2.v-speaker.sp-left .mv-grid, .mv2.v-speaker.sp-right .mv-grid { flex-direction:column; }
   .mv2.mv-moving .mv-grid { outline:2px dashed rgba(255,255,255,.5); outline-offset:4px; border-radius:18px; cursor:grabbing; }
+  /* while dragging: every place you can drop is marked softly, and the one you are heading for is lit */
+  .mv-zone { position:absolute; z-index:6; border-radius:14px; border:2px dashed rgba(255,255,255,.35); background:rgba(59,108,255,.10); pointer-events:none; transition:background .12s, border-color .12s; }
+  .mv-zone.on { background:rgba(59,108,255,.38); border-color:#fff; border-style:solid; }
+  .mv-zone[data-z=top] { left:12px; right:12px; top:0; height:16%; } .mv-zone[data-z=bottom] { left:12px; right:12px; bottom:12px; height:16%; }
+  .mv-zone[data-z=left] { left:12px; top:0; bottom:12px; width:14%; } .mv-zone[data-z=right] { right:12px; top:0; bottom:12px; width:14%; }
+  .cr.mv2 { position:relative; }
+  .mv2.v-custom.mv-moving .mvt:not(.drag) { outline:2px dashed rgba(255,255,255,.35); outline-offset:-2px; }
+  .mv2.v-custom.mv-moving .mvt.target { outline:3px solid #fff; outline-offset:-3px; box-shadow:0 0 0 4px rgba(59,108,255,.7); }
   /* Gallery and Custom: one grid of same-size boxes, in the middle of the window */
   .cr.mv2.v-gallery:not([hidden]), .cr.mv2.v-custom:not([hidden]) { display:flex; flex-direction:row; flex-wrap:wrap; justify-content:center; align-content:center; } /* a last row with fewer boxes sits in the middle too */
   .mv2.v-gallery .mv-top, .mv2.v-gallery .mv-grid, .mv2.v-custom .mv-top, .mv2.v-custom .mv-grid { display:contents; }
@@ -1027,7 +1035,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <span class="sp"></span>
   <span class="gl-acts" id="rcActs" hidden><span class="rc-where" id="rcWhere"></span><button type="button" class="hb pl" id="rcOpen">Open folder</button><button type="button" class="hb pl" id="rcRemux">Remux to MP4</button></span>
   <span class="gl-acts" id="anActs" hidden><span class="rc-where" id="anAddr"></span><button type="button" class="hb pl" id="anEdit">Change address</button><button type="button" class="hb pl" id="anOpen">Open in browser</button></span>
-  <span class="gl-acts" id="mvActs" hidden><span class="mv-views" id="mvViews" role="group" aria-label="Multiview layout"><button type="button" data-mv="speaker" title="The Program picture big, with a row of scenes. Drag the row to another side.">Speaker</button><button type="button" data-mv="gallery" title="Every scene the same size">Gallery</button><button type="button" data-mv="custom" title="Like Gallery, in your own order: drag a box to move it">Custom</button></span><button type="button" class="hb pl" id="mvDisp" hidden>Show on a display ▾</button><button type="button" class="hb pl" id="mvWin">New window</button></span>
+  <span class="gl-acts" id="mvActs" hidden><span class="mv-views" id="mvViews" role="group" aria-label="Multiview layout"><button type="button" data-mv="speaker" title="The Program picture big, with a row of scenes. Drag the row to another side.">Speaker</button><button type="button" data-mv="gallery" title="Every scene the same size">Gallery</button><button type="button" data-mv="custom" title="Like Gallery, in your own order: drag a box to move it">Custom</button></span><button type="button" class="hb pl" id="mvResetB" title="Speaker view, the row at the bottom, the scenes in their own order">Reset</button><button type="button" class="hb pl" id="mvDisp" hidden>Show on a display ▾</button><button type="button" class="hb pl" id="mvWin">New window</button></span>
   <span class="gl-acts" id="scActs" hidden><button type="button" class="hb pl" id="scObs">Import from OBS</button><button type="button" class="hb pl" id="scImp">Import file</button><button type="button" class="hb sb" id="scNew">+ New collection</button></span>
   <span class="gl-acts" id="glActs">
     <button type="button" class="hb" id="glUpd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Update title for all channels</button>
@@ -2828,6 +2836,8 @@ function mvApplyOrder() { // your order first; boxes it does not know yet (new s
 }
 function mvSetView(v) { mvView = v; mvSave(); fitCrTiles(); }
 $('#mvViews').onclick = (e) => { const b = e.target.closest('button[data-mv]'); if (b) mvSetView(b.dataset.mv); };
+// back to how it starts: Speaker view, the row at the bottom, the scenes in their own order
+$('#mvResetB').onclick = () => { mvView = 'speaker'; mvSide = 'bottom'; mvOrder = []; mvSave(); fitCrTiles(); };
 // Dragging: in Speaker the whole row of scenes moves to the side you drag it to; in Custom a box moves to the place of the box you drag it onto.
 // A short press without moving is still a click (it switches the scene).
 let mvDragged = false;
@@ -2836,25 +2846,35 @@ $('#crView').addEventListener('pointerdown', (e) => {
   const cr = $('#crView'), box = e.target.closest('.mvt');
   const strip = mvView === 'speaker' && e.target.closest('#crTiles');
   if (!(strip || (mvView === 'custom' && box))) return;
-  const sx = e.clientX, sy = e.clientY; let on = false;
+  const sx = e.clientX, sy = e.clientY; let on = false, side = mvSide, target = null, zones = [];
   const move = (ev) => {
-    if (!on) { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 10) return; on = true; mvDragged = true; cr.classList.add('mv-moving'); if (!strip) box.classList.add('drag'); }
-    if (strip) { // the nearest side of the window
+    if (!on) {
+      if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 10) return;
+      on = true; mvDragged = true; cr.classList.add('mv-moving');
+      if (strip) zones = ['top', 'bottom', 'left', 'right'].map((z) => { const d = document.createElement('div'); d.className = 'mv-zone'; d.dataset.z = z; cr.appendChild(d); return d; }); // the four places the row can go
+      else box.classList.add('drag');
+    }
+    if (strip) { // the nearest side of the window is lit; the row goes there when you let go
       const r = cr.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
-      const d = { left: x, right: 1 - x, top: y, bottom: 1 - y }, side = Object.keys(d).sort((a, b) => d[a] - d[b])[0];
-      if (side !== mvSide) { mvSide = side; fitCrTiles(); }
-    } else {
+      const d = { left: x, right: 1 - x, top: y, bottom: 1 - y }; side = Object.keys(d).sort((a, b) => d[a] - d[b])[0];
+      zones.forEach((z) => z.classList.toggle('on', z.dataset.z === side));
+    } else { // the box under the mouse is lit; the dragged box takes its place when you let go
       const over = document.elementFromPoint(ev.clientX, ev.clientY), t = over && over.closest('#crView .mvt');
-      if (!t || t === box) return;
-      const a = mvKeyOf(box), b = mvKeyOf(t), from = mvOrder.indexOf(a), to = mvOrder.indexOf(b);
-      if (from < 0 || to < 0) return;
-      mvOrder.splice(from, 1); mvOrder.splice(to, 0, a); mvApplyOrder();
+      const nt = t && t !== box ? t : null;
+      if (nt !== target) { if (target) target.classList.remove('target'); target = nt; if (target) target.classList.add('target'); }
     }
   };
-  const up = () => {
+  const up = (ev) => {
     removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
-    cr.classList.remove('mv-moving'); if (box) box.classList.remove('drag');
-    if (on) { mvSave(); setTimeout(() => { mvDragged = false; }, 0); }
+    cr.classList.remove('mv-moving'); if (box) box.classList.remove('drag'); zones.forEach((z) => z.remove()); if (target) target.classList.remove('target');
+    if (!on) return;
+    setTimeout(() => { mvDragged = false; }, 0);
+    if (ev && ev.type === 'pointercancel') return;
+    if (strip) { if (side !== mvSide) { mvSide = side; mvSave(); fitCrTiles(); } }
+    else if (target) {
+      const a = mvKeyOf(box), from = mvOrder.indexOf(a), to = mvOrder.indexOf(mvKeyOf(target));
+      if (from >= 0 && to >= 0) { mvOrder.splice(from, 1); mvOrder.splice(to, 0, a); mvSave(); mvApplyOrder(); }
+    }
   };
   addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
 });
