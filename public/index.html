@@ -925,8 +925,15 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv-views button { padding:6px 13px; border-radius:999px; border:0; background:transparent; color:#cdd3e4; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
   .mv-views button:hover { color:#fff; } .mv-views button.on { background:var(--sel, #3b6cff); color:#fff; }
   .mv-add { padding:8px 12px; border-radius:999px; background:#1a2140; color:#e8ecf8; border:1px solid rgba(255,255,255,.14); font:inherit; font-size:13px; max-width:170px; }
-  .mv2.v-gallery .mv-top { display:none; }
-  .mv2.v-gallery .mv-grid { flex:1; min-height:0; justify-content:center; align-content:center; }
+  /* the boxes fill the window: no empty space at the sides. The scene boxes share each row's whole width. */
+  .mv2.v-fill .mv-grid { display:flex; flex-wrap:wrap; gap:10px; flex:none; align-content:flex-start; overflow:hidden; }
+  .mv2.v-fill .mv-grid .mvt { flex:1 1 var(--tw); height:var(--th); aspect-ratio:auto !important; align-self:auto; min-width:0; }
+  .mv2.v-fill .mv-grid .mvt img, .mv2.v-fill .mv-grid .mvt canvas { object-fit:contain; background:#000; } /* a box can be any shape: its picture is never stretched or cut off */
+  .mv2.v-fill .mv-top { flex:none; }
+  .mv2.v-gallery .mv-top, .mv2.v-focus .mv-grid { display:none; }
+  .mv2.v-speaker .mv-grid { order:-1; flex-wrap:nowrap; }
+  .cr.mv2.v-side:not([hidden]) { flex-direction:row; }
+  .mv2 #crProg { object-fit:contain; background:#000; } /* the picture on air is never cut off */
   .cr.mv2.v-custom:not([hidden]) { display:block; position:relative; padding:0; }
   .mv2.v-custom .mv-top, .mv2.v-custom .mv-grid { display:contents; }
   .mv2.v-custom .mvt { position:absolute; aspect-ratio:auto !important; }
@@ -1025,7 +1032,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <span class="sp"></span>
   <span class="gl-acts" id="rcActs" hidden><span class="rc-where" id="rcWhere"></span><button type="button" class="hb pl" id="rcOpen">Open folder</button><button type="button" class="hb pl" id="rcRemux">Remux to MP4</button></span>
   <span class="gl-acts" id="anActs" hidden><span class="rc-where" id="anAddr"></span><button type="button" class="hb pl" id="anEdit">Change address</button><button type="button" class="hb pl" id="anOpen">Open in browser</button></span>
-  <span class="gl-acts" id="mvActs" hidden><span class="mv-views" id="mvViews" role="group" aria-label="Multiview layout"><button type="button" data-mv="prog" title="The big Program picture with the scenes under it">Program</button><button type="button" data-mv="gallery" title="Every scene the same size">Gallery</button><button type="button" data-mv="custom" title="Your own layout: place and size the boxes">Custom</button></span><button type="button" class="hb pl" id="mvEditB" hidden>Edit layout</button><select class="mv-add" id="mvAddS" aria-label="Add a box" hidden></select><button type="button" class="hb pl" id="mvResetB" hidden>Reset</button><button type="button" class="hb pl" id="mvDisp" hidden>Show on a display ▾</button><button type="button" class="hb pl" id="mvWin">New window</button></span>
+  <span class="gl-acts" id="mvActs" hidden><span class="mv-views" id="mvViews" role="group" aria-label="Multiview layout"><button type="button" data-mv="prog" title="The big Program picture with the scenes under it">Program</button><button type="button" data-mv="speaker" title="A thin row of scenes on top, the Program picture big under it">Speaker</button><button type="button" data-mv="side" title="The Program picture on the left, the scenes down the right side">Side by side</button><button type="button" data-mv="gallery" title="Every scene the same size">Gallery</button><button type="button" data-mv="focus" title="Only the Program picture">Focus</button><button type="button" data-mv="custom" title="Your own layout: place and size the boxes">Custom</button></span><button type="button" class="hb pl" id="mvEditB" hidden>Edit layout</button><select class="mv-add" id="mvAddS" aria-label="Add a box" hidden></select><button type="button" class="hb pl" id="mvResetB" hidden>Reset</button><button type="button" class="hb pl" id="mvDisp" hidden>Show on a display ▾</button><button type="button" class="hb pl" id="mvWin">New window</button></span>
   <span class="gl-acts" id="scActs" hidden><button type="button" class="hb pl" id="scObs">Import from OBS</button><button type="button" class="hb pl" id="scImp">Import file</button><button type="button" class="hb sb" id="scNew">+ New collection</button></span>
   <span class="gl-acts" id="glActs">
     <button type="button" class="hb" id="glUpd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Update title for all channels</button>
@@ -2778,10 +2785,13 @@ function fitCrTiles() {
   cr.classList.toggle('tall', tall); cr.classList.toggle('sq', sq);
   const ar = tall ? 9 / 16 : sq ? 1 : 16 / 9;
   const g = $('#crTiles'), n = g.children.length, gap = 14;
-  cr.classList.toggle('v-gallery', mvView === 'gallery'); cr.classList.toggle('v-custom', mvView === 'custom'); cr.classList.toggle('mv-edit', mvView === 'custom' && mvEdit);
+  MV_VIEWS.forEach((v) => cr.classList.toggle('v-' + v, mvView === v)); cr.classList.toggle('mv-edit', mvView === 'custom' && mvEdit);
+  const fill = mvView !== 'custom' && !((tall || sq) && mvView === 'prog'); cr.classList.toggle('v-fill', fill);
+  g.style.width = g.style.height = '';
   if (mvView !== 'custom') mvBoxes().forEach((el) => { el.style.left = el.style.top = el.style.zIndex = ''; el.classList.remove('unplaced'); if (el.id !== 'crProgBox') el.style.width = el.style.height = ''; });
   mvButtons();
-  if (mvView !== 'prog') return fitMvAlt(ar);
+  if (mvView === 'custom') return fitMvAlt(ar);
+  if (fill) return fitMvFill(ar);
   if (tall) { // Program on the left, the scenes 5 across to its right
     const H = cr.clientHeight - 22; const pw = Math.floor(H * ar); $('#crProgBox').style.width = pw + 'px'; $('#crProgBox').style.height = H + 'px';
     const W = cr.clientWidth - 48 - pw - 24, rows = Math.ceil(n / 5); let tw = (W - 4 * gap) / 5; const th = Math.min(tw / ar, (H - (rows - 1) * gap) / rows); tw = th * ar;
@@ -2797,17 +2807,20 @@ function fitCrTiles() {
 new ResizeObserver(() => fitCrTiles()).observe($('#crView')); addEventListener('resize', () => fitCrTiles());
 
 // ---- Multiview layouts ----
-// Program: the big Program picture with the scenes under it. Gallery: every scene the same size, as big as fits (like Zoom's gallery).
+// Program: the big Program picture with the scenes under it. Speaker: a thin row of scenes on top. Side by side: scenes down the right.
+// Gallery: every scene the same size (like Zoom's gallery). Focus: only the Program picture.
+// In all of these the boxes fill the whole window; the Program picture is shown whole inside its box.
 // Custom: your own layout. Press Edit layout, then drag a box to move it, drag its corner to size it, x to take it away.
-const MV_VIEWS = ['prog', 'gallery', 'custom'], MVG = 24; // custom: the window is a 24 x 24 grid
+const MV_VIEWS = ['prog', 'speaker', 'side', 'gallery', 'focus', 'custom'], MVG = 24; // custom: the window is a 24 x 24 grid
 let mvView = 'prog', mvEdit = false, mvCustom = null;
 try { const v = localStorage.getItem('ms_mv_view'); if (MV_VIEWS.includes(v)) mvView = v; mvCustom = JSON.parse(localStorage.getItem('ms_mv_custom') || 'null'); } catch {}
 function mvSave() { try { localStorage.setItem('ms_mv_view', mvView); if (mvCustom) localStorage.setItem('ms_mv_custom', JSON.stringify(mvCustom)); else localStorage.removeItem('ms_mv_custom'); } catch {} }
 const mvKeyOf = (el) => (el.id === 'crProgBox' ? '*program' : el.dataset.n);
 function mvBoxes() { return [$('#crProgBox'), ...document.querySelectorAll('#crTiles button.mvt[data-n]')]; }
-function mvDefault(names) { // Program big on the left, scenes down the right side and along the bottom
-  const o = { '*program': { x: 0, y: 0, w: 16, h: 16 } };
-  names.forEach((n, i) => { if (i < 4) o[n] = { x: 16, y: i * 4, w: 8, h: 4 }; else if (i < 10) o[n] = { x: (i - 4) * 4, y: 16, w: 4, h: 4 }; else if (i < 16) o[n] = { x: (i - 10) * 4, y: 20, w: 4, h: 4 }; });
+function mvDefault(names) { // fills the window: Program big on the left, up to 4 scenes down the right side, the rest in a row along the bottom
+  const side = names.slice(0, 4), rest = names.slice(4, 16), ph = rest.length ? 16 : MVG, o = { '*program': { x: 0, y: 0, w: side.length ? 16 : MVG, h: ph } };
+  side.forEach((n, i) => { o[n] = { x: 16, y: i * ph / side.length, w: 8, h: ph / side.length }; });
+  rest.forEach((n, i) => { o[n] = { x: i * MVG / rest.length, y: 16, w: MVG / rest.length, h: 8 }; });
   return o;
 }
 function mvPlace(el, it) {
@@ -2820,14 +2833,29 @@ function mvButtons() {
   $('#mvEditB').hidden = !c; $('#mvEditB').textContent = mvEdit ? 'Done' : 'Edit layout';
   $('#mvResetB').hidden = !(c && mvEdit); $('#mvAddS').hidden = !(c && mvEdit);
 }
+function fitMvFill(ar) {
+  const cr = $('#crView'), g = $('#crTiles'), pb = $('#crProgBox'), gp = 10, n = g.children.length;
+  const W = cr.clientWidth - 24, H = cr.clientHeight - 12, lim = (v, a, b) => Math.max(a, Math.min(b, v));
+  let pw = W, ph = H, tw = 0, th = 0, gw = 0, gh = 0;
+  if (mvView === 'focus' || !n) { /* only the Program picture */ }
+  else if (mvView === 'gallery') { // the number of boxes a row that keeps them closest to the picture's shape
+    let cols = 1, best = Infinity;
+    for (let c = 1; c <= n; c++) { const rows = Math.ceil(n / c), d = Math.abs(Math.log(((W - gp * (c - 1)) / c) / ((H - gp * (rows - 1)) / rows) / ar)); if (d < best) { best = d; cols = c; } }
+    const rows = Math.ceil(n / cols); tw = (W - gp * (cols - 1)) / cols; th = (H - gp * (rows - 1)) / rows; gw = W; gh = H; ph = 0;
+  } else if (mvView === 'speaker') { th = lim(H * 0.16, 80, 160); tw = (W - gp * (n - 1)) / n; gw = W; gh = th; ph = H - th - gp; }
+  else if (mvView === 'side') {
+    const sw = lim(W * 0.24, 200, 440), cols = n > 6 ? 2 : 1, rows = Math.ceil(n / cols);
+    tw = (sw - gp * (cols - 1)) / cols; th = (H - gp * (rows - 1)) / rows; gw = sw; gh = H; pw = W - sw - gp;
+  } else { // Program: scenes under the picture, in rows that are as wide as the window
+    const rows = Math.ceil(n / (Number(g.dataset.cols) || 5)), cols = Math.ceil(n / rows); // the same number in each row where it can be (6 scenes: 3 and 3, not 5 and 1)
+    tw = (W - gp * (cols - 1)) / cols; th = Math.min(tw / ar, (H * 0.4 - gp * (rows - 1)) / rows); gw = W; gh = rows * th + gp * (rows - 1); ph = H - gh - gp;
+  }
+  pb.style.width = Math.max(0, Math.floor(pw)) + 'px'; pb.style.height = Math.max(0, Math.floor(ph)) + 'px';
+  g.style.gridTemplateColumns = ''; g.style.setProperty('--tw', Math.max(40, Math.floor(tw) - 1) + 'px'); g.style.setProperty('--th', Math.max(30, Math.floor(th)) + 'px');
+  if (gw) { g.style.width = Math.floor(gw) + 'px'; g.style.height = Math.floor(gh) + 'px'; }
+}
 function fitMvAlt(ar) {
   const cr = $('#crView'), g = $('#crTiles');
-  if (mvView === 'gallery') {
-    const n = Math.max(1, g.children.length), gp = 10, W = cr.clientWidth - 24, H = cr.clientHeight - 12; let best = 0, cols = 1;
-    for (let c = 1; c <= n; c++) { const rows = Math.ceil(n / c), tw = Math.min((W - gp * (c - 1)) / c, ((H - gp * (rows - 1)) / rows) * ar); if (tw > best) { best = tw; cols = c; } }
-    g.style.gridTemplateColumns = 'repeat(' + cols + ',' + Math.floor(best) + 'px)';
-    return;
-  }
   const boxes = mvBoxes(), names = boxes.slice(1).map((b) => b.dataset.n);
   if (!mvCustom || !mvCustom.items || !Object.keys(mvCustom.items).length) mvCustom = { items: mvDefault(names) };
   const left = [];
@@ -2885,7 +2913,7 @@ function renderCr() {
       if (pw > best + 1) { best = pw; cols = c; slots = rows * c; }
     }
   }
-  if (mvView !== 'prog') slots = d.scenes.length; // Gallery and Custom show only real scenes
+  if (mvView !== 'prog' || !(view.classList.contains('tall') || view.classList.contains('sq'))) slots = d.scenes.length; // only real scenes: no empty boxes
   box.dataset.cols = cols;
   const key = d.scenes.join('\n') + '\n' + slots + mvView;
   if (box.dataset.key !== key) {
@@ -2978,8 +3006,8 @@ setInterval(pollCr, 200); // 5 pictures a second
       lastPf = pf; lastKey = key;
       if (out.width !== w || out.height !== h) { out.width = w; out.height = h; }
       // fill the box like the photo does (cover)
-      const sc = (mvView === 'custom' ? Math.min : Math.max)(w / src.width, h / src.height), dw = src.width * sc, dh = src.height * sc; // Custom boxes can be any shape: keep the whole picture
-      if (mvView === 'custom') { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); }
+      const sc = Math.min(w / src.width, h / src.height), dw = src.width * sc, dh = src.height * sc; // the box can be any shape: the picture on air is shown whole, never cut off
+      g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
       g.imageSmoothingQuality = 'high';
       g.drawImage(src, (w - dw) / 2, (h - dh) / 2, dw, dh);
       show(true);
