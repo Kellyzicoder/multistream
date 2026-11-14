@@ -1391,8 +1391,12 @@ function frame() {
   // recording the older way, no virtual camera), it is drawn only 5 times a second, so the app stays quick.
   if (lightMode() && (++lightTick % 6)) return;
   // the Multiview's big box is bigger than 720p: draw 1080p while it is open (back to 720p when it closes)
-  { const w = window.__mvWant, big = Boolean(w && Date.now() - w.at < 2000 && w.w > 1400), want = big ? 1920 : 1280;
-    if (SW > SH && !wsOut && !engineSending && !recW && PW !== want && (big || PW === 1920)) setProgramSize(want, want * 9 / 16); }
+  // Only a size the Multiview asked for is put back: the stream's own size (set when going live) is never touched.
+  { const w = window.__mvWant, big = Boolean(w && Date.now() - w.at < 2000 && w.w > 1400);
+    if (SW > SH && !wantSend && !engineSending && !recW) {
+      if (big && !mvBig && PW === 1280) { setProgramSize(1920, 1080); mvBig = true; }
+      else if (!big && mvBig) setProgramSize(1280, 720);
+    } }
   paint(ctx, PW / SW, now);
   window.__pf = (window.__pf | 0) + 1; // the Multiview copies the picture once for each new one
   if (sendTrack) { try { sendTrack.requestFrame(); } catch {} } // each finished picture goes to the encoder exactly once
@@ -1418,7 +1422,8 @@ function frameLoop() {
 function setFps(f) { if (f === frameFps) return; frameFps = f; clearTimeout(frameT); frameNext = performance.now() + 1000 / f; frameT = setTimeout(frameLoop, 1000 / f); }
 setFps(30);
 // The Program picture is small while nothing is sent (saves the computer's work) and full size while sending.
-function setProgramSize(w, h) { if (cv.width === w && cv.height === h) return; cv.width = w; cv.height = h; PW = w; PH = h; }
+let mvBig = false; // the Program picture is 1080p only because the Multiview's big box needs it
+function setProgramSize(w, h) { mvBig = false; if (cv.width === w && cv.height === h) return; cv.width = w; cv.height = h; PW = w; PH = h; }
 
 // videos play only while their scene is on air (or shown in a preview); each restarts when its scene goes on air
 function updateVideos() {
