@@ -228,6 +228,7 @@ async function until(fn, ms, what) {
   assert.strictEqual(await studio.locator('.ch').nth(1).locator('select').inputValue(), 'yes', 'Facebook shows it is limited to 1080p');
   const keyHint = await studio.locator('.ch').nth(1).locator('input[type=password]').getAttribute('placeholder');
   assert.ok(/Saved \(ends in/.test(keyHint), 'the key is never shown, only its last letters: ' + keyHint);
+  await studio.evaluate(() => { const d = document.getElementById('chType').closest('details'); if (d) d.open = true; }); // the stream-key form is folded away
   await studio.selectOption('#chType', 'other'); await studio.fill('#chName', 'Extra'); await studio.fill('#chUrl', 'rtmp://127.0.0.1:19999/live'); await studio.fill('#chKey', 'k');
   await studio.click('#chAdd');
   await until(() => studio.evaluate(() => document.querySelectorAll('.ch').length === 3), 10000, 'the added channel');
