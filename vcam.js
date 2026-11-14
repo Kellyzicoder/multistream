@@ -81,7 +81,7 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
   // returns { write(buf), stop() }
   function start(w = 1280, h = 720, fps = 30) {
     if (!available) throw new Error('The virtual camera is only in the Windows app');
-    stop();
+    stop(); rawSes++; // a raw session before this one is over
     info = { on: true, error: '' };
     if (vc && size !== w * h * 3) quit();
     if (!vc) {
@@ -106,6 +106,31 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
     });
     f.on('exit', () => { if (ff === f) { ff = null; info.on = false; finishFrame(); idleStart(); } });
     return { write: (b) => { if (f.stdin.writable) f.stdin.write(b); }, stop };
+  }
+
+  // The light way: whole raw pictures straight from the Studio (w*h*3 bytes each, blue-green-red), with no ffmpeg in between.
+  // A picture is skipped while the helper has not taken the last ones, so nothing can pile up or lock.
+  let rawSes = 0;
+  function startRaw(w = 1280, h = 720, fps = 30) {
+    if (!available) throw new Error('The virtual camera is only in the Windows app');
+    stop();
+    info = { on: true, error: '' };
+    if (vc && size !== w * h * 3) quit();
+    if (!vc) {
+      size = w * h * 3; vw = w; vh = h; fed = 0;
+      const v = spawn(helper, exeArgs || [String(w), String(h), String(fps)], { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
+      vc = v;
+      v.stdin.on('error', () => {});
+      v.stderr.on('data', (d) => { const t = String(d).trim().split('\n').pop(); if (t) info.error = t.slice(0, 200); });
+      const gone = () => { if (vc === v) { vc = null; idleStop(); info.on = false; } };
+      v.on('exit', gone); v.on('error', (e) => { info.error = e.message; gone(); });
+    }
+    idleStop(); fed = 0;
+    const ses = ++rawSes, target = vc;
+    return {
+      write: (b) => { if (ses === rawSes && vc === target && b && b.length === size && target.stdin.writable && target.stdin.writableLength < size * 2) target.stdin.write(b); },
+      stop: () => { if (ses !== rawSes) return; rawSes++; info.on = false; idleStart(); },
+    };
   }
 
   // Registers the virtual camera with Windows. Windows asks for the administrator's OK once.
@@ -138,7 +163,7 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
         : { ok: true }));
     });
   }
-  return { available, start, stop, quit, install, state: () => ({ available, registered: registered(platform), ...info }) };
+  return { available, start, startRaw, stop, quit, install, state: () => ({ available, registered: registered(platform), ...info }) };
 }
 
 module.exports = { createVcam };

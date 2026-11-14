@@ -925,7 +925,17 @@ const CAP_OFF = { ready: false, off: true, v: document.createElement('video'), e
 const CAN_OFF = new Set(['camera', 'screen', 'window']);
 function toggleOff(l) { if (l.off) delete l.off; else l.off = true; save(); renderLayers(); }
 const CAM_OFF = { ready: false, off: true, v: document.createElement('video'), err: '' };
+// Windows lets only ONE program part open a camera or capture card (a Blackmagic for example). When the OBS engine is making the
+// picture, the engine has the device, so this page must not open it too (that is what made the Blackmagic go black).
+// The page opens cameras itself only when it needs the picture: the engine is off or failed, or the page is sending,
+// recording or feeding the virtual camera.
+const CAM_ENG = { ready: true, eng: true, v: document.createElement('video'), err: 'shown live in the Program picture (the OBS engine has the device)' };
+const CAM_WAIT = { ready: false, v: document.createElement('video'), err: '' };
+let engineKnown = !(window.msNative && window.msNative.engineDisplay && window.msNative.engineState); // until the app says whether the engine runs, no camera is opened
+function engHasCams() { try { return lightMode(); } catch { return false; } }
 function getCam(l) {
+  if (!engineKnown) return CAM_WAIT;
+  if (engHasCams()) return CAM_ENG;
   const key = camKey(l);
   let c = cams.get(key); if (c && (camWanted(l) || !l.off)) { c.seen = Date.now(); return c; }
   if (!camWanted(l)) return CAM_OFF;
@@ -949,7 +959,7 @@ function getCam(l) {
 // cameras nobody uses any more (removed, or changed to another setting) are released so the device is free again
 setInterval(() => {
   const used = new Set();
-  allLayers().forEach((l) => { if (l.type === 'camera' && camWanted(l)) used.add(camKey(l)); if (l.type === 'duo') used.add(camKey(duoCam(l))); });
+  if (!engHasCams()) allLayers().forEach((l) => { if (l.type === 'camera' && camWanted(l)) used.add(camKey(l)); if (l.type === 'duo') used.add(camKey(duoCam(l))); });
   cams.forEach((c, k) => {
     if (used.has(k)) return;
     if (!c.unusedAt) c.unusedAt = Date.now();
@@ -1387,7 +1397,7 @@ function frame() {
   if (sendTrack) { try { sendTrack.requestFrame(); } catch {} } // each finished picture goes to the encoder exactly once
   // the recording and the virtual camera copy the finished Program picture when it is the same size or bigger (much less work than drawing the scene again)
   if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); if (recTrack) { try { recTrack.requestFrame(); } catch {} } }
-  if (vcOn) { if (SW > SH && cv.width >= 1280) vctx.drawImage(cv, 0, 0, 1280, 720); else copyFit(vctx, 1280, 720, cv); }
+  if (vcOn) { if (SW > SH && cv.width >= 1280) vctx.drawImage(cv, 0, 0, 1280, 720); else copyFit(vctx, 1280, 720, cv); if (vcRaw) vcPush(); }
 }
 $('#trType').value = trCfg.type; $('#trMs').value = String(trCfg.ms);
 // the OBS engine (when it is on) changes scene the same way
@@ -2864,7 +2874,7 @@ function flash(text, ok) { if (!ok && window.msNice) text = window.msNice(text);
   const nat = window.msNative;
   if (!nat || !nat.engineDisplay) return;
   let on = false, last = '';
-  const poll = () => nat.engineState().then((s) => { on = Boolean(s && s.on && s.started); engineLive = on; }).catch(() => {});
+  const poll = () => nat.engineState().then((s) => { on = Boolean(s && s.on && s.started); engineLive = on; engineKnown = true; }).catch(() => { engineKnown = true; });
   poll(); setInterval(poll, 2000);
   const send = (rect) => {
     const k = rect ? [rect.x, rect.y, rect.width, rect.height].join(',') : '';
@@ -3216,11 +3226,49 @@ document.addEventListener('click', () => ensureAudio(), { once: true });
 // ---------------- virtual camera (Zoom) ----------------
 // Sends the Studio picture to the Windows virtual camera. In Zoom, pick the camera called "Multistream Camera".
 let vcWs = null, vcMr = null, vcFirst = false;
+// The light way (like OBS feeds its camera): each finished picture is handed to the camera as it is. No video coding in the Studio,
+// no decoding in the app. If this computer cannot do it, the camera switches to the older way by itself and keeps working.
+let vcRaw = false, vcRawOff = false, vcBusy = false, vcPix = null;
+// The repacking runs beside the page (a worker), so the Studio's own drawing is never held up by it.
+let vcWk = null, vcWkOk = true;
+const vcPackHere = (a, isRgb) => { const out = new Uint8Array(a.length / 4 * 3), r = isRgb ? 2 : 0, b = 2 - r; for (let i = 0, j = 0; j < out.length; i += 4, j += 3) { out[j] = a[i + r]; out[j + 1] = a[i + 1]; out[j + 2] = a[i + b]; } return out.buffer; };
+function vcPack(isRgb) {
+  if (vcWkOk && !vcWk) {
+    try {
+      const src = 'onmessage=(e)=>{const a=new Uint8Array(e.data.a),out=new Uint8Array(a.length/4*3),r=e.data.rgb?2:0,b=2-r;for(let i=0,j=0;j<out.length;i+=4,j+=3){out[j]=a[i+r];out[j+1]=a[i+1];out[j+2]=a[i+b];}postMessage({a:e.data.a,o:out.buffer},[e.data.a,out.buffer]);};';
+      vcWk = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    } catch { vcWkOk = false; }
+  }
+  if (!vcWk) return Promise.resolve(vcPackHere(vcPix, isRgb));
+  return new Promise((res) => {
+    const wk = vcWk, buf = vcPix.buffer; vcPix = null;
+    const t = setTimeout(() => { vcWkOk = false; vcWk = null; try { wk.terminate(); } catch {} res(null); }, 2000); // the worker does not answer: do it here from now on
+    wk.onmessage = (e) => { clearTimeout(t); vcPix = new Uint8Array(e.data.a); res(e.data.o); };
+    wk.onerror = () => { clearTimeout(t); vcWkOk = false; vcWk = null; res(null); };
+    wk.postMessage({ a: buf, rgb: isRgb }, [buf]);
+  });
+}
+async function vcPush() {
+  const ws = vcWs;
+  if (vcBusy || !ws || ws.readyState !== 1) return; // the last picture is still on its way: skip this one, nothing piles up
+  vcBusy = true; let vf = null;
+  try {
+    vf = new VideoFrame(vcv, { timestamp: Math.round(performance.now() * 1000) });
+    const f = String(vf.format || ''), n = 1280 * 720;
+    if (!/^(RGB|BGR)[AX]$/.test(f) || vf.allocationSize() !== n * 4) throw new Error('picture format ' + f);
+    if (!vcPix) vcPix = new Uint8Array(n * 4);
+    await vf.copyTo(vcPix);
+    const out = await vcPack(f[0] === 'R'); // the camera takes blue, green, red (3 numbers a dot, not 4)
+    if (out && vcWs === ws && ws.readyState === 1) ws.send(out);
+  } catch (e) {
+    if (vcWs === ws && vcRaw) { vcRawOff = true; vcOff(); vcConnect(); } // the older way from now on
+  } finally { try { vf && vf.close(); } catch {} vcBusy = false; }
+}
 fetch('/api/vcam').then((r) => r.json()).then((s) => { if (s.available) $('#vcBtn').hidden = false; }).catch(() => {});
 function vcOff(msg) {
   try { vcMr && vcMr.state !== 'inactive' && vcMr.stop(); } catch {}
   try { vcWs && vcWs.close(); } catch {}
-  vcWs = vcMr = null; vcOn = false; $('#vcBtn').textContent = 'Start virtual camera'; $('#vcBtn').className = '';
+  vcWs = vcMr = null; vcOn = false; vcRaw = false; $('#vcBtn').textContent = 'Start virtual camera'; $('#vcBtn').className = '';
   if (msg) { $('#st').textContent = msg; $('#st').className = 'stat bad'; }
 }
 $('#vcBtn').onclick = async () => {
@@ -3234,14 +3282,21 @@ $('#vcBtn').onclick = async () => {
     if (r.error) { $('#st').textContent = 'Virtual camera: ' + r.error; $('#st').className = 'stat bad'; return; }
     vcFirst = true;
   }
-  const ws = vcWs = openPipe('/studio-vcam');
+  vcConnect();
+};
+function vcConnect() {
+  const raw = !vcRawOff && typeof VideoFrame === 'function' && Boolean(window.msNative && window.msNative.pipe);
+  const ws = vcWs = openPipe('/studio-vcam' + (raw ? '?raw=1' : ''));
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
-    const mt = ['video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
     vcOn = true;
-    vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000, videoKeyFrameIntervalDuration: 2000 });
-    vcMr.ondataavailable = inOrder((buf) => { if (ws.readyState === 1) ws.send(buf); });
-    vcMr.start(100);
+    if (raw) vcRaw = true;
+    else {
+      const mt = ['video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
+      vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000, videoKeyFrameIntervalDuration: 2000 });
+      vcMr.ondataavailable = inOrder((buf) => { if (ws.readyState === 1) ws.send(buf); });
+      vcMr.start(100);
+    }
     $('#vcBtn').textContent = 'Stop virtual camera'; $('#vcBtn').className = 'stop';
     $('#st').textContent = vcFirst
       ? 'Virtual camera is on. In Zoom, choose Multistream Camera (Settings → Video → Camera). If Zoom was already open and does not list it, close Zoom and open it again.'
@@ -3251,7 +3306,7 @@ $('#vcBtn').onclick = async () => {
   ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) vcOff('Virtual camera: ' + j.error); } catch {} };
   ws.onclose = () => { if (vcWs === ws) vcOff('Virtual camera stopped.'); };
   ws.onerror = () => {};
-};
+}
 
 // ---------------- the two drop-down menus (More, and + Add item) ----------------
 function popMenu(btn, pop) {
