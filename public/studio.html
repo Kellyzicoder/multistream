@@ -621,6 +621,13 @@ html.a-calm body { background:var(--bg) !important; }
   #sendBtn.stop, #recBtn.stop, #vcBtn.stop, .dock .ctl button#sendBtn.stop, .dock .ctl button#recBtn.stop, .dock .ctl button#vcBtn.stop { background:var(--sel) !important; border-color:var(--sel) !important; color:var(--onsel) !important; box-shadow:0 4px 16px color-mix(in srgb, var(--sel) 45%, transparent) !important; }
   #sendBtn.stop::before, #recBtn.stop::before, #vcBtn.stop::before { background:var(--onsel) !important; }
   #recBtn:not(.stop)::before, #sendBtn:not(.stop)::before { background:var(--sel) !important; }
+  /* ---------- the same look as Go Live: plain panel titles, round buttons, one blue main button ---------- */
+  .dock > h2 { font-size:14px !important; letter-spacing:0 !important; text-transform:none !important; color:var(--text) !important; background:transparent !important; padding:12px 16px 10px !important; }
+  .dock .ctl button { height:36px !important; border-radius:999px !important; }
+  #sendBtn:not(.stop) { background:var(--sel) !important; color:var(--onsel) !important; } #sendBtn:not(.stop)::before { background:currentColor !important; }
+  #modeBtn.on { background:color-mix(in srgb, var(--sel) 22%, transparent) !important; color:var(--text) !important; font-weight:600 !important; box-shadow:inset 0 0 0 1px var(--sel) !important; }
+  .ptitle { font-size:22px !important; }
+  .advd { margin-top:14px; } .advd > summary { cursor:pointer; font-size:13px; color:var(--muted); padding:6px 0; }
 </style>
 </head>
 <body>
@@ -740,14 +747,15 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
         </section>
         <section class="sp" data-sp="channels">
           <h3>Where your video goes</h3>
-          <p class="note">Every channel gets the same picture and sound. Turn one off to stop sending to it. A channel that drops reconnects by itself. YouTube and Facebook sign-in is in Settings → Stream.</p>
+          <p class="note">Every channel gets the same video. Turn one off to stop sending to it.</p>
           <div id="chanList"></div>
-          <h3>Add a channel</h3>
+          <details class="advd"><summary>Add a channel with a stream key</summary>
           <div class="f"><label>Site</label><select id="chType"><option value="youtube">YouTube</option><option value="facebook">Facebook</option><option value="other">Instagram or another site</option></select></div>
           <div class="f"><label>Name</label><input id="chName" placeholder="Church YouTube"></div>
           <div class="f"><label>Stream URL</label><input id="chUrl" placeholder="rtmps://..."></div>
           <div class="f"><label>Stream key</label><input id="chKey" type="password" autocomplete="off" placeholder="Paste the key"></div>
           <div class="row"><button id="chAdd">Add channel</button><span class="note" id="chMsg"></span></div>
+          </details>
         </section>
         <section class="sp" data-sp="video">
           <h3>What viewers get</h3>
@@ -758,7 +766,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
           <p class="note" id="outNote"></p>
           <div class="f"><label>Canvas</label><span>1920 x 1080 (the size scenes are built at)</span></div>
           <div class="f"><label>Encoder</label><span id="encName">...</span></div>
-          <div class="f"><label>Encoding</label><span>The video is made once for both the stream and the recording. If this computer can't, the app switches to the older way and tells you.</span></div>
+          <div class="f"><label>Encoding</label><span>Made once for the stream and the recording.</span></div>
           <div class="f"><label>Keyframes</label><span>Every 2 seconds (what YouTube and Facebook ask for)</span></div>
         </section>
         <section class="sp" data-sp="output">
@@ -1378,7 +1386,7 @@ function frame() {
   window.__pf = (window.__pf | 0) + 1; // the Multiview copies the picture once for each new one
   if (sendTrack) { try { sendTrack.requestFrame(); } catch {} } // each finished picture goes to the encoder exactly once
   // the recording and the virtual camera copy the finished Program picture when it is the same size or bigger (much less work than drawing the scene again)
-  if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); }
+  if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); if (recTrack) { try { recTrack.requestFrame(); } catch {} } }
   if (vcOn) { if (SW > SH && cv.width >= 1280) vctx.drawImage(cv, 0, 0, 1280, 720); else copyFit(vctx, 1280, 720, cv); }
 }
 $('#trType').value = trCfg.type; $('#trMs').value = String(trCfg.ms);
@@ -2931,7 +2939,7 @@ async function connectSend() {
     // fast: the browser's bitrate is the one we send, so it is set to the target exactly
     // a keyframe every 2 seconds: Facebook needs it to play the live, and a channel that reconnects can join straight away
     rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: fast ? OUT.kbps * 1000 : Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: 128000, videoKeyFrameIntervalDuration: 2000 });
-    rec.ondataavailable = async (e) => { if (e.data.size && wsOut && wsOut.readyState === 1) wsOut.send(await e.data.arrayBuffer()); };
+    rec.ondataavailable = inOrder((buf) => { if (wsOut && wsOut.readyState === 1) wsOut.send(buf); });
     rec.start(250);
     cv.classList.add('live');
   };
@@ -2956,7 +2964,7 @@ function stopSend() {
   if (autoRanPlan && autoRanPlan.offAfter) fetch('/api/autostart', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"on":false}' }).catch(() => {});
   autoRanPlan = null;
   dropSend();
-  setProgramSize(...(SH > SW ? [720, 1280] : SH === SW ? [720, 720] : [1280, 720])); setFps(30); lockOut();
+  setProgramSize(...idleSize()); setFps(recW && OUT.fps === 60 ? 60 : 30); lockOut();
   $('#sendBtn').textContent = 'Start streaming'; $('#sendBtn').className = ''; $('#liveTag').hidden = true; liveT0 = 0;
 }
 // Theme and main colour (the same setting as the Stream page: Settings, Appearance). White is one of the colours.
@@ -3138,7 +3146,13 @@ setInterval(() => {
 // Records the Studio picture to a file in the Videos/Multistream folder, at the quality you choose.
 // It has its own canvas, so 1080p is real 1080p and does not depend on what is being sent.
 const rcv = document.createElement('canvas'), rctx = rcv.getContext('2d');
-let recW = 0, recMr = null, recWs = null, recT0 = 0, recTick = 0;
+let recW = 0, recMr = null, recWs = null, recT0 = 0, recTick = 0, recTrack = null;
+// The Program picture's size while nothing is being sent: the recording's size while recording (so the scene is drawn once and copied,
+// not drawn twice at two sizes), otherwise the small size.
+// Pieces of video must reach the app in the order they were made. Turning a piece into bytes takes a moment, and on a busy computer
+// a later piece could finish first, which breaks the video for a moment. So the pieces are sent strictly one after another.
+function inOrder(send) { let q = Promise.resolve(); return (e) => { const b = e.data; if (!b || !b.size) return; q = q.then(() => b.arrayBuffer()).then(send).catch(() => {}); }; }
+function idleSize() { return recW ? [recW, rcv.height] : SH > SW ? [720, 1280] : SH === SW ? [720, 720] : [1280, 720]; }
 try { $('#recQ').value = localStorage.getItem('ms_recq') || '1080-8'; } catch {}
 if (!$('#recQ').value) $('#recQ').value = '1080-8';
 $('#recQ').onchange = () => { try { localStorage.setItem('ms_recq', $('#recQ').value); } catch {} };
@@ -3156,7 +3170,11 @@ async function startRec() {
   [recW, rcv.height] = outSize(res); rcv.width = recW;
   const rfps = OUT.fps === 60 ? 60 : 30;
   try { ensureAudio(); await syncAudio(); } catch {}
-  const out = new MediaStream(rcv.captureStream(rfps).getVideoTracks());
+  if (!wsOut && !engineSending) { setProgramSize(...idleSize()); setFps(rfps); }
+  // 0 = a picture is taken only when frame() has drawn one (requestFrame): none doubled, none skipped
+  let rs = rcv.captureStream(0); recTrack = rs.getVideoTracks()[0];
+  if (!recTrack || typeof recTrack.requestFrame !== 'function') { rs = rcv.captureStream(rfps); recTrack = null; }
+  const out = new MediaStream(rs.getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
   const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
   const fast = useFast(mt);
@@ -3165,7 +3183,7 @@ async function startRec() {
   ws.onopen = () => {
     // fast (encode once): the file is exactly what the browser makes, so use the chosen size. Normal way: give ffmpeg a bit more to work from.
     recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: (fast ? mb : Math.min(80, Math.max(mb, 6))) * 1000000, audioBitsPerSecond: 160000, videoKeyFrameIntervalDuration: 2000 });
-    recMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
+    recMr.ondataavailable = inOrder((buf) => { if (ws.readyState === 1) ws.send(buf); });
     recMr.start(500);
     recT0 = Date.now(); $('#recBtn').textContent = 'Stop recording'; $('#recBtn').className = 'stop';
     recTick = 0;
@@ -3186,7 +3204,8 @@ function endRec(fromClose) {
     return;
   }
   try { recMr && recMr.state !== 'inactive' && recMr.stop(); } catch {}
-  const ws = recWs; recWs = recMr = null;
+  const ws = recWs; recWs = recMr = recTrack = null;
+  if (!wsOut && !engineSending) { setProgramSize(...idleSize()); setFps(30); }
   // tell the relay we are done; it finishes the file, says where it saved it, then closes
   if (ws && !fromClose) setTimeout(() => { try { ws.send('stop'); } catch {} }, 700);
   $('#recBtn').textContent = 'Start recording'; $('#recBtn').className = ''; recT0 = 0;
@@ -3221,7 +3240,7 @@ $('#vcBtn').onclick = async () => {
     const mt = ['video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
     vcOn = true;
     vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000, videoKeyFrameIntervalDuration: 2000 });
-    vcMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
+    vcMr.ondataavailable = inOrder((buf) => { if (ws.readyState === 1) ws.send(buf); });
     vcMr.start(100);
     $('#vcBtn').textContent = 'Stop virtual camera'; $('#vcBtn').className = 'stop';
     $('#st').textContent = vcFirst

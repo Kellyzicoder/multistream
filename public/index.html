@@ -836,7 +836,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mdl .seg3 { display:grid; grid-template-columns:repeat(3,1fr); padding:3px; border-radius:999px; border:1px solid var(--gl-line); background:rgba(5,8,20,.45); }
   .mdl .seg3 button { padding:9px 10px; border:0; border-radius:999px; background:transparent; color:var(--soft); font-size:13px; font-weight:600; } .mdl .seg3 button.on { background:var(--blue); color:var(--onblue); } .mdl .seg3 button:disabled { opacity:.45; }
   /* ---------- Multiview (as in the design) ---------- */
-  .cr.mv2:not([hidden]) { display:flex; flex-direction:column; gap:14px; height:calc(100vh - 90px); padding:0 24px 22px; margin:0; max-width:none; background:transparent; overflow:hidden; box-sizing:border-box; align-items:stretch; justify-content:flex-start; }
+  .cr.mv2:not([hidden]) { display:flex; flex-direction:column; gap:10px; height:calc(100vh - 90px); padding:0 12px 12px; margin:0; max-width:none; background:transparent; overflow:hidden; box-sizing:border-box; align-items:stretch; justify-content:flex-start; }
   .cr.mv2.tall:not([hidden]) { flex-direction:row; align-items:center; gap:24px; }
   .mv2 .mv-top { flex:1; min-height:0; display:flex; justify-content:center; align-items:center; } .mv2.tall .mv-top { flex:none; height:100%; }
   .mv2 .mvt { position:relative; border-radius:16px; overflow:hidden; border:2px solid rgba(255,255,255,.1); box-shadow:0 10px 24px rgba(0,0,0,.35); background:linear-gradient(135deg,#1d2a5e,#0e1430); padding:0; margin:0; display:block; align-self:start; color:#eef1f8; text-align:left; font:inherit; min-width:0; box-sizing:border-box; }
@@ -851,7 +851,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv2 .mvt .lb small { margin-left:auto; color:#cdd3e4; font-weight:500; font-size:12px; }
   .mv2 .mvt .nb { position:absolute; left:10px; top:10px; z-index:1; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.16); }
   .mv2 .mv-tag { position:absolute; right:12px; top:12px; z-index:1; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:.4px; background:#ff4d5a; }
-  .mv2 .mv-grid { flex:none; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; } .mv2.tall .mv-grid { flex:1; align-content:center; }
+  .mv2 .mv-grid { flex:none; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; } .mv2.tall .mv-grid { flex:1; align-content:center; }
   .mv-chip { display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#cdd3e4; font-size:13px; font-weight:600; margin-left:4px; }
   .mv-chip b { padding:1px 7px; border-radius:6px; background:rgba(255,255,255,.12); font-size:11px; }
   /* ---------- Settings (as in the design) ---------- */
@@ -1318,13 +1318,13 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
 <div class="g2"><h3>Theme</h3><div class="seg2" id="themes"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button><button type="button" data-v="system">Match computer</button></div></div>
 <div class="g2"><h3>Colour</h3><div class="sws2" id="sws"></div></div></section><section class="pane" data-pane="stream" role="tabpanel" aria-label="Stream"><div class="s2h"><h2>Stream</h2></div><div class="g2 old2">
           <div class="grp"><h4>Private test</h4>
-            <p>On: only you can see the live on YouTube and Facebook. Turn it off for real services: then everyone can watch.</p>
+            <p>On: only you can see the live. Off: everyone can watch.</p>
             <div class="srow"><p class="lb">Private test</p>
               <div class="ctl"><label class="sw"><input type="checkbox" id="setPt" aria-label="Private test"><span></span></label></div></div>
           </div>
         </div><div class="g2 old2">
-          <div class="grp"><h4>YouTube account</h4>
-            <p>Add the file from Google, then sign in with the church YouTube account. Both stay on this computer only.</p>
+          <div class="grp"><h4>YouTube</h4>
+            <p>Add the file from Google once, then sign in.</p>
             <div class="srow"><label class="lb" for="yt-file">1. File from Google</label>
               <div class="ctl"><input class="t" id="yt-file" type="file" accept=".json,application/json"></div></div>
             <div class="srow"><p class="lb">2. Sign in</p>
@@ -1333,8 +1333,8 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
               <div class="ctl"><p class="note" id="yt-status"></p><p class="note" id="yt-msg"></p></div></div>
           </div>
         </div><div class="g2 old2">
-          <div class="grp"><h4>Sign in with Facebook</h4>
-            <p>Add and remove Pages on Go Live with <b>Add channel → Facebook</b>. Sign in here only if Facebook shows an error.</p>
+          <div class="grp"><h4>Facebook</h4>
+            <p>Pages are added on Go Live with <b>Add channel</b>. Sign in here only if Facebook shows an error.</p>
             <div class="srow"><p class="lb">Facebook</p>
               <div class="ctl"><p class="note" id="fbStatus" hidden></p><div class="fbbtns"><button class="b2 pri" id="fbSignIn" type="button">Sign in with Facebook</button><button class="b2" id="fbChange" type="button" hidden>Change Pages</button></div><p class="note" id="fbCode" hidden></p></div></div>
             <!-- the code to type on Facebook: big, with Copy and Open buttons and the steps -->
@@ -1343,18 +1343,18 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
               <div class="fbc-row"><output id="fbCodeVal" class="fbc-v" aria-live="polite"></output><button class="b2" id="fbCopy" type="button">Copy</button></div>
               <ol class="fbc-steps">
                 <li><button class="b2 pri" id="fbOpen" type="button">Open facebook.com/device</button></li>
-                <li>Paste or type the code above, then press Continue.</li>
-                <li>Tick every Page you might stream to, then finish. This window updates by itself.</li>
+                <li>Type the code, then Continue.</li>
+                <li>Tick your Pages, then finish.</li>
               </ol>
               <p class="note" id="fbCodeLeft"></p>
             </div>
             <div class="srow" id="fbPickRow" hidden><p class="lb" id="fbPickLb">Pages</p>
-              <div class="ctl"><p class="note">Pick the <b>main Page</b> (its comments and viewers show in the app). Tick <b>Also stream here</b> for any other Page that should get the same video.</p>
+              <div class="ctl"><p class="note">Pick the <b>main Page</b>. Tick <b>Also stream here</b> for other Pages.</p>
                 <div class="fbpages" id="fbPick" aria-labelledby="fbPickLb"></div>
-                <p class="note">Only the Pages you ticked on Facebook show here. To add one, press Sign in again and on Facebook choose <b>Edit access</b> (or <b>Choose Pages</b>) and tick it.</p>
+                <p class="note">A Page is missing? Sign in again and tick it on Facebook.</p>
                 <button class="b2 pri" id="fbUse" type="button">Save Pages</button></div></div>
           </div>
-          <details class="adv2"><summary>Advanced: Meta app and Page token</summary>
+          <details class="adv2"><summary>Advanced</summary>
           <div class="grp"><h4>Meta app (set once)</h4>
             <p>On developers.facebook.com, open your app. The App ID is under App settings → Basic. The client token is under App settings → Advanced. Then turn on <b>Login from devices</b> under Facebook Login → Settings, and press Save changes.</p>
             <div class="srow"><label class="lb" for="fb-appid">App ID</label>
@@ -2124,14 +2124,20 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     $('#offlineView').classList.toggle('empty', empty);
     $('#pv').hidden = !live;
   }
-  setInterval(() => {
-    if (page !== 'dash' || (st && st.obsLive) || document.hidden) return;
-    let cv = null; try { const w = sw(); cv = w && w.document && w.document.getElementById('cv'); } catch {}
-    if (!cv || !cv.width) return;
+  // The Studio's picture on Go Live: copied once for each new picture the Studio makes (smooth, like the OBS preview),
+  // and the words around it are set only when something changes (they used to be rewritten 10 times a second).
+  let pvPf = -1, pvHad = false;
+  const pvLoop = () => {
+    requestAnimationFrame(pvLoop);
+    if (page !== 'dash' || (st && st.obsLive) || document.hidden) { pvHad = false; return; }
+    let w = null, cv = null; try { w = sw(); cv = w && w.document && w.document.getElementById('cv'); } catch {}
+    if (!cv || !cv.width) { if (pvHad) { pvHad = false; offlinePreview(); } return; }
+    const pf = w.__pf | 0; if (pf === pvPf && pvHad) return; pvPf = pf;
     const c = $('#pvStudio'); if (c.width !== cv.width || c.height !== cv.height) { c.width = cv.width; c.height = cv.height; }
     try { c.getContext('2d').drawImage(cv, 0, 0); } catch {}
-    offlinePreview();
-  }, 100);
+    if (!pvHad) { pvHad = true; offlinePreview(); }
+  };
+  requestAnimationFrame(pvLoop);
   // Listen: hear the stream (the live preview's sound) on this computer
   $('#glpListen').onclick = () => {
     const v = $('#pv'); if (!(st && st.obsLive)) { alert('Listen works while you are live. Before that, use Listen in headphones in the Studio’s Audio Mixer.'); return; }
@@ -2701,6 +2707,7 @@ function showPage(p) {
   $('#crView').hidden = page !== 'cr';
   document.querySelectorAll('.xpage').forEach((x) => { x.hidden = !(XPAGES[page] && x.id === XPAGES[page].el); });
   Object.entries(XPAGES).forEach(([k, v]) => { if (k === page) v.open(); else v.close(); });
+  if (page === 'cr') document.documentElement.classList.add('nav-small'); // the same narrow menu as the Studio, so the tabs do not jump
   pageTabs.forEach((b) => { if (b.dataset.page === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   try { history.replaceState(null, '', page === 'cr' ? '#control-room' : XPAGES[page] ? '#' + page : location.pathname + location.search); } catch {}
   renderCr();
@@ -2750,7 +2757,7 @@ async function crSetScene(name) {
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 // the boxes keep their shape (16:9, or 9:16 for a portrait collection) and fill the page
 function fitCrTiles() {
-  const cr = $('#crView'); if (!cr || cr.hidden || !cr.clientWidth) return; cr.style.height = Math.max(300, innerHeight - cr.getBoundingClientRect().top - 22) + 'px';
+  const cr = $('#crView'); if (!cr || cr.hidden || !cr.clientWidth) return; cr.style.height = Math.max(300, innerHeight - cr.getBoundingClientRect().top - 4) + 'px';
   const tall = stu.shape === 'portrait', sq = stu.shape === 'square';
   cr.classList.toggle('tall', tall); cr.classList.toggle('sq', sq);
   const ar = tall ? 9 / 16 : sq ? 1 : 16 / 9;
@@ -2760,9 +2767,10 @@ function fitCrTiles() {
     const W = cr.clientWidth - 48 - pw - 24, rows = Math.ceil(n / 5); let tw = (W - 4 * gap) / 5; const th = Math.min(tw / ar, (H - (rows - 1) * gap) / rows); tw = th * ar;
     g.style.gridTemplateColumns = 'repeat(5,' + Math.floor(tw) + 'px)';
   } else {
-    const rows = Math.ceil(n / 5), tw = (cr.clientWidth - 48 - 4 * gap) / 5, th = tw / ar;
-    g.style.gridTemplateColumns = 'repeat(5,minmax(0,1fr))';
-    const ph = Math.max(120, cr.clientHeight - 22 - rows * th - rows * gap); const pw = Math.min(cr.clientWidth - 48, ph * ar);
+    const cols = sq ? 5 : Number(g.dataset.cols) || 5, gp = 10;
+    const rows = Math.ceil(n / cols), tw = (cr.clientWidth - 24 - (cols - 1) * gp) / cols, th = tw / ar;
+    g.style.gridTemplateColumns = 'repeat(' + cols + ',minmax(0,1fr))';
+    const ph = Math.max(120, cr.clientHeight - 12 - rows * th - rows * gp); const pw = Math.min(cr.clientWidth - 24, ph * ar);
     $('#crProgBox').style.width = Math.floor(pw) + 'px'; $('#crProgBox').style.height = Math.floor(pw / ar) + 'px';
   }
 }
@@ -2770,7 +2778,19 @@ new ResizeObserver(() => fitCrTiles()).observe($('#crView')); addEventListener('
 function renderCr() {
   if (page !== 'cr') return;
   const d = crData(); const box = $('#crTiles');
-  const slots = Math.max(10, Math.ceil(d.scenes.length / 5) * 5);
+  // Fill the window like OBS does: try 4 to 10 boxes a row and keep the one that leaves the Program picture biggest
+  // (so there is no empty space beside it). Upright and square shapes keep the fixed rows.
+  let cols = 5, slots = Math.max(10, Math.ceil(d.scenes.length / 5) * 5);
+  const view = $('#crView');
+  if (!view.classList.contains('tall') && !view.classList.contains('sq') && view.clientWidth > 300) {
+    const W = view.clientWidth - 24, H = view.clientHeight - 12, G = 10, n = Math.max(1, d.scenes.length); let best = -1;
+    for (let c = 4; c <= 10; c++) {
+      const rows = Math.ceil(n / c), tw = (W - G * (c - 1)) / c; if (tw < 220 && c > 4) break; // boxes stay big enough to read
+      const pw = Math.min(W, (H - rows * (tw * 9 / 16) - G * rows) * 16 / 9);
+      if (pw > best + 1) { best = pw; cols = c; slots = rows * c; }
+    }
+  }
+  box.dataset.cols = cols;
   const key = d.scenes.join('\n') + '\n' + slots;
   if (box.dataset.key !== key) {
     box.dataset.key = key; box.textContent = '';
@@ -2870,6 +2890,7 @@ setInterval(pollCr, 200); // 5 pictures a second
   requestAnimationFrame(loop);
 })();
 if (location.hash === '#control-room') setTimeout(() => showPage('cr'), 0);
+window.addEventListener('resize', () => { if (page === 'cr') renderCr(); });
 window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' ? 'cr' : XPAGES[location.hash.slice(1)] ? location.hash.slice(1) : 'dash'));
 if (XPAGES[location.hash.slice(1)]) setTimeout(() => showPage(location.hash.slice(1)), 0);
 
