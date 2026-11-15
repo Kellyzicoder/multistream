@@ -1,7 +1,13 @@
 // Desktop app (Windows + Mac). Version 3: the windows talk to the app directly, with no localhost.
 // Pages load from app://multistream/... and every request is answered inside the app (server.js handle()).
 
-const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet, screen, Menu } = require('electron');
+const { app, BrowserWindow, dialog, shell, ipcMain, desktopCapturer, session, protocol, net: electronNet, screen, Menu, powerSaveBlocker } = require('electron');
+// During a service this window is usually behind OBS, Zoom or the Presenter. Without these, Windows and Chromium treat a covered or
+// minimised window as hidden and slow its drawing and timers, which shows as dropped video on the stream, the recording and the virtual camera.
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
 const path = require('path');
 const fs = require('fs');
 // The app was called "Multistream 3". Its saved settings (keys, scenes, sign-ins) are in a folder with that name:
@@ -122,12 +128,160 @@ function createWindow() {
   // links that leave the dashboard open in the normal browser
   win.webContents.setWindowOpenHandler(({ url }) => {
     const p = projectorOptions(url); if (p) return p;
+    // a Multiview window is opened from this window, so it can show the Studio's live picture smoothly
+    if (url === HOME + '/#control-room' && crNext) { const o = crNext.o; return { action: 'allow', overrideBrowserWindowOptions: o }; }
     if (/^https?:\/\//i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
-  win.on('closed', () => { win = null; });
+  // closing the main window closes the whole app, with any Multiview or other window that is still open
+  win.on('closed', () => { win = null; app.quit(); });
 }
 
+
+// ---- OBS engine (test) ----
+// The engine draws the picture on the graphics card inside the app (see engine.js), the way OBS does, and it
+// makes the video that goes live and into recordings.
+// It is off unless switched on in the Help menu (Windows). Why: on Windows a camera or capture card
+// (like a Blackmagic) can be open in one place only, and both the engine and the Studio page open it, so one of
+// them can get a black picture. On the Mac it sometimes froze the app just after opening. Until both are fixed,
+// the Studio makes the video itself, as before.
+// (MULTISTREAM_ENGINE=off or =on changes this, for tests and for help with problems.)
+let engineMod = null;
+const engine = () => engineMod || (engineMod = require('./engine'));
+const engineFile = () => path.join(app.getPath('userData'), 'engine-settings.json');
+function engineOn() {
+  if (process.env.MULTISTREAM_ENGINE === 'off') return false;
+  if (process.env.MULTISTREAM_ENGINE === 'on') return true;
+  if (process.platform !== 'win32') return false;
+  try { return JSON.parse(fs.readFileSync(engineFile(), 'utf8')).test === true; } catch (e) { return false; }
+}
+// the Help menu switch: it is used the next time the app opens (the engine starts before the window shows)
+function setEngine(on) {
+  try { fs.writeFileSync(engineFile(), JSON.stringify({ test: Boolean(on) })); } catch (e) {}
+  setMenu();
+  dialog.showMessageBox({ type: 'info', message: on ? 'The OBS engine (test) is on.' : 'The OBS engine (test) is off.', detail: 'Close Multistream and open it again to use this.' });
+}
+// Starting the engine keeps the app busy for a second or two, so it is done before the window shows:
+// then the window answers clicks straight away, instead of freezing just after it opens.
+function startEngineFirst() {
+  if (!engineOn() || !engine().available() || engine().isStarted()) return;
+  if (!engine().start()) console.error('Engine: could not start, the Studio makes the video itself');
+}
+async function startEngine() {
+  if (!engine().isStarted()) return;
+  await engine().askMacCamera();
+  if (win && !win.isDestroyed()) win.webContents.send('ms-engine', engineState());
+  engineFollow(engine().isStarted());
+}
+
+// The engine builds the Studio's scenes: whenever the Studio saves (a new source, a move, another scene on air),
+// the engine gets the same scenes. Only the facts it needs are sent: where each file is on this computer,
+// and which screen (by its place in the list of screens).
+let engineTimer = null, engineRev = -1, engineTrans = { type: 'fade', ms: 500 }, screenIds = [], screenAt = 0;
+async function screenOrder() {
+  if (Date.now() - screenAt < 10000) return screenIds;
+  try { screenIds = (await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } })).map((s) => s.id); } catch (e) {}
+  screenAt = Date.now();
+  return screenIds;
+}
+function engineFile_(l, assets) {
+  if (l.file && path.isAbsolute(l.file)) return l.file;
+  const m = /^\/api\/studio\/asset\/(.+)$/.exec(l.url || '');
+  if (m) { try { return path.join(assets, path.basename(decodeURIComponent(m[1]))); } catch (e) { return ''; } }
+  return '';
+}
+async function engineSend(force) {
+  if (!relay || !relay.studioNow || !engine().isStarted()) return;
+  const now = relay.studioNow();
+  if (!force && now.rev === engineRev) return;
+  engineRev = now.rev;
+  const st = now.studio || {};
+  const order = await screenOrder();
+  const [w, h] = st.shape === 'portrait' ? [1080, 1920] : st.shape === 'square' ? [1080, 1080] : [1920, 1080];
+  const scenes = (st.scenes || []).map((sc) => ({
+    name: String(sc.name || ''),
+    layers: (sc.layers || []).map((l) => {
+      const x = { ...l };
+      if (l.type === 'image' || l.type === 'video') {
+        x.path = engineFile_(l, now.assets);
+        x.link = !x.path && /^https?:\/\//i.test(l.url || '') ? l.url : '';
+      }
+      if (l.type === 'screen' || (l.type === 'duo' && l.scrType !== 'window')) { const i = order.indexOf(l.display); x.screenIndex = i >= 0 ? i : 0; }
+      if (l.type === 'duo' && l.bg && l.bg.kind === 'picture') x.bg = { ...l.bg, path: engineFile_(l.bg, now.assets) };
+      return x;
+    }),
+  }));
+  let ov = '';
+  try { ov = relay.overlayBase ? await relay.overlayBase() : ''; } catch (e) {}
+  engine().sync({ w, h, scenes, audio: st.audio || [], current: String(st.current || ''), trans: engineTrans, ov });
+}
+function engineFollow(on) {
+  if (engineTimer) { clearInterval(engineTimer); engineTimer = null; }
+  engineRev = -1;
+  if (!on) return;
+  engineSend(true);
+  engineTimer = setInterval(() => { engineSend(false).catch(() => {}); }, 400);
+}
+// Going live with the engine: the Studio asks, the app opens its receiver, and the engine sends to it.
+// o: { h, fps, kbps, shape } (the Studio's Output settings)
+handleIpc('ms-engine-send', async (e, o) => {
+  if (!relay || !relay.engineIngest || !engine().isStarted()) return { ok: false, error: 'The OBS engine is not on' };
+  try {
+    await engineSend(true);
+    const ing = await relay.engineIngest(o || {});
+    const r = engine().startStream(ing);
+    if (!r.ok) relay.engineIngestStop();
+    return r;
+  } catch (err) {
+    try { relay.engineIngestStop(); } catch (_) {}
+    return { ok: false, error: String(err && err.message ? err.message : err) };
+  }
+});
+handleIpc('ms-engine-unsend', () => {
+  try { engine().stopStream(); } catch (e) {}
+  try { if (relay && relay.engineIngestStop) relay.engineIngestStop(); } catch (e) {}
+  return true;
+});
+// Recording with the engine. o: { w, h, fps, kbps }
+let engineRecFile = '';
+handleIpc('ms-engine-record', (e, o) => {
+  if (!relay || !relay.engineRecName || !engine().isStarted()) return { ok: false, error: 'The OBS engine is not on' };
+  try {
+    const n = relay.engineRecName();
+    const r = engine().startRecord({ ...(o || {}), dir: n.dir, base: n.base });
+    if (r.ok) engineRecFile = n.name;
+    return r;
+  } catch (err) { return { ok: false, error: String(err && err.message ? err.message : err) }; }
+});
+handleIpc('ms-engine-unrecord', async () => {
+  const r = await engine().stopRecord();
+  const name = engineRecFile; engineRecFile = '';
+  if (r.ok && name) { relay.engineRecSaved(name); return { ok: true, saved: name }; }
+  return r;
+});
+handleIpc('ms-engine-sendstate', () => (engineMod ? engine().streamState() : { sending: false, active: false }));
+// the Studio's transition (Cut, Fade, Slide, Dip to black) and how long it takes
+handleIpc('ms-engine-trans', (e, t) => {
+  if (t && typeof t === 'object') engineTrans = { type: String(t.type || 'fade'), ms: Math.max(0, Math.min(5000, Number(t.ms) || 0)) };
+  engineSend(true).catch(() => {});
+  return true;
+});
+function engineState() {
+  return { available: engine().available(), on: engineOn(), started: engine().isStarted() };
+}
+handleIpc('ms-engine-state', () => engineState());
+// the page tells where its preview box is (or null when it is hidden); the engine draws its picture there
+handleIpc('ms-engine-preview', (e, rect) => (win && e.sender === win.webContents ? engine().showPreview(win, rect) : false));
+// any box on the app's own windows (the Studio's Program, the Multiview): key, where it is, and what it shows
+// Copy buttons: the app's own clipboard (the page's clipboard needs a permission the app does not give)
+handleIpc('ms-copy', (e, text) => { require('electron').clipboard.writeText(String(text || '').slice(0, 10000)); return true; });
+handleIpc('ms-engine-display', (e, key, rect, src) => {
+  const w = BrowserWindow.fromWebContents(e.sender);
+  if (!w || (w !== win && w !== crWin) || !engineMod || !engine().isStarted()) return false;
+  const k = 'w' + e.sender.id + '-' + String(key || '').replace(/[^\w-]/g, '').slice(0, 40);
+  const what = src && typeof src === 'object' && src.scene ? { scene: String(src.scene) } : 'program';
+  return engine().showDisplay(w, k, rect && typeof rect === 'object' ? { x: +rect.x || 0, y: +rect.y || 0, width: +rect.width || 0, height: +rect.height || 0 } : null, what);
+});
 
 // ---- Studio helpers ----
 let studioWin = null;
@@ -167,20 +321,40 @@ function projectorOptions(url) {
 }
 let crWin = null;
 handleIpc('ms-open-cr', (e, displayId) => openMultiview(displayId));
+let crNext = null;
 function openMultiview(displayId) {
   const d = displayById(displayId);
   if (crWin && !crWin.isDestroyed()) crWin.close();
   const o = { width: 1280, height: 800, title: 'Multistream Multiview', autoHideMenuBar: true, backgroundColor: '#07090b', show: !d,
     webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(__dirname, 'preload.js') } };
   if (d) Object.assign(o, { x: d.bounds.x, y: d.bounds.y, width: d.bounds.width, height: d.bounds.height });
-  const w = crWin = new BrowserWindow(o);
-  if (d) {
-    w.once('ready-to-show', () => { w.setBounds(d.bounds); w.setFullScreen(true); w.show(); });
-    // Esc leaves full screen (the window stays, on that display)
-    w.webContents.on('before-input-event', (ev, input) => { if (input.type === 'keyDown' && input.key === 'Escape' && w.isFullScreen()) { w.setFullScreen(false); ev.preventDefault(); } });
+  const setup = (w) => {
+    crWin = w;
+    if (d) {
+      const go = () => { if (w.isDestroyed()) return; w.setBounds(d.bounds); w.setFullScreen(true); w.show(); };
+      w.once('ready-to-show', go); setTimeout(go, 1500); // in case the window was ready already
+      // Esc leaves full screen (the window stays, on that display)
+      w.webContents.on('before-input-event', (ev, input) => { if (input.type === 'keyDown' && input.key === 'Escape' && w.isFullScreen()) { w.setFullScreen(false); ev.preventDefault(); } });
+    }
+    w.on('closed', () => { if (crWin === w) crWin = null; });
+  };
+  // Opened from the main window (so the two can share the Studio's live picture). If that does not work,
+  // the window is made the plain way and shows photos of the picture instead.
+  if (win && !win.isDestroyed()) {
+    const mine = crNext = { o };
+    let made = false;
+    const onMade = (w) => { made = true; if (crNext === mine) crNext = null; setup(w); };
+    win.webContents.once('did-create-window', onMade);
+    win.webContents.executeJavaScript(`window.open(${JSON.stringify(HOME + '/#control-room')}, '_blank'); 0`, true).catch(() => {});
+    setTimeout(() => {
+      if (made) return;
+      win && !win.isDestroyed() && win.webContents.removeListener('did-create-window', onMade);
+      if (crNext === mine) crNext = null;
+      const w = new BrowserWindow(o); setup(w); w.loadURL(HOME + '/#control-room');
+    }, 2000);
+    return;
   }
-  w.loadURL(HOME + '/#control-room');
-  w.on('closed', () => { if (crWin === w) crWin = null; });
+  const w = new BrowserWindow(o); setup(w); w.loadURL(HOME + '/#control-room');
 }
 // A web page (like the lyrics page) is drawn off-screen. We pass each new picture of it to the studio page.
 const browsers = new Map();
@@ -386,6 +560,10 @@ function buildMenu() {
     { label: 'Help', submenu: [
       { label: 'Download page (latest version)', click: () => shell.openExternal(RELEASE_PAGE) },
       { label: 'Developer tools (for problems)', accelerator: 'F12', click: () => { const w = focusedWin(); if (w) w.webContents.toggleDevTools(); } },
+      ...(process.platform === 'win32' && engine().available() ? [
+        { type: 'separator' },
+        { label: 'Use the OBS engine (test)', type: 'checkbox', checked: engineOn(), click: (item) => setEngine(item.checked) },
+      ] : []),
     ] },
   ];
   return Menu.buildFromTemplate(template);
@@ -399,11 +577,15 @@ async function start() {
     process.env.FFMPEG_PATH = ffmpegPath();
     process.env.MULTISTREAM_RECORDINGS = process.env.MULTISTREAM_RECORDINGS || path.join(app.getPath('videos'), 'Multistream');
     relay = require('./server');
+    // while streaming or recording, the computer must not go to sleep by itself (the screen may still turn off)
+    { let keep = null; const t = setInterval(() => { let busy = false; try { busy = relay.busy(); } catch {}
+        if (busy && keep === null) keep = powerSaveBlocker.start('prevent-app-suspension');
+        else if (!busy && keep !== null) { try { powerSaveBlocker.stop(keep); } catch {} keep = null; } }, 5000); if (t.unref) t.unref(); }
     relay.setOpenFolder((p) => shell.openPath(p));
     if (relay.setShowFile) relay.setShowFile((p) => shell.showItemInFolder(p));
     if (relay.onCollections) relay.onCollections(() => setMenu()); // the menu shows the scene collections
   } catch (err) {
-    dialog.showErrorBox('Multistream cannot start', String(err && err.message ? err.message : err));
+    dialog.showErrorBox('Multistream cannot start', require('./public/plain').plain(String(err && err.message ? err.message : err)));
     app.quit();
     return;
   }
@@ -411,8 +593,11 @@ async function start() {
   setupAppSession(session.defaultSession);
   setupScreenCapture(session.defaultSession);
   setMenu(); screen.on('display-added', setMenu); screen.on('display-removed', setMenu); // the Multiview list follows the screens
+  try { startEngineFirst(); } catch (e) { console.error('Engine:', e && e.message); }
   createWindow();
   startUpdates();
+  const goEngine = () => { startEngine().catch((e) => console.error('Engine:', e && e.message)); };
+  if (win && win.webContents.isLoading()) win.webContents.once('did-finish-load', goEngine); else goEngine();
 }
 
 // only one copy at a time
@@ -423,13 +608,14 @@ if (!app.requestSingleInstanceLock()) {
     if (win) {
       if (win.isMinimized()) win.restore();
       win.focus();
-    }
+    } else if (app.isReady()) createWindow(); // the main window was closed but the app was still there
   });
-  app.whenReady().then(start).catch((e) => { console.error('Multistream failed to start:', e && e.stack || e); dialog.showErrorBox('Multistream cannot start', String(e && e.message || e)); app.quit(); });
+  app.whenReady().then(start).catch((e) => { console.error('Multistream failed to start:', e && e.stack || e); dialog.showErrorBox('Multistream cannot start', require('./public/plain').plain(String(e && e.message || e))); app.quit(); });
 }
 
 // stop every platform stream when the app closes
 app.on('before-quit', () => {
+  if (engineMod) engineMod.stop();
   if (relay) relay.shutdown();
 });
 app.on('window-all-closed', () => app.quit());

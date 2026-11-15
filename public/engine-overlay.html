@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Multistream graphics</title>
+<style>
+  /* The OBS engine shows this page as one source: see-through, the size of the scene, nothing but the drawing */
+  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// One graphic from the Studio (text, name bar, countdown or clock), drawn for the OBS engine.
+// The page asks the app for the graphic's settings a few times a second, so changes show at once
+// (a name bar shown or hidden slides in or out, the same as in the Studio).
+// The drawing is the same as the Studio's (studio.html: drawLower, drawWords, drawCentered, drawBg).
+const q = new URLSearchParams(location.search);
+const ID = q.get('id') || '';
+const cv = document.getElementById('c'), c = cv.getContext('2d');
+let SW = 1920, SH = 1080, L = null;
+
+async function poll() {
+  try {
+    const r = await fetch('layer?id=' + encodeURIComponent(ID), { cache: 'no-store' });
+    if (r.ok) {
+      const j = await r.json();
+      L = j.layer || null;
+      if (j.w && j.h && (j.w !== SW || j.h !== SH)) { SW = j.w; SH = j.h; }
+    }
+  } catch (e) {}
+  setTimeout(poll, 250);
+}
+
+// pictures and videos: the app hands them over by name (only this computer can ask)
+function fileUrl(o) {
+  if (o.file) return 'file?p=' + encodeURIComponent(o.file);
+  const m = /^\/api\/studio\/asset\/(.+)$/.exec(o.url || '');
+  if (m) return 'asset/' + m[1];
+  return o.url || '';
+}
+const imgs = new Map();
+function getImg(url) { let i = imgs.get(url); if (!i) { i = new Image(); i.onerror = () => { i.bad = true; }; i.src = url; imgs.set(url, i); } return i; }
+const vids = new Map();
+function getVid(o) {
+  const url = fileUrl(o);
+  let v = vids.get(url);
+  if (!v) { v = document.createElement('video'); v.muted = true; v.loop = o.loop !== false; v.playsInline = true; v.src = url; v.play().catch(() => {}); vids.set(url, v); }
+  return v;
+}
+
+// ---- name bars ----
+let lower = null;
+const LOWER_MS = { typewriter: 1300, bounce: 800, flip: 600, glow: 700 };
+function lowerProgress(l) {
+  const want = l.visible !== false ? 1 : 0, now = performance.now(), ms = want ? (LOWER_MS[l.anim] || 450) : 450;
+  if (!lower) lower = { p: want, t: now };
+  const dt = now - lower.t;
+  if (dt > 0) { lower.t = now; lower.p = want > lower.p ? Math.min(1, lower.p + dt / ms) : Math.max(0, lower.p - dt / 450); }
+  return lower.p;
+}
+const FONTS = { '': 'system-ui, sans-serif', inter: 'Inter, "Segoe UI", system-ui, sans-serif', montserrat: 'Montserrat, "Segoe UI", system-ui, sans-serif', poppins: 'Poppins, "Segoe UI", system-ui, sans-serif', playfair: '"Playfair Display", Georgia, "Times New Roman", serif' };
+const fontOf = (l) => FONTS[l.font || ''] || FONTS[''];
+const initials = (t) => String(t || '').trim().split(/\s+/).slice(0, 2).map((w) => w[0] || '').join('').toUpperCase();
+const easeOut = (p) => 1 - Math.pow(1 - p, 3);
+function easeBounce(p) { const n = 7.5625, d = 2.75; if (p < 1 / d) return n * p * p; if (p < 2 / d) return n * (p -= 1.5 / d) * p + 0.75; if (p < 2.5 / d) return n * (p -= 2.25 / d) * p + 0.9375; return n * (p -= 2.625 / d) * p + 0.984375; }
+function drawLower(c, l) {
+  const p = lowerProgress(l); if (p <= 0) return;
+  const anim = l.anim || 'slide', e = easeOut(p), w = l.w || 900, h = l.h || 130;
+  let x = l.x, y = l.y, alpha = Math.min(1, p * 2);
+  const cx = l.x + w / 2, cy = l.y + h / 2, scaleAt = (sx, sy) => { c.translate(cx, cy); c.scale(sx, sy); c.translate(-cx, -cy); };
+  if (anim === 'slide') x = l.x - (1 - e) * (w + l.x + 40);
+  else if (anim === 'fade') alpha = p;
+  else if (anim === 'rise') { y = l.y + (1 - e) * 60; alpha = p; }
+  else if (anim === 'drop') { y = l.y - (1 - e) * 60; alpha = p; }
+  else if (anim === 'pop') { const k = p < 1 ? 1 + 0.12 * Math.sin(p * Math.PI) - 0.4 * (1 - e) : 1; scaleAt(Math.max(0.01, k), Math.max(0.01, k)); alpha = Math.min(1, p * 3); }
+  else if (anim === 'zoom') { scaleAt(1 + 0.3 * (1 - e), 1 + 0.3 * (1 - e)); alpha = p; }
+  else if (anim === 'bounce') { y = l.y - (1 - easeBounce(p)) * (h + 80); alpha = Math.min(1, p * 4); }
+  else if (anim === 'flip') { scaleAt(1, Math.max(0.01, e)); alpha = 1; }
+  else if (anim === 'blur') { c.filter = 'blur(' + Math.round((1 - e) * 24) + 'px)'; alpha = p; }
+  else if (anim === 'wipe') { c.beginPath(); c.rect(l.x - 4, l.y - 4, (w + 8) * e, h + 8); c.clip(); alpha = 1; }
+  else if (anim === 'glow') { alpha = p; c.shadowColor = l.color || '#3b6cff'; c.shadowBlur = 60 * (p < 1 ? Math.sin(p * Math.PI) + 0.2 : 0.2); }
+  c.globalAlpha = alpha;
+  const style = l.style || 'clean', col = l.color || '#3b6cff', tc = l.textColor || '#ffffff', F = fontOf(l);
+  const r = Math.round(h * 0.16);
+  if (style === 'bold') { c.fillStyle = col; c.beginPath(); c.roundRect(x, y, w, h, r); c.fill(); }
+  else if (style === 'minimal') { c.fillStyle = col; c.fillRect(x, y + h - 6, Math.min(w, 260), 6); }
+  else { c.fillStyle = 'rgba(10,14,31,0.84)'; c.beginPath(); c.roundRect(x, y, w, h, r); c.fill(); c.fillStyle = col; c.beginPath(); c.roundRect(x, y, 12, h, [r, 0, 0, r]); c.fill(); }
+  c.shadowBlur = 0; c.filter = 'none';
+  let tx = x + (style === 'minimal' ? 0 : 36);
+  const ph = Math.round(h * 0.62), py = y + (h - ph) / 2;
+  const im = l.pic ? getImg(fileUrl({ file: l.pic, url: l.picUrl })) : null;
+  if (im && im.complete && im.naturalWidth) {
+    c.save(); c.beginPath(); if ((l.tag || 'person') === 'person') c.arc(tx + ph / 2, py + ph / 2, ph / 2, 0, Math.PI * 2); else c.roundRect(tx, py, ph, ph, ph * 0.18); c.clip();
+    const k = Math.max(ph / im.naturalWidth, ph / im.naturalHeight), dw = im.naturalWidth * k, dh = im.naturalHeight * k; c.drawImage(im, tx + (ph - dw) / 2, py + (ph - dh) / 2, dw, dh); c.restore();
+    tx += ph + Math.round(h * 0.2);
+  } else if ((l.tag || 'person') === 'person' && style !== 'minimal' && l.initials !== false) {
+    c.fillStyle = style === 'bold' ? 'rgba(255,255,255,0.22)' : col; c.beginPath(); c.arc(tx + ph / 2, py + ph / 2, ph / 2, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#ffffff'; c.font = `700 ${Math.round(ph * 0.4)}px ${F}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(initials(l.title), tx + ph / 2, py + ph / 2 + 1); c.textAlign = 'left';
+    tx += ph + Math.round(h * 0.2);
+  }
+  const sub = l.showSub === false ? '' : (l.sub || ''), room = Math.max(40, x + w - tx - 28);
+  const title = anim === 'typewriter' ? String(l.title || '').slice(0, Math.ceil(String(l.title || '').length * Math.min(1, p * 1.25))) : (l.title || '');
+  const big = Math.round(h * 0.34), small = Math.round(h * 0.22);
+  c.fillStyle = tc; c.textBaseline = 'alphabetic'; c.textAlign = 'left';
+  c.font = `700 ${big}px ${F}`; c.fillText(title, tx, y + h * (sub ? 0.5 : 0.62), room);
+  if (sub) { const sp = anim === 'typewriter' ? Math.max(0, Math.min(1, (p - 0.6) / 0.4)) : 1; c.font = `500 ${small}px ${F}`; c.globalAlpha = alpha * 0.85 * sp; c.fillText(sub, tx, y + h * 0.8, room); }
+}
+
+// ---- countdown and clock ----
+const pad2 = (n) => String(n).padStart(2, '0');
+function timerLeft(l, now = Date.now()) {
+  if (l.mode === 'until') {
+    const [hh, mm] = String(l.at || '10:00').split(':').map(Number), d = new Date(now); d.setHours(hh || 0, mm || 0, 0, 0);
+    return Math.max(0, d.getTime() - now);
+  }
+  if (l.endAt) return Math.max(0, l.endAt - now);
+  return l.left != null ? l.left : (l.minutes == null ? 5 : l.minutes) * 60000;
+}
+function fmtLeft(ms) { const t = Math.ceil(ms / 1000), hh = Math.floor(t / 3600), mm = Math.floor(t / 60) % 60, ss = t % 60; return (hh ? hh + ':' + pad2(mm) : pad2(mm)) + ':' + pad2(ss); }
+function clockText(l, now = new Date()) {
+  let hh = now.getHours(), suf = '';
+  if (l.h24 !== true) { suf = hh >= 12 ? ' PM' : ' AM'; hh = hh % 12 || 12; }
+  const base = (l.h24 === true ? pad2(hh) : String(hh)) + ':' + pad2(now.getMinutes()) + (l.secs ? ':' + pad2(now.getSeconds()) : '') + suf;
+  return l.date ? now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) + '   ' + base : base;
+}
+function drawCentered(c, l, text, label) {
+  const w = l.w || SW, size = l.size || 200, F = fontOf(l);
+  c.fillStyle = l.color || '#ffffff'; c.textAlign = 'center'; c.textBaseline = 'top';
+  let y = l.y;
+  if (label) { c.font = `600 ${Math.round(size * 0.3)}px ${F}`; c.fillText(label, l.x + w / 2, y, w); y += size * 0.4; }
+  c.font = `bold ${size}px ${F}`; c.fillText(text, l.x + w / 2, y, w);
+}
+function drawWords(c, l) {
+  const size = l.size || 60, w = l.w || SW, al = l.align || 'left';
+  c.font = `bold ${size}px ${fontOf(l)}`; c.textBaseline = 'top'; c.textAlign = al === 'centre' ? 'center' : al;
+  const ax = al === 'centre' ? l.x + w / 2 : al === 'right' ? l.x + w : l.x;
+  if (l.shadow) { c.shadowColor = 'rgba(0,0,0,0.6)'; c.shadowBlur = size * 0.18; c.shadowOffsetY = size * 0.06; }
+  String(l.text || '').split('\n').forEach((t, i) => {
+    const ty = l.y + i * size * 1.2;
+    if (l.outline) { c.lineWidth = Math.max(2, size * 0.08); c.strokeStyle = l.outlineColor || '#000000'; c.lineJoin = 'round'; c.strokeText(t, ax, ty, w); }
+    c.fillStyle = l.color || '#fff'; c.fillText(t, ax, ty, w);
+  });
+}
+function drawBg(c, l, x, y, w, h) {
+  const b = l.bg; if (!b || !b.kind || b.kind === 'none') return;
+  c.save(); c.globalAlpha = (b.op == null ? 100 : b.op) / 100;
+  const cover = (el, sw, sh) => { const k = Math.max(w / sw, h / sh), dw = sw * k, dh = sh * k; c.beginPath(); c.rect(x, y, w, h); c.clip(); c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); };
+  if (b.kind === 'colour') { c.fillStyle = b.color || '#0a0e1f'; c.fillRect(x, y, w, h); }
+  else if (b.kind === 'picture') { const i = getImg(fileUrl(b)); if (i.complete && i.naturalWidth) cover(i, i.naturalWidth, i.naturalHeight); }
+  else if (b.kind === 'video') { const v = getVid({ file: b.file, url: b.url, loop: b.loop }); if (v.readyState >= 2 && v.videoWidth) cover(v, v.videoWidth, v.videoHeight); }
+  c.restore();
+}
+
+function frame() {
+  if (cv.width !== SW || cv.height !== SH) { cv.width = SW; cv.height = SH; }
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, SW, SH);
+  const l = L;
+  if (l) {
+    c.save();
+    try {
+      if (l.type === 'lower') drawLower(c, l);
+      else if (l.visible !== false) {
+        if (l.rot || l.flipH || l.flipV) { const cx = (l.x || 0) + (l.w || SW) / 2, cy = (l.y || 0) + (l.h || SH) / 2; c.translate(cx, cy); if (l.rot) c.rotate(l.rot * Math.PI / 180); c.scale(l.flipH ? -1 : 1, l.flipV ? -1 : 1); c.translate(-cx, -cy); }
+        if (l.type === 'text') drawWords(c, l);
+        else if (l.type === 'clock') drawCentered(c, l, clockText(l), '');
+        else if (l.type === 'timer') {
+          const left = timerLeft(l), done = left <= 0;
+          if (!(done && l.endDo === 'hide')) {
+            if (l.bg && l.bg.kind && l.bg.kind !== 'none') drawBg(c, l, 0, 0, SW, SH);
+            drawCentered(c, l, done && l.endDo !== 'zero' && l.doneText ? l.doneText : fmtLeft(left), l.label);
+          }
+        }
+      }
+    } catch (e) {}
+    c.restore();
+  }
+  requestAnimationFrame(frame);
+}
+poll();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

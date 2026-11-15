@@ -112,6 +112,17 @@
   .dlg-h button { background:none; border:0; font-size:18px; padding:0 6px; }
   .dlg-b { padding:12px; overflow:auto; }
   .dlg-b .f { grid-template-columns:140px 1fr; }
+  /* Missing files window and the red ! on a source whose file is not found */
+  #layers .lyr button.miss { width:22px; height:22px; border-radius:50%; border:0; padding:0; background:#e5484d; color:#fff; font-weight:800; font-size:13px; display:grid; place-items:center; flex:none; }
+  .missw .dlg { width:min(640px, 94vw); }
+  .mw-lead { margin:0 0 12px; font-size:14px; line-height:1.5; }
+  .mw-list { display:grid; gap:8px; }
+  .mw-r { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; }
+  .mw-t { flex:1; min-width:0; display:grid; gap:2px; }
+  .mw-t b { font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mw-t small { color:var(--muted); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mw-ft { display:flex; align-items:center; gap:12px; padding:12px; border-top:1px solid var(--line); }
+  .mw-ft span { flex:1; font-size:13px; color:var(--muted); }
   .dlg-b h3 { margin:14px 0 6px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
   .dlg-b h3:first-child { margin-top:0; }
   #ev { touch-action:none; }
@@ -427,6 +438,13 @@
   .dock h2 .hb2.wide { width:auto; padding:0 8px; gap:5px; display:flex; align-items:center; font-size:11px; font-weight:600; letter-spacing:0; text-transform:none; margin-left:8px; }
   .dock h2 .mxl { margin-left:auto; }
   .dock .list, .dock .pad { background:transparent !important; }
+  /* dragging a scene or a source to another place in its list */
+html.a-calm body { background:var(--bg) !important; }
+  .srcbar { display:flex; align-items:center; gap:8px; padding:4px 14px; min-height:34px; flex:none; font-size:13px; color:var(--muted); }
+  .srcbar .sb-n { margin-right:6px; max-width:38ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .srcbar .sb-n.has { color:var(--text); font-weight:600; }
+  .srcbar button { padding:4px 12px; border-radius:999px; border:1px solid var(--line); background:var(--field); color:var(--text); font:inherit; font-size:12.5px; cursor:pointer; } .srcbar button:hover { border-color:var(--sel); }
+  .scn.drag, .lyr.drag { opacity:.45; }
+  body.rowdrag-scene .scn:not(.drag), body.rowdrag-source .lyr:not(.drag) { box-shadow:inset 0 2px 0 color-mix(in srgb, var(--sel) 35%, transparent), inset 0 -2px 0 color-mix(in srgb, var(--sel) 35%, transparent); } .scn.dropA, .lyr.dropA { box-shadow:inset 0 3px 0 var(--sel) !important; } .scn.dropB, .lyr.dropB { box-shadow:inset 0 -3px 0 var(--sel) !important; }
   #scenes { padding:4px 0; } #scenes .scn { margin:3px 8px; padding:9px 12px; border-radius:10px; font-size:14px; background:transparent; }
   #scenes .scn.on { background:var(--sel); color:var(--onsel); font-weight:600; } #scenes .scn .dot { display:none; }
   #layers { padding:4px 0; } #layers .lyr { margin:2px 8px; padding:6px 6px 6px 12px; gap:10px; border-radius:10px; font-size:14px; background:transparent; }
@@ -600,10 +618,35 @@
   .asbar .as-min { width:26px; height:26px; min-width:0; padding:0 !important; border-radius:8px; border:0; background:rgba(255,255,255,.08); color:#cdd3e4; display:grid; place-items:center; font-size:16px; line-height:1; margin-left:auto; order:1 !important; flex:none !important; }
   .asbar.mini { width:auto !important; padding:8px 12px !important; border-radius:999px !important; cursor:pointer; gap:0 !important; }
   .asbar.mini .as-seg, .asbar.mini .as-r1 > button:not(.as-min), .asbar.mini .as-r1 .sp { display:none !important; } .asbar.mini .as-left { flex:none !important; margin-left:8px !important; order:1; } .asbar.mini .as-r1 { flex-wrap:nowrap !important; } .asbar.mini .as-min { margin-left:10px; }
+  /* Streaming, recording and the virtual camera keep the main colour you picked (Settings, Appearance) while they run, instead of turning red */
+  #sendBtn.stop, #recBtn.stop, #vcBtn.stop, .dock .ctl button#sendBtn.stop, .dock .ctl button#recBtn.stop, .dock .ctl button#vcBtn.stop { background:var(--sel) !important; border-color:var(--sel) !important; color:var(--onsel) !important; box-shadow:0 4px 16px color-mix(in srgb, var(--sel) 45%, transparent) !important; }
+  #sendBtn.stop::before, #recBtn.stop::before, #vcBtn.stop::before { background:var(--onsel) !important; }
+  #recBtn:not(.stop)::before, #sendBtn:not(.stop)::before { background:var(--sel) !important; }
+  /* ---------- the same look as Go Live: plain panel titles, round buttons, one blue main button ---------- */
+  .dock > h2 { font-size:14px !important; letter-spacing:0 !important; text-transform:none !important; color:var(--text) !important; background:transparent !important; padding:12px 16px 10px !important; }
+  .dock .ctl button { height:36px !important; border-radius:999px !important; }
+  #sendBtn:not(.stop) { background:var(--sel) !important; color:var(--onsel) !important; } #sendBtn:not(.stop)::before { background:currentColor !important; }
+  #modeBtn.on { background:color-mix(in srgb, var(--sel) 22%, transparent) !important; color:var(--text) !important; font-weight:600 !important; box-shadow:inset 0 0 0 1px var(--sel) !important; }
+  .ptitle { font-size:22px !important; }
+  .advd { margin-top:14px; } .advd > summary { cursor:pointer; font-size:13px; color:var(--muted); padding:6px 0; }
 </style>
 </head>
 <body>
-<script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
+<script src="/plain.js"></script>
+<script>
+// every pop-up message in plain words (see plain.js); a short "YouTube: " in front is kept
+(function () {
+  const P = window.msPlain || ((t) => t);
+  const nice = (t) => { const s = String(t == null ? '' : t); const m = /^([^:]{1,45}): ([\s\S]+)$/.exec(s); return m && !/https?$/i.test(m[1]) ? m[1] + ': ' + P(m[2]) : P(s); };
+  window.msNice = nice;
+  const a = window.alert.bind(window);
+  window.alert = (t) => a(nice(t));
+})();
+</script>
+<script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');
+// Inside the app window the Studio sometimes misses the app's helpers (it then tries a connection that does not exist
+// in the desktop app and never sends any video). The window around it has them, so it uses those.
+try { if (!window.msNative && window.parent !== window && window.parent.msNative) window.msNative = window.parent.msNative; } catch {}</script>
 <div class="asbar" id="asBar" hidden><div class="as-r1"><span class="as-dot"></span><b id="asStep">Auto start</b><span class="as-left" id="asLeft"></span><button type="button" class="as-min" id="asMin" title="Make smaller" aria-label="Make smaller">−</button><span class="sp"></span><button type="button" id="asNext">Next step now</button><button type="button" id="asStop">Stop plan</button></div><div class="as-seg" id="asSeg"></div></div>
 <div class="alertbar" id="alertBar" role="alert"><span id="alertTxt"></span><button type="button" id="alertX">Dismiss</button></div>
 <aside class="snv" aria-label="Menu">
@@ -629,6 +672,8 @@
     <div class="screen"><div class="cap">Program <span id="airName"></span> <b class="livetag" id="liveTag" hidden>● LIVE</b></div><canvas id="cv" class="v" width="1280" height="720"></canvas></div>
   </div>
   <div class="split v" id="splitR" title="Drag to make the right panels wider or narrower" hidden></div><aside class="sdock" id="dockR" aria-label="Panels on the right"></aside></div>
+  <!-- the source bar under the picture, like OBS: what you can do with the source you picked -->
+  <div class="srcbar" id="srcBar" aria-label="The source you picked"><span class="sb-n" id="sbName">No source picked</span><button type="button" id="sbProps" hidden>Properties</button><button type="button" id="sbFilters" hidden>Filters</button><button type="button" id="sbOff" hidden>Deactivate</button></div>
   <div class="split h" id="splitB" title="Drag to make the bottom panels taller or shorter"></div>
 
   <!-- docks along the bottom, like OBS -->
@@ -695,47 +740,50 @@
           <div class="f"><label>Theme</label><span class="lookbtns" id="lookTheme"><button type="button" data-v="system">System</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></span></div>
           <div class="f"><label>Main colour</label><span class="lookcols" id="lookCols"></span></div>
           <p class="note">Theme and main colour are the same as on the Go Live page (Settings, Appearance).</p>
-          <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap to the edges, the middle and other items when moving or resizing</label></div>
-          <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Ask "Are you sure?" before stopping</label></div>
-          <div class="f"><label>Panels</label><span><button id="resetLayout" type="button">Put the panels back</button> <span class="note">Drag a panel's title to move it. Drag it up to float it, or drop it on the bottom row to dock it again.</span></span></div>
+          <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap items to edges, the centre and each other</label></div>
+          <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Confirm before stopping the stream</label></div>
+          <div class="f"><label>Panels</label><span><button id="resetLayout" type="button">Reset panels</button> <span class="note">Drag a panel by its title to move it. Drag it up to float it; drop it on the bottom row to put it back.</span></span></div>
           <h3>Scenes and windows</h3>
           <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes from OBS...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
         </section>
         <section class="sp" data-sp="channels">
           <h3>Where your video goes</h3>
-          <p class="note">Each channel gets the same picture and sound. Switch one off to stop sending to it. A channel that drops starts again by itself. Sign-in for YouTube and Facebook (titles, Go Live, chat) is in the Go Live page under Settings.</p>
+          <p class="note">Every channel gets the same video. Turn one off to stop sending to it.</p>
           <div id="chanList"></div>
-          <h3>Add a channel</h3>
+          <details class="advd"><summary>Add a channel with a stream key</summary>
           <div class="f"><label>Site</label><select id="chType"><option value="youtube">YouTube</option><option value="facebook">Facebook</option><option value="other">Instagram or another site</option></select></div>
           <div class="f"><label>Name</label><input id="chName" placeholder="Church YouTube"></div>
           <div class="f"><label>Stream URL</label><input id="chUrl" placeholder="rtmps://..."></div>
           <div class="f"><label>Stream key</label><input id="chKey" type="password" autocomplete="off" placeholder="Paste the key"></div>
           <div class="row"><button id="chAdd">Add channel</button><span class="note" id="chMsg"></span></div>
+          </details>
         </section>
         <section class="sp" data-sp="video">
           <h3>What viewers get</h3>
           <div class="f"><label>Quality</label><select id="outQ"></select></div>
+          <div class="f"><label>Picture height (pixels)</label><input id="outH" type="number" min="360" max="2160" step="2"></div>
+          <div class="f"><label>Frames a second</label><input id="outFps" type="number" min="10" max="60" step="1"></div>
           <div class="f"><label>Bitrate (kbps)</label><input id="outKbps" type="number" min="1000" max="60000" step="500"></div>
           <p class="note" id="outNote"></p>
-          <div class="f"><label>Canvas</label><span>1920 x 1080 (items are placed on this, like OBS)</span></div>
+          <div class="f"><label>Canvas</label><span>1920 x 1080 (the size scenes are built at)</span></div>
           <div class="f"><label>Encoder</label><span id="encName">...</span></div>
-          <div class="f"><label>Encoding</label><span>The picture is encoded once for the stream and the recording. If this computer cannot do that, the app goes back to the older way by itself and tells you.</span></div>
+          <div class="f"><label>Encoding</label><span>Made once for the stream and the recording.</span></div>
           <div class="f"><label>Keyframes</label><span>Every 2 seconds (what YouTube and Facebook ask for)</span></div>
         </section>
         <section class="sp" data-sp="output">
           <h3>Recording</h3>
           <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal (about 3.6 GB an hour)</option><option value="1080-4">1080p small file (about 1.8 GB an hour)</option><option value="720-6">720p normal (about 2.7 GB an hour)</option><option value="720-3">720p small file (about 1.4 GB an hour)</option></select></div>
-          <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Also save the stream as soon as it starts</label></div>
+          <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Record automatically when the stream starts</label></div>
           <div class="f"><label>Saved in</label><span><code id="recDir2"></code></span></div>
           <div class="row"><button id="recOpen2">Open folder</button><span class="note" id="recMsg2"></span></div>
-          <p class="note">Recordings are .mkv files, so they still play if the power goes out. VLC plays them.</p>
+          <p class="note">Saved as .mkv, so a file still plays if the power goes out. Open them with VLC.</p>
         </section>
         <section class="sp" data-sp="audio">
           <h3>Monitoring</h3>
           <div class="f"><label>Monitoring output</label><select id="monDev"></select></div>
-          <p class="note">Monitoring lets you hear an input in your headphones. Use headphones, or the microphone will pick up the speakers. Turn it on for each input in the Audio Mixer, under Tools.</p>
+          <p class="note">Hear an input in your headphones. Turn on Listen for each input in the Audio Mixer (Tools). Use headphones, or the microphone will pick up the speakers.</p>
           <h3>Inputs</h3>
-          <p class="note">Add and set up sound inputs in the Audio Mixer: volume, mute, delay, low cut, bass/mid/treble, noise gate, compressor and limiter. "Computer sound" (what this PC plays) is in the Windows app.</p>
+          <p class="note">Add sound inputs in the Audio Mixer, then set volume, mute, delay, EQ, noise gate, compressor and limiter. "Computer sound" (what this PC plays) works in the Windows app.</p>
         </section>
         <section class="sp" data-sp="hotkeys">
           <h3>Hotkeys</h3>
@@ -766,9 +814,9 @@
         </section>
         <section class="sp" data-sp="advanced">
           <h3>Advanced</h3>
-          <div class="f"><label>Dropped channels</label><span>Started again after 3, 6, 9 ... up to 30 seconds, 10 tries, then it says so.</span></div>
+          <div class="f"><label>Dropped channels</label><span>It reconnects by itself (up to 10 tries, a bit longer apart each time), then tells you.</span></div>
           <div class="f"><label>Reset</label><span><button id="resetStudio">Reset Studio settings</button></span></div>
-          <p class="note">Reset puts the video size, recording quality, transition, monitoring output and the options above back to how they started. Your scenes, sources and channels are kept.</p>
+          <p class="note">Puts the video size, recording quality, transition, headphone output and the options above back to how they started. Your scenes, sources and channels stay.</p>
         </section>
       </div>
     </div>
@@ -787,6 +835,7 @@
     const light = t === 'light' || (t === 'system' && dark && !dark.matches);
     document.documentElement.classList.toggle('t-light', light);
     document.documentElement.classList.toggle('glass-off', Boolean(a.contrast));
+    document.documentElement.classList.toggle('a-calm', Boolean(a.calm));
     ['clear', 'blur', 'solid'].forEach((k) => document.documentElement.classList.toggle('ps-' + k, a.panel === k));
     const r = document.documentElement.style;
     // a white main colour on the light (white) theme would not show: it becomes dark there
@@ -810,9 +859,13 @@ const $ = (s) => document.querySelector(s);
 const cv = $('#cv'), ctx = cv.getContext('2d'), ev = $('#ev'), ectx = ev.getContext('2d');
 // the scene collection's shape: wide (16:9), tall (9:16) or square (1:1)
 let collNames = [];
+let collSeen = '';
 async function showColl() {
   const el = $('#pColl'); if (!el) return;
-  try { const r = await fetch('/api/collections').then((x) => x.json()); collNames = r.names || []; el.textContent = 'Scene collection: '; const b = document.createElement('b'); b.textContent = r.current || ''; el.append(b); if (SH >= SW) { const t = document.createElement('i'); t.textContent = SH > SW ? '9:16' : '1:1'; el.append(' ', t); } el.append(' \u25BE'); } catch {}
+  try { const r = await fetch('/api/collections').then((x) => x.json());
+    // another scene collection was opened: check its files too
+    if (collSeen && r.current !== collSeen) setTimeout(() => checkMissing(true), 1000);
+    collSeen = r.current || ''; collNames = r.names || []; el.textContent = 'Scene collection: '; const b = document.createElement('b'); b.textContent = r.current || ''; el.append(b); if (SH >= SW) { const t = document.createElement('i'); t.textContent = SH > SW ? '9:16' : '1:1'; el.append(' ', t); } el.append(' \u25BE'); } catch {}
 }
 function applyShape(shape) {
   const [w, h] = shape === 'portrait' ? [1080, 1920] : shape === 'square' ? [1080, 1080] : [1920, 1080];
@@ -827,6 +880,7 @@ function applyShape(shape) {
 let studio = { scenes: [], audio: [], current: '' };
 let editing = '';        // scene being edited
 let sel = '';            // layer being edited
+let missing = [], missingIds = new Set(); // sources whose picture or video file is not on this computer
 let saveT = 0, lastRev = 0, dirtyCurrent = false, serverPreview = '';
 const uid = () => Math.random().toString(36).slice(2, 8);
 const byName = (n) => studio.scenes.find((s) => s.name === n);
@@ -841,7 +895,7 @@ function save() {
     try { const r = await fetch('/api/studio', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); if (r.rev) lastRev = r.rev; } catch {}
   }, 300);
 }
-function setCurrent(name, byPlan) { if (!byPlan && auto && auto.plan.takeover !== false) autoStop('You changed the scene, so the plan stopped.'); studio.current = name; dirtyCurrent = true; save(); renderAll(); }
+function setCurrent(name, byPlan) { if (!byPlan && auto && auto.plan.takeover !== false) autoStop('You changed the scene, so the plan stopped.'); studio.current = name; dirtyCurrent = true; try { trTell(); } catch {} save(); renderAll(); }
 
 // ---------------- media ----------------
 const devices = { video: [], audio: [] };
@@ -860,9 +914,32 @@ let addDraft = null;
 const allLayers = () => { const a = []; studio.scenes.forEach((sc) => a.push(...sc.layers)); if (addDraft) a.push(addDraft); return a; };
 const RES = { auto: [1920, 1080], '720': [1280, 720], '1080': [1920, 1080], '1440': [2560, 1440], '2160': [3840, 2160] };
 const camKey = (l) => [l.label || '', l.device || '', l.res || 'auto', l.fps || 'auto'].join('|');
+// Like OBS: a camera can be deactivated (the device is let go, so another app can use it), and it can be set to
+// "deactivate when not showing" (it is only open while its scene is on air, being edited, or in a transition).
+function camShowing(l) {
+  const names = new Set([studio.current, editing, shown]); if (trans) { names.add(trans.from); names.add(trans.to); }
+  return studio.scenes.some((sc) => names.has(sc.name) && sc.layers.some((x) => x.id === l.id));
+}
+const camWanted = (l) => !l.off && (!l.idleOff || camShowing(l));
+const CAP_OFF = { ready: false, off: true, v: document.createElement('video'), err: '' };
+// the kinds of source that can be deactivated (the device or screen is let go) and activated again
+const CAN_OFF = new Set(['camera', 'screen', 'window']);
+function toggleOff(l) { if (l.off) delete l.off; else l.off = true; save(); renderLayers(); }
+const CAM_OFF = { ready: false, off: true, v: document.createElement('video'), err: '' };
+// Windows lets only ONE program part open a camera or capture card (a Blackmagic for example). When the OBS engine is making the
+// picture, the engine has the device, so this page must not open it too (that is what made the Blackmagic go black).
+// The page opens cameras itself only when it needs the picture: the engine is off or failed, or the page is sending,
+// recording or feeding the virtual camera.
+const CAM_ENG = { ready: true, eng: true, v: document.createElement('video'), err: 'shown live in the Program picture (the OBS engine has the device)' };
+const CAM_WAIT = { ready: false, v: document.createElement('video'), err: '' };
+let engineKnown = !(window.msNative && window.msNative.engineDisplay && window.msNative.engineState); // until the app says whether the engine runs, no camera is opened
+function engHasCams() { try { return lightMode(); } catch { return false; } }
 function getCam(l) {
+  if (!engineKnown) return CAM_WAIT;
+  if (engHasCams()) return CAM_ENG;
   const key = camKey(l);
-  let c = cams.get(key); if (c) { c.seen = Date.now(); return c; }
+  let c = cams.get(key); if (c && (camWanted(l) || !l.off)) { c.seen = Date.now(); return c; }
+  if (!camWanted(l)) return CAM_OFF;
   c = { v: document.createElement('video'), ready: false, seen: Date.now(), info: '' };
   c.v.muted = true; c.v.playsInline = true; cams.set(key, c);
   const id = pickDevice('video', l.label, l.device);
@@ -883,7 +960,7 @@ function getCam(l) {
 // cameras nobody uses any more (removed, or changed to another setting) are released so the device is free again
 setInterval(() => {
   const used = new Set();
-  allLayers().forEach((l) => { if (l.type === 'camera') used.add(camKey(l)); if (l.type === 'duo') used.add(camKey(duoCam(l))); });
+  if (!engHasCams()) allLayers().forEach((l) => { if (l.type === 'camera' && camWanted(l)) used.add(camKey(l)); if (l.type === 'duo') used.add(camKey(duoCam(l))); });
   cams.forEach((c, k) => {
     if (used.has(k)) return;
     if (!c.unusedAt) c.unusedAt = Date.now();
@@ -893,7 +970,7 @@ setInterval(() => {
   cams.forEach((c, k) => { if (c.dead && used.has(k) && Date.now() - c.seen > 4000) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} cams.delete(k); } });
   // screens, windows, web pages and phone cameras that no scene uses any more are let go the same way
   const usedCap = new Set(), usedBoard = new Set(), usedIp = new Set();
-  allLayers().forEach((l) => { usedCap.add(capKey(l)); if (l.type === 'duo') usedCap.add(capKey(duoScr(l))); if (l.url) { usedBoard.add(boardKey(l)); usedIp.add(l.url); } });
+  allLayers().forEach((l) => { if (!l.off) usedCap.add(capKey(l)); if (l.type === 'duo') usedCap.add(capKey(duoScr(l))); if (l.url) { usedBoard.add(boardKey(l)); usedIp.add(l.url); } });
   const later = (o) => { if (!o.unusedAt) o.unusedAt = Date.now(); return Date.now() - o.unusedAt > 2500; };
   caps.forEach((c, k) => { if (usedCap.has(k)) { c.unusedAt = 0; return; } if (later(c)) { try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(k); } });
   boards.forEach((b, k) => { if (usedBoard.has(k)) { b.unusedAt = 0; return; } if (later(b)) { if (window.msNative) window.msNative.browserClose(k); boards.delete(k); } });
@@ -905,6 +982,7 @@ const serial = (fn) => { const p = capQ.then(fn); capQ = p.catch(() => {}); retu
 const caps = new Map();
 const capKey = (l) => l.type + '|' + (l.display || '') + '|' + (l.winName || '');
 function getCapture(l) {
+  if (l.off) return CAP_OFF; // deactivated: the screen or window is not captured
   const key = capKey(l);
   let c = caps.get(key); if (c) return c;
   c = { v: document.createElement('video'), ready: false }; c.v.muted = true; caps.set(key, c);
@@ -1216,11 +1294,11 @@ function drawLayer(c, l, live) {
     } else if (l.type === 'camera') {
       const cm = getCam(l);
       if (cm.ready && cm.v.videoWidth) { pic(c, l, cm.v, cm.v.videoWidth, cm.v.videoHeight); }
-      else note(c, l, cm.err ? 'Video capture device: ' + cm.err : 'Starting the video capture device...');
+      else note(c, l, cm.off ? (l.off ? 'Video capture device: deactivated' : 'Video capture device: off until this scene is shown') : cm.err ? 'Video capture device: ' + cm.err : 'Starting the video capture device...');
     } else if (l.type === 'screen' || l.type === 'window') {
       const sc = getCapture(l), nm = l.type === 'window' ? 'Window' : 'Screen';
       if (sc.ready && sc.v.videoWidth) { pic(c, l, sc.v, sc.v.videoWidth, sc.v.videoHeight); }
-      else note(c, l, sc.err ? nm + ': ' + sc.err : 'Starting ' + nm.toLowerCase() + ' capture...');
+      else note(c, l, sc.off ? nm + ': deactivated' : sc.err ? nm + ': ' + sc.err : 'Starting ' + nm.toLowerCase() + ' capture...');
     } else if (l.type === 'browser') {
       if (!window.msNative) { note(c, l, 'Web pages need the Multistream desktop app'); }
       else { const b = getBoard(l); if (b.ready) { pic(c, l, b.c, b.c.width, b.c.height); } }
@@ -1292,6 +1370,15 @@ function paint(c, scale, now) {
     c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#000'; c.fillRect(0, 0, W, H); c.drawImage(v, (W - dw) / 2, (H - dh) / 2, dw, dh); c.restore();
   }
 }
+let engineLive = false; // the OBS engine is running and draws the live picture
+const lightMode = () => engineLive && engineFails < 2 && !wsOut && !recW && !vcOn;
+// Is the Studio on screen? (In the app it keeps running behind the other pages.) Checked twice a second.
+let studioShown = true;
+setInterval(() => {
+  let on = !document.hidden;
+  try { if (on && window.frameElement && window.frameElement.checkVisibility) on = window.frameElement.checkVisibility({ visibilityProperty: true }); } catch {}
+  studioShown = on;
+}, 500);
 function frame() {
   const now = performance.now();
   if (shown === null) shown = studio.current;
@@ -1300,20 +1387,43 @@ function frame() {
     shown = studio.current;
   }
   if (trans && now - trans.t0 >= trCfg.ms) trans = null;
+  // The engine makes the live picture. When nothing here needs this page's own copy of it (not going live or
+  // recording the older way, no virtual camera), it is drawn only 5 times a second, so the app stays quick.
+  if (lightMode() && (++lightTick % 6)) return;
+  // the Multiview's big box is bigger than 720p: draw 1080p while it is open (back to 720p when it closes)
+  // Only a size the Multiview asked for is put back: the stream's own size (set when going live) is never touched.
+  { const w = window.__mvWant, big = Boolean(w && Date.now() - w.at < 2000 && w.w > 1400);
+    if (SW > SH && !wantSend && !engineSending && !recW) {
+      if (big && !mvBig && PW === 1280) { setProgramSize(1920, 1080); mvBig = true; }
+      else if (!big && mvBig) setProgramSize(1280, 720);
+    } }
   paint(ctx, PW / SW, now);
+  window.__pf = (window.__pf | 0) + 1; // the Multiview copies the picture once for each new one
+  if (sendTrack) { try { sendTrack.requestFrame(); } catch {} } // each finished picture goes to the encoder exactly once
   // the recording and the virtual camera copy the finished Program picture when it is the same size or bigger (much less work than drawing the scene again)
-  if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); }
-  if (vcOn) { if (SW > SH && cv.width >= 1280) vctx.drawImage(cv, 0, 0, 1280, 720); else copyFit(vctx, 1280, 720, cv); }
+  if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); if (recTrack) { try { recTrack.requestFrame(); } catch {} } }
+  if (vcOn) { if (SW > SH && cv.width >= 1280) vctx.drawImage(cv, 0, 0, 1280, 720); else copyFit(vctx, 1280, 720, cv); if (vcRaw) vcPush(); }
 }
 $('#trType').value = trCfg.type; $('#trMs').value = String(trCfg.ms);
-const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#trMs').value); try { localStorage.setItem('ms_trans', JSON.stringify(trCfg)); } catch {} };
+// the OBS engine (when it is on) changes scene the same way
+const trTell = () => { try { if (window.msNative && window.msNative.engineTrans) window.msNative.engineTrans({ type: trCfg.type, ms: trCfg.ms }); } catch {} };
+const saveTr = () => { trCfg.type = $('#trType').value; trCfg.ms = Number($('#trMs').value); try { localStorage.setItem('ms_trans', JSON.stringify(trCfg)); } catch {} trTell(); };
+setTimeout(trTell, 0);
 $('#trType').onchange = saveTr; $('#trMs').onchange = saveTr;
 // not requestAnimationFrame, so it keeps running if the window is covered
-let frameT = 0, frameFps = 0;
-function setFps(f) { if (f === frameFps) return; frameFps = f; clearInterval(frameT); frameT = setInterval(frame, 1000 / f); }
+let frameT = 0, frameFps = 0, lightTick = 0, frameNext = 0, sendTrack = null;
+// A timer that keeps its own beat: each picture is due one step after the one before, so a late picture does not push all the next ones later (setInterval drifts)
+function frameLoop() {
+  frame();
+  const step = 1000 / frameFps, now = performance.now();
+  frameNext += step; if (frameNext < now - 2 * step) frameNext = now; // far behind: do not rush to catch up
+  frameT = setTimeout(frameLoop, Math.max(0, frameNext - now));
+}
+function setFps(f) { if (f === frameFps) return; frameFps = f; clearTimeout(frameT); frameNext = performance.now() + 1000 / f; frameT = setTimeout(frameLoop, 1000 / f); }
 setFps(30);
 // The Program picture is small while nothing is sent (saves the computer's work) and full size while sending.
-function setProgramSize(w, h) { if (cv.width === w && cv.height === h) return; cv.width = w; cv.height = h; PW = w; PH = h; }
+let mvBig = false; // the Program picture is 1080p only because the Multiview's big box needs it
+function setProgramSize(w, h) { mvBig = false; if (cv.width === w && cv.height === h) return; cv.width = w; cv.height = h; PW = w; PH = h; }
 
 // videos play only while their scene is on air (or shown in a preview); each restarts when its scene goes on air
 function updateVideos() {
@@ -1703,7 +1813,7 @@ let meterT = performance.now();
 function drawMeters(now) {
   requestAnimationFrame(drawMeters);
   const dt = Math.min(0.2, (now - meterT) / 1000); meterT = now;
-  if (document.hidden) return;
+  if (document.hidden || !studioShown) return;
   document.querySelectorAll('#audio .au[data-id]').forEach((d) => {
     const bars = d.querySelectorAll('.mt'); if (!bars.length) return;
     const n = asrc.get(d.dataset.id);
@@ -1735,6 +1845,18 @@ function emptyPanel(title, sub, btn, fn) {
   if (btn) { const k = document.createElement('button'); k.type = 'button'; k.textContent = '+ ' + btn; k.onclick = (e) => { e.stopPropagation(); fn(); }; d.appendChild(k); }
   return d;
 }
+// Drag a row of a list (scenes, sources) to another place in it. kind keeps the two lists apart.
+let dragRowKey = '';
+function dragRow(d, kind, key, onDrop) {
+  d.draggable = true;
+  const clear = () => d.classList.remove('dropA', 'dropB');
+  const below = (e) => { const r = d.getBoundingClientRect(); return e.clientY > r.top + r.height / 2; };
+  d.addEventListener('dragstart', (e) => { if (e.target.closest && e.target.closest('input')) { e.preventDefault(); return; } dragRowKey = kind + ':' + key; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', key); } catch {} d.classList.add('drag'); document.body.classList.add('rowdrag-' + kind); });
+  d.addEventListener('dragend', () => { dragRowKey = ''; d.classList.remove('drag'); document.body.classList.remove('rowdrag-scene', 'rowdrag-source'); document.querySelectorAll('.dropA, .dropB').forEach((x) => x.classList.remove('dropA', 'dropB')); });
+  d.addEventListener('dragover', (e) => { if (!dragRowKey.startsWith(kind + ':') || dragRowKey === kind + ':' + key) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; const b = below(e); d.classList.toggle('dropA', !b); d.classList.toggle('dropB', b); });
+  d.addEventListener('dragleave', clear);
+  d.addEventListener('drop', (e) => { clear(); if (!dragRowKey.startsWith(kind + ':')) return; e.preventDefault(); const from = dragRowKey.slice(kind.length + 1); dragRowKey = ''; if (from !== key) onDrop(from, below(e)); });
+}
 function renderScenes() {
   const box = $('#scenes'); box.textContent = '';
   if (!studio.scenes.length) box.appendChild(emptyPanel('No scenes yet', 'A scene is one picture: a camera, slides or a welcome screen.', 'Add a scene', () => $('#addScene').click()));
@@ -1747,6 +1869,11 @@ function renderScenes() {
     // the click before the double-click draws the list again, so find the name again
     d.ondblclick = () => renameInPlace([...document.querySelectorAll('#scenes .scn .n')].find((x) => x.textContent === s.name) || n, s.name, (v) => { if (v && v !== s.name && !studio.scenes.some((x) => x.name === v)) { if (studio.current === s.name) { studio.current = v; dirtyCurrent = true; } s.name = v; editing = v; save(); } renderAll(); });
     d.addEventListener('contextmenu', (e) => showSceneMenu(e, s));
+    dragRow(d, 'scene', s.name, (from, below) => {
+      const a = studio.scenes, i = a.findIndex((x) => x.name === from); if (i < 0) return;
+      const [it] = a.splice(i, 1); const t = a.findIndex((x) => x.name === s.name);
+      a.splice(below ? t + 1 : t, 0, it); save(); renderAll();
+    });
     box.appendChild(d);
   });
 }
@@ -1782,7 +1909,7 @@ function showSceneMenu(ev, sc) {
 const mbarItems = {
   file: () => [['New scene', () => $('#addScene').click()], ['Import scenes from OBS...', () => $('#impBtn').click()], ['Export this scene collection', () => window.msColl('export')], null, ['Preview window', () => $('#projBtn').click()], ['Settings', () => $('#setBtn').click()]],
   edit: () => { const cl = curLayer(); return [['Undo', () => histGo(-1)], ['Redo', () => histGo(1)], null, ['Copy source', () => { clip = JSON.stringify(cl); flash('Copied. Ctrl+V pastes it.', true); }, !cl], ['Paste source', () => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'v', ctrlKey: true })), !clip], ['Remove source', () => $('#srcDel').click(), !cl], null, ['Source settings', () => $('#srcCog').click(), !cl], ['Filters', () => { if (cl) openFilters(cl); }, !cl]]; },
-  view: () => [['Studio mode', () => $('#modeBtn').click(), false, studioMode], ['Meters side to side', () => document.querySelector('[data-mxl=h]').click()], ['Meters up and down', () => document.querySelector('[data-mxl=v]').click()], null, ['Put the panels back', () => $('#resetLayout').click()], ['Full screen', () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); }]],
+  view: () => [['Studio mode', () => $('#modeBtn').click(), false, studioMode], ['Meters side to side', () => document.querySelector('[data-mxl=h]').click()], ['Meters up and down', () => document.querySelector('[data-mxl=v]').click()], null, ['Reset panels', () => $('#resetLayout').click()], ['Full screen', () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); }]],
   help: () => [['Keyboard shortcuts', () => { try { if (parent !== window && parent.msOpenSettings) { parent.msOpenSettings('hotkeys'); return; } } catch {} $('#keysBox').hidden = !$('#keysBox').hidden; }], ['Help', () => { try { if (parent !== window && parent.showPage) { parent.showPage('help'); return; } } catch {} window.open('/#help'); }]],
 };
 document.querySelectorAll('#mbar button').forEach((b) => {
@@ -1888,6 +2015,7 @@ const MEDIA = new Set(['image', 'video', 'camera', 'screen', 'window', 'browser'
 // ---------------- sources: icons, lock, right-click menu, Add Source window (like OBS) ----------------
 const SVG = (p) => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
 const SRC_ICON = {
+  card: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="10" rx="1.5"/><path d="M7 16v3M11 16v3M15 16v3M7 10h4"/><circle cx="16.5" cy="11" r="1.5"/></svg>',
   pptx: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4M7 8h6M7 11h4"/></svg>',
   duo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="13" height="10" rx="1.5"/><rect x="17" y="8" width="5" height="6" rx="1"/><path d="M6 20h5M8.5 16v4"/></svg>',
   mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
@@ -1959,6 +2087,7 @@ function showSourceMenu(ev, l, nameEl) {
     box.appendChild(b);
   };
   [['Properties', () => { propsOpen = true; renderLayers(); }], ['Filters', () => openFilters(l)],
+    ...(CAN_OFF.has(l.type) ? [[l.off ? 'Activate' : 'Deactivate', () => toggleOff(l)]] : []),
     ['Rename', () => { const n = document.querySelector('#layers .lyr.on .n'); if (n) renameInPlace(n, l.name || ICON[l.type] || l.type, (v) => { if (v) { l.name = v; save(); } renderLayers(); }); }],
     [l.locked ? 'Unlock' : 'Lock', () => { l.locked = !l.locked; save(); renderLayers(); }], null,
     ['Order', order], ['Transform', transform],
@@ -1975,7 +2104,7 @@ function showSourceMenu(ev, l, nameEl) {
 // Add a source: the kinds in groups on the left; on the right a live preview and its settings,
 // then Reset, Cancel and Add source at the bottom. A source already in another scene can be added as a copy.
 const ADD_GROUPS = [
-  ['Cameras and screens', [['camera', 'Camera', 'A webcam, ATEM Mini or capture card'], ['ipcam', 'Phone camera', 'A phone camera app on the Wi-Fi'], ['screen', 'Whole screen', 'Show a display, like slides'], ['window', 'One window', 'Just one program, like ProPresenter'], ['duo', 'Speaker + screen', 'A camera and a screen side by side']]],
+  ['Cameras and screens', [['camera', 'Camera', 'A webcam or USB camera'], ['card', 'Video capture card', 'A capture card or box: Blackmagic, ATEM Mini, Elgato'], ['ipcam', 'Phone camera', 'A phone camera app on the Wi-Fi'], ['screen', 'Whole screen', 'Show a display, like slides'], ['window', 'One window', 'Just one program, like ProPresenter'], ['duo', 'Speaker + screen', 'A camera and a screen side by side']]],
   ['Pictures and video', [['image', 'Picture', 'A logo, poster or overlay'], ['pptx', 'PowerPoint slides', 'The slideshow window'], ['video', 'Video file', 'Announcements or an intro'], ['browser', 'Web page (lyrics, slides)', 'Lyrics, slides or a website'], ['color', 'Colour', 'A plain background']]],
   ['Text', [['text', 'Text', 'Any words on screen'], ['lower', 'Name bar', "A speaker's name and role"], ['timer', 'Countdown', 'Before you start'], ['clock', 'Clock', 'The time now']]],
   ['Sound', [['mic', 'Microphone', 'A microphone or sound desk']]],
@@ -1987,6 +2116,7 @@ function openAddSource() {
   const makeDraft = (t) => {
     if (t === 'mic') return { mic: true, name: 'Microphone', device: '', vol: 0.8, nr: true, mono: false };
     if (t === 'pptx') { const l = newLayer('window'); l.name = 'PowerPoint slides'; return l; }
+    if (t === 'card') { const l = newLayer('camera'); l.name = 'Video Capture Card'; l.card = true; return l; }
     const l = newLayer(t); l.name = kindInfo(t)[1]; return l;
   };
   let draft = makeDraft(pick); addDraft = draft.mic ? null : draft;
@@ -2064,7 +2194,7 @@ function openAddSource() {
     head.querySelector('.as-ic').innerHTML = SRC_ICON[pick] || SRC_ICON.window || ''; head.querySelector('b').textContent = k[1];
     main.textContent = '';
     // the same kind already in other scenes: "Use one you have"
-    const want = pick === 'pptx' ? 'window' : pick;
+    const want = pick === 'pptx' ? 'window' : pick === 'card' ? 'camera' : pick;
     const seen = new Set(), have = [];
     if (pick !== 'mic') studio.scenes.forEach((sc) => (sc.layers || []).forEach((l) => { if (l.type !== want || s.layers.some((x) => x.id === l.id)) return; const key = (l.name || '') + '|' + (l.url || l.src || l.device || l.text || ''); if (seen.has(key)) return; seen.add(key); have.push({ l, scene: sc.name }); }));
     if (have.length) {
@@ -2113,20 +2243,36 @@ function renderLayers() {
     const l = s.layers[i];
     const d = document.createElement('div'); d.className = 'lyr' + (l.id === sel ? ' on' : '');
     const eye = eyeBtn(l.visible !== false, 'Show or hide', (v) => { l.visible = v; save(); });
-    const ti = document.createElement('span'); ti.className = 'tico'; ti.innerHTML = SRC_ICON[l.type] || ''; ti.title = ICON[l.type] || l.type;
+    const ti = document.createElement('span'); ti.className = 'tico'; ti.innerHTML = (l.card && SRC_ICON.card) || SRC_ICON[l.type] || ''; ti.title = l.card ? 'Video capture card' : ICON[l.type] || l.type;
     const n = document.createElement('span'); n.className = 'n'; n.textContent = l.name || ICON[l.type] || l.type; n.title = n.textContent;
     const up = document.createElement('button'); up.className = 'sm'; up.textContent = '\u2191'; up.title = 'Move in front'; up.onclick = (e) => { e.stopPropagation(); if (i < s.layers.length - 1) { [s.layers[i], s.layers[i + 1]] = [s.layers[i + 1], s.layers[i]]; save(); renderLayers(); } };
     const x = document.createElement('button'); x.className = 'sm'; x.textContent = '\u00d7'; x.title = 'Remove'; x.onclick = (e) => { e.stopPropagation(); s.layers.splice(i, 1); sel = ''; save(); renderLayers(); };
     const cog = document.createElement('button'); cog.className = 'cog'; cog.textContent = '\u2699'; cog.title = 'Settings for ' + (l.name || l.type); cog.setAttribute('aria-label', cog.title);
     cog.onclick = (e) => { e.stopPropagation(); sel = l.id; propsOpen = true; renderLayers(); };
     if (l.visible === false) d.classList.add('hid');
-    d.append(ti, n, eye, lockBtn(l)); d.onclick = () => { sel = l.id; renderLayers(); };
+    // a picture or video whose file is not on this computer: a red mark, and a click opens Missing files
+    if (missingIds.has(l.id)) { const w = document.createElement('button'); w.type = 'button'; w.className = 'miss'; w.textContent = '!'; w.title = 'File not found. Click to find it.'; w.setAttribute('aria-label', w.title); w.onclick = (e) => { e.stopPropagation(); openMissing(); }; n.title = n.textContent + ' (file not found)'; d.append(ti, n, w, eye, lockBtn(l)); }
+    else d.append(ti, n, eye, lockBtn(l)); d.onclick = () => { sel = l.id; renderLayers(); };
     d.addEventListener('contextmenu', (e) => showSourceMenu(e, l, n));
     d.ondblclick = () => { sel = l.id; propsOpen = true; renderLayers(); };
+    // the list shows the front item at the top, so "above" in the list is later in the scene's own order
+    dragRow(d, 'source', l.id, (from, below) => {
+      const a = s.layers, k = a.findIndex((x) => x.id === from); if (k < 0) return;
+      const [it] = a.splice(k, 1); const t = a.findIndex((x) => x.id === l.id);
+      a.splice(below ? t : t + 1, 0, it); sel = it.id; save(); renderLayers();
+    });
     box.appendChild(d);
   }
   renderProps();
+  // the source bar under the picture
+  const cur = s.layers.find((x) => x.id === sel);
+  $('#sbName').textContent = cur ? (cur.name || ICON[cur.type] || cur.type) : 'No source picked'; $('#sbName').classList.toggle('has', Boolean(cur));
+  $('#sbProps').hidden = $('#sbFilters').hidden = !cur;
+  $('#sbOff').hidden = !(cur && CAN_OFF.has(cur.type)); if (cur) $('#sbOff').textContent = cur.off ? 'Activate' : 'Deactivate';
 }
+$('#sbProps').onclick = () => { if (curLayer()) { propsOpen = true; renderLayers(); } };
+$('#sbFilters').onclick = () => { const l = curLayer(); if (l) openFilters(l); };
+$('#sbOff').onclick = () => { const l = curLayer(); if (l) toggleOff(l); };
 function field(label, el) { const d = document.createElement('div'); d.className = 'f'; const l = document.createElement('label'); l.textContent = label; d.append(l, el); return d; }
 let pfxOpen = false;
 // the Properties window (opens on double-click, the gear button, or when you add a source, like OBS)
@@ -2259,11 +2405,18 @@ function renderProps(target, draft) {
     const sl = document.createElement('select'); sl.add(new Option('Default camera', ''));
     devices.video.forEach((x) => sl.add(new Option(x.label || 'Camera', x.deviceId)));
     sl.title = 'ATEM Mini or a capture box: plug its USB cable into this computer, then choose it here. It appears by itself within a few seconds.';
+    if (l.card) { const cn = document.createElement('p'); cn.className = 'note'; cn.textContent = 'Plug the card or box into this computer, then choose it under Device. Only one app can use a capture card at a time, so close other apps that show it.'; box.append(cn); }
     sl.value = pickDevice('video', l.label, l.device); sl.onchange = () => { l.device = sl.value; l.label = ''; save(); }; box.append(field('Device', sl));
     const rs = document.createElement('select'); [['auto', 'Automatic (best)'], ['2160', '3840 × 2160 (4K)'], ['1440', '2560 × 1440'], ['1080', '1920 × 1080'], ['720', '1280 × 720']].forEach(([v, t]) => rs.add(new Option(t, v)));
     rs.value = l.res || 'auto'; rs.onchange = () => { l.res = rs.value; save(); }; box.append(field('Size', rs));
     const fp = document.createElement('select'); [['auto', 'Automatic'], ['30', '30'], ['60', '60'], ['25', '25'], ['24', '24'], ['50', '50']].forEach(([v, t]) => fp.add(new Option(t, v)));
     fp.value = l.fps || 'auto'; fp.onchange = () => { l.fps = fp.value; save(); }; box.append(field('Frame rate', fp));
+    // like OBS: Deactivate lets the device go (the picture stops); Activate opens it again
+    const ab = document.createElement('button'); ab.type = 'button'; ab.className = 'sm';
+    const abT = () => { ab.textContent = l.off ? 'Activate' : 'Deactivate'; ab.title = l.off ? 'Open the device again' : 'Let the device go, so another app can use it. The picture stops.'; };
+    abT(); ab.onclick = () => { if (l.off) delete l.off; else l.off = true; abT(); save(); if (!draft) renderLayers(); };
+    box.append(field('Device on or off', ab));
+    box.append(field('Deactivate when not showing', tick(l.idleOff, (v) => { if (v) l.idleOff = true; else delete l.idleOff; }, true)));
     box.append(field("Use the camera's sound", tick(l.camSound, (v) => { l.camSound = v; if (!draft) camSound(l); }, true)));
     const ci = document.createElement('p'); ci.className = 'note'; ci.id = 'camInfo'; left.append(ci);
   }
@@ -2388,13 +2541,81 @@ function camSound(l) {
   studio.audio.push(n); const sc = byName(editing); if (sc) (sc.audio = sc.audio || []).push(n.id);
   l.camSoundId = n.id; save(); renderAudio(); syncAudio(); flash(n.name + ' added to the Audio Mixer.', true);
 }
+// ---------------- Missing files (like OBS) ----------------
+// When the Studio opens (or another scene collection is opened), it checks that every picture and video file is
+// on this computer. If some are not, a window lists them: find each one, search a folder for all of them at once,
+// or leave them for now. Sources with a missing file also get a red ! in the Sources list.
+async function checkMissing(show) {
+  try { missing = (await fetch('/api/studio/missing').then((r) => r.json())).missing || []; } catch { return; }
+  const before = [...missingIds].join(',');
+  missingIds = new Set(missing.map((m) => m.id));
+  if ([...missingIds].join(',') !== before) renderLayers();
+  if (show && missing.length) openMissing();
+}
+function layerById(id) { for (const sc of studio.scenes) for (const l of sc.layers) if (l.id === id) return l; return null; }
+// copy the chosen file into the app (like Choose in a source's settings) and use it for that source
+async function useFileFor(m, file) {
+  const l = layerById(m.id); if (!l) return false;
+  const r = await fetch('/api/studio/asset/' + encodeURIComponent(uid() + '-' + file.name), { method: 'PUT', body: file }).then((x) => x.json()).catch(() => ({}));
+  if (!r.url) return false;
+  if (m.part === 'bg') { l.bg.url = r.url; l.bg.file = ''; }
+  else if (m.part === 'pic') { l.picUrl = r.url; l.pic = ''; }
+  else { l.url = r.url; l.file = ''; }
+  save(); return true;
+}
+function openMissing() {
+  if (document.querySelector('.modal.missw')) return;
+  const m = document.createElement('div'); m.className = 'modal missw';
+  const dlg = document.createElement('div'); dlg.className = 'dlg'; dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-label', 'Missing files');
+  dlg.innerHTML = '<div class="dlg-h"><b>Missing files</b><button type="button" aria-label="Close">×</button></div><div class="dlg-b"><p class="mw-lead"></p><div class="mw-list"></div></div><div class="mw-ft"><button type="button" class="mw-dir">Search a folder…</button><span></span><button type="button" class="mw-later">Not now</button></div>';
+  m.appendChild(dlg); document.body.appendChild(m);
+  const close = () => { m.remove(); document.removeEventListener('keydown', esc); };
+  const esc = (e) => { if (e.key === 'Escape') close(); };
+  dlg.querySelector('.dlg-h button').onclick = close; dlg.querySelector('.mw-later').onclick = close; document.addEventListener('keydown', esc);
+  const draw = () => {
+    if (!missing.length) { close(); flash('All files found.', true); return; }
+    dlg.querySelector('.mw-lead').textContent = (missing.length === 1 ? '1 file' : missing.length + ' files') + ' used in your scenes cannot be found on this computer, so they show black. They may have moved, or be on a drive that is not plugged in.';
+    const list = dlg.querySelector('.mw-list'); list.textContent = '';
+    missing.forEach((x) => {
+      const r = document.createElement('div'); r.className = 'mw-r';
+      const t = document.createElement('div'); t.className = 'mw-t';
+      const b = document.createElement('b'); b.textContent = x.file;
+      const sm = document.createElement('small'); sm.textContent = 'Scene: ' + x.scene + ' · ' + x.name + (x.where ? ' · was at ' + x.where : '');
+      t.append(b, sm);
+      const f = document.createElement('button'); f.type = 'button'; f.textContent = 'Find…';
+      f.onclick = () => {
+        const inp = $('#file'); inp.value = ''; inp.accept = x.type === 'video' || (x.part === 'bg' && /\.(mp4|mov|webm|mkv|m4v)$/i.test(x.file)) ? 'video/*' : 'image/*,video/*';
+        inp.onchange = async () => { const file = inp.files[0]; if (!file) return; f.textContent = 'Copying…'; await useFileFor(x, file); await checkMissing(false); draw(); };
+        inp.click();
+      };
+      r.append(t, f); list.appendChild(r);
+    });
+  };
+  // a whole folder: every missing file with the same name in it (or its folders) is used
+  dlg.querySelector('.mw-dir').onclick = () => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.webkitdirectory = true; inp.multiple = true;
+    inp.onchange = async () => {
+      const files = [...inp.files], note = dlg.querySelector('.mw-ft span');
+      let found = 0;
+      for (const x of missing.slice()) {
+        const hit = files.find((f) => f.name.toLowerCase() === x.file.toLowerCase());
+        if (hit) { note.textContent = 'Copying ' + hit.name + '…'; if (await useFileFor(x, hit)) found++; }
+      }
+      note.textContent = found ? 'Found ' + found + '.' : 'None of the missing files are in that folder.';
+      await checkMissing(false); draw();
+    };
+    inp.click();
+  };
+  draw();
+}
+
 let posOpen = false;
 function pickFile(l, accept, done) {
   const f = $('#file'); f.value = ''; f.accept = accept || (l.type === 'video' ? 'video/*' : 'image/*');
   f.onchange = async () => {
     const file = f.files[0]; if (!file) return;
     const r = await fetch('/api/studio/asset/' + encodeURIComponent(uid() + '-' + file.name), { method: 'PUT', body: file }).then((x) => x.json());
-    if (r.url) { l.url = r.url; l.file = ''; save(); if (done) done(); else { renderLayers(); renderProps(); } }
+    if (r.url) { l.url = r.url; l.file = ''; save(); if (done) done(); else { renderLayers(); renderProps(); } setTimeout(() => checkMissing(false), 800); }
   }; f.click();
 }
 function newLayer(t) {
@@ -2649,7 +2870,37 @@ if (/[?&]same=1/.test(location.search) && window.msNative) {
 }
 // a message (like "Recording saved") stays on the status line for a few seconds
 let stHold = 0;
-function flash(text, ok) { $('#st').textContent = text; $('#st').className = 'stat ' + (ok ? 'ok' : 'bad'); stHold = Date.now() + 6000; }
+function flash(text, ok) { if (!ok && window.msNice) text = window.msNice(text); $('#st').textContent = text; $('#st').className = 'stat ' + (ok ? 'ok' : 'bad'); stHold = Date.now() + 6000; }
+
+// ---------------- OBS engine: the Program box ----------------
+// When the engine is on, the engine paints the Program box itself, so it shows
+// exactly what viewers get. Its picture sits on top of the page, so it is taken away while a menu or window is open.
+// The Preview box (the scene you are editing) stays drawn here, because you move and resize items on it.
+(function () {
+  const nat = window.msNative;
+  if (!nat || !nat.engineDisplay) return;
+  let on = false, last = '';
+  const poll = () => nat.engineState().then((s) => { on = Boolean(s && s.on && s.started); engineLive = on; engineKnown = true; }).catch(() => { engineKnown = true; });
+  poll(); setInterval(poll, 2000);
+  const send = (rect) => {
+    const k = rect ? [rect.x, rect.y, rect.width, rect.height].join(',') : '';
+    if (k === last) return;
+    last = k;
+    nat.engineDisplay('studio-program', rect, 'program').catch(() => {});
+  };
+  const popupHere = () => document.querySelector('.ctxm, .modal, .menu2, dialog[open]');
+  const popupThere = () => { try { return window.parent !== window && window.parent.document.querySelector('.overlay:not([hidden]), dialog[open], .pop2'); } catch { return null; } };
+  const tick = () => {
+    if (!on || document.hidden || popupHere() || popupThere()) return send(null);
+    let ox = 0, oy = 0;
+    try { if (window.frameElement) { if (window.frameElement.checkVisibility && !window.frameElement.checkVisibility({ visibilityProperty: true })) return send(null); const f = window.frameElement.getBoundingClientRect(); if (f.width < 2 || f.height < 2) return send(null); ox = f.left; oy = f.top; } } catch {}
+    const r = cv.getBoundingClientRect(), b = 3; // inside the box's border
+    if (r.width < 10 || r.height < 10 || r.bottom < 0 || r.top > innerHeight) return send(null);
+    send({ x: Math.round(ox + r.left + b), y: Math.round(oy + r.top + b), width: Math.round(r.width - b * 2), height: Math.round(r.height - b * 2) });
+  };
+  setInterval(tick, 250);
+  window.addEventListener('resize', () => { last = '-'; tick(); });
+})();
 
 // ---------------- sending ----------------
 // Once you press Start sending, it keeps trying to send until you press Stop. If the link drops, or the
@@ -2662,10 +2913,39 @@ async function startSend() {
   $('#sendBtn').textContent = 'Stop streaming'; $('#sendBtn').className = 'stop'; $('#liveTag').hidden = false; liveT0 = liveT0 || Date.now();
   await connectSend();
 }
+// The OBS engine makes and sends the video itself, and this page only says start and stop. If the engine is not
+// there, or fails twice in a row, this page makes the video itself (the older way), so the service still goes out.
+let engineSending = false, engineWatch = 0, engineFails = 0;
+async function engineReady() {
+  if (engineFails >= 2) return false;
+  try { const s = window.msNative && window.msNative.engineState ? await window.msNative.engineState() : null; return Boolean(s && s.on && s.started && window.msNative.engineSend); } catch { return false; }
+}
 async function connectSend() {
   clearTimeout(retryT);
+  if (await engineReady()) {
+    const r = await window.msNative.engineSend({ h: OUT.h, fps: OUT.fps, kbps: OUT.kbps, shape: SHAPE_OF() }).catch((e) => ({ ok: false, error: e.message }));
+    if (!wantSend) { window.msNative.engineUnsend(); return; }
+    if (!r || !r.ok) {
+      engineFails++;
+      if (engineFails < 2) { flash('Could not go live: ' + ((r && r.error) || 'no answer') + '. Trying again...', false); scheduleRetry(); return; }
+      flash('Going live the other way, because the engine did not work.', false);
+      return connectSend();
+    }
+    engineFails = 0; engineSending = true; cv.classList.add('live');
+    clearInterval(engineWatch);
+    engineWatch = setInterval(async () => {
+      if (!engineSending) return;
+      const st = await window.msNative.engineSendState().catch(() => null);
+      if (st && !st.active && wantSend) { dropSend(); scheduleRetry(); }
+    }, 2000);
+    return;
+  }
   try { ensureAudio(); await syncAudio(); } catch {}
-  const out = new MediaStream(cv.captureStream(OUT.fps).getVideoTracks());
+  // 0 = the picture is taken only when frame() says so (requestFrame), so none is doubled or skipped; older Chromes keep the timed way
+  let capStream = cv.captureStream(0), capTrack = capStream.getVideoTracks()[0];
+  if (!capTrack || typeof capTrack.requestFrame !== 'function') { capStream = cv.captureStream(OUT.fps); capTrack = null; }
+  sendTrack = capTrack;
+  const out = new MediaStream(capStream.getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
   const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
   const fast = useFast(mt);
@@ -2673,8 +2953,9 @@ async function connectSend() {
   wsOut.binaryType = 'arraybuffer';
   wsOut.onopen = () => {
     // fast: the browser's bitrate is the one we send, so it is set to the target exactly
-    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: fast ? OUT.kbps * 1000 : Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: 128000 });
-    rec.ondataavailable = async (e) => { if (e.data.size && wsOut && wsOut.readyState === 1) wsOut.send(await e.data.arrayBuffer()); };
+    // a keyframe every 2 seconds: Facebook needs it to play the live, and a channel that reconnects can join straight away
+    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: fast ? OUT.kbps * 1000 : Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: 128000, videoKeyFrameIntervalDuration: 2000 });
+    rec.ondataavailable = inOrder((buf) => { if (wsOut && wsOut.readyState === 1) wsOut.send(buf); });
     rec.start(250);
     cv.classList.add('live');
   };
@@ -2683,9 +2964,10 @@ async function connectSend() {
   wsOut.onclose = () => { if (wsOut !== mine) return; dropSend(); if (wantSend) scheduleRetry(); };
 }
 function dropSend() {
+  if (engineSending) { engineSending = false; clearInterval(engineWatch); try { window.msNative.engineUnsend(); } catch {} }
   try { rec && rec.state !== 'inactive' && rec.stop(); } catch {}
   try { wsOut && wsOut.close(); } catch {}
-  rec = wsOut = null; cv.classList.remove('live');
+  rec = wsOut = null; sendTrack = null; cv.classList.remove('live');
 }
 function scheduleRetry() {
   $('#st').textContent = 'Connection lost. Reconnecting...'; $('#st').className = 'stat bad';
@@ -2698,7 +2980,7 @@ function stopSend() {
   if (autoRanPlan && autoRanPlan.offAfter) fetch('/api/autostart', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"on":false}' }).catch(() => {});
   autoRanPlan = null;
   dropSend();
-  setProgramSize(...(SH > SW ? [720, 1280] : SH === SW ? [720, 720] : [1280, 720])); setFps(30); lockOut();
+  setProgramSize(...idleSize()); setFps(recW && OUT.fps === 60 ? 60 : 30); lockOut();
   $('#sendBtn').textContent = 'Start streaming'; $('#sendBtn').className = ''; $('#liveTag').hidden = true; liveT0 = 0;
 }
 // Theme and main colour (the same setting as the Stream page: Settings, Appearance). White is one of the colours.
@@ -2719,7 +3001,25 @@ function stopSend() {
 })();
 $('#tabStream').onclick = () => { if (!$('#backBtn').hidden) { $('#backBtn').click(); return; } if (window.msNative) window.msNative.openDashboard(); else location.href = '/'; };
 $('#tabCr').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else location.href = '/#control-room'; };
-$('#sendBtn').onclick = async () => { if (wantSend) { if (askStop && !confirm('Stop streaming now?')) return; stopSend(); } else { try { await maybeAutoStart(); } catch { return; } startSend(); } };
+// Stopping on purpose also ends the live on YouTube and Facebook, so it does not stay open with no video.
+// The lives end first, then the video stops (so no "the live is still open" warning in between).
+async function endLives() {
+  try {
+    const s = await (await fetch('/api/state')).json();
+    const ends = [];
+    if (s.session && s.session.youtube) ends.push(fetch('/api/youtube/end', { method: 'POST' }));
+    if (s.session && s.session.facebook) ends.push(fetch('/api/facebook/end', { method: 'POST' }));
+    await Promise.all(ends);
+  } catch {}
+}
+$('#sendBtn').onclick = async () => {
+  if (wantSend) {
+    if (askStop && !confirm('Stop streaming now? The live ends on every channel.')) return;
+    const b = $('#sendBtn'); b.disabled = true; b.textContent = 'Stopping...';
+    await endLives();
+    b.disabled = false; stopSend();
+  } else { try { await maybeAutoStart(); } catch { return; } startSend(); }
+};
 
 // ---------------- Auto start: runs the plan's steps when you press Start Streaming ----------------
 let auto = null, autoVid = null, autoRanPlan = null;
@@ -2853,6 +3153,7 @@ let liveT0 = 0;
 const hms = (ms) => { const t = Math.floor(ms / 1000); return [Math.floor(t / 3600), Math.floor(t / 60) % 60, t % 60].map((n) => String(n).padStart(2, '0')).join(':'); };
 setInterval(() => {
   const lc = $('#liveClock'), rc = $('#recClock');
+  if (document.hidden) return;
   lc.textContent = 'LIVE: ' + hms(liveT0 ? Date.now() - liveT0 : 0); lc.className = liveT0 ? 'on' : '';
   rc.textContent = 'REC: ' + hms(recT0 ? Date.now() - recT0 : 0); rc.className = recT0 ? 'on' : '';
 }, 500);
@@ -2861,16 +3162,35 @@ setInterval(() => {
 // Records the Studio picture to a file in the Videos/Multistream folder, at the quality you choose.
 // It has its own canvas, so 1080p is real 1080p and does not depend on what is being sent.
 const rcv = document.createElement('canvas'), rctx = rcv.getContext('2d');
-let recW = 0, recMr = null, recWs = null, recT0 = 0, recTick = 0;
+let recW = 0, recMr = null, recWs = null, recT0 = 0, recTick = 0, recTrack = null;
+// The Program picture's size while nothing is being sent: the recording's size while recording (so the scene is drawn once and copied,
+// not drawn twice at two sizes), otherwise the small size.
+// Pieces of video must reach the app in the order they were made. Turning a piece into bytes takes a moment, and on a busy computer
+// a later piece could finish first, which breaks the video for a moment. So the pieces are sent strictly one after another.
+function inOrder(send) { let q = Promise.resolve(); return (e) => { const b = e.data; if (!b || !b.size) return; q = q.then(() => b.arrayBuffer()).then(send).catch(() => {}); }; }
+function idleSize() { return recW ? [recW, rcv.height] : SH > SW ? [720, 1280] : SH === SW ? [720, 720] : [1280, 720]; }
 try { $('#recQ').value = localStorage.getItem('ms_recq') || '1080-8'; } catch {}
 if (!$('#recQ').value) $('#recQ').value = '1080-8';
 $('#recQ').onchange = () => { try { localStorage.setItem('ms_recq', $('#recQ').value); } catch {} };
 async function startRec() {
   const [res, mb] = $('#recQ').value.split('-').map(Number);
+  // the OBS engine is on: it records the file itself
+  if (await engineReady() && window.msNative.engineRecord) {
+    const [w, h] = outSize(res);
+    const r = await window.msNative.engineRecord({ w, h, fps: OUT.fps === 60 ? 60 : 30, kbps: mb * 1000 }).catch((e) => ({ ok: false, error: e.message }));
+    if (!r || !r.ok) { engineFails = 2; flash('Recording the other way, because the engine did not work.', false); return startRec(); }
+    recWs = { engine: true, readyState: 1, send() {}, close() {} };
+    recT0 = Date.now(); $('#recBtn').textContent = 'Stop recording'; $('#recBtn').className = 'stop';
+    return;
+  }
   [recW, rcv.height] = outSize(res); rcv.width = recW;
   const rfps = OUT.fps === 60 ? 60 : 30;
   try { ensureAudio(); await syncAudio(); } catch {}
-  const out = new MediaStream(rcv.captureStream(rfps).getVideoTracks());
+  if (!wsOut && !engineSending) { setProgramSize(...idleSize()); setFps(rfps); }
+  // 0 = a picture is taken only when frame() has drawn one (requestFrame): none doubled, none skipped
+  let rs = rcv.captureStream(0); recTrack = rs.getVideoTracks()[0];
+  if (!recTrack || typeof recTrack.requestFrame !== 'function') { rs = rcv.captureStream(rfps); recTrack = null; }
+  const out = new MediaStream(rs.getVideoTracks());
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
   const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
   const fast = useFast(mt);
@@ -2878,8 +3198,8 @@ async function startRec() {
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
     // fast (encode once): the file is exactly what the browser makes, so use the chosen size. Normal way: give ffmpeg a bit more to work from.
-    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: (fast ? mb : Math.min(80, Math.max(mb, 6))) * 1000000, audioBitsPerSecond: 160000 });
-    recMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
+    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: (fast ? mb : Math.min(80, Math.max(mb, 6))) * 1000000, audioBitsPerSecond: 160000, videoKeyFrameIntervalDuration: 2000 });
+    recMr.ondataavailable = inOrder((buf) => { if (ws.readyState === 1) ws.send(buf); });
     recMr.start(500);
     recT0 = Date.now(); $('#recBtn').textContent = 'Stop recording'; $('#recBtn').className = 'stop';
     recTick = 0;
@@ -2890,8 +3210,18 @@ async function startRec() {
 }
 function endRec(fromClose) {
   clearInterval(recTick); recW = 0;
+  if (recWs && recWs.engine) {
+    recWs = null; $('#recBtn').textContent = 'Start recording'; $('#recBtn').className = ''; recT0 = 0;
+    flash('Finishing the recording...', true);
+    window.msNative.engineUnrecord().then((r) => {
+      if (r && r.saved) flash('Saved: ' + r.saved + ' (in your Videos/Multistream folder)', true);
+      else flash('Recording problem: ' + ((r && r.error) || 'no answer'), false);
+    }).catch((e) => flash('Recording problem: ' + e.message, false));
+    return;
+  }
   try { recMr && recMr.state !== 'inactive' && recMr.stop(); } catch {}
-  const ws = recWs; recWs = recMr = null;
+  const ws = recWs; recWs = recMr = recTrack = null;
+  if (!wsOut && !engineSending) { setProgramSize(...idleSize()); setFps(30); }
   // tell the relay we are done; it finishes the file, says where it saved it, then closes
   if (ws && !fromClose) setTimeout(() => { try { ws.send('stop'); } catch {} }, 700);
   $('#recBtn').textContent = 'Start recording'; $('#recBtn').className = ''; recT0 = 0;
@@ -2901,38 +3231,88 @@ document.addEventListener('click', () => ensureAudio(), { once: true });
 
 // ---------------- virtual camera (Zoom) ----------------
 // Sends the Studio picture to the Windows virtual camera. In Zoom, pick the camera called "Multistream Camera".
-let vcWs = null, vcMr = null;
+let vcWs = null, vcMr = null, vcFirst = false;
+// The light way (like OBS feeds its camera): each finished picture is handed to the camera as it is. No video coding in the Studio,
+// no decoding in the app. If this computer cannot do it, the camera switches to the older way by itself and keeps working.
+let vcRaw = false, vcRawOff = false, vcBusy = false, vcPix = null;
+// The repacking runs beside the page (a worker), so the Studio's own drawing is never held up by it.
+let vcWk = null, vcWkOk = true;
+const vcPackHere = (a, isRgb) => { const out = new Uint8Array(a.length / 4 * 3), r = isRgb ? 2 : 0, b = 2 - r; for (let i = 0, j = 0; j < out.length; i += 4, j += 3) { out[j] = a[i + r]; out[j + 1] = a[i + 1]; out[j + 2] = a[i + b]; } return out.buffer; };
+function vcPack(isRgb) {
+  if (vcWkOk && !vcWk) {
+    try {
+      const src = 'onmessage=(e)=>{const a=new Uint8Array(e.data.a),out=new Uint8Array(a.length/4*3),r=e.data.rgb?2:0,b=2-r;for(let i=0,j=0;j<out.length;i+=4,j+=3){out[j]=a[i+r];out[j+1]=a[i+1];out[j+2]=a[i+b];}postMessage({a:e.data.a,o:out.buffer},[e.data.a,out.buffer]);};';
+      vcWk = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    } catch { vcWkOk = false; }
+  }
+  if (!vcWk) return Promise.resolve(vcPackHere(vcPix, isRgb));
+  return new Promise((res) => {
+    const wk = vcWk, buf = vcPix.buffer; vcPix = null;
+    const t = setTimeout(() => { vcWkOk = false; vcWk = null; try { wk.terminate(); } catch {} res(null); }, 2000); // the worker does not answer: do it here from now on
+    wk.onmessage = (e) => { clearTimeout(t); vcPix = new Uint8Array(e.data.a); res(e.data.o); };
+    wk.onerror = () => { clearTimeout(t); vcWkOk = false; vcWk = null; res(null); };
+    wk.postMessage({ a: buf, rgb: isRgb }, [buf]);
+  });
+}
+async function vcPush() {
+  const ws = vcWs;
+  if (vcBusy || !ws || ws.readyState !== 1) return; // the last picture is still on its way: skip this one, nothing piles up
+  vcBusy = true; let vf = null;
+  try {
+    vf = new VideoFrame(vcv, { timestamp: Math.round(performance.now() * 1000) });
+    const f = String(vf.format || ''), n = 1280 * 720;
+    if (!/^(RGB|BGR)[AX]$/.test(f) || vf.allocationSize() !== n * 4) throw new Error('picture format ' + f);
+    if (!vcPix) vcPix = new Uint8Array(n * 4);
+    await vf.copyTo(vcPix);
+    const out = await vcPack(f[0] === 'R'); // the camera takes blue, green, red (3 numbers a dot, not 4)
+    if (out && vcWs === ws && ws.readyState === 1) ws.send(out);
+  } catch (e) {
+    if (vcWs === ws && vcRaw) { vcRawOff = true; vcOff(); vcConnect(); } // the older way from now on
+  } finally { try { vf && vf.close(); } catch {} vcBusy = false; }
+}
 fetch('/api/vcam').then((r) => r.json()).then((s) => { if (s.available) $('#vcBtn').hidden = false; }).catch(() => {});
 function vcOff(msg) {
   try { vcMr && vcMr.state !== 'inactive' && vcMr.stop(); } catch {}
   try { vcWs && vcWs.close(); } catch {}
-  vcWs = vcMr = null; vcOn = false; $('#vcBtn').textContent = 'Start virtual camera'; $('#vcBtn').className = '';
+  vcWs = vcMr = null; vcOn = false; vcRaw = false; $('#vcBtn').textContent = 'Start virtual camera'; $('#vcBtn').className = '';
   if (msg) { $('#st').textContent = msg; $('#st').className = 'stat bad'; }
 }
 $('#vcBtn').onclick = async () => {
   if (vcWs) { vcOff(); $('#st').textContent = 'Virtual camera is off.'; $('#st').className = 'stat'; return; }
-  let ok = false; try { ok = localStorage.getItem('ms_vcam_ok4') === '1'; } catch {}
-  if (!ok) {
-    if (!confirm('Windows will ask for permission one time, to add the camera called Multistream Camera (it replaces the old DirectShow Softcam name). Quit Zoom fully first (also from the icons next to the clock). Continue?')) return;
+  // Multistream Camera is added to Windows once (Windows asks for permission one time). Zoom can stay open.
+  const st0 = await fetch('/api/vcam').then((x) => x.json()).catch(() => ({}));
+  if (!st0.registered) {
+    if (!confirm('Windows will ask for permission one time, to add the camera called Multistream Camera. Zoom can stay open. Continue?')) return;
+    $('#st').textContent = 'Adding Multistream Camera… press Yes in the Windows box.'; $('#st').className = 'stat';
     const r = await fetch('/api/vcam/install', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then((x) => x.json()).catch(() => ({ error: 'Could not reach the app' }));
-    if (r.error) { $('#st').textContent = 'Virtual camera setup: ' + r.error; $('#st').className = 'stat bad'; return; }
-    try { localStorage.setItem('ms_vcam_ok4', '1'); } catch {}
+    if (r.error) { $('#st').textContent = 'Virtual camera: ' + r.error; $('#st').className = 'stat bad'; return; }
+    vcFirst = true;
   }
-  const ws = vcWs = openPipe('/studio-vcam');
+  vcConnect();
+};
+function vcConnect() {
+  const raw = !vcRawOff && typeof VideoFrame === 'function' && Boolean(window.msNative && window.msNative.pipe);
+  const ws = vcWs = openPipe('/studio-vcam' + (raw ? '?raw=1' : ''));
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
-    const mt = ['video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
     vcOn = true;
-    vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000 });
-    vcMr.ondataavailable = async (e) => { if (e.data.size && ws.readyState === 1) ws.send(await e.data.arrayBuffer()); };
-    vcMr.start(100);
+    if (raw) vcRaw = true;
+    else {
+      const mt = ['video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
+      vcMr = new MediaRecorder(new MediaStream(vcv.captureStream(30).getVideoTracks()), { mimeType: mt, videoBitsPerSecond: 6000000, videoKeyFrameIntervalDuration: 2000 });
+      vcMr.ondataavailable = inOrder((buf) => { if (ws.readyState === 1) ws.send(buf); });
+      vcMr.start(100);
+    }
     $('#vcBtn').textContent = 'Stop virtual camera'; $('#vcBtn').className = 'stop';
-    $('#st').textContent = 'Virtual camera is on. In Zoom, choose the camera called Multistream Camera.'; $('#st').className = 'stat ok';
+    $('#st').textContent = vcFirst
+      ? 'Virtual camera is on. In Zoom, choose Multistream Camera (Settings → Video → Camera). If Zoom was already open and does not list it, close Zoom and open it again.'
+      : 'Virtual camera is on. In Zoom, choose the camera called Multistream Camera.';
+    $('#st').className = 'stat ok'; vcFirst = false;
   };
   ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) vcOff('Virtual camera: ' + j.error); } catch {} };
   ws.onclose = () => { if (vcWs === ws) vcOff('Virtual camera stopped.'); };
   ws.onerror = () => {};
-};
+}
 
 // ---------------- the two drop-down menus (More, and + Add item) ----------------
 function popMenu(btn, pop) {
@@ -3102,8 +3482,9 @@ function drawSelection() {
 // When you edit the scene that is on air, the finished Program picture is copied (one quick copy)
 // instead of drawing every item of the scene a second time.
 setInterval(() => {
+  if (!studioShown) return; // nobody sees the edit preview while another page is open
   const s = byName(editing);
-  if (s && editing === shown && !trans && cv.width >= ev.width) { ectx.save(); ectx.setTransform(1, 0, 0, 1, 0, 0); ectx.drawImage(cv, 0, 0, ev.width, ev.height); ectx.restore(); }
+  if (s && editing === shown && !trans && cv.width >= ev.width && !lightMode()) { ectx.save(); ectx.setTransform(1, 0, 0, 1, 0, 0); ectx.drawImage(cv, 0, 0, ev.width, ev.height); ectx.restore(); }
   else drawScene(ectx, s, ev.width / SW, false);
   drawSelection();
 }, 50);
@@ -3122,6 +3503,7 @@ const PRESETS = [
   ['1080-60-9000', '1080p, 60 frames (fast movement)'],
   ['1440-30-12000', '1440p, 30 frames'],
   ['2160-30-20000', '4K, 30 frames (needs a strong computer)'],
+  ['custom', 'Custom (your own numbers below)'],
 ];
 function outNote() {
   const name = OUT.h === 2160 ? '4K' : OUT.h + 'p';
@@ -3133,16 +3515,22 @@ function outNote() {
 }
 function saveOut() { try { localStorage.setItem('ms_out', JSON.stringify(OUT)); } catch {} outNote(); }
 function lockOut() {
-  $('#outQ').disabled = $('#outKbps').disabled = wantSend;
+  $('#outQ').disabled = $('#outKbps').disabled = $('#outH').disabled = $('#outFps').disabled = wantSend;
   if (wantSend) $('#outNote').textContent = 'Stop streaming to change the video size.'; else outNote();
 }
 (function () {
   const q = $('#outQ'); PRESETS.forEach(([v, t]) => q.add(new Option(t, v)));
-  const cur = PRESETS.find((x) => x[0].startsWith(OUT.h + '-' + OUT.fps + '-'));
-  q.value = cur ? cur[0] : '1080-30-6000';
-  if (!cur) { OUT.h = 1080; OUT.fps = 30; OUT.kbps = 6000; }
-  $('#outKbps').value = OUT.kbps; outNote();
-  q.onchange = () => { const [h, f, k] = q.value.split('-').map(Number); OUT.h = h; OUT.fps = f; OUT.kbps = k; $('#outKbps').value = k; saveOut(); };
+  // numbers that make sense: a height from 360 to 2160 (even), 10 to 60 frames a second
+  const okH = (v) => { const n = Math.round(Number(v)); return n >= 360 && n <= 2160 ? n - (n % 2) : 0; };
+  const okF = (v) => { const n = Math.round(Number(v)); return n >= 10 && n <= 60 ? n : 0; };
+  if (!okH(OUT.h) || !okF(OUT.fps)) { OUT.h = 1080; OUT.fps = 30; OUT.kbps = 6000; }
+  OUT.h = okH(OUT.h); OUT.fps = okF(OUT.fps);
+  // the list shows a ready-made choice when the numbers match one, otherwise "Custom"
+  const show = () => { const cur = PRESETS.find((x) => x[0].startsWith(OUT.h + '-' + OUT.fps + '-')); q.value = cur ? cur[0] : 'custom'; $('#outH').value = OUT.h; $('#outFps').value = OUT.fps; $('#outKbps').value = OUT.kbps; };
+  show(); outNote();
+  q.onchange = () => { if (q.value !== 'custom') { const [h, f, k] = q.value.split('-').map(Number); OUT.h = h; OUT.fps = f; OUT.kbps = k; } show(); saveOut(); };
+  $('#outH').onchange = () => { OUT.h = okH($('#outH').value) || OUT.h; show(); saveOut(); };
+  $('#outFps').onchange = () => { OUT.fps = okF($('#outFps').value) || OUT.fps; show(); saveOut(); };
   $('#outKbps').onchange = () => { OUT.kbps = Math.min(60000, Math.max(1000, Math.round(Number($('#outKbps').value)) || OUT.kbps)); $('#outKbps').value = OUT.kbps; saveOut(); };
 })();
 function fillMon() {
@@ -3397,6 +3785,7 @@ async function poll() {
       editing = byName(wasEditing) ? wasEditing : studio.current;
       renderAll();
     }
+    if (!rec) return;
     const e = await fetch('/api/studio/status').then((r) => r.json());
     if (rec && Date.now() > stHold) {
       $('#st').textContent = (e.sending ? 'Sending to the relay' + (e.encoder ? ' (using the ' + e.encoder + ')' : '') : 'Connecting...') + (e.error ? ' - ' + e.error : ''); $('#st').className = 'stat ' + (e.error ? 'bad' : 'ok');
@@ -3407,10 +3796,34 @@ async function poll() {
   } catch {}
 }
 // Multiview pictures: Preview and Program at 960x540 (sharp on a big screen), scene pictures at 480x270
-const small = document.createElement('canvas'); small.width = 960; small.height = 540;
+// the Program and Preview pictures for the Multiview: 1280 x 720, so the big box looks sharp
+const small = document.createElement('canvas'); small.width = 1280; small.height = 720;
 const sctx = small.getContext('2d');
 const tiny = document.createElement('canvas'); tiny.width = 480; tiny.height = 270; const tctx = tiny.getContext('2d');
-let thumbs = {}, thumbAt = 0, shotBusy = false, watching = true, pingAt = 0;
+// Live pictures for the Multiview's scene boxes. When the Multiview can reach this page it copies these (about 3 times a second,
+// no JPEG photos, no trip through the app). They are drawn only while a Multiview is open and the OBS engine is not drawing them.
+const tileCv = new Map(); window.__tiles = tileCv; window.__tilesRev = 0;
+let tileLast = 0, tileTurn = 0;
+function tilesTick() {
+  const w = window.__mvWant;
+  if (!w || Date.now() - w.at > 1500 || engineLive) return;
+  const now = performance.now(); if (now - tileLast < 300) return; tileLast = now; tileTurn++;
+  const tw = SW > SH ? 640 : SW < SH ? 360 : 480, th = SW > SH ? 360 : SW < SH ? 640 : 480;
+  const list = studio.scenes.slice(0, 30), names = new Set(list.map((x) => x.name));
+  tileCv.forEach((c, k) => { if (!names.has(k)) tileCv.delete(k); });
+  const half = list.length > 10; // many scenes: half of them each time
+  list.forEach((sc, i) => {
+    let c = tileCv.get(sc.name); const fresh = !c || c.width !== tw || c.height !== th;
+    if (fresh) { c = document.createElement('canvas'); c.width = tw; c.height = th; tileCv.set(sc.name, c); }
+    if (half && !fresh && (i + tileTurn) % 2) return;
+    const cx = c.getContext('2d');
+    if (sc.name === studio.current && cv.width >= 320) copyFit(cx, tw, th, cv); else drawFit(cx, tw, th, sc, false);
+  });
+  window.__tilesRev++;
+}
+setInterval(tilesTick, 100);
+// watching starts false: the app first says whether the Multiview is open, so nothing is drawn for it while the app opens
+let thumbs = {}, thumbAt = 0, shotBusy = false, watching = false, pingAt = 0, mvLive = false;
 async function shots() {
   if (shotBusy) return; shotBusy = true;
   try {
@@ -3420,19 +3833,23 @@ async function shots() {
       pingAt = Date.now(); const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"ping":1}' }).then((x) => x.json()); watching = Boolean(r && r.watching); shotBusy = false; return;
     }
     // the Program picture is a small copy of what is on air (one quick copy, not drawing the scene again)
-    if (SW > SH && cv.width >= 960) sctx.drawImage(cv, 0, 0, 960, 540); else if (cv.width >= 540) copyFit(sctx, 960, 540, cv); else drawFit(sctx, 960, 540, byName(studio.current), true);
-    const prog = small.toDataURL('image/jpeg', 0.8);
-    let pv = prog; if (serverPreview && serverPreview !== studio.current) { drawFit(sctx, 960, 540, byName(serverPreview), false); pv = small.toDataURL('image/jpeg', 0.8); }
-    const body = { prog, pv };
+    if (!mvLive) { if (SW > SH && cv.width >= 1280) sctx.drawImage(cv, 0, 0, 1280, 720); else if (cv.width >= 540) copyFit(sctx, 1280, 720, cv); else drawFit(sctx, 1280, 720, byName(studio.current), true); }
+    // the Multiview copies the live Program picture itself (mvLive): then no photo of it is made here (they are slow)
+    const body = {};
+    if (!mvLive) {
+      body.prog = small.toDataURL('image/jpeg', 0.86);
+      body.pv = body.prog; if (serverPreview && serverPreview !== studio.current) { drawFit(sctx, 1280, 720, byName(serverPreview), false); body.pv = small.toDataURL('image/jpeg', 0.86); }
+    }
     // the small scene pictures are sent only when one of them changed (a scene with a camera changes each time)
-    if (Date.now() - thumbAt > 1500 || !Object.keys(thumbs).length) {
+    const liveTiles = Boolean(window.__mvWant && Date.now() - window.__mvWant.at < 2000 && window.__mvWant.tiles); // the Multiview copies live pictures: no photos needed
+    if (!liveTiles && (Date.now() - thumbAt > 1500 || !Object.keys(thumbs).length)) {
       thumbAt = Date.now(); const next = {};
       studio.scenes.forEach((s) => { drawFit(tctx, 480, 270, s, false); next[s.name] = tiny.toDataURL('image/jpeg', 0.75); });
       const names = Object.keys(next), changed = names.length !== Object.keys(thumbs).length || names.some((n) => next[n] !== thumbs[n]);
       thumbs = next;
       if (changed) body.thumbs = thumbs;
     }
-    const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); watching = Boolean(r && r.watching); pingAt = Date.now();
+    const r = await fetch('/api/studio/shots', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); watching = Boolean(r && r.watching); mvLive = Boolean(r && r.live); pingAt = Date.now();
     if (r && r.wantThumbs) thumbs = {}; // the app has none (it started again): send them next time
   } catch {}
   shotBusy = false;
@@ -3450,6 +3867,7 @@ async function shots() {
   editing = studio.current;
   renderAll(); await loadDevices(); ensureAudio();
   setInterval(poll, 700); setInterval(shots, 200); // Multiview pictures 5 times a second (only while a Multiview is open)
+  setTimeout(() => checkMissing(true), 1500); // files that are not on this computer: the Missing files window
 })();
 </script>
 <div id="keysBox" hidden style="position:fixed;right:12px;top:52px;z-index:50;background:var(--card,#101814);border:1px solid var(--line);border-radius:10px;padding:12px 14px;max-width:300px;font-size:13px;line-height:1.7;box-shadow:0 8px 30px #0008">

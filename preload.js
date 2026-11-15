@@ -29,4 +29,16 @@ if (location.protocol === 'app:') contextBridge.exposeInMainWorld('msNative', {
   screens: () => ipcRenderer.invoke('ms-screens'),
   sources: (kind) => ipcRenderer.invoke('ms-sources', kind),
   pickScreen: (id, name, kind) => ipcRenderer.invoke('ms-pick-screen', id, name, kind),
+  // the OBS engine (always on when this copy of the app has it)
+  engineState: () => ipcRenderer.invoke('ms-engine-state'),
+  enginePreview: (rect) => ipcRenderer.invoke('ms-engine-preview', rect),
+  engineDisplay: (key, rect, src) => ipcRenderer.invoke('ms-engine-display', key, rect, src),
+  onEngine: (cb) => { ipcRenderer.on('ms-engine', (e, st) => cb(st)); },
+  engineTrans: (t) => ipcRenderer.invoke('ms-engine-trans', t),
+  copyText: (t) => ipcRenderer.invoke('ms-copy', t),
+  engineSend: (o) => ipcRenderer.invoke('ms-engine-send', o),
+  engineUnsend: () => ipcRenderer.invoke('ms-engine-unsend'),
+  engineSendState: () => ipcRenderer.invoke('ms-engine-sendstate'),
+  engineRecord: (o) => ipcRenderer.invoke('ms-engine-record', o),
+  engineUnrecord: () => ipcRenderer.invoke('ms-engine-unrecord'),
 });

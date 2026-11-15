@@ -26,6 +26,7 @@ function openKept(name, v) { const o = secret.open(v); if (o === null) { keptSea
 function sealKept(name, v) { if (v) { keptSealed.delete(name); return secret.seal(v); } return keptSealed.get(name) || ''; }
 const { detectEncoder } = require('./encoder');
 const outargs = require('./outargs');
+const { plain } = require('./public/plain'); // error messages in plain words
 const { makeProgressParser, parseStreamLine, makeRateTracker, makeKeyframeTracker, makeFlvInfo } = require('./stats');
 const { Writable } = require('stream');
 
@@ -75,6 +76,10 @@ const REC_DIR = process.env.MULTISTREAM_RECORDINGS || path.join(DATA_DIR, 'recor
 const REC_FILE = path.join(DATA_DIR, 'recording.json');
 let recCfg = { auto: false };
 try { recCfg = { auto: Boolean(JSON.parse(fs.readFileSync(REC_FILE, 'utf8')).auto) }; } catch {}
+// The small ffmpeg programs that only pass video on (no encoding) get a little more priority, so a busy computer
+// (OBS, Zoom, the Presenter) does not hold the stream back. They use very little processor, so nothing else is slowed.
+function liftPriority(p) { try { if (p && p.pid) os.setPriority(p.pid, os.constants.priority.PRIORITY_ABOVE_NORMAL); } catch {} }
+let recActive = 0; // Studio recordings being written now
 const recorder = createRecorder({ ffmpeg: FFMPEG, input: HUB_IN, dir: REC_DIR, feed: (stdin) => hub.subscribe(stdin) });
 let openFolderHook = null;
 let showFileHook = null; // shows one file in the folder (Explorer or Finder)
@@ -93,7 +98,7 @@ const chat = createChat({
 });
 
 // what is open right now on each site, so the Go live button can turn into End live
-const session = { youtube: '', facebook: '' }; // YouTube broadcast id, Facebook live video id
+const session = { youtube: '', facebook: '', fbAlso: [] }; // YouTube broadcast id, Facebook live video id, lives on the extra Pages
 
 // ---- relay state ----
 let obsLive = false;
@@ -116,6 +121,7 @@ function alertBroadcast(group, msg) {
   for (const [c, g] of alertClients) if (g === group) { try { c.send(data); } catch {} }
 }
 function sendAlert(group, source, text, ok = false) {
+  if (!ok) text = /^(could not upload|connected, but|the video stopped)/i.test(String(text)) ? String(text) : plain(text);
   const a = { group, source, text, at: Date.now(), ok };
   alertNow[group].set(source, a);
   alertBroadcast(group, a);
@@ -148,13 +154,15 @@ function logHealth(text, kind) { healthLog.push({ t: Date.now(), text, kind: kin
 const reconnects = new Map(); // id -> times a channel dropped and was started again
 const liveSince = new Map(); // id -> when it went live
 function setStatus(id, state, message = '') {
+  if (state === 'error') message = plain(message || 'The connection to the site dropped.');
   const before = (status.get(id) || {}).state;
   status.set(id, { state, message });
   const d = destinations.find((x) => x.id === id), name = d ? d.name : 'A channel';
   if (state === 'live' && before !== 'live') { if (!liveSince.has(id)) liveSince.set(id, Date.now()); logHealth(before === 'error' ? `${name} dropped and reconnected by itself.` : `${name} is live.`, before === 'error' ? 'warn' : ''); }
-  if (state === 'error' && before !== 'error') { if (obsLive) reconnects.set(id, (reconnects.get(id) || 0) + 1); logHealth(`${name} dropped: ${message || 'no reason given'}`, 'warn'); }
+  if (state === 'error' && before !== 'error') { if (obsLive) reconnects.set(id, (reconnects.get(id) || 0) + 1); logHealth(`${name} dropped: ${message || 'the connection dropped'}`, 'warn'); }
   if (state === 'off' && before && before !== 'off') liveSince.delete(id);
-  if (state === 'error' && (before !== 'error' || message)) sendAlert('stream', name, `stopped receiving: ${message || 'no reason given'}`);
+  if (state === 'error' && (before !== 'error' || message)) sendAlert('stream', name, message || 'The connection dropped');
+  else if (state === 'starting' && before === 'error') sendAlert('stream', name, 'Reconnecting now…');
   else if (state === 'live' && before !== 'live') resolveAlert('stream', name, 'back on air');
 }
 
@@ -234,16 +242,25 @@ function stopMonitor() {
 // a destination that drops while the Studio is still sending starts again by itself
 const autoRetry = createAutoRetry({
   restart: (id) => { const d = destinations.find((x) => x.id === id); if (d && obsLive) startDestination(d); },
-  onWait: (id, reason, ms, n, max) => setStatus(id, 'error', `${reason || 'Dropped'} - trying again in ${Math.round(ms / 1000)} s (try ${n} of ${max})`),
-  onGiveUp: (id, reason, max) => setStatus(id, 'error', `${reason || 'Stopped'} - gave up after ${max} tries. Press Restart.`),
+  onWait: (id, reason, ms, n, max) => setStatus(id, 'error', `${plain(reason).replace(/\.$/, '')}. Reconnecting… (${n} of ${max})`),
+  onGiveUp: (id, reason, max) => setStatus(id, 'error', `${plain(reason).replace(/\.$/, '')}. Could not reconnect after ${max} tries. Press Restart.`),
 });
 
 function targetOf(d) {
   return `${d.url.replace(/\/+$/, '')}/${d.key}`;
 }
 
+// A YouTube or Facebook channel the app signs in to gets a new live (and a fresh key) each time. Until that live is
+// made, its saved key belongs to the last live, which the site has closed, so sending to it only fails and drops.
+function waitingForLive(d) {
+  if (yt.refreshToken && d === ytDestination()) return !session.youtube && 'YouTube';
+  if (fb.token && d === fbDestination()) return !session.facebook && 'Facebook';
+  if (d.fbPage) return !session.fbAlso.some((a) => a.destId === d.id) && 'Facebook';
+  return false;
+}
 function startDestination(d) {
   if (!obsLive || !d.enabled || procs.has(d.id)) return;
+  if (waitingForLive(d)) { setStatus(d.id, 'starting', 'Making the live on ' + waitingForLive(d) + '…'); return; }
   if (!d.url || !d.key) {
     setStatus(d.id, 'error', 'Add the stream URL and key first');
     return;
@@ -261,6 +278,7 @@ function startDestination(d) {
     targetOf(d),
   ];
   const p = spawn(FFMPEG, args, { windowsHide: true });
+  if (!cv.capped) liftPriority(p);
   const startedAt = Date.now();
   procs.set(d.id, p);
   p.stdin.on('error', () => {});
@@ -284,22 +302,30 @@ function startDestination(d) {
     })
   );
   let lastLine = '';
-  // ffmpeg prints nothing at "warning" level while healthy, so mark live after a short wait
-  const liveTimer = setTimeout(() => {
-    if (procs.get(d.id) === p) setStatus(d.id, 'live', cv.capped ? 'Sent as 1080p, the most this site takes' : '');
-  }, 3000);
+  // live only once the site is really taking the video (bytes going out for 3 seconds), not just because it started
+  let sentAt = 0;
+  const liveTimer = setInterval(() => {
+    if (procs.get(d.id) !== p) return clearInterval(liveTimer);
+    const st = destStats.get(d.id);
+    if (st && st.kbps > 0) {
+      if (!sentAt) sentAt = Date.now();
+      else if (Date.now() - sentAt >= 3000) { clearInterval(liveTimer); setStatus(d.id, 'live', cv.capped ? 'Sent as 1080p, the most this site takes' : ''); }
+    } else if (Date.now() - startedAt > 20000 && (status.get(d.id) || {}).state === 'starting') {
+      setStatus(d.id, 'starting', 'Waiting for the site to take the video…');
+    }
+  }, 500);
   p.stderr.on('data', (chunk) => {
     const text = chunk.toString().trim().split('\n').pop();
     if (text) lastLine = hideKey(text, d.key); // never show the key
   });
   p.on('error', (err) => {
-    clearTimeout(liveTimer);
+    clearInterval(liveTimer);
     procs.delete(d.id);
     destStats.delete(d.id);
     setStatus(d.id, 'error', err.message);
   });
   p.on('close', (code, signal) => {
-    clearTimeout(liveTimer);
+    clearInterval(liveTimer);
     if (procs.get(d.id) === p) {
       procs.delete(d.id);
       destStats.delete(d.id);
@@ -408,6 +434,18 @@ app.use((req, res, next) => {
   res.status(403).type('text').send('Not allowed');
 });
 app.use(express.json({ limit: '8mb' }));
+// every error or warning sent to the app's pages is put into plain words first
+app.use((req, res, next) => {
+  const json = res.json.bind(res);
+  res.json = (b) => {
+    if (b && typeof b === 'object' && !Array.isArray(b)) {
+      if (typeof b.error === 'string' && b.error) b = { ...b, error: plain(b.error) };
+      if (typeof b.warning === 'string' && b.warning) b = { ...b, warning: plain(b.warning) };
+    }
+    return json(b);
+  };
+  next();
+});
 
 app.use(express.static(path.join(__dirname, 'public')));
 // the small video-player library used by the preview
@@ -425,7 +463,9 @@ function publicView(d) {
     hasKey: Boolean(d.key),
     keyEnd: d.key ? d.key.slice(-4) : '',
     enabled: d.enabled,
+    fbPage: d.fbPage || '',
     cap1080: d.cap1080 === undefined ? null : d.cap1080,
+    tall: d.tall || '', // Instagram: how a wide picture is made tall ('' = sent as it is)
     status: status.get(d.id) || { state: 'off', message: '' },
     stats: destStats.get(d.id) || null,
   };
@@ -448,7 +488,7 @@ app.get('/api/state', (req, res) => {
   res.json({
     obsLive,
     ingest: { preview: '/live.flv' },
-    studio: { sending: studioInfo.sending },
+    studio: { sending: studioInfo.sending, error: studioInfo.error },
     signal: {
       startedAt: signal.startedAt,
       video: signal.video,
@@ -462,7 +502,10 @@ app.get('/api/state', (req, res) => {
     facebook: fbView(),
     youtube: ytView(),
     recording: recView(),
-    session: { youtube: Boolean(session.youtube), facebook: Boolean(session.facebook) },
+    session: { youtube: Boolean(session.youtube), facebook: Boolean(session.facebook), fbAlso: session.fbAlso.map((a) => a.pageId),
+      // links to the live videos on Facebook (main Page, then each extra Page by its id)
+      ytLink: session.youtube ? 'https://www.youtube.com/watch?v=' + encodeURIComponent(session.youtube) : '',
+      fbLink: session.facebook ? session.fbLink || '' : '', fbLinks: Object.fromEntries(session.fbAlso.map((a) => [a.pageId, a.link || ''])) },
   });
 });
 
@@ -553,12 +596,13 @@ app.post('/api/facebook/end', async (req, res) => {
   if (d) stopDestination(d.id);
   chat.stopFacebook();
   let warning = '';
-  try {
-    const r = await fetch(`${GRAPH}/${session.facebook}`, { method: 'POST', body: new URLSearchParams({ access_token: fb.token, end_live_video: 'true' }) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok && !/already|ended|finished/i.test((j.error && j.error.message) || '')) warning = (j.error && j.error.message) || 'Facebook did not confirm';
-  } catch { warning = 'Could not reach Facebook'; }
+  try { warning = await fbEndLive(session.facebook, fb.token); } catch { warning = 'Could not reach Facebook'; }
   session.facebook = '';
+  // the extra Pages end too
+  for (const a of session.fbAlso.slice()) {
+    const p = (fb.also || []).find((x) => x.pageId === a.pageId);
+    try { const w = await fbEndAlso(a.pageId); if (w) warning = (warning ? warning + '; ' : '') + ((p && p.pageName) || 'Page') + ': ' + w; } catch { warning = (warning ? warning + '; ' : '') + 'Could not reach Facebook'; }
+  }
   res.json({ ok: true, warning });
 });
 
@@ -637,7 +681,8 @@ function recordingSaved(name) {
   if (upCfg.auto && yt.refreshToken) queueUpload(name);
 }
 function queueUpload(name) {
-  if (upQueue.includes(name) || (recJobs.get(name) || {}).kind === 'upload') return;
+  const j = recJobs.get(name);
+  if (upQueue.includes(name) || (j && j.kind === 'upload' && !j.error)) return; // an upload that failed can be tried again
   upQueue.push(name); logHealth('Recording ' + name + ' will be uploaded to YouTube.'); runUploads();
 }
 let uploading = false;
@@ -651,7 +696,7 @@ async function runUploads() {
         const id = await ytUpload(f, name, upCfg.privacy || 'unlisted', (pct) => { job.pct = pct; });
         upCfg.done[name] = { id, privacy: upCfg.privacy || 'unlisted', at: Date.now() }; saveUp(); recJobs.delete(name);
         logHealth('Recording ' + name + ' is on YouTube (' + (upCfg.privacy || 'unlisted') + ').');
-      } catch (e) { job.error = e.message; job.pct = 0; sendAlert('stream', 'YouTube upload', 'could not upload ' + name + ': ' + e.message); }
+      } catch (e) { job.error = plain(e.message); job.pct = 0; sendAlert('stream', 'YouTube upload', 'could not upload ' + name + ': ' + plain(e.message)); }
     }
   } finally { uploading = false; }
 }
@@ -659,7 +704,9 @@ async function runUploads() {
 async function ytUpload(file, name, privacy, onPct) {
   const size = fs.statSync(file).size;
   const d = new Date(fs.statSync(file).mtimeMs);
-  const title = (gl.title ? gl.title + ' - ' : 'Recording - ') + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  // the title the stream had when this was recorded, if it is known; otherwise the title on Go Live now
+  const was = (upCfg.titles || {})[name] || (upCfg.titles || {})[name.replace(/\.[^.]+$/, '') + '.mkv'] || gl.title || '';
+  const title = (was ? was + ' - ' : 'Recording - ') + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   const start = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
     method: 'POST',
     headers: { Authorization: `Bearer ${await ytAccessToken()}`, 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Length': String(size), 'X-Upload-Content-Type': /\.mp4$/i.test(file) ? 'video/mp4' : 'video/x-matroska' },
@@ -866,17 +913,25 @@ app.get('/api/golive/thumbnail', (req, res) => {
 // ---- Facebook Page: "Go live on Facebook" button ----
 // The Page token is stored only in facebook.json on this computer. It is never sent back to the browser.
 const FB_FILE = path.join(DATA_DIR, 'facebook.json');
-let fb = { pageId: '', pageName: '', token: '' };
+// also: more Pages the same video goes to at the same time ([{ pageId, pageName, token }]). The main Page
+// (pageId) is the one whose comments, viewers and title the app shows and changes.
+let fb = { pageId: '', pageName: '', token: '', also: [] };
 try {
   fb = { ...fb, ...JSON.parse(fs.readFileSync(FB_FILE, 'utf8')) };
   fb.token = openKept('fb.token', fb.token);
+  try { fb.also = typeof fb.also === 'string' && fb.also ? JSON.parse(openKept('fb.also', fb.also) || '[]') : []; } catch { fb.also = []; }
+  if (!Array.isArray(fb.also)) fb.also = [];
+  // every Page shared at the last sign-in (with its token), so Go Live can add one any time without signing in again
+  try { fb.known = typeof fb.known === 'string' && fb.known ? JSON.parse(openKept('fb.known', fb.known) || '[]') : []; } catch { fb.known = []; }
+  if (!Array.isArray(fb.known)) fb.known = [];
 } catch {}
 function saveFb() {
-  fs.writeFileSync(FB_FILE, JSON.stringify({ ...fb, token: sealKept('fb.token', fb.token) }, null, 2), { mode: 0o600 });
+  fs.writeFileSync(FB_FILE, JSON.stringify({ ...fb, token: sealKept('fb.token', fb.token), also: sealKept('fb.also', JSON.stringify(fb.also || [])), known: sealKept('fb.known', JSON.stringify(fb.known || [])) }, null, 2), { mode: 0o600 });
 }
 const GRAPH = 'https://graph.facebook.com/v26.0';
 function fbView() {
-  return { pageId: fb.pageId, pageName: fb.pageName, hasToken: Boolean(fb.token), tokenEnd: fb.token ? fb.token.slice(-4) : '', appId: fb.appId || '', hasClientToken: Boolean(fb.clientToken) };
+  return { granted: fb.granted || null, pageId: fb.pageId, pageName: fb.pageName, hasToken: Boolean(fb.token), tokenEnd: fb.token ? fb.token.slice(-4) : '', appId: fb.appId || '', hasClientToken: Boolean(fb.clientToken),
+    also: (fb.also || []).map((p) => ({ pageId: p.pageId, pageName: p.pageName, on: p.on !== false, title: p.title || '', description: p.description || '' })) };
 }
 // ---- Sign in with Facebook (Facebook Login for Devices) ----
 // Needs only the Meta app ID and its client token (both are meant to be inside apps; no app secret).
@@ -896,11 +951,15 @@ app.post('/api/facebook/login', async (req, res) => {
   const a = fbApp();
   if (!a.id || !a.ct) return res.status(400).json({ error: 'Add the Meta app ID and client token first (below)' });
   try {
-    const r = await fetch(`${GRAPH}/device/login`, { method: 'POST', body: new URLSearchParams({ access_token: `${a.id}|${a.ct}`, scope: 'pages_show_list,pages_read_engagement,pages_manage_posts' }) });
-    const j = await r.json().catch(() => ({}));
+    // business_management: Pages run through a Meta Business account (Business Suite) are only listed with it.
+    // If Facebook does not allow it for this app, sign-in is asked again without it.
+    const ask = (scope) => fetch(`${GRAPH}/device/login`, { method: 'POST', body: new URLSearchParams({ access_token: `${a.id}|${a.ct}`, scope }) });
+    let r = await ask('pages_show_list,pages_read_engagement,pages_manage_posts,business_management');
+    let j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.code) { r = await ask('pages_show_list,pages_read_engagement,pages_manage_posts'); j = await r.json().catch(() => ({})); }
     if (!r.ok || !j.code) return res.status(502).json({ error: (j.error && (j.error.error_user_msg || j.error.message)) || 'Facebook did not start the sign-in' });
     fbLogin = { code: j.code, until: Date.now() + (Number(j.expires_in) || 420) * 1000 };
-    res.json({ userCode: j.user_code, uri: j.verification_uri || 'https://www.facebook.com/device', interval: Number(j.interval) || 5 });
+    res.json({ userCode: j.user_code, uri: j.verification_uri || 'https://www.facebook.com/device', interval: Number(j.interval) || 5, expires: Number(j.expires_in) || 420 });
   } catch { res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' }); }
 });
 app.get('/api/facebook/login', async (req, res) => {
@@ -918,16 +977,126 @@ app.get('/api/facebook/login', async (req, res) => {
       if ([1349174, 1349172].includes(e.error_subcode)) return res.json({ pending: true }); // still waiting for the person / asking too often
       fbLogin = null; return res.json({ error: e.error_user_msg || e.message || 'Facebook did not finish the sign-in' });
     }
-    const pr = await fetch(`${GRAPH}/me/accounts?fields=id,name,access_token&limit=100&access_token=${encodeURIComponent(j.access_token)}`);
+    const tok = encodeURIComponent(j.access_token);
+    const pr = await fetch(`${GRAPH}/me/accounts?fields=id,name,access_token&limit=100&access_token=${tok}`);
     const pj = await pr.json().catch(() => ({}));
     if (!pr.ok) { fbLogin = null; return res.json({ error: (pj.error && pj.error.message) || 'Facebook did not list your Pages' }); }
-    fbLogin = { pages: (pj.data || []).filter((p) => p.id && p.access_token) };
+    const list = (pj.data || []).filter((p) => p.id && p.access_token);
+    // Pages run through a Meta Business account (owned by it, or shared with it) are listed there, not always above
+    try {
+      const br = await fetch(`${GRAPH}/me/businesses?fields=owned_pages.limit(100){id,name,access_token},client_pages.limit(100){id,name,access_token}&limit=50&access_token=${tok}`);
+      const bj = await br.json().catch(() => ({}));
+      (bj.data || []).forEach((b) => [b.owned_pages, b.client_pages].forEach((g) => ((g && g.data) || []).forEach((p) => {
+        if (p.id && p.access_token && !list.some((x) => x.id === p.id)) list.push(p);
+      })));
+    } catch {}
+    // what Facebook really gave at this sign-in (shown with a Permissions error, so it is clear what is missing)
+    try {
+      const qr = await fetch(`${GRAPH}/me/permissions?access_token=${tok}`);
+      const qj = await qr.json().catch(() => ({}));
+      fb.granted = (qj.data || []).filter((x) => x.status === 'granted').map((x) => x.permission);
+      fb.declined = (qj.data || []).filter((x) => x.status !== 'granted').map((x) => x.permission);
+      saveFb();
+    } catch {}
+    fbLogin = { pages: list };
+    if (list.length) { fb.known = list.map((p) => ({ id: p.id, name: p.name || '', access_token: p.access_token })); saveFb(); }
     if (!fbLogin.pages.length) { fbLogin = null; return res.json({ error: 'Signed in, but no Pages were shared. Sign in again and tick the Page when Facebook asks.' }); }
     res.json({ done: true, pages: pages() });
   } catch { res.json({ pending: true }); }
 });
+// the Pages from the last sign-in: from this session, or the saved list
+const fbPagesNow = () => (fbLogin && fbLogin.pages ? fbLogin.pages : fb.known || []);
+// Go Live: the Pages you can stream to, and which are added (main, extra) or not
+app.get('/api/facebook/pages', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  const also = new Set((fb.also || []).map((x) => x.pageId));
+  res.json({ signedIn: fbPagesNow().length > 0, pages: fbPagesNow().map((p) => ({ id: p.id, name: p.name || '', added: p.id === fb.pageId ? 'main' : also.has(p.id) ? 'also' : '' })) });
+});
+// Go Live: remove the main Page. The next extra Page (if any) becomes the main one.
+app.delete('/api/facebook/main', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  if (session.facebook) return res.status(400).json({ error: 'Stop streaming first.' });
+  const next = (fb.also || [])[0];
+  if (next) { fb = { ...fb, pageId: next.pageId, pageName: next.pageName, token: next.token }; fb.also = fb.also.slice(1); const d = destinations.find((x) => x.fbPage === next.pageId); if (d) { stopDestination(d.id); status.delete(d.id); destinations = destinations.filter((x) => x !== d); save(); } }
+  else fb = { ...fb, pageId: '', pageName: '', token: '' };
+  saveFb(); res.json(fbView());
+});
+// Go Live: add one Page. The first one becomes the main Page; the others stream the same video.
+app.post('/api/facebook/pages/:id', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  const p = fbPagesNow().find((x) => x.id === req.params.id);
+  if (!p) return res.status(404).json({ error: 'That Page is not in the list. Sign in with Facebook again.' });
+  if (p.id === fb.pageId || (fb.also || []).some((x) => x.pageId === p.id)) return res.json(fbView());
+  if (!fb.pageId || !fb.token) { fb = { ...fb, pageId: p.id, pageName: p.name || '', token: p.access_token }; saveFb(); return res.json(fbView()); }
+  fb.also = [...(fb.also || []), { pageId: p.id, pageName: p.name || '', token: p.access_token, on: true, title: '', description: '' }].slice(0, 10);
+  saveFb(); res.json(fbView());
+});
+// the main Page's channel (the channels for the extra Pages carry the Page's id in fbPage)
 function fbDestination() {
-  return destinations.find((d) => /facebook/i.test(d.name));
+  return destinations.find((d) => /facebook/i.test(d.name) && !d.fbPage);
+}
+function fbAlsoDestination(p) {
+  let d = destinations.find((x) => x.fbPage === p.pageId);
+  if (!d) { d = { id: crypto.randomUUID(), name: 'Facebook: ' + (p.pageName || p.pageId), url: '', key: '', enabled: true, fbPage: p.pageId }; destinations.push(d); save(); }
+  else if (p.pageName && d.name !== 'Facebook: ' + p.pageName) { d.name = 'Facebook: ' + p.pageName; save(); }
+  return d;
+}
+// a new live video on one Page; gives back { id, url, key }
+async function fbNewLive(pageId, token, status, title, description) {
+  const r = await fetch(`${GRAPH}/${pageId}/live_videos`, { method: 'POST', body: new URLSearchParams({ access_token: token, status, title, ...(description ? { description } : {}) }) });
+  const j = await r.json();
+  const streamUrl = j.secure_stream_url || j.stream_url;
+  if (!r.ok || !streamUrl) {
+    const e = j.error || {};
+    let msg = e.message || 'Facebook did not create the live video';
+    if (e.code === 200 || e.code === 10 || /permission/i.test(msg)) {
+      // say exactly what Facebook gave at sign-in, and what it needs for a live video
+      const need = ['pages_manage_posts', 'pages_read_engagement', 'pages_show_list'];
+      const missing = need.filter((x) => !(fb.granted || []).includes(x));
+      // in plain words (Facebook's own text is computer words): what is missing and what to do
+      msg = 'Facebook did not let the app go live on this Page. '
+        + (fb.granted ? (missing.length ? 'Not given at sign-in: ' + missing.join(', ') + '. ' : 'Everything needed was given at sign-in, so check you are a full admin of this Page. ') : '')
+        + 'Fix it in your Meta app, then Settings → Stream → Sign in again.';
+    }
+    throw new Error(msg);
+  }
+  // Facebook gives one full address. Split it into the URL and the key the relay already uses.
+  const [addr, query] = streamUrl.split('?');
+  const idx = addr.lastIndexOf('/');
+  // where the live video is on Facebook (for the "Open on Facebook" link on Go Live)
+  let link = '';
+  try {
+    const pr = await fetch(`${GRAPH}/${j.id}?${new URLSearchParams({ fields: 'permalink_url', access_token: token })}`);
+    const pj = await pr.json().catch(() => ({}));
+    if (pj.permalink_url) link = /^https?:/i.test(pj.permalink_url) ? pj.permalink_url : 'https://www.facebook.com' + (pj.permalink_url.startsWith('/') ? '' : '/') + pj.permalink_url;
+  } catch {}
+  return { id: j.id || '', url: addr.slice(0, idx), key: addr.slice(idx + 1) + (query ? '?' + query : ''), link };
+}
+async function fbStartAlso(p) {
+  const m = session.fbMeta || { status: 'LIVE_NOW', title: 'Live', description: '' };
+  // this Page's own title and description, if it has them (otherwise the same as the main Page)
+  const l = await fbNewLive(p.pageId, p.token, m.status, p.title || m.title, p.description || m.description);
+  const pd = fbAlsoDestination(p);
+  stopDestination(pd.id);
+  pd.url = l.url; pd.key = l.key; pd.enabled = true;
+  save();
+  session.fbAlso = session.fbAlso.filter((a) => a.pageId !== p.pageId);
+  session.fbAlso.push({ pageId: p.pageId, id: l.id, destId: pd.id, link: l.link });
+  startDestination(pd);
+}
+async function fbEndAlso(pageId) {
+  const a = session.fbAlso.find((x) => x.pageId === pageId);
+  if (!a) return '';
+  session.fbAlso = session.fbAlso.filter((x) => x !== a);
+  stopDestination(a.destId);
+  const p = (fb.also || []).find((x) => x.pageId === pageId);
+  return p ? fbEndLive(a.id, p.token) : '';
+}
+async function fbEndLive(id, token) {
+  const r = await fetch(`${GRAPH}/${id}`, { method: 'POST', body: new URLSearchParams({ access_token: token, end_live_video: 'true' }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok && !/already|ended|finished/i.test((j.error && j.error.message) || '')) return (j.error && j.error.message) || 'Facebook did not confirm';
+  return '';
 }
 // Go live needs a channel to put the new key in. If the person has not added one yet, make it here.
 function addDestination(name) {
@@ -947,7 +1116,7 @@ app.put('/api/facebook', async (req, res) => {
   const token = String((req.body || {}).token || '').trim();
   if (!/^\d+$/.test(pageId)) return res.status(400).json({ error: 'The Page ID is only numbers' });
   // a Page picked after Sign in with Facebook brings its own token
-  const fromLogin = !token && fbLogin && fbLogin.pages ? fbLogin.pages.find((p) => p.id === pageId) : null;
+  const fromLogin = !token ? fbPagesNow().find((p) => p.id === pageId) || null : null;
   const newToken = token || (fromLogin && fromLogin.access_token) || fb.token;
   if (!newToken) return res.status(400).json({ error: 'Sign in with Facebook, or paste the Page access token' });
   try {
@@ -955,11 +1124,72 @@ app.put('/api/facebook', async (req, res) => {
     const j = await r.json();
     if (!r.ok || !j.id) return res.status(400).json({ error: (j.error && j.error.message) || 'Facebook did not accept this Page ID and token' });
     fb = { ...fb, pageId, pageName: j.name || '', token: newToken };
-    saveFb(); if (fromLogin) fbLogin = null;
+    // the extra Pages (ids from the last sign-in, or ones already saved); never the main Page twice
+    const want = (req.body || {}).also;
+    if (Array.isArray(want)) {
+      const next = [];
+      want.map(String).filter((id) => /^\d+$/.test(id) && id !== pageId).slice(0, 10).forEach((id) => {
+        const p = fbPagesNow().find((x) => x.id === id) || null;
+        const kept = (fb.also || []).find((x) => x.pageId === id);
+        if (p) next.push({ pageId: id, pageName: p.name || '', token: p.access_token, on: kept ? kept.on !== false : true, title: kept ? kept.title || '' : '', description: kept ? kept.description || '' : '' });
+        else if (kept) next.push(kept);
+      });
+      fb.also = next;
+    }
+    saveFb(); // the Pages from this sign-in stay (in memory, until the app closes) so Change Page can switch without signing in again
     res.json(fbView());
   } catch {
     res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' });
   }
+});
+
+// one extra Page switched on or off on Go Live (during a live it starts or ends that Page's live straight away)
+app.put('/api/facebook/also/:pageId', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  const p = (fb.also || []).find((x) => x.pageId === req.params.pageId);
+  if (!p) return res.status(404).json({ error: 'That Page is not saved' });
+  p.on = Boolean((req.body || {}).on);
+  saveFb();
+  try {
+    if (!p.on) await fbEndAlso(p.pageId);
+    else if (session.facebook && obsLive && !session.fbAlso.some((a) => a.pageId === p.pageId)) await fbStartAlso(p);
+    res.json({ ok: true });
+  } catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// one extra Page's own title and description (empty = the same as the main Page). During a live, Facebook is told too.
+app.put('/api/facebook/also/:pageId/details', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  const p = (fb.also || []).find((x) => x.pageId === req.params.pageId);
+  if (!p) return res.status(404).json({ error: 'That Page is not saved' });
+  const b = req.body || {};
+  p.title = String(b.title || '').trim().slice(0, 250);
+  p.description = String(b.description || '').trim().slice(0, 5000);
+  saveFb();
+  const a = session.fbAlso.find((x) => x.pageId === p.pageId);
+  let warning = '';
+  if (a && a.id) {
+    const m = session.fbMeta || { title: 'Live', description: '' };
+    try {
+      const r = await fetch(`${GRAPH}/${a.id}`, { method: 'POST', body: new URLSearchParams({ access_token: p.token, title: p.title || m.title, description: p.description || m.description || '' }) });
+      if (!r.ok) warning = 'Saved, but Facebook did not change the title of the live that is on now. It is used next time.';
+    } catch { warning = 'Saved, but Facebook could not be reached to change the live that is on now. It is used next time.'; }
+  }
+  res.json({ ok: true, warning });
+});
+
+// remove one extra Page (during a live, its live ends first)
+app.delete('/api/facebook/also/:pageId', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  const p = (fb.also || []).find((x) => x.pageId === req.params.pageId);
+  if (!p) return res.status(404).json({ error: 'That Page is not saved' });
+  let warning = '';
+  try { warning = await fbEndAlso(p.pageId); } catch { warning = 'Could not reach Facebook to end the live on this Page. End it on Facebook.'; }
+  fb.also = fb.also.filter((x) => x !== p);
+  saveFb();
+  const d = destinations.find((x) => x.fbPage === p.pageId);
+  if (d) { stopDestination(d.id); status.delete(d.id); destinations = destinations.filter((x) => x !== d); save(); }
+  res.json({ ok: true, warning });
 });
 
 app.post('/api/facebook/live', async (req, res) => {
@@ -968,30 +1198,27 @@ app.post('/api/facebook/live', async (req, res) => {
   const d = fbDestination() || addDestination('Facebook');
   const title = goLiveTitle(req);
   const description = goLiveDescription(req);
-  try {
-    const r = await fetch(`${GRAPH}/${fb.pageId}/live_videos`, {
-      method: 'POST',
-      // Test mode: Facebook takes the stream but the video is not published on the Page.
-      body: new URLSearchParams({ access_token: fb.token, status: (req.body || {}).test || (req.body || {}).privacy === 'self' ? 'UNPUBLISHED' : 'LIVE_NOW', title, ...(description ? { description } : {}) }),
-    });
-    const j = await r.json();
-    const streamUrl = j.secure_stream_url || j.stream_url;
-    if (!r.ok || !streamUrl) return res.status(502).json({ error: (j.error && j.error.message) || 'Facebook did not create the live video' });
-    // Facebook gives one full address. Split it into the URL and the key the relay already uses.
-    const [addr, query] = streamUrl.split('?');
-    const idx = addr.lastIndexOf('/');
-    stopDestination(d.id);
-    d.url = addr.slice(0, idx);
-    d.key = addr.slice(idx + 1) + (query ? '?' + query : '');
-    d.enabled = true;
-    save();
-    startDestination(d);
-    session.facebook = j.id || '';
-    chat.startFacebook(j.id);
-    res.json({ ok: true, liveVideoId: j.id || '' });
-  } catch {
-    res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' });
+  // Test mode: Facebook takes the stream but the video is not published on the Page.
+  const status = (req.body || {}).test || (req.body || {}).privacy === 'self' ? 'UNPUBLISHED' : 'LIVE_NOW';
+  let main;
+  try { main = await fbNewLive(fb.pageId, fb.token, status, title, description); }
+  catch (e) { return res.status(502).json({ error: /fetch failed/i.test(e.message) ? 'Could not reach Facebook. Check the internet connection.' : e.message }); }
+  stopDestination(d.id);
+  d.url = main.url; d.key = main.key; d.enabled = true;
+  save();
+  session.facebook = main.id; // the live is made: the channel may send now
+  startDestination(d);
+  session.fbLink = main.link;
+  chat.startFacebook(main.id);
+  // the extra Pages that are switched on: the same video, each with its own live and its own channel
+  session.fbMeta = { status, title, description };
+  const also = [];
+  for (const p of (fb.also || []).filter((x) => x.on !== false)) {
+    try { await fbStartAlso(p); also.push({ page: p.pageName, ok: true }); }
+    catch (e) { also.push({ page: p.pageName, ok: false, error: e.message }); }
   }
+  const failed = also.filter((x) => !x.ok);
+  res.json({ ok: true, liveVideoId: main.id, also, warning: failed.length ? failed.map((x) => x.page + ': ' + x.error).join('; ') : '' });
 });
 
 // ---- YouTube: sign in once, then "Go live on YouTube" ----
@@ -1016,7 +1243,7 @@ function ytView() {
 function ytDestination() {
   return destinations.find((d) => /youtube/i.test(d.name));
 }
-const plain = (s) => String(s).replace(/[<>&"']/g, '');
+const noTags = (s) => String(s).replace(/[<>&"']/g, '');
 async function googleToken(params) {
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -1084,7 +1311,7 @@ app.get('/api/youtube/login', (req, res) => {
 app.get('/api/youtube/callback', async (req, res) => {
   const page = (title, text) => res.type('html').send(simplePage(title, `<p>${text}</p>`));
   const { code, state, error } = req.query;
-  if (error) return page('YouTube not connected', `Google said: ${plain(error)}. You can close this tab and try again.`);
+  if (error) return page('YouTube not connected', `Google said: ${noTags(plain(error))}. You can close this tab and try again.`);
   if (!ytLoginState || state !== ytLoginState) return page('YouTube not connected', 'This sign-in link is old. Go back to the app and click Connect YouTube again.');
   ytLoginState = '';
   const verifier = ytVerifier; ytVerifier = '';
@@ -1096,9 +1323,9 @@ app.get('/api/youtube/callback', async (req, res) => {
     const ch = await ytApi('GET', 'channels', { part: 'snippet', mine: 'true' });
     yt.channelTitle = (ch.items && ch.items[0] && ch.items[0].snippet && ch.items[0].snippet.title) || '';
     saveYt();
-    page('YouTube connected', `Connected${yt.channelTitle ? ' to ' + plain(yt.channelTitle) : ''}. You can close this tab and go back to the app.`);
+    page('YouTube connected', `Connected${yt.channelTitle ? ' to ' + noTags(yt.channelTitle) : ''}. You can close this tab and go back to the app.`);
   } catch (e) {
-    page('YouTube not connected', plain(e.message));
+    page('YouTube not connected', noTags(plain(e.message)));
   }
   closeLoginListener();
 });
@@ -1147,12 +1374,18 @@ app.post('/api/youtube/live', async (req, res) => {
     try { await ytSetThumbnail(b.id); } catch (e) { thumbnailError = e.message; }
     // 4. send the video to that stream
     const info = stream.cdn.ingestionInfo;
-    stopDestination(d.id);
-    d.url = info.ingestionAddress;
-    d.key = info.streamName;
+    // the same stream address and key as the channel already sends to: keep sending (no drop before going live);
+    // only a new address or key restarts the channel
+    const same = d.url === info.ingestionAddress && d.key === info.streamName && procs.has(d.id);
     d.enabled = true;
-    save();
-    startDestination(d);
+    session.youtube = b.id; // the live is made: the channel may send now
+    if (!same) {
+      stopDestination(d.id);
+      d.url = info.ingestionAddress;
+      d.key = info.streamName;
+      save();
+      startDestination(d);
+    } else save();
     // the chat id is on the broadcast. If it was not in the first answer, ask for it.
     let liveChatId = (b.snippet || {}).liveChatId;
     if (!liveChatId) {
@@ -1186,14 +1419,16 @@ app.post('/api/destinations', (req, res) => {
 app.put('/api/destinations/:id', (req, res) => {
   const d = destinations.find((x) => x.id === req.params.id);
   if (!d) return res.status(404).json({ error: 'Not found' });
-  const { name, key, enabled, cap1080 } = req.body || {};
+  const { name, key, enabled, cap1080, tall } = req.body || {};
   const url = req.body && req.body.url !== undefined ? String(req.body.url).trim() : undefined;
   if (url !== undefined && !okStreamUrl(url)) return res.status(400).json({ error: 'The server address must start with rtmp:// or rtmps://' });
   // moving a channel to a different server needs its key typed again, so a saved key is never sent somewhere new
   const hasKey = Boolean(d.key || keptSealed.has('dest:' + d.id));
   if (url !== undefined && hasKey && hostOf(url) !== hostOf(d.url) && !(key !== undefined && key !== '')) return res.status(400).json({ error: 'You changed the server. Type the stream key again.' });
   if (cap1080 !== undefined) d.cap1080 = cap1080 === null ? undefined : Boolean(cap1080);
-  const changedTarget = (url !== undefined && url !== d.url) || (key !== undefined && key !== '' && key !== d.key);
+  const tallWas = d.tall || '';
+  if (tall !== undefined) { if (['fill', 'blur', 'bars'].includes(tall)) d.tall = tall; else delete d.tall; }
+  const changedTarget = (url !== undefined && url !== d.url) || (key !== undefined && key !== '' && key !== d.key) || (d.tall || '') !== tallWas;
   if (name !== undefined) d.name = String(name);
   if (url !== undefined) d.url = String(url);
   if (key !== undefined && key !== '') d.key = String(key); // empty = keep the old key
@@ -1273,7 +1508,15 @@ try {
   }
 } catch {}
 let studioRev = 1;
-function saveStudio() { try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STUDIO_FILE, JSON.stringify(studio)); } catch {} studioRev++; }
+// Saving is joined up: dragging an item sends many changes a second, but the file is written once, half a second after the last one
+// (and once more when the app closes). The new file is written beside the old one and swapped in, so a power cut cannot leave half a file.
+let studioTimer = null;
+function writeStudioNow() {
+  clearTimeout(studioTimer); studioTimer = null;
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STUDIO_FILE + '.tmp', JSON.stringify(studio)); fs.renameSync(STUDIO_FILE + '.tmp', STUDIO_FILE); } catch {}
+}
+function saveStudio() { studioRev++; if (!studioTimer) studioTimer = setTimeout(writeStudioNow, 500); }
+process.on('exit', () => { if (studioTimer) writeStudioNow(); });
 // ?rev=N: when nothing changed since N, a short answer (the Studio asks often)
 app.get('/api/studio', (req, res) => {
   if (req.query && String(req.query.rev) === String(studioRev)) return res.json({ same: true, rev: studioRev, preview: studio.preview || '' });
@@ -1375,6 +1618,31 @@ app.get('/api/studio/asset/:name', (req, res) => {
 });
 
 // local files named in an imported OBS scene file (pictures and videos). Only this PC can ask for them.
+// Files the Studio's sources use that are not on this computer (moved, deleted, on a drive that is not plugged in,
+// or from OBS on another computer). The Studio lists them in its Missing files window, like OBS.
+function studioFileOf(o) {
+  if (!o) return '';
+  if (o.file && path.isAbsolute(String(o.file))) return String(o.file);
+  const m = /^\/api\/studio\/asset\/(.+)$/.exec(String(o.url || ''));
+  if (m) { try { return path.join(ASSET_DIR, path.basename(decodeURIComponent(m[1]))); } catch { return ''; } }
+  return '';
+}
+app.get('/api/studio/missing', (req, res) => {
+  if (!isLocal(req)) return res.status(403).end();
+  const out = [];
+  for (const sc of studio.scenes || []) for (const l of sc.layers || []) {
+    const checks = [];
+    if (l.type === 'image' || l.type === 'video') checks.push(['', l]);
+    if ((l.type === 'timer' || l.type === 'duo') && l.bg && (l.bg.kind === 'picture' || l.bg.kind === 'video')) checks.push(['bg', l.bg]);
+    if (l.type === 'lower' && l.pic) checks.push(['pic', { file: l.pic, url: l.picUrl }]);
+    for (const [part, o] of checks) {
+      const f = studioFileOf(o);
+      if (f && !fs.existsSync(f)) out.push({ scene: sc.name, id: l.id, part, name: l.name || path.basename(f), type: l.type, file: path.basename(f), where: o.file ? f : '' });
+    }
+  }
+  res.json({ missing: out });
+});
+
 app.get('/api/studio/file', (req, res) => {
   if (!isLocal(req)) return res.status(403).end();
   const p = String((req.query || {}).p || '');
@@ -1405,11 +1673,13 @@ app.put('/api/studio/shots', (req, res) => {
     const gotThumbs = b.thumbs && typeof b.thumbs === 'object';
     studioShots = { ...studioShots, at: Date.now(), prog: String(b.prog || ''), pv: String(b.pv || ''), thumbs: gotThumbs ? b.thumbs : studioShots.thumbs, tv: studioShots.tv + (gotThumbs ? 1 : 0) };
   }
-  res.json({ ok: true, watching: Date.now() - studioShots.watched < 3000, wantThumbs: studioShots.tv === 0 });
+  // live: the Multiview copies the Program picture itself, so the Studio does not need to make photos of it
+  res.json({ ok: true, watching: Date.now() - studioShots.watched < 3000, live: Date.now() - (studioShots.liveAt || 0) < 3000, wantThumbs: studioShots.tv === 0 });
 });
 // ?tv=N: the Multiview already has the small scene pictures number N, so they are not sent again
 app.get('/api/studio/shots', (req, res) => {
   studioShots.watched = Date.now();
+  if ((req.query || {}).live === '1') studioShots.liveAt = Date.now();
   const tv = Number((req.query || {}).tv);
   res.json({ alive: Date.now() - studioShots.at < 5000, prog: studioShots.prog, pv: studioShots.pv, tv: studioShots.tv, rev: studioRev, thumbs: tv === studioShots.tv ? undefined : studioShots.thumbs });
 });
@@ -1444,6 +1714,8 @@ studioRecWss.on('connection', (w, req) => {
   const copy = q.get('copy') === '1'; // the browser already made H.264 at the right size (encode once)
   const args = outargs.recordArgs(studioEncoder.key, { h: q.get('h'), mbit: q.get('mbit'), fps: q.get('fps'), shape: q.get('shape') }, path.join(REC_DIR, name), copy);
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
+  if (copy) liftPriority(ff);
+  recActive++; ff.once('exit', () => { recActive = Math.max(0, recActive - 1); });
   let last = '';
   ff.stderr.on('data', (c) => { last = String(c).trim().split('\n').pop().slice(0, 200); });
   ff.stdin.on('error', () => {});
@@ -1468,9 +1740,10 @@ app.post('/api/vcam/install', async (req, res) => {
   res.json(await vcam.install(Boolean((req.body || {}).remove)));
 });
 const vcamWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });
-vcamWss.on('connection', (w) => {
+vcamWss.on('connection', (w, req) => {
   let s;
-  try { s = vcam.start(1280, 720, 30); } catch (e) { try { w.send(JSON.stringify({ error: e.message })); w.close(); } catch {} return; }
+  const raw = /[?&]raw=1/.test((req && req.url) || ''); // raw pictures from the Studio: no ffmpeg in between
+  try { s = raw ? vcam.startRaw(1280, 720, 30) : vcam.start(1280, 720, 30); } catch (e) { try { w.send(JSON.stringify({ error: e.message })); w.close(); } catch {} return; }
   w.on('message', (m) => s.write(m));
   w.on('close', () => s.stop());
 });
@@ -1482,6 +1755,7 @@ studioWss.on('connection', (w, req) => {
   studioOut = out; studioInfo.out = outargs.label(out) + (copy ? ' (fast)' : '');
   const args = outargs.ingestArgs(studioEncoder.key, out, copy);
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+  if (copy) liftPriority(ff);
   studioFf = ff; studioInfo.sending = true; studioInfo.error = '';
   const unfeed = feedHub(ff.stdout);
   ff.on('close', unfeed);
@@ -1497,6 +1771,98 @@ studioWss.on('connection', (w, req) => {
   w.on('message', (m) => { if (ff.stdin.writable) ff.stdin.write(m); });
   w.on('close', () => { try { ff.stdin.end(); setTimeout(() => ff.kill('SIGKILL'), 1500); } catch {} });
 });
+
+// ---- the OBS engine's video (when the engine is on) ----
+// The engine makes the video itself and sends it to a receiver on this computer only (127.0.0.1, a free port,
+// a new secret name each time). ffmpeg only passes it on (no second encode) into the same hub as the Studio's
+// video, so every channel gets it the same way as before.
+let engineIn = null; // { want, ff, port, key }
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const srv = require('net').createServer();
+    srv.unref(); srv.on('error', reject);
+    srv.listen(0, '127.0.0.1', () => { const { port } = srv.address(); srv.close(() => resolve(port)); });
+  });
+}
+async function engineIngest(o) {
+  engineIngestStop();
+  const port = await freePort();
+  const key = crypto.randomBytes(12).toString('hex');
+  const out = outargs.parseOut(new URLSearchParams({ h: String(o.h || 720), fps: String(o.fps || 30), kbps: String(o.kbps || 4500), shape: String(o.shape || 'landscape') }));
+  const me = { want: true, ff: null, port, key };
+  engineIn = me;
+  studioOut = out; studioInfo.out = outargs.label(out) + ' (OBS engine)'; studioInfo.error = '';
+  const listen = () => {
+    if (!me.want || engineIn !== me) return;
+    const ff = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-listen', '1', '-f', 'flv', '-i', `rtmp://127.0.0.1:${port}/live/${key}`,
+      '-c', 'copy', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    me.ff = ff; studioFf = ff;
+    const unfeed = feedHub(ff.stdout);
+    ff.stdout.once('data', () => { studioInfo.sending = true; studioInfo.error = ''; });
+    ff.on('close', unfeed);
+    ff.stderr.on('data', (d) => { studioInfo.error = String(d).trim().split('\n').pop().slice(0, 200); });
+    ff.on('exit', () => {
+      if (studioFf === ff) { studioFf = null; studioInfo.sending = false; }
+      // the engine reconnects by itself; the receiver waits for it again
+      if (me.want && engineIn === me) setTimeout(listen, 300);
+    });
+  };
+  listen();
+  await new Promise((r) => setTimeout(r, 400)); // ffmpeg is listening before the engine knocks
+  return { server: `rtmp://127.0.0.1:${port}/live`, key, w: out.w, h: out.h, fps: out.fps, kbps: out.kbps };
+}
+function engineIngestStop() {
+  const me = engineIn;
+  engineIn = null;
+  if (!me) return;
+  me.want = false;
+  if (me.ff) { try { me.ff.kill('SIGKILL'); } catch {} }
+  if (studioFf === me.ff) { studioFf = null; studioInfo.sending = false; }
+}
+
+// ---- the OBS engine's graphics (text, name bars, countdowns, the clock) ----
+// The engine draws these with its built-in web page source. Its pages are fetched from a small listener that
+// only this computer can reach (127.0.0.1, a free port) and only with a secret made fresh each time the app starts.
+// It hands out the graphics page, one graphic's settings, and the pictures and videos those graphics use.
+let ovServer = null, ovBase = '';
+const ovToken = crypto.randomBytes(16).toString('hex');
+function findLayer(id) {
+  for (const sc of studio.scenes || []) for (const l of sc.layers || []) if (l.id === id) return l;
+  return null;
+}
+function overlayBase() {
+  if (ovServer) return Promise.resolve(ovBase);
+  return new Promise((resolve, reject) => {
+    const srv = http.createServer((req, res) => {
+      const u = new URL(req.url || '/', 'http://x');
+      const pre = '/ov/' + ovToken + '/';
+      if (!u.pathname.startsWith(pre)) { res.writeHead(404); return res.end(); }
+      const rest = u.pathname.slice(pre.length);
+      const send = (code, type, body) => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(body); };
+      const sendFile = (f) => {
+        if (!f || !MEDIA_EXT.test(f) || !fs.existsSync(f)) return send(404, 'text/plain', '');
+        const ext = path.extname(f).slice(1).toLowerCase();
+        const type = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', avif: 'image/avif', mp4: 'video/mp4', m4v: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', mkv: 'video/x-matroska' }[ext] || 'application/octet-stream';
+        res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'max-age=60' });
+        fs.createReadStream(f).pipe(res);
+      };
+      if (rest === 'page') return fs.readFile(path.join(__dirname, 'public', 'engine-overlay.html'), (err, b) => (err ? send(404, 'text/plain', '') : send(200, 'text/html; charset=utf-8', b)));
+      if (rest === 'layer') {
+        const [w, h] = studio.shape === 'portrait' ? [1080, 1920] : studio.shape === 'square' ? [1080, 1080] : [1920, 1080];
+        return send(200, 'application/json', JSON.stringify({ layer: findLayer(String(u.searchParams.get('id') || '')), w, h }));
+      }
+      if (rest === 'file') { const p = String(u.searchParams.get('p') || ''); return sendFile(path.isAbsolute(p) ? p : ''); }
+      if (rest.startsWith('asset/')) return sendFile(path.join(ASSET_DIR, path.basename(decodeURIComponent(rest.slice(6)))));
+      send(404, 'text/plain', '');
+    });
+    srv.on('error', reject);
+    srv.listen(0, '127.0.0.1', () => {
+      ovServer = srv;
+      ovBase = `http://127.0.0.1:${srv.address().port}/ov/${ovToken}`;
+      resolve(ovBase);
+    });
+  });
+}
 
 // ---- for the desktop app (main.js) ----
 // A request from an app window, answered with no network: { method, url, headers, body } -> { status, headers, body }
@@ -1519,6 +1885,8 @@ function openPipe(p, toWindow) {
 }
 function shutdown() {
   stopAll();
+  engineIngestStop();
+  try { if (ovServer) ovServer.close(); } catch {}
   try { if (studioFf) studioFf.kill('SIGKILL'); } catch {}
   try { vcam.quit(); } catch {}
   try { loginServer && loginServer.close(); } catch {}
@@ -1534,6 +1902,21 @@ if (STANDALONE) {
 }
 
 // used by the desktop app (main.js)
-module.exports = { stopAll, shutdown, handle, openPipe, setOpenFolder: (fn) => { openFolderHook = fn; }, setShowFile: (fn) => { showFileHook = fn; },
+module.exports = { stopAll, shutdown, handle, openPipe,
+  // streaming or recording now (the computer is kept awake)
+  busy: () => Boolean(obsLive || studioFf || recActive || recorder.state().on), setOpenFolder: (fn) => { openFolderHook = fn; }, setShowFile: (fn) => { showFileHook = fn; },
   // scene collections for the menu bar
-  collections: () => ({ current: coll.current, names: collNames() }), onCollections: (fn) => { collHook = fn; } };
+  collections: () => ({ current: coll.current, names: collNames() }), onCollections: (fn) => { collHook = fn; },
+  // the Studio's scenes as saved, for the OBS engine (rev changes whenever they change)
+  studioNow: () => ({ studio, rev: studioRev, assets: ASSET_DIR }),
+  // the OBS engine's video comes in here (see engineIngest)
+  engineIngest, engineIngestStop, overlayBase,
+  // a recording made by the OBS engine: where it goes and what it is called, then "it is saved"
+  engineRecName: () => {
+    fs.mkdirSync(REC_DIR, { recursive: true });
+    const d = new Date(), two = (n) => String(n).padStart(2, '0');
+    const base = `Studio ${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}`;
+    if (gl.title) { upCfg.titles = upCfg.titles || {}; upCfg.titles[base + '.mkv'] = gl.title; saveUp(); }
+    return { dir: REC_DIR, base, name: base + '.mkv' };
+  },
+  engineRecSaved: (name) => { try { recordingSaved(name); } catch {} } };
