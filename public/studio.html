@@ -1549,11 +1549,9 @@ async function syncAudio() {
       n.hp.type = 'allpass'; n.eqL.type = 'lowshelf'; n.eqL.frequency.value = 200; n.eqM.type = 'peaking'; n.eqM.frequency.value = 1000; n.eqM.Q.value = 0.9; n.eqH.type = 'highshelf'; n.eqH.frequency.value = 4000;
       // the chain: input -> delay -> (gate listens here) -> low cut -> bass/mid/treble -> compressor -> noise gate -> limiter -> fader -> scene gate -> master
       // and after the fader a copy goes to the monitor (your headphones)
-      n.delay.connect(n.det); n.delay.connect(n.hp); n.hp.connect(n.eqL); n.eqL.connect(n.eqM); n.eqM.connect(n.eqH); n.eqH.connect(n.comp);
-      n.comp.connect(n.nz); n.nz.connect(n.lim);
       // Mono (both sides the same) and Balance (left/right), like OBS Advanced Audio Properties
       n.mono = actx.createGain(); n.mono.channelCountMode = 'explicit'; n.mono.channelInterpretation = 'speakers'; n.mono.channelCount = 2;
-      n.bal = actx.createStereoPanner(); n.lim.connect(n.mono); n.mono.connect(n.bal); n.bal.connect(n.gain);
+      n.bal = actx.createStereoPanner(); n.mono.connect(n.bal); n.bal.connect(n.gain); // applyFx joins input -> effects that are on -> here
       n.gain.connect(n.an); n.gain.connect(n.gate);
       // left and right meters: the level after the fader, split in two (a one-channel input is copied to both sides)
       n.st = actx.createGain(); n.st.channelCount = 2; n.st.channelCountMode = 'explicit'; n.st.channelInterpretation = 'speakers';
@@ -1575,6 +1573,17 @@ async function syncAudio() {
 const fxOf = (a) => (a.fx = a.fx || {});
 function applyFx(a, n) {
   const f = a.fx || {}, t = actx.currentTime;
+  { // Only the effects that are switched on are in the path. With none on, the sound goes straight from the input to the fader, unchanged.
+    const sig = [f.lowcut && f.lowcut.on, f.eq && f.eq.on, f.comp && f.comp.on, f.lim && f.lim.on].map(Boolean).join();
+    if (n.sig !== sig && n.mono) {
+      n.sig = sig;
+      [n.delay, n.hp, n.eqL, n.eqM, n.eqH, n.comp, n.nz, n.lim].forEach((x) => { try { x.disconnect(); } catch {} });
+      n.delay.connect(n.det); // the noise gate listens here
+      const path = [n.delay]; if (f.lowcut && f.lowcut.on) path.push(n.hp); if (f.eq && f.eq.on) path.push(n.eqL, n.eqM, n.eqH); if (f.comp && f.comp.on) path.push(n.comp);
+      path.push(n.nz); if (f.lim && f.lim.on) path.push(n.lim); path.push(n.mono);
+      for (let i = 0; i < path.length - 1; i++) path[i].connect(path[i + 1]);
+    }
+  }
   n.delay.delayTime.setTargetAtTime(Math.max(0, Math.min(1000, f.delay || 0)) / 1000, t, 0.02);
   const c = f.comp || {};
   if (c.on) { n.comp.threshold.value = c.thr == null ? -18 : c.thr; n.comp.ratio.value = c.ratio || 4; n.comp.knee.value = 12; n.comp.attack.value = 0.005; n.comp.release.value = 0.25; }
@@ -1636,11 +1645,11 @@ function makeFader(a, horiz) {
   show(); return { el, read };
 }
 // the sound tools of one input, in their own small window
-function openTools(a, fx) {
+function openTools(a, fx, what) {
   const m = document.createElement('div'); m.className = 'modal';
   const dlg = document.createElement('div'); dlg.className = 'dlg';
   dlg.innerHTML = '<div class="dlg-h"><b></b><button type="button" aria-label="Close">×</button></div>';
-  dlg.querySelector('b').textContent = 'Sound tools: ' + a.name;
+  dlg.querySelector('b').textContent = (what || 'Filters') + " for '" + a.name + "'";
   const body = document.createElement('div'); body.className = 'dlg-b'; body.appendChild(fx); dlg.appendChild(body); m.appendChild(dlg);
   const close = () => { m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
   dlg.querySelector('button').onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
@@ -1711,15 +1720,17 @@ function renderAudio() {
       sl.value = pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
     }
     const fx = document.createElement('div'); fx.className = 'fxbody';
+    const props = document.createElement('div'); props.className = 'fxbody';
     const row = (label, el) => { const w = document.createElement('div'); w.className = 'fxr'; const l = document.createElement('span'); l.textContent = label; w.append(l, el); fx.appendChild(w); };
     const slider = (min, max, step, val, fmt, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { o.textContent = fmt(i.value); set(Number(i.value)); save(); syncAudio(); }; w.append(i, o); return w; };
     const sw = (on, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(on); c.onchange = () => { set(c.checked); save(); syncAudio(); }; return c; };
     const F = fxOf(a);
     const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only'], ['both', 'Monitor and output']].forEach(([v, t]) => mon.add(new Option(t, v)));
     mon.value = a.monitor || 'off'; mon.onchange = () => { a.monitor = mon.value; save(); syncAudio(); gateAudio(); };
-    if (!sl.disabled) row('Input', sl);
-    row('Audio monitoring', mon);
-    row('Delay', slider(0, 1000, 10, F.delay || 0, (v) => v + ' ms', (v) => { F.delay = v; }));
+    // Properties: only the device (like OBS). Listening and delay are in Advanced Audio Properties. The effects are in Filters.
+    { const w = document.createElement('div'); w.className = 'fxr'; const l = document.createElement('span');
+      if (!sl.disabled) { l.textContent = 'Device'; w.append(l, sl); } else { l.textContent = 'This source has no device to choose.'; w.append(l); }
+      props.appendChild(w); }
     row('Low cut (rumble)', sw(F.lowcut && F.lowcut.on, (v) => { F.lowcut = { ...(F.lowcut || {}), on: v }; }));
     row('  cuts below', slider(40, 300, 5, F.lowcut && F.lowcut.hz || 80, (v) => v + ' Hz', (v) => { F.lowcut = { ...(F.lowcut || {}), hz: v }; }));
     row('Bass, mid, treble', sw(F.eq && F.eq.on, (v) => { F.eq = { ...(F.eq || {}), on: v }; }));
@@ -1733,7 +1744,7 @@ function renderAudio() {
     row('  strength', slider(1, 20, 0.5, F.comp && F.comp.ratio || 4, (v) => v + ':1', (v) => { F.comp = { ...(F.comp || {}), ratio: v }; }));
     row('Limiter (stops peaks)', sw(F.lim && F.lim.on, (v) => { F.lim = { ...(F.lim || {}), on: v }; }));
     row('  ceiling', slider(-20, 0, 1, F.lim && F.lim.thr != null ? F.lim.thr : -3, (v) => v + ' dB', (v) => { F.lim = { ...(F.lim || {}), thr: v }; }));
-    const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'sm'; tb.textContent = 'Tools'; tb.title = 'Input, headphones, delay, low cut, bass/treble, gate, compressor, limiter'; tb.onclick = () => openTools(a, fx);
+    const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'sm'; tb.textContent = 'Filters'; tb.title = 'Low cut, bass/treble, noise gate, compressor, limiter'; tb.onclick = () => openTools(a, fx, 'Filters');
     const lb = document.createElement('button'); lb.type = 'button'; lb.className = 'sm lsn' + (isHeard(a) ? ' on' : ''); lb.title = 'Listen in headphones'; lb.setAttribute('aria-label', 'Listen to ' + a.name + ' in headphones');
     lb.onclick = (e) => { e.stopPropagation(); openListen(a, lb); };
     if (HZ) {
@@ -1743,7 +1754,7 @@ function renderAudio() {
       const bt = document.createElement('div'); bt.className = 'hbt';
       m.className = a.muted ? 'mut' : ''; m.innerHTML = a.muted ? ICON_MUTE : ICON_SPK; m.title = a.muted ? 'Muted - click to hear it again' : 'Mute'; m.setAttribute('aria-label', (a.muted ? 'Unmute ' : 'Mute ') + a.name);
       lb.className = isHeard(a) ? 'on' : ''; lb.innerHTML = ICON_HP;
-      tb.className = ''; tb.textContent = '⋯'; tb.setAttribute('aria-label', 'Sound tools for ' + a.name);
+      tb.className = ''; tb.textContent = '⋯'; tb.setAttribute('aria-label', 'Filters for ' + a.name);
       bt.append(m, lb, tb); d.append(left, mid, bt);
     } else {
       // up and down (as in the design): name, loudness, fader + meters + scale, then M, listen and the volume
@@ -1760,7 +1771,7 @@ function renderAudio() {
     }
     box.appendChild(d);
     // right-click a sound input (like OBS): rename, mute, hear it in this scene, properties and filters
-    d.addEventListener('contextmenu', (e) => showAudioMenu(e, a, n, fx, on.has(a.id)));
+    d.addEventListener('contextmenu', (e) => showAudioMenu(e, a, n, fx, on.has(a.id), props));
   });
   $('#audNote').textContent = studio.audio.length ? '' : 'No sound inputs yet.';
   if (!studio.audio.length) { box.classList.remove('hz'); box.appendChild(emptyPanel('No sound yet', 'Add a microphone or a sound desk.', 'Add a microphone', () => { openAddSource(); setTimeout(() => { const b = [...document.querySelectorAll('.addsrc2 .as-list button')].find((x) => x.textContent === 'Microphone'); if (b) b.click(); }, 0); })); }
@@ -1957,7 +1968,7 @@ function openProjector(src, displayId) {
 }
 function closeCtx() { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } document.querySelectorAll('#mbar button.on').forEach((b) => b.classList.remove('on')); }
 // the right-click menu on a sound input in the Audio Mixer
-function showAudioMenu(ev, a, nameEl, fx, inScene) {
+function showAudioMenu(ev, a, nameEl, fx, inScene, props) {
   ev.preventDefault(); closeCtx();
   const m = document.createElement('div'); m.className = 'ctxm'; m.setAttribute('role', 'menu');
   const head = document.createElement('div'); head.className = 'ctxh'; head.textContent = a.name; m.appendChild(head);
@@ -1978,7 +1989,8 @@ function showAudioMenu(ev, a, nameEl, fx, inScene) {
     i.onkeydown = (e) => { if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false); }; i.onblur = () => finish(true);
   });
   sep();
-  item('Properties and filters...', () => openTools(a, fx));
+  item('Filters', () => openTools(a, fx, 'Filters'));
+  item('Properties', () => openTools(a, props, 'Properties'));
   item('Advanced Audio Properties...', () => openAdvancedAudio());
   document.body.appendChild(m); ctxMenu = m;
   const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';

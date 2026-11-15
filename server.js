@@ -83,6 +83,7 @@ let recActive = 0; // Studio recordings being written now
 const recorder = createRecorder({ ffmpeg: FFMPEG, input: HUB_IN, dir: REC_DIR, feed: (stdin) => hub.subscribe(stdin) });
 let openFolderHook = null;
 let showFileHook = null; // shows one file in the folder (Explorer or Finder)
+let trashHook = null; // puts a file in the Recycle Bin (it can be taken back out)
 const recView = () => ({ ...recorder.state(), auto: recCfg.auto });
 
 // ---- chat (read only) ----
@@ -653,7 +654,7 @@ app.post('/api/recording/open', (req, res) => {
 
 // ---- Recordings page: every recording, make MP4, play, show, and upload to YouTube ----
 const UP_FILE = path.join(DATA_DIR, 'uploads.json');
-let upCfg = { auto: false, privacy: 'unlisted', done: {}, titles: {} }; // done: file name -> { id, privacy, at }; titles: file name -> the stream title when it was recorded
+let upCfg = { auto: false, privacy: 'unlisted', after: 'keep', done: {}, titles: {} }; // done: file name -> { id, privacy, at }; titles: file name -> the stream title when it was recorded
 try { upCfg = { ...upCfg, ...JSON.parse(fs.readFileSync(UP_FILE, 'utf8')) }; } catch {}
 const saveUp = () => { try { fs.writeFileSync(UP_FILE, JSON.stringify(upCfg, null, 2)); } catch {} };
 const recJobs = new Map(); // file name -> { kind: 'mp4' | 'upload', pct, error }
@@ -695,6 +696,7 @@ async function runUploads() {
       try {
         const id = await ytUpload(f, name, upCfg.privacy || 'unlisted', (pct) => { job.pct = pct; });
         upCfg.done[name] = { id, privacy: upCfg.privacy || 'unlisted', at: Date.now() }; saveUp(); recJobs.delete(name);
+        if (upCfg.after === 'done' || upCfg.after === 'trash') tidyRecording(name, upCfg.after).catch(() => {}); // after a finished upload, as chosen on the Recordings page
         logHealth('Recording ' + name + ' is on YouTube (' + (upCfg.privacy || 'unlisted') + ').');
       } catch (e) { job.error = plain(e.message); job.pct = 0; sendAlert('stream', 'YouTube upload', 'could not upload ' + name + ': ' + plain(e.message)); }
     }
@@ -738,14 +740,35 @@ async function ytUpload(file, name, privacy, onPct) {
     throw new Error('The upload did not finish');
   } finally { try { fs.closeSync(fd); } catch {} }
 }
-app.get('/api/recordings', (req, res) => res.json({ folder: REC_DIR, free: freeSpace(), auto: upCfg.auto, privacy: upCfg.privacy, youtube: Boolean(yt.refreshToken), files: recList() }));
+app.get('/api/recordings', (req, res) => res.json({ folder: REC_DIR, free: freeSpace(), auto: upCfg.auto, privacy: upCfg.privacy, after: upCfg.after || 'keep', canTrash: Boolean(trashHook), youtube: Boolean(yt.refreshToken), files: recList() }));
 app.put('/api/recordings', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const b = req.body || {};
   if (typeof b.auto === 'boolean') upCfg.auto = b.auto;
   if (['public', 'private', 'unlisted'].includes(b.privacy)) upCfg.privacy = b.privacy;
-  saveUp(); res.json({ ok: true, auto: upCfg.auto, privacy: upCfg.privacy });
+  if (['keep', 'done', 'trash'].includes(b.after)) upCfg.after = b.after;
+  saveUp(); res.json({ ok: true, auto: upCfg.auto, privacy: upCfg.privacy, after: upCfg.after });
 });
+// Tidy up a recording without leaving the app: move it into a "Done" folder inside the recordings folder, or put it in the Recycle Bin
+// (so it can still be taken back). Never while it is still being written, uploaded or copied.
+const DONE_DIR = path.join(REC_DIR, 'Done');
+async function tidyRecording(name, how) {
+  const f = recPath(name); if (!f) return 'That recording was not found';
+  if (recJobs.get(name) && !recJobs.get(name).error) return 'Wait until its upload or MP4 copy is finished';
+  if (upQueue.includes(name)) return 'It is waiting to upload';
+  try { if (Date.now() - fs.statSync(f).mtimeMs < 15000) return 'It is still being recorded'; } catch { return 'That recording was not found'; }
+  try {
+    if (how === 'done') {
+      fs.mkdirSync(DONE_DIR, { recursive: true });
+      let to = path.join(DONE_DIR, path.basename(f)); for (let i = 2; fs.existsSync(to); i++) to = path.join(DONE_DIR, path.basename(f).replace(/(\.[^.]+)$/, ' (' + i + ')$1'));
+      fs.renameSync(f, to);
+    } else if (how === 'trash') {
+      if (!trashHook) return 'Deleting works in the desktop app only';
+      await trashHook(f);
+    } else return 'Unknown';
+  } catch (e) { return 'Could not do that: ' + e.message; }
+  recJobs.delete(name); return '';
+}
 // copy a recording to MP4 without encoding again (same quality, fast), with progress
 function remux(name) {
   const f = recPath(name); if (!f || !/\.mkv$/i.test(name) || recJobs.get(name)) return;
@@ -765,6 +788,7 @@ app.post('/api/recordings/:act', (req, res) => {
   if (act === 'play') { if (!openFolderHook) return res.json({ error: 'Open it yourself: ' + f }); openFolderHook(f); return res.json({ ok: true }); }
   if (act === 'show') { if (showFileHook) showFileHook(f); else if (openFolderHook) openFolderHook(REC_DIR); return res.json({ ok: true }); }
   if (act === 'upload') { if (!yt.refreshToken) return res.status(400).json({ error: 'Connect YouTube first (Go Live page)' }); queueUpload(name); return res.json({ ok: true }); }
+  if (act === 'done' || act === 'trash') { tidyRecording(name, act).then((err) => (err ? res.status(400).json({ error: err }) : res.json({ ok: true }))); return; }
   if (act === 'mp4') { if (!/\.mkv$/i.test(name)) return res.status(400).json({ error: 'It is already an MP4' }); remux(name); return res.json({ ok: true }); }
   res.status(404).json({ error: 'Unknown' });
 });
@@ -1904,7 +1928,7 @@ if (STANDALONE) {
 // used by the desktop app (main.js)
 module.exports = { stopAll, shutdown, handle, openPipe,
   // streaming or recording now (the computer is kept awake)
-  busy: () => Boolean(obsLive || studioFf || recActive || recorder.state().on), setOpenFolder: (fn) => { openFolderHook = fn; }, setShowFile: (fn) => { showFileHook = fn; },
+  busy: () => Boolean(obsLive || studioFf || recActive || recorder.state().on), setOpenFolder: (fn) => { openFolderHook = fn; }, setShowFile: (fn) => { showFileHook = fn; }, setTrash: (fn) => { trashHook = fn; },
   // scene collections for the menu bar
   collections: () => ({ current: coll.current, names: collNames() }), onCollections: (fn) => { collHook = fn; },
   // the Studio's scenes as saved, for the OBS engine (rev changes whenever they change)

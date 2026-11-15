@@ -583,6 +583,7 @@ async function start() {
         else if (!busy && keep !== null) { try { powerSaveBlocker.stop(keep); } catch {} keep = null; } }, 5000); if (t.unref) t.unref(); }
     relay.setOpenFolder((p) => shell.openPath(p));
     if (relay.setShowFile) relay.setShowFile((p) => shell.showItemInFolder(p));
+    if (relay.setTrash) relay.setTrash((p) => shell.trashItem(p)); // the Recycle Bin: it can be taken back out
     if (relay.onCollections) relay.onCollections(() => setMenu()); // the menu shows the scene collections
   } catch (err) {
     dialog.showErrorBox('Multistream cannot start', require('./public/plain').plain(String(err && err.message ? err.message : err)));

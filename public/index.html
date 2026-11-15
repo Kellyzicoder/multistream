@@ -1183,6 +1183,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
     <span class="tile-yt2" id="rcYt"></span>
     <div class="rc-a1"><b>Upload to YouTube when the stream ends</b><small id="rcAutoN"></small></div>
     <label class="rc-who">Who can watch<select id="rcPriv"><option value="unlisted">Unlisted</option><option value="private">Private</option><option value="public">Public</option></select></label>
+    <label class="rc-who">After uploading<select id="rcAfter"><option value="keep">Keep the file</option><option value="done">Move it to the Done folder</option><option value="trash">Delete it (Recycle Bin)</option></select></label>
     <button type="button" class="tg2" id="rcAuto" role="switch" aria-label="Upload to YouTube when the stream ends"></button>
   </div>
 </section>
@@ -2665,19 +2666,25 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       if (/\.mkv$/i.test(f.name) && !f.hasMp4 && !(f.job && f.job.kind === 'mp4' && !f.job.error)) btn('Make MP4', () => act('mp4', f.name));
       // upload this one recording to YouTube by hand (the same privacy as chosen at the bottom of this page)
       if (r.youtube && !f.youtube && !f.queued && !(f.job && !f.job.error)) btn(f.job && f.job.error ? 'Try the upload again' : 'Upload to YouTube', () => { if (confirm('Upload "' + title(f) + '" to YouTube as ' + (PRIV[r.privacy] || 'Unlisted') + '?')) act('upload', f.name); });
+      // tidy up without leaving the app
+      if (!(f.job && !f.job.error) && !f.queued) {
+        btn('Move to Done', () => act('done', f.name));
+        if (r.canTrash) btn('Delete', () => { if (confirm('Delete "' + title(f) + '"? It goes to the Recycle Bin.' + (f.youtube ? '' : ' It is NOT on YouTube yet.'))) act('trash', f.name); });
+      }
       c.appendChild(bt); box.appendChild(c);
     });
     if (!(r.files || []).length) box.innerHTML = '<div class="rc-empty">No recordings yet. Press Start recording in the Production.</div>';
     $('#rcYt').innerHTML = tileHTML('yt');
     const tg = $('#rcAuto'); tg.classList.toggle('on', Boolean(r.auto)); tg.setAttribute('aria-checked', String(Boolean(r.auto)));
     $('#rcAutoN').textContent = r.youtube ? '' : 'Connect YouTube first (Settings → Stream).';
-    $('#rcPriv').value = r.privacy || 'unlisted';
+    $('#rcPriv').value = r.privacy || 'unlisted'; $('#rcAfter').value = r.after || 'keep'; $('#rcAfter').querySelector('[value=trash]').hidden = !r.canTrash;
   }
   async function tick() { try { data = await api('/api/recordings'); } catch { return; } draw(); }
   $('#rcOpen').onclick = () => api('/api/recording/open', 'POST').then((r) => { if (r && r.error) alert(r.error); });
   $('#rcRemux').onclick = () => { if (!confirm('Copy every MKV recording to an MP4 (same quality, the MKV is kept)?')) return; api('/api/recordings/mp4-all', 'POST').then(tick); };
   $('#rcAuto').onclick = () => api('/api/recordings', 'PUT', { auto: !$('#rcAuto').classList.contains('on') }).then(tick);
   $('#rcPriv').onchange = () => api('/api/recordings', 'PUT', { privacy: $('#rcPriv').value }).then(tick);
+  $('#rcAfter').onchange = () => api('/api/recordings', 'PUT', { after: $('#rcAfter').value }).then(tick);
   XPAGES.rec = { title: 'Recordings', el: 'recView', open() { if (!t) { tick(); t = setInterval(tick, 2000); } }, close() { clearInterval(t); t = null; } };
 })();
 // Stream health: how the stream is doing right now, updated every 2 seconds while the page is open
