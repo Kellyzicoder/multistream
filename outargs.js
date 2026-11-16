@@ -21,11 +21,13 @@ function parseOut(q) {
   const h = heightOf(q.get('h'));
   const fps = fpsOf(q.get('fps'));
   const kbps = Math.min(60000, Math.max(1000, Math.round(Number(q.get('kbps'))) || defaultKbps(h, fps)));
+  // the sound's bitrate (Settings → Output → Audio bitrate), one of the usual ones; not given: 128
+  const ab = Number(q.get('abps')), abps = [96, 128, 160, 192, 256, 320].includes(ab) ? { abps: ab } : {};
   // a tall (9:16) or square scene collection: "1080p" means 1080 wide
   const shape = q.get('shape');
-  if (shape === 'portrait') return { h: widthFor(h), w: h, fps, kbps, res: h, shape };
-  if (shape === 'square') return { h, w: h, fps, kbps, res: h, shape };
-  return { h, w: widthFor(h), fps, kbps };
+  if (shape === 'portrait') return { h: widthFor(h), w: h, fps, kbps, res: h, shape, ...abps };
+  if (shape === 'square') return { h, w: h, fps, kbps, res: h, shape, ...abps };
+  return { h, w: widthFor(h), fps, kbps, ...abps };
 }
 const resOf = (out) => out.res || out.h;
 
@@ -38,11 +40,12 @@ function label(out) {
 // copy = true (encode once, the normal case): the page already encoded H.264 at the right size, so ffmpeg only
 // wraps it. Audio is still made AAC, because FLV does not take the Opus audio the browser makes.
 function ingestArgs(encKey, out, copy = false) {
+  const ab = (out.abps || 128) + 'k';
   if (copy) return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-c:v', 'copy',
-    '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'];
+    '-c:a', 'aac', '-b:a', ab, '-ar', '44100', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'];
   return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0',
     '-vf', `scale=${out.w}:${out.h}`, ...videoArgs(encKey, out.kbps, out.fps * 2), '-pix_fmt', 'yuv420p', '-r', String(out.fps),
-    '-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'];
+    '-c:a', 'aac', '-b:a', ab, '-ar', '44100', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'];
 }
 
 // the Studio's video -> a file

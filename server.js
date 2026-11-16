@@ -75,7 +75,7 @@ save();
 const REC_DIR = process.env.MULTISTREAM_RECORDINGS || path.join(DATA_DIR, 'recordings');
 const REC_FILE = path.join(DATA_DIR, 'recording.json');
 let recCfg = { auto: false };
-try { recCfg = { auto: Boolean(JSON.parse(fs.readFileSync(REC_FILE, 'utf8')).auto) }; } catch {}
+try { const j = JSON.parse(fs.readFileSync(REC_FILE, 'utf8')); recCfg = { auto: Boolean(j.auto), remux: j.remux !== false }; } catch {}
 // The small ffmpeg programs that only pass video on (no encoding) get a little more priority, so a busy computer
 // (OBS, Zoom, the Presenter) does not hold the stream back. They use very little processor, so nothing else is slowed.
 function liftPriority(p) { try { if (p && p.pid) os.setPriority(p.pid, os.constants.priority.PRIORITY_ABOVE_NORMAL); } catch {} }
@@ -84,7 +84,7 @@ const recorder = createRecorder({ ffmpeg: FFMPEG, input: HUB_IN, dir: REC_DIR, f
 let openFolderHook = null;
 let showFileHook = null; // shows one file in the folder (Explorer or Finder)
 let trashHook = null; // puts a file in the Recycle Bin (it can be taken back out)
-const recView = () => ({ ...recorder.state(), auto: recCfg.auto });
+const recView = () => ({ ...recorder.state(), auto: recCfg.auto, remux: recCfg.remux !== false });
 
 // ---- chat (read only) ----
 const chat = createChat({
@@ -639,13 +639,14 @@ app.post('/api/recording/start', (req, res) => {
 });
 app.post('/api/recording/stop', async (req, res) => { await recorder.stop(); res.json(recView()); });
 app.put('/api/recording', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
-  recCfg = { auto: Boolean((req.body || {}).auto) };
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
+  const b = req.body || {};
+  recCfg = { auto: typeof b.auto === 'boolean' ? b.auto : Boolean(recCfg.auto), remux: typeof b.remux === 'boolean' ? b.remux : recCfg.remux !== false };
   try { fs.writeFileSync(REC_FILE, JSON.stringify(recCfg)); } catch {}
   res.json(recView());
 });
 app.post('/api/recording/open', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   try { fs.mkdirSync(REC_DIR, { recursive: true }); } catch {}
   if (!openFolderHook) return res.json({ error: 'Open this folder yourself: ' + REC_DIR });
   openFolderHook(REC_DIR);
@@ -678,8 +679,11 @@ function recList() {
   }).filter(Boolean).sort((a, b) => b.at - a.at);
 }
 function freeSpace() { try { const s = fs.statfsSync(REC_DIR); return s.bavail * s.bsize; } catch { return null; } }
+// a recording has finished: like OBS's "Automatically remux to MP4", an MP4 copy is made (same quality, takes a moment;
+// the .mkv stays, as in OBS), then it is uploaded if that is switched on
 function recordingSaved(name) {
-  if (upCfg.auto && yt.refreshToken) queueUpload(name);
+  const up = () => { if (upCfg.auto && yt.refreshToken) queueUpload(name); };
+  if (recCfg.remux !== false && /\.mkv$/i.test(name)) remux(name, up); else up();
 }
 function queueUpload(name) {
   const j = recJobs.get(name);
@@ -696,7 +700,7 @@ async function runUploads() {
       try {
         const id = await ytUpload(f, name, upCfg.privacy || 'unlisted', (pct) => { job.pct = pct; });
         upCfg.done[name] = { id, privacy: upCfg.privacy || 'unlisted', at: Date.now() }; saveUp(); recJobs.delete(name);
-        if (upCfg.after === 'done' || upCfg.after === 'trash') tidyRecording(name, upCfg.after).catch(() => {}); // after a finished upload, as chosen on the Recordings page
+        if (upCfg.after === 'done' || upCfg.after === 'trash') { const twin = name.replace(/\.mkv$/i, '.mp4'); tidyRecording(name, upCfg.after).then(() => (twin !== name && recPath(twin) ? tidyRecording(twin, upCfg.after) : '')).catch(() => {}); } // after a finished upload, as chosen on the Recordings page
         logHealth('Recording ' + name + ' is on YouTube (' + (upCfg.privacy || 'unlisted') + ').');
       } catch (e) { job.error = plain(e.message); job.pct = 0; sendAlert('stream', 'YouTube upload', 'could not upload ' + name + ': ' + plain(e.message)); }
     }
@@ -770,14 +774,14 @@ async function tidyRecording(name, how) {
   recJobs.delete(name); return '';
 }
 // copy a recording to MP4 without encoding again (same quality, fast), with progress
-function remux(name) {
-  const f = recPath(name); if (!f || !/\.mkv$/i.test(name) || recJobs.get(name)) return;
+function remux(name, then) {
+  const f = recPath(name); if (!f || !/\.mkv$/i.test(name) || recJobs.get(name)) { if (then) then(); return; }
   const out = f.replace(/\.mkv$/i, '.mp4'), job = { kind: 'mp4', pct: 0, error: '' }; recJobs.set(name, job);
   const secs = durCache.get(f + '|' + fs.statSync(f).size) || 0;
   const p = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-y', '-i', f, '-map', '0', '-c', 'copy', '-movflags', '+faststart', '-progress', 'pipe:1', out], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
   p.stdout.on('data', makeProgressParser((b) => { const us = Number(b.out_time_us || b.out_time_ms); if (secs && us) job.pct = Math.min(99, Math.floor(us / 1e6 / secs * 100)); }));
   p.on('error', (e) => { job.error = e.message; });
-  p.on('close', (code) => { if (code === 0) recJobs.delete(name); else { job.error = 'Could not make the MP4'; try { fs.unlinkSync(out); } catch {} } });
+  p.on('close', (code) => { if (code === 0) recJobs.delete(name); else { job.error = 'Could not make the MP4'; try { fs.unlinkSync(out); } catch {} } if (then) then(); });
 }
 app.post('/api/recordings/:act', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
@@ -911,7 +915,7 @@ app.post('/api/golive/title', async (req, res) => {
 });
 app.get('/api/golive', (req, res) => res.json({ title: gl.title, description: gl.description || '', hasThumbnail: Boolean(thumbFile()) }));
 app.put('/api/golive/thumbnail', express.raw({ type: '*/*', limit: '10mb' }), (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const b = req.body;
   const type = Buffer.isBuffer(b) && b.length > 8
     ? (b.slice(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])) ? 'image/png' : b.slice(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])) ? 'image/jpeg' : '')
@@ -922,10 +926,60 @@ app.put('/api/golive/thumbnail', express.raw({ type: '*/*', limit: '10mb' }), (r
     for (const f of Object.values(THUMBS)) fs.rmSync(f, { force: true });
     fs.writeFileSync(THUMBS[type], b);
   } catch (e) { return res.status(500).json({ error: e.message }); }
-  res.json({ ok: true });
+  thumbToLive().then((errs) => res.json({ ok: true, live: Boolean(session.youtube || session.facebook), error: errs.join(' · ') }));
 });
+// a new picture while live: YouTube and Facebook get it straight away
+async function thumbToLive() {
+  const errs = [];
+  if (session.youtube && yt.refreshToken) { try { await ytSetThumbnail(session.youtube); } catch (e) { errs.push('YouTube: ' + e.message); } }
+  if (session.facebook && fb.token) { try { await fbSetThumbnail(session.facebook, fb.token); } catch (e) { errs.push('Facebook: ' + e.message); } }
+  for (const a of session.fbAlso || []) { const p = (fb.also || []).find((x) => x.pageId === a.pageId); if (p) { try { await fbSetThumbnail(a.id, p.token); } catch (e) { errs.push('Facebook (' + (p.pageName || p.pageId) + '): ' + e.message); } } }
+  return errs;
+}
+// ---- Saved stream details: a title, a description and a thumbnail picture to use again another time ----
+const SAVED_DIR = path.join(DATA_DIR, 'saved-details'), SAVED_FILE = path.join(SAVED_DIR, 'saved.json');
+let savedGl = []; try { savedGl = JSON.parse(fs.readFileSync(SAVED_FILE, 'utf8')) || []; } catch {}
+const savedThumb = (id) => ['png', 'jpg'].map((x) => path.join(SAVED_DIR, id + '.' + x)).find((f) => fs.existsSync(f)) || '';
+function writeSaved() { try { fs.mkdirSync(SAVED_DIR, { recursive: true }); fs.writeFileSync(SAVED_FILE, JSON.stringify(savedGl, null, 2)); } catch {} }
+const savedView = () => savedGl.map((x) => ({ id: x.id, name: x.name, title: x.title, desc: x.desc || '', hasThumb: Boolean(savedThumb(x.id)) }));
+app.get('/api/golive/saved', (req, res) => res.json({ list: savedView() }));
+app.post('/api/golive/saved', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
+  const b = req.body || {}, title = String(b.title || '').trim().slice(0, 100), desc = String(b.desc || '').trim().slice(0, 5000);
+  if (!title) return res.status(400).json({ error: 'Type a title first' });
+  const name = String(b.name || title).trim().slice(0, 40);
+  const old = savedGl.find((x) => x.name === name), id = old ? old.id : crypto.randomUUID().slice(0, 8);
+  try {
+    fs.mkdirSync(SAVED_DIR, { recursive: true });
+    const t = b.thumb === false ? null : thumbFile();
+    ['png', 'jpg'].forEach((x) => fs.rmSync(path.join(SAVED_DIR, id + '.' + x), { force: true }));
+    if (t) fs.copyFileSync(t.file, path.join(SAVED_DIR, id + (t.type === 'image/png' ? '.png' : '.jpg')));
+  } catch (e) { return res.status(500).json({ error: e.message }); }
+  savedGl = savedGl.filter((x) => x.id !== id); savedGl.push({ id, name, title, desc });
+  while (savedGl.length > 20) { const gone = savedGl.shift(); ['png', 'jpg'].forEach((x) => fs.rmSync(path.join(SAVED_DIR, gone.id + '.' + x), { force: true })); }
+  writeSaved(); res.json({ ok: true, list: savedView() });
+});
+// use a saved one: its title and description, and its picture becomes the thumbnail (no picture saved: the thumbnail stays as it is)
+app.post('/api/golive/saved/:id/use', async (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
+  const x = savedGl.find((v) => v.id === req.params.id); if (!x) return res.status(404).json({ error: 'Not found' });
+  gl.title = x.title; gl.description = x.desc || ''; try { fs.writeFileSync(GL_FILE, JSON.stringify(gl, null, 2)); } catch {}
+  const f = savedThumb(x.id); let error = '';
+  if (f) {
+    try { for (const t of Object.values(THUMBS)) fs.rmSync(t, { force: true }); fs.copyFileSync(f, THUMBS[/\.png$/i.test(f) ? 'image/png' : 'image/jpeg']); } catch (e) { error = e.message; }
+    if (!error) error = (await thumbToLive()).join(' · ');
+  }
+  res.json({ ok: true, title: x.title, desc: x.desc || '', hasThumb: Boolean(f), error });
+});
+app.delete('/api/golive/saved/:id', (req, res) => {
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
+  const id = req.params.id; savedGl = savedGl.filter((x) => x.id !== id);
+  ['png', 'jpg'].forEach((x) => { try { fs.rmSync(path.join(SAVED_DIR, id + '.' + x), { force: true }); } catch {} });
+  writeSaved(); res.json({ ok: true, list: savedView() });
+});
+app.get('/api/golive/saved/:id/thumb', (req, res) => { const f = /^[\w-]{1,40}$/.test(req.params.id) ? savedThumb(req.params.id) : ''; f ? res.sendFile(f) : res.status(404).end(); });
 app.delete('/api/golive/thumbnail', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   for (const f of Object.values(THUMBS)) { try { fs.rmSync(f, { force: true }); } catch {} }
   res.json({ ok: true });
 });
@@ -963,7 +1017,7 @@ function fbView() {
 let fbLogin = null; // while waiting: { code, until }; after: { pages: [{ id, name, access_token }] }
 const fbApp = () => ({ id: String(fb.appId || process.env.MS_FB_APP_ID || '').trim(), ct: String(fb.clientToken || process.env.MS_FB_CLIENT_TOKEN || '').trim() });
 app.put('/api/facebook/app', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const appId = String((req.body || {}).appId || '').trim(), ct = String((req.body || {}).clientToken || '').trim();
   if (!/^\d{5,20}$/.test(appId)) return res.status(400).json({ error: 'The App ID is only numbers' });
   if (ct && !/^[0-9a-f]{16,64}$/i.test(ct)) return res.status(400).json({ error: 'The client token is letters a-f and numbers (App settings, Advanced)' });
@@ -971,7 +1025,7 @@ app.put('/api/facebook/app', (req, res) => {
   res.json(fbView());
 });
 app.post('/api/facebook/login', async (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Sign in on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Sign in on the main computer' });
   const a = fbApp();
   if (!a.id || !a.ct) return res.status(400).json({ error: 'Add the Meta app ID and client token first (below)' });
   try {
@@ -987,7 +1041,7 @@ app.post('/api/facebook/login', async (req, res) => {
   } catch { res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' }); }
 });
 app.get('/api/facebook/login', async (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Sign in on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Sign in on the main computer' });
   if (!fbLogin) return res.json({ idle: true });
   const pages = () => fbLogin.pages.map((p) => ({ id: p.id, name: p.name }));
   if (fbLogin.pages) return res.json({ done: true, pages: pages() });
@@ -1032,13 +1086,13 @@ app.get('/api/facebook/login', async (req, res) => {
 const fbPagesNow = () => (fbLogin && fbLogin.pages ? fbLogin.pages : fb.known || []);
 // Go Live: the Pages you can stream to, and which are added (main, extra) or not
 app.get('/api/facebook/pages', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   const also = new Set((fb.also || []).map((x) => x.pageId));
   res.json({ signedIn: fbPagesNow().length > 0, pages: fbPagesNow().map((p) => ({ id: p.id, name: p.name || '', added: p.id === fb.pageId ? 'main' : also.has(p.id) ? 'also' : '' })) });
 });
 // Go Live: remove the main Page. The next extra Page (if any) becomes the main one.
 app.delete('/api/facebook/main', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   if (session.facebook) return res.status(400).json({ error: 'Stop streaming first.' });
   const next = (fb.also || [])[0];
   if (next) { fb = { ...fb, pageId: next.pageId, pageName: next.pageName, token: next.token }; fb.also = fb.also.slice(1); const d = destinations.find((x) => x.fbPage === next.pageId); if (d) { stopDestination(d.id); status.delete(d.id); destinations = destinations.filter((x) => x !== d); save(); } }
@@ -1047,7 +1101,7 @@ app.delete('/api/facebook/main', (req, res) => {
 });
 // Go Live: add one Page. The first one becomes the main Page; the others stream the same video.
 app.post('/api/facebook/pages/:id', async (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   const p = fbPagesNow().find((x) => x.id === req.params.id);
   if (!p) return res.status(404).json({ error: 'That Page is not in the list. Sign in with Facebook again.' });
   if (p.id === fb.pageId || (fb.also || []).some((x) => x.pageId === p.id)) return res.json(fbView());
@@ -1107,6 +1161,7 @@ async function fbStartAlso(p) {
   session.fbAlso = session.fbAlso.filter((a) => a.pageId !== p.pageId);
   session.fbAlso.push({ pageId: p.pageId, id: l.id, destId: pd.id, link: l.link });
   startDestination(pd);
+  fbSetThumbnail(l.id, p.token).catch((e) => logHealth('Facebook (' + (p.pageName || p.pageId) + ') did not take the thumbnail: ' + e.message));
 }
 async function fbEndAlso(pageId) {
   const a = session.fbAlso.find((x) => x.pageId === pageId);
@@ -1115,6 +1170,18 @@ async function fbEndAlso(pageId) {
   stopDestination(a.destId);
   const p = (fb.also || []).find((x) => x.pageId === pageId);
   return p ? fbEndLive(a.id, p.token) : '';
+}
+// The thumbnail on a Facebook live: the live video has a normal video behind it, and that video takes the picture.
+async function fbSetThumbnail(liveId, token) {
+  const t = thumbFile(); if (!t || !liveId || !token) return;
+  const j = await fetch(`${GRAPH}/${liveId}?${new URLSearchParams({ fields: 'video', access_token: token })}`).then((x) => x.json()).catch(() => ({}));
+  const vid = j && j.video && j.video.id; if (!vid) throw new Error((j.error && j.error.message) || 'Facebook did not give the video');
+  const form = new FormData();
+  form.append('access_token', token); form.append('is_preferred', 'true');
+  form.append('source', new Blob([fs.readFileSync(t.file)], { type: t.type }), path.basename(t.file));
+  const r = await fetch(`${GRAPH}/${vid}/thumbnails`, { method: 'POST', body: form });
+  const k = await r.json().catch(() => ({}));
+  if (!r.ok || k.error) throw new Error((k.error && k.error.message) || 'Facebook did not take the thumbnail');
 }
 async function fbEndLive(id, token) {
   const r = await fetch(`${GRAPH}/${id}`, { method: 'POST', body: new URLSearchParams({ access_token: token, end_live_video: 'true' }) });
@@ -1135,7 +1202,7 @@ app.get('/api/facebook', (req, res) => {
 });
 
 app.put('/api/facebook', async (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const pageId = String((req.body || {}).pageId || '').trim();
   const token = String((req.body || {}).token || '').trim();
   if (!/^\d+$/.test(pageId)) return res.status(400).json({ error: 'The Page ID is only numbers' });
@@ -1169,7 +1236,7 @@ app.put('/api/facebook', async (req, res) => {
 
 // one extra Page switched on or off on Go Live (during a live it starts or ends that Page's live straight away)
 app.put('/api/facebook/also/:pageId', async (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const p = (fb.also || []).find((x) => x.pageId === req.params.pageId);
   if (!p) return res.status(404).json({ error: 'That Page is not saved' });
   p.on = Boolean((req.body || {}).on);
@@ -1183,7 +1250,7 @@ app.put('/api/facebook/also/:pageId', async (req, res) => {
 
 // one extra Page's own title and description (empty = the same as the main Page). During a live, Facebook is told too.
 app.put('/api/facebook/also/:pageId/details', async (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const p = (fb.also || []).find((x) => x.pageId === req.params.pageId);
   if (!p) return res.status(404).json({ error: 'That Page is not saved' });
   const b = req.body || {};
@@ -1204,7 +1271,7 @@ app.put('/api/facebook/also/:pageId/details', async (req, res) => {
 
 // remove one extra Page (during a live, its live ends first)
 app.delete('/api/facebook/also/:pageId', async (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const p = (fb.also || []).find((x) => x.pageId === req.params.pageId);
   if (!p) return res.status(404).json({ error: 'That Page is not saved' });
   let warning = '';
@@ -1234,6 +1301,8 @@ app.post('/api/facebook/live', async (req, res) => {
   startDestination(d);
   session.fbLink = main.link;
   chat.startFacebook(main.id);
+  let thumbnailError = '';
+  try { await fbSetThumbnail(main.id, fb.token); } catch (e) { thumbnailError = e.message; }
   // the extra Pages that are switched on: the same video, each with its own live and its own channel
   session.fbMeta = { status, title, description };
   const also = [];
@@ -1242,7 +1311,7 @@ app.post('/api/facebook/live', async (req, res) => {
     catch (e) { also.push({ page: p.pageName, ok: false, error: e.message }); }
   }
   const failed = also.filter((x) => !x.ok);
-  res.json({ ok: true, liveVideoId: main.id, also, warning: failed.length ? failed.map((x) => x.page + ': ' + x.error).join('; ') : '' });
+  res.json({ ok: true, liveVideoId: main.id, also, thumbnailError, warning: failed.length ? failed.map((x) => x.page + ': ' + x.error).join('; ') : '' });
 });
 
 // ---- YouTube: sign in once, then "Go live on YouTube" ----
@@ -1300,7 +1369,7 @@ app.get('/api/youtube', (req, res) => {
 
 // the file you download from Google (the OAuth client .json). Only the computer itself can set this.
 app.put('/api/youtube/client', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const f = (req.body || {}).file || {};
   const c = f.installed || f.web || {};
   if (!c.client_id || !c.client_secret) return res.status(400).json({ error: 'This does not look like the file Google gave you' });
@@ -1312,7 +1381,7 @@ app.put('/api/youtube/client', (req, res) => {
 });
 
 app.get('/api/youtube/login', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   if (!yt.clientId) return res.status(400).json({ error: 'Choose the file from Google first' });
   ytLoginState = crypto.randomBytes(16).toString('hex');
   ytVerifier = crypto.randomBytes(32).toString('base64url'); // PKCE: only this app can use the code Google sends back
@@ -1564,7 +1633,7 @@ app.get('/api/collections/file', (req, res) => {
   try { res.json({ multistream: 'scene collection', name: n, ...collOf(JSON.parse(fs.readFileSync(collPath(n), 'utf8'))) }); } catch { res.status(404).json({ error: 'Not found' }); }
 });
 app.post('/api/collections', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Change scene collections on the church PC' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Change scene collections on the main computer' });
   const b = req.body || {}, act = String(b.do || ''), name = String(b.name || '').trim().slice(0, 60);
   const names = collNames();
   const stash = () => { fs.mkdirSync(COLL_DIR, { recursive: true }); fs.writeFileSync(collPath(coll.current), JSON.stringify(collOf(studio))); };
@@ -1605,7 +1674,7 @@ app.post('/api/collections', (req, res) => {
   res.json({ ok: true, current: coll.current, names: collNames(), rev: studioRev });
 });
 app.put('/api/studio', (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Edit scenes on the church PC' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Edit scenes on the main computer' });
   const b = req.body || {};
   if (Array.isArray(b.scenes)) studio.scenes = b.scenes.slice(0, 60);
   if (Array.isArray(b.audio)) studio.audio = b.audio.slice(0, 40);
@@ -1760,7 +1829,7 @@ studioRecWss.on('connection', (w, req) => {
 const vcam = createVcam({ ffmpeg: FFMPEG });
 app.get('/api/vcam', (req, res) => res.json(vcam.state()));
 app.post('/api/vcam/install', async (req, res) => {
-  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the church computer' });
+  if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   res.json(await vcam.install(Boolean((req.body || {}).remove)));
 });
 const vcamWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });

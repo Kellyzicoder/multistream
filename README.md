@@ -14,14 +14,14 @@ You need Node.js (version 18 or newer) from nodejs.org.
 2. Run `npm install` (one time).
 3. Run `npm run app`. A window opens with the dashboard.
 
-## Make the Windows installer for the church PC
+## Make the Windows installer for the main computer
 
 Build the Windows installer on a Windows PC. The ffmpeg that comes with the app is downloaded for the computer where you run `npm install`, so a Windows installer has to be built on Windows.
 
 1. On a Windows PC, install Node.js and open this folder in a terminal (PowerShell).
 2. Run `npm install`
 3. Run `npm run dist`
-4. The installer appears in the `dist` folder (a file ending in `.exe`). Copy it to the church PC and run it.
+4. The installer appears in the `dist` folder (a file ending in `.exe`). Copy it to the main computer and run it.
 
 To make a Mac app instead, run the same two commands on a Mac. The file in `dist` ends in `.dmg`.
 
@@ -38,14 +38,14 @@ To make a Mac app instead, run the same two commands on a Mac. The file in `dist
    - Keyframe interval should be 2 seconds. Facebook and YouTube say 4 seconds at most. If it is higher, the bar turns amber. In OBS go to Settings → Output → Streaming → Keyframe Interval and set it to 2. The switch under the preview turns the preview off if you want to save a little power.
 6. **Go live:** start OBS first, then press **Go live** next to YouTube or Facebook in the **Go live** box. Leave **Private test** switched on to try it without the public seeing it. Switch it off for the real service.
    - Facebook: press **Set up** next to Facebook (it opens **Settings → Facebook**), type the Page ID and token, then press **OK**.
-   - YouTube: press **Set up** next to YouTube (it opens **Settings → YouTube**), choose the .json file from Google, then **Connect YouTube** and sign in with the church account. If there is no channel named "YouTube" (or "Facebook") yet, Go live adds it for you.
+   - YouTube: press **Set up** next to YouTube (it opens **Settings → YouTube**), choose the .json file from Google, then **Connect YouTube** and sign in with your account. If there is no channel named "YouTube" (or "Facebook") yet, Go live adds it for you.
    - There is no lock. When Private test is off, the app asks "Continue?" once before it goes live in public.
-   - **Title and thumbnail:** type the title in the **Title** box (leave it empty to use "Live from FCCHQ" and the date). Press **Choose picture** to pick a PNG or JPG thumbnail (1280×720 is best). The title goes to YouTube and Facebook. The thumbnail goes to YouTube only. The title is remembered. Choose the picture on the church computer. If YouTube refuses the picture, you still go live and the app tells you why.
+   - **Title and thumbnail:** type the title in the **Title** box (leave it empty to use "Live from FCCHQ" and the date). Press **Choose picture** to pick a PNG or JPG thumbnail (1280×720 is best). The title goes to YouTube and Facebook. The thumbnail goes to YouTube only. The title is remembered. Choose the picture on the main computer. If YouTube refuses the picture, you still go live and the app tells you why.
    - Instagram stays manual: press **Go live** in Instagram.
 
 ## Phone control
 
-Phone control has been removed. Only the app on the church computer can control the stream, so no other device or website can reach it.
+Phone control has been removed. Only the app on the main computer can control the stream, so no other device or website can reach it.
 
 ## Notes
 
@@ -61,16 +61,16 @@ Phone control has been removed. Only the app on the church computer can control 
 3. Your OBS scenes show as tiles under the preview. Tap a tile to switch to that scene. The red tile marked ON AIR is the scene OBS is showing now.
 4. **Small / Medium / Large** changes the tile size, and **Pictures** turns the little live pictures off if you only want names. These choices are saved on each device.
 5. **Audio levels** show under the tiles: one bar for each sound in OBS (green is fine, orange is loud, red is too loud), with a thin line for the loudest recent peak. A sound that is muted in OBS shows a MUTED tag. These are for watching only. Use the **Show** switch to turn them off. They only run while the page is open, so OBS is not kept busy the rest of the time.
-The password is saved only on the church computer and is never sent to the phone. Only the church computer can change the OBS connection. A phone that is logged in can switch scenes.
+The password is saved only on the main computer and is never sent to the phone. Only the main computer can change the OBS connection. A phone that is logged in can switch scenes.
 
 ## Appearance and accessibility
-Press **Settings** at the top right. The left side lists the sections: Appearance, Accessibility, YouTube, Facebook, OBS and Phone. **Appearance** and **Accessibility** let you pick a dark, light or system theme, choose the main colour (or type your own), make text bigger, turn on high contrast, use colour-blind friendly colours, make buttons bigger, and stop animations. Changes show straight away. Press **OK** to save and close, **Apply** to save and stay, or **Cancel** to go back. Choices are saved on each device (the phone and the church computer are separate). **Reset all** puts everything back to the default.
+Press **Settings** at the top right. The left side lists the sections: Appearance, Accessibility, YouTube, Facebook, OBS and Phone. **Appearance** and **Accessibility** let you pick a dark, light or system theme, choose the main colour (or type your own), make text bigger, turn on high contrast, use colour-blind friendly colours, make buttons bigger, and stop animations. Changes show straight away. Press **OK** to save and close, **Apply** to save and stay, or **Cancel** to go back. Choices are saved on each device (the phone and the main computer are separate). **Reset all** puts everything back to the default.
 
 ## Studio (replaces OBS)
 
-Menu next to the title, then Studio (on the church PC only). It opens in its own window.
+Menu next to the title, then Studio (on the main computer only). It opens in its own window.
 
-- **Import OBS scenes:** in OBS choose Scene Collection, then Export. In the Studio press "Import OBS scenes..." and pick that file. Pictures and videos are read from the same paths OBS used, so run this on the church PC.
+- **Import OBS scenes:** in OBS choose Scene Collection, then Export. In the Studio press "Import OBS scenes..." and pick that file. Pictures and videos are read from the same paths OBS used, so run this on the main computer.
 - **Sources:** camera and capture cards, pictures, video files (with sound), screen capture, web pages (like the lyrics page), phone camera over Wi-Fi (DroidCam), text and colours.
 - **Sound:** every input has a volume, mute and level meter. Tick which scenes each input is heard in.
 - **Send:** "Start sending" sends the ON AIR picture and the sound into the relay, the same place OBS sent to.
@@ -83,7 +83,7 @@ The app is not signed with a paid Apple account. Open the .dmg, drag Multistream
 
 ## Vercel preview
 
-The Vercel link is a demo only: it shows the pages with sample data. The real app runs on the church PC, because it needs ffmpeg and a video port that Vercel does not have.
+The Vercel link is a demo only: it shows the pages with sample data. The real app runs on the main computer, because it needs ffmpeg and a video port that Vercel does not have.
 
 ## Recording
 

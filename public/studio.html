@@ -688,7 +688,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
     <section class="dock"><h2>Sources<button type="button" class="hb2" id="srcCog" title="Source settings" aria-label="Source settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button><button type="button" class="hb2" id="addBtn" title="Add source" aria-label="Add source">+</button></h2>
       <div class="list" id="layers"></div>
       <div class="tb" hidden>
-        <div class="menu"><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Video Capture Device<small>A webcam, ATEM Mini or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Service starts in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a whole computer screen</small></button><button class="mi" data-add="window">Window<small>One program, like lyrics or slides</small></button><button class="mi" data-add="duo">Speaker + screen<small>A camera and a screen side by side</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
+        <div class="menu"><div class="pop pop-up" id="addPop" hidden><button class="mi" data-add="camera">Video Capture Device<small>A webcam, ATEM Mini or capture card</small></button><button class="mi" data-add="image">Picture<small>A photo or poster</small></button><button class="mi" data-add="video">Video<small>A video file</small></button><button class="mi" data-add="text">Text<small>Words on screen</small></button><button class="mi" data-add="lower">Name bar<small>A name and title at the bottom</small></button><button class="mi" data-add="timer">Countdown<small>"Starting in 10:00"</small></button><button class="mi" data-add="clock">Clock<small>The time now</small></button><button class="mi" data-add="screen">Screen<small>Show a whole computer screen</small></button><button class="mi" data-add="window">Window<small>One program, like lyrics or slides</small></button><button class="mi" data-add="duo">Speaker + screen<small>A camera and a screen side by side</small></button><button class="mi" data-add="browser">Web page<small>A website, like lyrics</small></button><button class="mi" data-add="ipcam">Phone camera<small>A phone camera app on the Wi-Fi</small></button><button class="mi" data-add="color">Colour<small>A plain background</small></button></div></div>
         <button id="srcDel" title="Remove source">Remove</button>
       </div>
     </section>
@@ -755,7 +755,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
           <div id="chanList"></div>
           <details class="advd"><summary>Add a channel with a stream key</summary>
           <div class="f"><label>Site</label><select id="chType"><option value="youtube">YouTube</option><option value="facebook">Facebook</option><option value="other">Instagram or another site</option></select></div>
-          <div class="f"><label>Name</label><input id="chName" placeholder="Church YouTube"></div>
+          <div class="f"><label>Name</label><input id="chName" placeholder="Our YouTube"></div>
           <div class="f"><label>Stream URL</label><input id="chUrl" placeholder="rtmps://..."></div>
           <div class="f"><label>Stream key</label><input id="chKey" type="password" autocomplete="off" placeholder="Paste the key"></div>
           <div class="row"><button id="chAdd">Add channel</button><span class="note" id="chMsg"></span></div>
@@ -767,6 +767,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
           <div class="f"><label>Picture height (pixels)</label><input id="outH" type="number" min="360" max="2160" step="2"></div>
           <div class="f"><label>Frames a second</label><input id="outFps" type="number" min="10" max="60" step="1"></div>
           <div class="f"><label>Bitrate (kbps)</label><input id="outKbps" type="number" min="1000" max="60000" step="500"></div>
+          <div class="f"><label>Audio bitrate</label><select id="outAbps"><option value="96">96</option><option value="128">128</option><option value="160">160</option><option value="192">192</option><option value="256">256</option><option value="320">320</option></select></div>
           <p class="note" id="outNote"></p>
           <div class="f"><label>Canvas</label><span>1920 x 1080 (the size scenes are built at)</span></div>
           <div class="f"><label>Encoder</label><span id="encName">...</span></div>
@@ -777,9 +778,10 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
           <h3>Recording</h3>
           <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal (about 3.6 GB an hour)</option><option value="1080-4">1080p small file (about 1.8 GB an hour)</option><option value="720-6">720p normal (about 2.7 GB an hour)</option><option value="720-3">720p small file (about 1.4 GB an hour)</option></select></div>
           <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Record automatically when the stream starts</label></div>
+          <div class="f"><label>MP4 copy</label><label class="chk"><input type="checkbox" id="recRemux"> Automatically remux to MP4</label></div>
           <div class="f"><label>Saved in</label><span><code id="recDir2"></code></span></div>
           <div class="row"><button id="recOpen2">Open folder</button><span class="note" id="recMsg2"></span></div>
-          <p class="note">Saved as .mkv. Make an MP4 on the Recordings page.</p>
+          <p class="note">Saved as .mkv (safe if the computer stops). With remux on, an .mp4 copy is made when it finishes.</p>
         </section>
         <section class="sp" data-sp="audio">
           <h3>Monitoring</h3>
@@ -852,7 +854,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
 let SW = 1920, SH = 1080;             // the size scenes are drawn in (same as OBS); a tall (9:16) collection is 1080 x 1920
 let PW = 1280, PH = 720;              // the size of the Program picture (small while idle, the real size while sending)
 // What viewers get. Saved on this computer. Facebook and Instagram take 1080p at most; the app makes them a smaller copy.
-const OUT = { h: 1080, fps: 30, kbps: 6000 };
+const OUT = { h: 1080, fps: 30, kbps: 6000, abps: 160 };
 try { Object.assign(OUT, JSON.parse(localStorage.getItem('ms_out') || '{}')); } catch {}
 const outW = (h) => Math.round(h * 16 / 9 / 2) * 2;
 // the picture size for a chosen quality: "1080p" is 1920 x 1080 wide, 1080 x 1920 tall, 1080 x 1080 square
@@ -1402,6 +1404,7 @@ function frame() {
     } }
   paint(ctx, PW / SW, now);
   window.__pf = (window.__pf | 0) + 1; // the Multiview copies the picture once for each new one
+  tilesFrame();
   if (sendTrack) { try { sendTrack.requestFrame(); } catch {} } // each finished picture goes to the encoder exactly once
   // the recording and the virtual camera copy the finished Program picture when it is the same size or bigger (much less work than drawing the scene again)
   if (recW) { if (cv.width === recW && cv.height === rcv.height) rctx.drawImage(cv, 0, 0); else paint(rctx, recW / SW, now); if (recTrack) { try { recTrack.requestFrame(); } catch {} } }
@@ -2983,12 +2986,12 @@ async function connectSend() {
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
   const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
   const fast = useFast(mt);
-  wsOut = openPipe(`/studio-ingest?h=${OUT.h}&fps=${OUT.fps}&kbps=${OUT.kbps}&shape=${SHAPE_OF()}${fast ? '&copy=1' : ''}`);
+  wsOut = openPipe(`/studio-ingest?h=${OUT.h}&fps=${OUT.fps}&kbps=${OUT.kbps}&abps=${OUT.abps}&shape=${SHAPE_OF()}${fast ? '&copy=1' : ''}`);
   wsOut.binaryType = 'arraybuffer';
   wsOut.onopen = () => {
     // fast: the browser's bitrate is the one we send, so it is set to the target exactly
     // a keyframe every 2 seconds: Facebook needs it to play the live, and a channel that reconnects can join straight away
-    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: fast ? OUT.kbps * 1000 : Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: 128000, videoKeyFrameIntervalDuration: 2000 });
+    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: fast ? OUT.kbps * 1000 : Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: Math.max(128000, OUT.abps * 1000), videoKeyFrameIntervalDuration: 2000 });
     rec.ondataavailable = inOrder((buf) => { if (wsOut && wsOut.readyState === 1) wsOut.send(buf); });
     rec.start(250);
     cv.classList.add('live');
@@ -3549,7 +3552,7 @@ function outNote() {
 }
 function saveOut() { try { localStorage.setItem('ms_out', JSON.stringify(OUT)); } catch {} outNote(); }
 function lockOut() {
-  $('#outQ').disabled = $('#outKbps').disabled = $('#outH').disabled = $('#outFps').disabled = wantSend;
+  $('#outQ').disabled = $('#outKbps').disabled = $('#outH').disabled = $('#outFps').disabled = $('#outAbps').disabled = wantSend;
   if (wantSend) $('#outNote').textContent = 'Stop streaming to change the video size.'; else outNote();
 }
 (function () {
@@ -3565,6 +3568,8 @@ function lockOut() {
   q.onchange = () => { if (q.value !== 'custom') { const [h, f, k] = q.value.split('-').map(Number); OUT.h = h; OUT.fps = f; OUT.kbps = k; } show(); saveOut(); };
   $('#outH').onchange = () => { OUT.h = okH($('#outH').value) || OUT.h; show(); saveOut(); };
   $('#outFps').onchange = () => { OUT.fps = okF($('#outFps').value) || OUT.fps; show(); saveOut(); };
+  $('#outAbps').value = String([96, 128, 160, 192, 256, 320].includes(Number(OUT.abps)) ? OUT.abps : 160);
+  $('#outAbps').onchange = () => { OUT.abps = Number($('#outAbps').value) || 160; saveOut(); };
   $('#outKbps').onchange = () => { OUT.kbps = Math.min(60000, Math.max(1000, Math.round(Number($('#outKbps').value)) || OUT.kbps)); $('#outKbps').value = OUT.kbps; saveOut(); };
 })();
 function fillMon() {
@@ -3609,8 +3614,9 @@ $('#resetStudio').onclick = () => {
 async function loadEnc() { try { const e = await fetch('/api/studio/status').then((r) => r.json()); $('#encName').textContent = e.encoder || 'checking...'; } catch {} }
 // ----- Recording pane -----
 async function loadRec() {
-  try { const r = await fetch('/api/recording').then((x) => x.json()); $('#recAuto2').checked = Boolean(r.auto); $('#recDir2').textContent = r.folder || ''; } catch {}
+  try { const r = await fetch('/api/recording').then((x) => x.json()); $('#recAuto2').checked = Boolean(r.auto); $('#recRemux').checked = r.remux !== false; $('#recDir2').textContent = r.folder || ''; } catch {}
 }
+$('#recRemux').onchange = () => { fetch('/api/recording', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ remux: $('#recRemux').checked }) }).catch(() => {}); };
 $('#recAuto2').onchange = () => { fetch('/api/recording', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ auto: $('#recAuto2').checked }) }).catch(() => {}); };
 $('#recOpen2').onclick = async () => { const r = await fetch('/api/recording/open', { method: 'POST' }).then((x) => x.json()).catch(() => ({})); $('#recMsg2').textContent = r.error || ''; };
 // ----- Channels pane (like Restream: every place your video goes) -----
@@ -3834,28 +3840,38 @@ async function poll() {
 const small = document.createElement('canvas'); small.width = 1280; small.height = 720;
 const sctx = small.getContext('2d');
 const tiny = document.createElement('canvas'); tiny.width = 480; tiny.height = 270; const tctx = tiny.getContext('2d');
-// Live pictures for the Multiview's scene boxes. When the Multiview can reach this page it copies these (about 3 times a second,
-// no JPEG photos, no trip through the app). They are drawn only while a Multiview is open and the OBS engine is not drawing them.
+// Live pictures for the Multiview's scene boxes. When the Multiview can reach this page it copies these (each time they are
+// drawn, no JPEG photos, no trip through the app). They are drawn only while a Multiview is open and the OBS engine is not drawing them.
 const tileCv = new Map(); window.__tiles = tileCv; window.__tilesRev = 0;
-let tileLast = 0, tileTurn = 0;
-function tilesTick() {
+let tileTurn = 0, tileCost = 0, tileEvery = 1;
+// Drawn in the same step as the Program picture, so every box moves together with it (in sync, not a few times a second).
+// The box that is on air is a copy of the Program picture (almost no work). The other scenes are drawn small. If drawing
+// them starts to take too long (many scenes, a slow computer), they are drawn every 2nd or 3rd picture instead, so the
+// stream and the recording never slow down because of the Multiview.
+function tilesFrame() {
   const w = window.__mvWant;
   if (!w || Date.now() - w.at > 1500 || engineLive) return;
-  const now = performance.now(); if (now - tileLast < 300) return; tileLast = now; tileTurn++;
-  const tw = SW > SH ? 640 : SW < SH ? 360 : 480, th = SW > SH ? 360 : SW < SH ? 640 : 480;
+  const t0 = performance.now(); tileTurn++;
+  const many = studio.scenes.length > 12;
+  const tw = many ? (SW > SH ? 480 : SW < SH ? 270 : 360) : (SW > SH ? 640 : SW < SH ? 360 : 480);
+  const th = many ? (SW > SH ? 270 : SW < SH ? 480 : 360) : (SW > SH ? 360 : SW < SH ? 640 : 480);
   const list = studio.scenes.slice(0, 30), names = new Set(list.map((x) => x.name));
   tileCv.forEach((c, k) => { if (!names.has(k)) tileCv.delete(k); });
-  const half = list.length > 10; // many scenes: half of them each time
   list.forEach((sc, i) => {
     let c = tileCv.get(sc.name); const fresh = !c || c.width !== tw || c.height !== th;
     if (fresh) { c = document.createElement('canvas'); c.width = tw; c.height = th; tileCv.set(sc.name, c); }
-    if (half && !fresh && (i + tileTurn) % 2) return;
+    const onAir = sc.name === studio.current && cv.width >= 320;
+    if (!fresh && !onAir && (i + tileTurn) % tileEvery) return; // spread the work over the next pictures
     const cx = c.getContext('2d');
-    if (sc.name === studio.current && cv.width >= 320) copyFit(cx, tw, th, cv); else drawFit(cx, tw, th, sc, false);
+    if (onAir) copyFit(cx, tw, th, cv); else drawFit(cx, tw, th, sc, false);
   });
   window.__tilesRev++;
+  // keep the Multiview's share of each picture small: about 6 ms at 30 frames a second
+  tileCost = tileCost * 0.9 + (performance.now() - t0) * 0.1;
+  const budget = 200 / Math.max(frameFps, 1);
+  if (tileCost > budget && tileEvery < 4) { tileEvery++; tileCost = budget * 0.6; }
+  else if (tileCost < budget * 0.35 && tileEvery > 1 && !(tileTurn % 60)) tileEvery--;
 }
-setInterval(tilesTick, 100);
 // watching starts false: the app first says whether the Multiview is open, so nothing is drawn for it while the app opens
 let thumbs = {}, thumbAt = 0, shotBusy = false, watching = false, pingAt = 0, mvLive = false;
 async function shots() {
