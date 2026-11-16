@@ -28,7 +28,7 @@ function fromApp(e) { try { return isAppUrl(e.senderFrame && e.senderFrame.url);
 const handleIpc = (name, fn) => ipcMain.handle(name, (e, ...a) => (fromApp(e) ? fn(e, ...a) : undefined));
 const onIpc = (name, fn) => ipcMain.on(name, (e, ...a) => { if (fromApp(e)) fn(e, ...a); });
 handleIpc('ms-version', () => app.getVersion());
-// Web pages used as Studio sources (like a lyrics site) run in their own separate space: no camera,
+// Web pages used as Production sources (like a lyrics site) run in their own separate space: no camera,
 // microphone or screen, no pop-ups, and they cannot reach the app's pages or settings.
 const WEB_SOURCES = 'persist:web-sources';
 let webSes = null;
@@ -58,7 +58,7 @@ app.on('web-contents-created', (e, contents) => {
   contents.on('will-navigate', guard);
   contents.on('will-redirect', guard);
   // pop-ups: web sources get none; app windows get the projector, and websites open in the normal browser
-  // (the Stream and Studio windows set their own rules on top of this)
+  // (the Stream and Production windows set their own rules on top of this)
   contents.setWindowOpenHandler(({ url }) => {
     if (isWebSource()) return { action: 'deny' };
     const p = projectorOptions(url); if (p) return p;
@@ -104,8 +104,8 @@ function createWindow() {
     title: 'Multistream',
     autoHideMenuBar: false,
     backgroundColor: '#eaf1fb',
-    // the Studio runs inside this window (in the background while you look at other pages) and makes the video,
-    // so the window never slows down. The app's own pages inside it (the Studio) get the app's helpers too.
+    // the Production runs inside this window (in the background while you look at other pages) and makes the video,
+    // so the window never slows down. The app's own pages inside it (the Production) get the app's helpers too.
     webPreferences: { contextIsolation: true, nodeIntegration: false, nodeIntegrationInSubFrames: true, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
   win.webContents.on('did-fail-load', (e, code, desc, url) => console.error('Page failed to load:', code, desc, url));
@@ -128,7 +128,7 @@ function createWindow() {
   // links that leave the dashboard open in the normal browser
   win.webContents.setWindowOpenHandler(({ url }) => {
     const p = projectorOptions(url); if (p) return p;
-    // a Multiview window is opened from this window, so it can show the Studio's live picture smoothly
+    // a Multiview window is opened from this window, so it can show the Production's live picture smoothly
     if (url === HOME + '/#control-room' && crNext) { const o = crNext.o; return { action: 'allow', overrideBrowserWindowOptions: o }; }
     if (/^https?:\/\//i.test(url)) shell.openExternal(url);
     return { action: 'deny' };
@@ -142,9 +142,9 @@ function createWindow() {
 // The engine draws the picture on the graphics card inside the app (see engine.js), the way OBS does, and it
 // makes the video that goes live and into recordings.
 // It is off unless switched on in the Help menu (Windows). Why: on Windows a camera or capture card
-// (like a Blackmagic) can be open in one place only, and both the engine and the Studio page open it, so one of
+// (like a Blackmagic) can be open in one place only, and both the engine and the Production page open it, so one of
 // them can get a black picture. On the Mac it sometimes froze the app just after opening. Until both are fixed,
-// the Studio makes the video itself, as before.
+// the Production makes the video itself, as before.
 // (MULTISTREAM_ENGINE=off or =on changes this, for tests and for help with problems.)
 let engineMod = null;
 const engine = () => engineMod || (engineMod = require('./engine'));
@@ -165,7 +165,7 @@ function setEngine(on) {
 // then the window answers clicks straight away, instead of freezing just after it opens.
 function startEngineFirst() {
   if (!engineOn() || !engine().available() || engine().isStarted()) return;
-  if (!engine().start()) console.error('Engine: could not start, the Studio makes the video itself');
+  if (!engine().start()) console.error('Engine: could not start, the Production makes the video itself');
 }
 async function startEngine() {
   if (!engine().isStarted()) return;
@@ -174,7 +174,7 @@ async function startEngine() {
   engineFollow(engine().isStarted());
 }
 
-// The engine builds the Studio's scenes: whenever the Studio saves (a new source, a move, another scene on air),
+// The engine builds the Production's scenes: whenever the Production saves (a new source, a move, another scene on air),
 // the engine gets the same scenes. Only the facts it needs are sent: where each file is on this computer,
 // and which screen (by its place in the list of screens).
 let engineTimer = null, engineRev = -1, engineTrans = { type: 'fade', ms: 500 }, screenIds = [], screenAt = 0;
@@ -222,8 +222,8 @@ function engineFollow(on) {
   engineSend(true);
   engineTimer = setInterval(() => { engineSend(false).catch(() => {}); }, 400);
 }
-// Going live with the engine: the Studio asks, the app opens its receiver, and the engine sends to it.
-// o: { h, fps, kbps, shape } (the Studio's Output settings)
+// Going live with the engine: the Production asks, the app opens its receiver, and the engine sends to it.
+// o: { h, fps, kbps, shape } (the Production's Output settings)
 handleIpc('ms-engine-send', async (e, o) => {
   if (!relay || !relay.engineIngest || !engine().isStarted()) return { ok: false, error: 'The OBS engine is not on' };
   try {
@@ -260,7 +260,7 @@ handleIpc('ms-engine-unrecord', async () => {
   return r;
 });
 handleIpc('ms-engine-sendstate', () => (engineMod ? engine().streamState() : { sending: false, active: false }));
-// the Studio's transition (Cut, Fade, Slide, Dip to black) and how long it takes
+// the Production's transition (Cut, Fade, Slide, Dip to black) and how long it takes
 handleIpc('ms-engine-trans', (e, t) => {
   if (t && typeof t === 'object') engineTrans = { type: String(t.type || 'fade'), ms: Math.max(0, Math.min(5000, Number(t.ms) || 0)) };
   engineSend(true).catch(() => {});
@@ -272,7 +272,7 @@ function engineState() {
 handleIpc('ms-engine-state', () => engineState());
 // the page tells where its preview box is (or null when it is hidden); the engine draws its picture there
 handleIpc('ms-engine-preview', (e, rect) => (win && e.sender === win.webContents ? engine().showPreview(win, rect) : false));
-// any box on the app's own windows (the Studio's Program, the Multiview): key, where it is, and what it shows
+// any box on the app's own windows (the Production's Program, the Multiview): key, where it is, and what it shows
 // Copy buttons: the app's own clipboard (the page's clipboard needs a permission the app does not give)
 handleIpc('ms-copy', (e, text) => { require('electron').clipboard.writeText(String(text || '').slice(0, 10000)); return true; });
 handleIpc('ms-engine-display', (e, key, rect, src) => {
@@ -283,14 +283,14 @@ handleIpc('ms-engine-display', (e, key, rect, src) => {
   return engine().showDisplay(w, k, rect && typeof rect === 'object' ? { x: +rect.x || 0, y: +rect.y || 0, width: +rect.width || 0, height: +rect.height || 0 } : null, what);
 });
 
-// ---- Studio helpers ----
+// ---- Production helpers ----
 let studioWin = null;
-// same = true: the Studio replaces the dashboard in the same window (a button in the Studio goes back).
+// same = true: the Production replaces the dashboard in the same window (a button in the Production goes back).
 handleIpc('ms-open-studio', (e, same) => {
   if (studioWin) { studioWin.focus(); return; }
   if (same && win && !win.isDestroyed()) { win.webContents.setBackgroundThrottling(false); win.loadURL(HOME + '/studio.html?same=1'); return; }
   studioWin = new BrowserWindow({
-    width: 1400, height: 860, title: 'Multistream Studio', autoHideMenuBar: false, backgroundColor: '#0f1512',
+    width: 1400, height: 860, title: 'Multistream Production', autoHideMenuBar: false, backgroundColor: '#0f1512',
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false, autoplayPolicy: 'no-user-gesture-required', preload: path.join(__dirname, 'preload.js') },
   });
   studioWin.loadURL(HOME + '/studio.html');
@@ -299,12 +299,12 @@ handleIpc('ms-open-studio', (e, same) => {
 });
 handleIpc('ms-open-dashboard', () => {
   if (!win || win.isDestroyed()) return;
-  // the Studio has its own window: only bring the Go Live page to the front (reloading would close the Studio's web pages)
+  // the Production has its own window: only bring the Livestream page to the front (reloading would close the Production's web pages)
   if (studioWin && !studioWin.isDestroyed()) { win.show(); win.focus(); return; }
   browsers.forEach((b) => b.destroy()); browsers.clear();
   win.webContents.setBackgroundThrottling(true);
   win.loadURL(HOME + '/');
-  win.show(); win.focus(); // bring the Go Live page to the front
+  win.show(); win.focus(); // bring the Livestream page to the front
 });
 // the screens that are connected (for showing the Multiview or a Preview/Program picture full screen on one of them)
 const displayList = () => { const main = screen.getPrimaryDisplay().id; return screen.getAllDisplays().map((d, i) => ({ id: d.id, n: i + 1, label: d.label || '', w: d.size.width, h: d.size.height, main: d.id === main })); };
@@ -338,7 +338,7 @@ function openMultiview(displayId) {
     }
     w.on('closed', () => { if (crWin === w) crWin = null; });
   };
-  // Opened from the main window (so the two can share the Studio's live picture). If that does not work,
+  // Opened from the main window (so the two can share the Production's live picture). If that does not work,
   // the window is made the plain way and shows photos of the picture instead.
   if (win && !win.isDestroyed()) {
     const mine = crNext = { o };
@@ -374,7 +374,7 @@ handleIpc('ms-browser-open', (e, id, url, w, h) => {
 });
 handleIpc('ms-browser-close', (e, id) => { const b = browsers.get(id); if (b) { b.destroy(); browsers.delete(id); } });
 // (sending on, or closing, a pipe only works for a pipe that window opened, so these need no page check)
-// Two-way pipes between a window and the app (the Studio's video, recording and virtual camera).
+// Two-way pipes between a window and the app (the Production's video, recording and virtual camera).
 // They used to be WebSockets on localhost. Now they are plain messages inside the app.
 const pipes = new Map();
 // One listener per window (not one per pipe) closes that window's pipes when the window goes away.
@@ -382,7 +382,7 @@ const pipeWatch = new Set();
 function closePipesOf(senderId) {
   for (const [key, w] of pipes) if (key.startsWith(senderId + ':')) { pipes.delete(key); w.windowClosed(); }
 }
-// a page inside the window (the Studio) has its own pipes, so the key names the frame too
+// a page inside the window (the Production) has its own pipes, so the key names the frame too
 const frameKey = (e) => e.sender.id + ':' + (e.senderFrame ? e.senderFrame.processId + '.' + e.senderFrame.routingId : '0');
 onIpc('ms-pipe-open', (e, id, p) => {
   const key = frameKey(e) + ':' + id, sid = e.sender.id, frame = e.senderFrame;
@@ -394,7 +394,7 @@ onIpc('ms-pipe-open', (e, id, p) => {
   if (!pipeWatch.has(sid)) {
     pipeWatch.add(sid);
     const wc = e.sender;
-    // the window loads another page (Stream <-> Studio in the same window): the old page's pipes end too
+    // the window loads another page (Stream <-> Production in the same window): the old page's pipes end too
     const moved = (ev) => { if (ev && ev.isMainFrame && !ev.isSameDocument) closePipesOf(sid); };
     wc.on('did-start-navigation', moved);
     wc.once('destroyed', () => { pipeWatch.delete(sid); closePipesOf(sid); });
@@ -515,11 +515,11 @@ async function remuxRecordings() {
     detail: [done.length ? 'Made: ' + done.map((x) => path.basename(x)).join(', ') : '', bad.length ? 'Not done: ' + bad.join(', ') : ''].filter(Boolean).join('\n') });
   if (done.length) shell.showItemInFolder(done[0]);
 }
-// Scene Collection menu: the Studio page does the work (it asks for names and shows the result)
+// Scene Collection menu: the Production page does the work (it asks for names and shows the result)
 async function collDo(act, name) {
   const w = studioWin && !studioWin.isDestroyed() ? studioWin : win; if (!w || w.isDestroyed()) return;
   const ok = await w.webContents.executeJavaScript('typeof window.msColl === "function"').catch(() => false);
-  if (!ok) { dialog.showMessageBox(w, { type: 'info', message: 'Open the Studio first', detail: 'Scene collections are changed in the Studio.' }); return; }
+  if (!ok) { dialog.showMessageBox(w, { type: 'info', message: 'Open the Production first', detail: 'Scene collections are changed in the Production.' }); return; }
   w.focus(); w.webContents.executeJavaScript(`window.msColl(${JSON.stringify(act)}, ${JSON.stringify(name || '')})`).catch(() => {});
 }
 function buildMenu() {
@@ -583,6 +583,7 @@ async function start() {
         else if (!busy && keep !== null) { try { powerSaveBlocker.stop(keep); } catch {} keep = null; } }, 5000); if (t.unref) t.unref(); }
     relay.setOpenFolder((p) => shell.openPath(p));
     if (relay.setShowFile) relay.setShowFile((p) => shell.showItemInFolder(p));
+    if (relay.setTrash) relay.setTrash((p) => shell.trashItem(p)); // the Recycle Bin: it can be taken back out
     if (relay.onCollections) relay.onCollections(() => setMenu()); // the menu shows the scene collections
   } catch (err) {
     dialog.showErrorBox('Multistream cannot start', require('./public/plain').plain(String(err && err.message ? err.message : err)));

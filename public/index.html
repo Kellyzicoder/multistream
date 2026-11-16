@@ -201,7 +201,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .pop2.ask .ttl { font-size:18px; font-weight:700; } .pop2.ask .sub { font-size:13px; color:var(--muted); }
   .pop2.ask .rows { display:flex; flex-direction:column; gap:6px; } .pop2.ask .rows > div { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.04); }
   .pop2.ask .rows i { width:22px; height:22px; border-radius:50%; background:rgba(59,108,255,.18); color:#9db6ff; display:grid; place-items:center; font-size:11px; font-weight:700; font-style:normal; flex:none; } .pop2.ask .rows b { font-size:13px; font-weight:600; } .pop2.ask .rows span { font-size:12.5px; color:#8a93ad; }
-  /* ---------- Go Live while live: health in the side, and the tall (9:16) view ---------- */
+  /* ---------- Livestream while live: health in the side, and the tall (9:16) view ---------- */
   .glh { padding:16px 18px; } .glh .sec-h { gap:10px; } .glh .lnk { font-size:12px; white-space:nowrap; } .glh .sec-t { white-space:nowrap; } .glh .hl-badge { white-space:nowrap; padding:3px 10px; font-size:11.5px; }
   .gh-g { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; margin-top:10px; }
   .gh-g > div { padding:10px 12px; border-radius:14px; background:var(--card2); display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 5px; }
@@ -666,7 +666,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .gs-row .ok { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; background:rgba(74,222,128,.18); color:#4ade80; font-weight:800; flex:none; } .gs-row .ok.warn { background:rgba(245,185,66,.18); color:var(--amber); }
   .gs-row.info { background:color-mix(in srgb, var(--blue) 10%, transparent); border:1px solid color-mix(in srgb, var(--blue) 35%, transparent); } .gs-row.info .ok { background:color-mix(in srgb, var(--blue) 25%, transparent); color:var(--link); }
   @media (max-width:760px) { .gs-grid, .gs-f { grid-template-columns:1fr; } .gs-lay { grid-template-columns:1fr 1fr; } }
-  /* ---------- Go Live layout: picture and stream details on the left, channels and chat on the right ---------- */
+  /* ---------- Livestream layout: picture and stream details on the left, channels and chat on the right ---------- */
   .mainc { display:flex; flex-direction:column; gap:18px; min-height:0; min-width:0; overflow:auto; }
   .mainc .stage { flex:1; min-height:340px; padding:22px; align-items:center; }
   .sd { display:grid; grid-template-columns:260px minmax(0,1fr); gap:20px; padding:18px 20px; }
@@ -690,7 +690,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .tile svg { width:24px; height:24px; }
   .ch { align-items:center; }
 
-  /* =================== the design (app frame and Go Live) =================== */
+  /* =================== the design (app frame and Livestream) =================== */
   html { --navw:230px; } html.nav-small { --navw:76px; }
   body { background:radial-gradient(520px 420px at 78% 18%, color-mix(in srgb, var(--blue) 45%, transparent), transparent 70%), radial-gradient(480px 420px at 30% 85%, rgba(168,85,247,.32), transparent 70%), radial-gradient(420px 360px at 95% 90%, rgba(20,184,166,.28), transparent 70%), var(--bg); background-attachment:fixed; }
   html.t-light body { background:radial-gradient(520px 420px at 78% 18%, rgba(59,108,255,.14), transparent 70%), radial-gradient(480px 420px at 30% 85%, rgba(168,85,247,.10), transparent 70%), var(--bg); }
@@ -803,7 +803,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .glh2-g .gh-ch .tile { width:22px; height:22px; border-radius:6px; } .glh2-g .gh-ch .tile svg { width:12px; height:12px; } .glh2-g .gh-ch .r { margin-left:auto; color:var(--muted); font-variant-numeric:tabular-nums; } .glh2-g .gh-ch .hl-st { min-width:58px; text-align:right; font-weight:700; }
   @media (max-width:1180px) { .glh2-g { grid-template-columns:repeat(2, minmax(0,1fr)); } .glh2-g .gh-ch { grid-column:1 / -1; } }
   @media (max-width:1000px) { .app { grid-template-columns:1fr; } .sd { flex-direction:column; } .sd-thumb { width:100%; } .gl-acts { flex-wrap:wrap; justify-content:flex-end; } }
-  /* the Studio, shown inside this window */
+  /* the Production, shown inside this window */
   html.on-studio .top, html.on-studio .asrun, html.on-studio .alertbar { display:none !important; }
   .stv { position:fixed; left:var(--navw); top:0; right:0; bottom:0; padding:0; z-index:4; } .stv iframe { width:100%; height:100%; border:0; display:block; background:var(--bg); }
   .stv.bg { visibility:hidden; pointer-events:none; } .stv[hidden] { display:block; visibility:hidden; pointer-events:none; }
@@ -920,18 +920,31 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   /* nothing to show: a dark shade of the main colour (like OBS), everywhere a picture is missing */
   .mv2 .mvt { background:#000; }
   /* Multiview layouts (like Zoom): Speaker, Gallery, Custom. Every box keeps the picture's own shape: nothing is stretched and there are no black sides. */
-  .mv-views { display:inline-flex; gap:2px; padding:3px; border-radius:999px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); }
-  .mv-views button { padding:6px 13px; border-radius:999px; border:0; background:transparent; color:#cdd3e4; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
-  .mv-views button:hover { color:#fff; } .mv-views button.on { background:var(--sel, #3b6cff); color:#fff; }
+  .mv-menuw { position:relative; display:inline-block; }
+  .mv-menu, .mv-ctx { position:absolute; right:0; top:calc(100% + 8px); z-index:60; min-width:210px; padding:6px; border-radius:14px; background:#171c33; border:1px solid rgba(255,255,255,.14); box-shadow:0 18px 50px rgba(0,0,0,.55); }
+  .mv-ctx { position:fixed; right:auto; top:auto; }
+  .mv-menu button, .mv-ctx button { display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; border:0; border-radius:9px; background:transparent; color:#e8ecf8; font:inherit; font-size:13.5px; text-align:left; cursor:pointer; }
+  .mv-menu button:hover, .mv-ctx button:hover { background:rgba(255,255,255,.08); }
+  .mv-menu button::before { content:""; width:14px; flex:none; } .mv-menu button.on::before { content:"\2713"; }
+  .mv-menu hr { border:0; border-top:1px solid rgba(255,255,255,.1); margin:5px 4px; }
   .mv2 .mvt { width:var(--tw); height:var(--th); aspect-ratio:auto !important; flex:none; }
   .mv2 #crProgBox { flex:none; align-self:center; }
-  /* Speaker: the row of scenes sits on one side (top, bottom, left or right); drag it to another side */
-  .mv2.v-speaker .mv-top { flex:1; min-width:0; min-height:0; height:auto; align-self:stretch; }
-  .mv2.v-speaker .mv-grid { align-self:center; }
-  .mv2.v-speaker .mv-grid { display:flex; gap:10px; flex:none; justify-content:center; align-items:center; cursor:grab; touch-action:none; }
+  /* Speaker: the row of scenes sits on one side (top, bottom, left or right); drag it to another side, drag its edge to make it bigger */
+  .mv2.v-speaker .mv-top { flex:1; min-width:0; min-height:0; height:auto; align-self:stretch; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-content:center; align-items:center; }
+  .mv2.v-speaker .mv-grid { display:flex; gap:10px; flex:none; justify-content:safe center; align-items:center; align-self:center; cursor:grab; touch-action:none; overflow:hidden; scroll-behavior:smooth; max-width:100%; max-height:100%; }
   .mv2.v-speaker.sp-top .mv-grid, .mv2.v-speaker.sp-left .mv-grid { order:-1; }
   .cr.mv2.v-speaker.sp-left:not([hidden]), .cr.mv2.v-speaker.sp-right:not([hidden]) { flex-direction:row; }
   .mv2.v-speaker.sp-left .mv-grid, .mv2.v-speaker.sp-right .mv-grid { flex-direction:column; }
+  .mv2.no-main .mv-top { display:none !important; }
+  .mv2.hideprog #crProgBox { display:none !important; }
+  .mv2 .mvt.pin::after { content:"\1F4CC"; position:absolute; right:8px; top:8px; font-size:13px; z-index:3; }
+  /* the edge of the row: drag it to make the scenes bigger or smaller */
+  .mv-size { position:absolute; z-index:7; border-radius:6px; background:transparent; touch-action:none; } .mv-size::after { content:""; position:absolute; inset:0; margin:auto; border-radius:4px; background:rgba(255,255,255,.28); }
+  .mv-size.h { height:12px; cursor:row-resize; } .mv-size.h::after { width:64px; height:4px; } .mv-size.v { width:12px; cursor:col-resize; } .mv-size.v::after { width:4px; height:64px; }
+  .mv-size:hover::after, .mv-size.on::after { background:#fff; }
+  /* arrows when there are more scenes than fit */
+  .mv-arr { position:absolute; z-index:8; width:34px; height:34px; border-radius:50%; border:1px solid rgba(255,255,255,.25); background:rgba(10,14,31,.85); color:#fff; font-size:18px; line-height:1; display:grid; place-items:center; cursor:pointer; padding:0; }
+  .mv-arr:hover { background:var(--sel, #3b6cff); } .mv-arr[hidden] { display:none; }
   .mv2.mv-moving .mv-grid { outline:2px dashed rgba(255,255,255,.5); outline-offset:4px; border-radius:18px; cursor:grabbing; }
   /* while dragging: every place you can drop is marked softly, and the one you are heading for is lit */
   .mv-zone { position:absolute; z-index:6; border-radius:14px; border:2px dashed rgba(255,255,255,.35); background:rgba(59,108,255,.10); pointer-events:none; transition:background .12s, border-color .12s; }
@@ -991,8 +1004,14 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   #yt-status.bad, #yt-msg.bad, #fbCode.bad, #fb-msg.bad, #fb-appmsg.bad { color:var(--red); }
   .note.conn-ok { display:inline-block; font-weight:600; color:var(--green) !important; background:color-mix(in srgb, var(--green) 14%, transparent); padding:6px 12px; border-radius:999px; margin:0 0 8px; }
   /* "Open on Facebook" / "Open on YouTube" on a channel while live: always one line */
-  .cc .fblink { margin-top:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--blue); font-size:13px; font-weight:600; cursor:pointer; align-self:flex-start; white-space:nowrap; max-width:100%; }
-  .cc .fblink:hover { background:var(--field); }
+  /* a channel like Restream: name, stream title, status line (Streaming, viewers, View) */
+  .cc .nm { white-space:normal !important; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .cc .cttl { font-size:12.5px; color:var(--text); opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+  .cc .meta { display:flex; align-items:center; gap:10px; margin-top:3px; font-size:12px; color:var(--soft); min-width:0; white-space:nowrap; }
+  .cc .meta .st { font-size:12px; overflow:hidden; text-overflow:ellipsis; } .cc .meta .st.live { color:#5fd38d; } .cc .meta .st.live::before { content:"● "; }
+  .cc .meta .eye { display:inline-flex; align-items:center; gap:4px; color:var(--text); } .cc .meta .eye svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; }
+  .cc .fblink { margin-left:auto; padding:0; border:0; background:none; color:var(--blue); font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; flex:none; }
+  .cc .fblink:hover { text-decoration:underline; }
   /* Facebook sign-in: the code and the Page list, in the app's style */
   .fbbtns { display:flex; gap:8px; flex-wrap:wrap; }
   .fbcode { margin:8px 0 14px; padding:16px; border:1px solid var(--line); border-radius:16px; background:var(--field); display:grid; gap:10px; }
@@ -1017,8 +1036,8 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
     <button type="button" class="snv-tg" id="navToggle" aria-label="Make the menu smaller" title="Make the menu smaller"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
   </div>
   <nav id="pageTabs" aria-label="Pages">
-    <button type="button" data-page="dash" aria-current="page" title="Go Live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg><span>Go Live</span></button>
-    <button type="button" data-page="studio" title="Studio: scenes, cameras, sound, recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg><span>Studio</span></button>
+    <button type="button" data-page="dash" aria-current="page" title="Livestream"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg><span>Livestream</span></button>
+    <button type="button" data-page="studio" title="Production: scenes, cameras, sound, recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg><span>Production</span></button>
     <button type="button" data-page="cr" title="Multiview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><span>Multiview</span></button>
     <button type="button" data-page="health" title="Stream health"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>Stream health</span></button>
     <button type="button" data-page="stats" title="Analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Analytics</span></button>
@@ -1028,14 +1047,14 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <span class="snv-sp"></span>
     <button type="button" class="snv-b" data-page="help" title="Help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.2v.1"/></svg><span>Help</span></button>
   <button type="button" class="snv-b" id="setBtn" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
-  <div class="snv-live" id="navLive" title="Is the Studio sending?"><i></i><b id="navLiveT">Offline</b><span id="navLiveS">Ready</span></div>
+  <div class="snv-live" id="navLive" title="Is the Production sending?"><i></i><b id="navLiveT">Offline</b><span id="navLiveS">Ready</span></div>
 </aside>
 <header class="top">
-  <h1 class="pgt" id="pageTitle">Go Live</h1><span class="hl-badge" id="pageBadge" hidden></span><span class="mv-chip" id="mvShape" hidden></span>
+  <h1 class="pgt" id="pageTitle">Livestream</h1><span class="hl-badge" id="pageBadge" hidden></span><span class="mv-chip" id="mvShape" hidden></span>
   <span class="sp"></span>
   <span class="gl-acts" id="rcActs" hidden><span class="rc-where" id="rcWhere"></span><button type="button" class="hb pl" id="rcOpen">Open folder</button><button type="button" class="hb pl" id="rcRemux">Remux to MP4</button></span>
   <span class="gl-acts" id="anActs" hidden><span class="rc-where" id="anAddr"></span><button type="button" class="hb pl" id="anEdit">Change address</button><button type="button" class="hb pl" id="anOpen">Open in browser</button></span>
-  <span class="gl-acts" id="mvActs" hidden><span class="mv-views" id="mvViews" role="group" aria-label="Multiview layout"><button type="button" data-mv="speaker" title="The Program picture big, with a row of scenes. Drag the row to another side.">Speaker</button><button type="button" data-mv="gallery" title="Every scene the same size">Gallery</button><button type="button" data-mv="custom" title="Like Gallery, in your own order: drag a box to move it">Custom</button></span><button type="button" class="hb pl" id="mvResetB" title="Speaker view, the row at the bottom, the scenes in their own order">Reset</button><button type="button" class="hb pl" id="mvDisp" hidden>Show on a display ▾</button><button type="button" class="hb pl" id="mvWin">New window</button></span>
+  <span class="gl-acts" id="mvActs" hidden><span class="mv-menuw"><button type="button" class="hb pl" id="mvMenuB" aria-haspopup="menu" aria-expanded="false" title="Change the view"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:currentColor;vertical-align:-3px;margin-right:6px"><rect x="3" y="4" width="18" height="10" rx="2"/><rect x="3" y="16" width="5" height="4" rx="1"/><rect x="9.5" y="16" width="5" height="4" rx="1"/><rect x="16" y="16" width="5" height="4" rx="1"/></svg>View</button><div class="mv-menu" id="mvMenu" role="menu" hidden></div></span><button type="button" class="hb pl" id="mvDisp" hidden>Show on a display ▾</button><button type="button" class="hb pl" id="mvWin">New window</button></span>
   <span class="gl-acts" id="scActs" hidden><button type="button" class="hb pl" id="scObs">Import from OBS</button><button type="button" class="hb pl" id="scImp">Import file</button><button type="button" class="hb sb" id="scNew">+ New collection</button></span>
   <span class="gl-acts" id="glActs">
     <button type="button" class="hb" id="glUpd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Update title for all channels</button>
@@ -1056,12 +1075,12 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
       <video id="pv" muted autoplay playsinline hidden></video>
       <div id="offlineView" class="glp-off">
         <div class="ring" aria-hidden="true"><i></i></div><span class="glp-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
-        <h1 id="h1">Waiting for the Studio</h1>
-        <p class="lead" id="lead">The Studio makes the picture. It starts by itself when the app opens.</p>
-        <p style="text-align:center;margin:0"><button type="button" class="b2 pri" id="openStudioBtn">Open Studio</button></p>
+        <h1 id="h1">Waiting for the Production</h1>
+        <p class="lead" id="lead">The Production makes the picture. It starts by itself when the app opens.</p>
+        <p style="text-align:center;margin:0"><button type="button" class="b2 pri" id="openStudioBtn">Open Production</button></p>
       </div>
       <div class="pv-msg" id="pvMsg" hidden></div>
-      <div class="glp-tr"><span class="ov dark" id="ovPrev">Preview from the Studio</span><span class="ov dark" id="ovTime" hidden>00:00:00</span><span class="ov" id="ovState">OFFLINE</span></div>
+      <div class="glp-tr"><span class="ov dark" id="ovPrev">Preview from the Production</span><span class="ov dark" id="ovTime" hidden>00:00:00</span><span class="ov" id="ovState">OFFLINE</span></div>
       <div class="glp-side" id="glpSide" hidden><span class="glp-r lk" title="Likes"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff4d5a" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 5.3 3.2 1.7-2 3.2-3.2 5.3-3.2 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></svg></span><b id="glLikes">0</b><button type="button" class="glp-r" id="glChatBtn" title="Open the live chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></button><b id="glChatN">0</b><span class="glp-r" title="Watching now"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span><b id="glView">0</b></div>
       <span class="glp-asp">9:16</span>
       <div class="glp-msg" id="glpMsg" hidden><span class="av" id="glpAv"></span><b id="glpWho"></b><span id="glpTxt"></span></div>
@@ -1069,7 +1088,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
     <div class="glp-bar">
       <div class="glp-t"><b id="glpTitle">Your stream</b><small id="glpSub"></small></div>
       <span class="grow"></span>
-      <button type="button" class="pb" id="glpStudio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg>Studio</button>
+      <button type="button" class="pb" id="glpStudio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg>Production</button>
       <button type="button" class="pb" id="glpListen" title="Hear the stream on this computer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg><span>Listen</span></button>
     </div>
   </main>
@@ -1140,7 +1159,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
     </section>
 </div>
 
-<section class="xpage stv" id="studioView" hidden aria-label="Studio"></section>
+<section class="xpage stv" id="studioView" hidden aria-label="Production"></section>
 
 <!-- multiview -->
 <section class="xpage hl" id="healthView" hidden aria-label="Stream health">
@@ -1164,6 +1183,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
     <span class="tile-yt2" id="rcYt"></span>
     <div class="rc-a1"><b>Upload to YouTube when the stream ends</b><small id="rcAutoN"></small></div>
     <label class="rc-who">Who can watch<select id="rcPriv"><option value="unlisted">Unlisted</option><option value="private">Private</option><option value="public">Public</option></select></label>
+    <label class="rc-who">After uploading<select id="rcAfter"><option value="keep">Keep the file</option><option value="done">Move it to the Done folder</option><option value="trash">Delete it (Recycle Bin)</option></select></label>
     <button type="button" class="tg2" id="rcAuto" role="switch" aria-label="Upload to YouTube when the stream ends"></button>
   </div>
 </section>
@@ -1187,35 +1207,35 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <input type="search" class="hp-q" id="hpQ" placeholder="Search help (for example: echo, camera, Facebook)" aria-label="Search help">
   <div class="hp-grid" id="hpGrid">
     <div class="card hp-c"><h3>Start here</h3><ol>
-      <li><b>Add your channels.</b> On Go Live, press Set up for YouTube or Facebook, or + Add for any other site (you need its server address and stream key).</li>
-      <li><b>Make your scenes.</b> Open the Studio. A scene is one screen, like Welcome or Camera. Press + under Sources to add a camera, screen, picture, name bar and more.</li>
-      <li><b>Add sound.</b> In the Studio's Audio Mixer, press Add and pick your microphone or sound desk. Watch the meter move when you talk.</li>
-      <li><b>Press Start Streaming</b> in the Studio. The app now has your video, but nobody sees it yet.</li>
-      <li><b>Go live.</b> On Go Live, type a title and press Go live on each channel (or let the channels with a stream key start by themselves).</li>
+      <li><b>Add your channels.</b> On Livestream, press Set up for YouTube or Facebook, or + Add for any other site (you need its server address and stream key).</li>
+      <li><b>Make your scenes.</b> Open the Production. A scene is one screen, like Welcome or Camera. Press + under Sources to add a camera, screen, picture, name bar and more.</li>
+      <li><b>Add sound.</b> In the Production's Audio Mixer, press Add and pick your microphone or sound desk. Watch the meter move when you talk.</li>
+      <li><b>Press Start Streaming</b> in the Production. The app now has your video, but nobody sees it yet.</li>
+      <li><b>Livestream.</b> On Livestream, type a title and press Livestream on each channel (or let the channels with a stream key start by themselves).</li>
     </ol></div>
     <div class="card hp-c"><h3>Fix a problem</h3><dl>
-      <dt>The meters move but nobody hears me</dt><dd>Check the input is heard in the scene (the eye next to its name in the mixer) and not muted. Check the channel is live on Go Live.</dd>
+      <dt>The meters move but nobody hears me</dt><dd>Check the input is heard in the scene (the eye next to its name in the mixer) and not muted. Check the channel is live on Livestream.</dd>
       <dt>Echo or feedback</dt><dd>Turn off Listen in headphones, or use headphones. If two inputs pick up the same sound, mute one.</dd>
       <dt>Camera not found</dt><dd>Close other apps that use the camera (Zoom, Teams, the Camera app), unplug it and plug it in again, then pick it again in its settings.</dd>
       <dt>A channel keeps dropping</dt><dd>Open Stream health. If Sending goes up and down, lower the quality in Settings → Video, or use a network cable instead of Wi-Fi.</dd>
       <dt>Screen or window is black on a Mac</dt><dd>In System Settings → Privacy & Security → Screen Recording, turn on Multistream, then reopen the app.</dd>
       <dt>Facebook says the stream is too big</dt><dd>Facebook takes 1080p at most. The app sends Facebook a smaller copy by itself; keep the cap on in the channel's settings.</dd>
-      <dt>Wrong video played at the start</dt><dd>Open Auto start on Go Live and check the steps, or keep Ask me first each time turned on.</dd>
+      <dt>Wrong video played at the start</dt><dd>Open Auto start on Livestream and check the steps, or keep Ask me first each time turned on.</dd>
     </dl></div>
-    <div class="card hp-c"><h3>Studio keys</h3><table class="hp-k">
+    <div class="card hp-c"><h3>Production keys</h3><table class="hp-k">
       <tr><td><kbd>1</kbd>–<kbd>9</kbd></td><td>Put that scene on air</td></tr>
       <tr><td><kbd>Alt</kbd> + <kbd>1</kbd>–<kbd>9</kbd></td><td>Mute or unmute a sound input</td></tr>
       <tr><td><kbd>R</kbd></td><td>Start or stop recording</td></tr>
       <tr><td><kbd>Shift</kbd> + <kbd>G</kbd></td><td>Start or stop streaming</td></tr>
       <tr><td><kbd>Ctrl</kbd> + <kbd>F</kbd> / <kbd>S</kbd></td><td>Fit / stretch the selected item to the screen</td></tr>
       <tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td>Undo</td></tr>
-      <tr><td><kbd>F11</kbd></td><td>Full screen Studio</td></tr>
+      <tr><td><kbd>F11</kbd></td><td>Full screen Production</td></tr>
     </table><p class="hp-n">See every key in Settings → Hotkeys.</p></div>
     <div class="card hp-c"><h3>Good to know</h3><ul>
       <li><b>Private test:</b> turn it on in Settings → Stream before a real service to check everything without anyone seeing it.</li>
       <li><b>Recordings</b> are saved on this computer. Find them on the Recordings page.</li>
       <li><b>Tall video (9:16)</b> for Instagram or TikTok: make a Portrait collection on the Scene collections page.</li>
-      <li><b>Zoom:</b> in the Studio, start the virtual camera, then pick Multistream Camera in Zoom.</li>
+      <li><b>Zoom:</b> in the Production, start the virtual camera, then pick Multistream Camera in Zoom.</li>
       <li><b>Updates</b> come by themselves. Do not restart while you are live.</li>
     </ul><div class="hp-b"><button type="button" class="ghost" id="hpRel">Download page</button><span class="hp-v" id="hpVer"></span></div></div>
   </div>
@@ -1264,11 +1284,11 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
 <div class="wl" id="welcome" role="dialog" aria-modal="true" aria-label="Welcome">
   <div class="wl-logo"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="var(--red)"/></svg>Multistream</div>
   <h1>Stream your service<br>everywhere at once</h1>
-  <p class="lead2">Go live on YouTube, Facebook and more at the same time. Set up your camera and sound, and record your service, all in one app.</p>
+  <p class="lead2">Livestream on YouTube, Facebook and more at the same time. Set up your camera and sound, and record your service, all in one app.</p>
   <div class="wl-boxes">
     <button type="button" class="pri" id="wlStart"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></i><b>Get started</b><span class="d">New here? We'll help you set up</span></button>
-    <button type="button" id="wlStudio"><i class="bl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg></i><b>Open Studio</b><span class="d">Set up your camera, slides and sound</span></button>
-    <button type="button" id="wlLive"><i class="rd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg></i><b>Go Live</b><span class="d">Start streaming now</span></button>
+    <button type="button" id="wlStudio"><i class="bl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg></i><b>Open Production</b><span class="d">Set up your camera, slides and sound</span></button>
+    <button type="button" id="wlLive"><i class="rd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg></i><b>Livestream</b><span class="d">Start streaming now</span></button>
   </div>
 </div>
 
@@ -1301,7 +1321,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
       <h2 style="margin-bottom:6px">You're ready to stream</h2>
       <div id="gsCheck" style="display:flex;flex-direction:column;gap:14px"></div>
       <div class="gs-row info"><span class="ok">i</span><div class="t"><b>Try a private test first: only you can see it</b></div></div>
-      <div class="gs-nav" style="margin-top:10px"><button type="button" class="gb" data-gs="back">Back</button><span class="sp"></span><button type="button" class="gb" id="gsTest">Start a private test</button><button type="button" class="gb pri" data-gs="done">Go to Go Live</button></div>
+      <div class="gs-nav" style="margin-top:10px"><button type="button" class="gb" data-gs="back">Back</button><span class="sp"></span><button type="button" class="gb" id="gsTest">Start a private test</button><button type="button" class="gb pri" data-gs="done">Go to Livestream</button></div>
     </div>
   </div>
 </div>
@@ -1309,13 +1329,13 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <div class="swin set2" role="dialog" aria-modal="true" aria-label="Settings">
     <nav class="snav" id="setNav" role="tablist" aria-orientation="vertical" aria-label="Settings sections"><div class="s2t">Settings</div><button type="button" role="tab" data-pane="general"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>General</button><button type="button" role="tab" data-pane="appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg>Appearance</button><button type="button" role="tab" data-pane="stream"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8"/></svg>Stream</button><button type="button" role="tab" data-pane="recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>Recording</button><button type="button" role="tab" data-pane="audio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/></svg>Audio</button><button type="button" role="tab" data-pane="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/></svg>Video</button><button type="button" role="tab" data-pane="hotkeys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6"/></svg>Hotkeys</button><button type="button" role="tab" data-pane="advanced"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/></svg>Advanced</button><button type="button" role="tab" data-pane="system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="4" width="16" height="12" rx="1.5"/><path d="M9 20h6M12 16v4"/></svg>System</button></nav>
     <div class="s2r">
-      <div class="smain"><section class="pane" data-pane="general" role="tabpanel" aria-label="General"><div class="s2h"><h2>General</h2></div><div class="g2"><h3>Studio</h3><div class="c2">
+      <div class="smain"><section class="pane" data-pane="general" role="tabpanel" aria-label="General"><div class="s2h"><h2>General</h2></div><div class="g2"><h3>Production</h3><div class="c2">
   <div class="r2"><span class="l">Snap items to edges, the centre and each other</span><button type="button" class="tg2" data-mirror="#optSnap" aria-label="Snap items"></button></div>
   <div class="r2"><span class="l">Confirm before stopping the stream</span><button type="button" class="tg2" data-mirror="#optConfirm" aria-label="Ask before stopping"></button></div>
-  <div class="r2"><span class="l">Studio panel layout</span><button type="button" class="b3" data-click="#resetLayout">Reset panels</button></div>
+  <div class="r2"><span class="l">Production panel layout</span><button type="button" class="b3" data-click="#resetLayout">Reset panels</button></div>
   <div class="r2"><span class="l">Scenes from OBS</span><button type="button" class="b3" data-click="#impBtn">Import scenes from OBS...</button></div>
   <div class="r2"><span class="l">Show the live picture in its own window</span><button type="button" class="b3" data-click="#projBtn">Open window</button></div>
-</div><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div>
+</div><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div>
 <div class="g2"><h3>Reading and using</h3><div class="c2 acc2">
           <div class="grp"><h4>Reading</h4>
             <div class="srow"><p class="lb" id="l-size">Text size</p>
@@ -1360,7 +1380,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
           </div>
         </div><div class="g2 old2">
           <div class="grp"><h4>Facebook</h4>
-            <p>Pages are added on Go Live with <b>Add channel</b>. Sign in here only if Facebook shows an error.</p>
+            <p>Pages are added on Livestream with <b>Add channel</b>. Sign in here only if Facebook shows an error.</p>
             <div class="srow"><p class="lb">Facebook</p>
               <div class="ctl"><p class="note" id="fbStatus" hidden></p><div class="fbbtns"><button class="b2 pri" id="fbSignIn" type="button">Sign in with Facebook</button><button class="b2" id="fbChange" type="button" hidden>Change Pages</button></div><p class="note" id="fbCode" hidden></p></div></div>
             <!-- the code to type on Facebook: big, with Copy and Open buttons and the steps -->
@@ -1402,19 +1422,19 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <div class="r2"><span class="l">Quality</span><select class="i3" data-mirror="#recQ"></select></div>
   <div class="r2"><span class="l">Record automatically when the stream starts</span><button type="button" class="tg2" data-mirror="#recAuto2" aria-label="Record automatically"></button></div>
   <div class="r2"><span class="l">Saved in</span><code class="pth" id="s2RecDir"></code><button type="button" class="b3" id="s2RecOpen">Open folder</button></div>
-</div><p class="n2">Saved as .mkv, so a file still plays if the power goes out. Open them with VLC, or make an MP4 copy on the Recordings page (Remux to MP4).</p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="audio" role="tabpanel" aria-label="Audio"><div class="s2h"><h2>Audio</h2></div><div class="g2"><h3>Monitoring</h3><div class="c2">
+</div><p class="n2">Saved as .mkv. Make an MP4 on the Recordings page.</p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="audio" role="tabpanel" aria-label="Audio"><div class="s2h"><h2>Audio</h2></div><div class="g2"><h3>Monitoring</h3><div class="c2">
   <div class="r2"><span class="l">Monitoring output (your headphones)</span><select class="i3" data-mirror="#monDev"></select></div>
-</div><p class="n2">Hear an input in your headphones. Turn it on for each input with Listen in the Studio's mixer. Use headphones, or the microphone will pick up the speakers.</p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="video" role="tabpanel" aria-label="Video"><div class="s2h"><h2>Video</h2></div><div class="g2"><h3>What viewers get</h3><div class="c2">
+</div><p class="n2">Hear an input in your headphones. Turn it on for each input with Listen in the Production's mixer. Use headphones, or the microphone will pick up the speakers.</p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="video" role="tabpanel" aria-label="Video"><div class="s2h"><h2>Video</h2></div><div class="g2"><h3>What viewers get</h3><div class="c2">
   <div class="r2"><span class="l">Quality</span><select class="i3" data-mirror="#outQ"></select></div>
   <div class="r2"><span class="l">Picture height (pixels)</span><input class="i3" type="number" min="360" max="2160" step="2" data-mirror="#outH"></div>
   <div class="r2"><span class="l">Frames a second</span><input class="i3" type="number" min="10" max="60" step="1" data-mirror="#outFps"></div>
   <div class="r2"><span class="l">Bitrate (kbps)</span><input class="i3" type="number" min="1000" max="60000" step="500" data-mirror="#outKbps"></div>
   <div class="r2"><span class="l">Encoder</span><span class="v2" id="s2Enc">...</span></div>
   <div class="r2"><span class="l">Keyframes</span><span class="v2">Every 2 seconds (what YouTube and Facebook ask for)</span></div>
-</div><p class="n2" id="s2OutNote"></p><p class="n2 s2-nostudio" hidden>Open the Studio once to change these.</p></div></section><section class="pane" data-pane="hotkeys" role="tabpanel" aria-label="Hotkeys"><div class="s2h"><h2>Hotkeys</h2><label class="hks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="hkQ" placeholder="Search hotkeys" aria-label="Search hotkeys"></label></div><div class="hkl" id="hkList"></div></section><section class="pane" data-pane="advanced" role="tabpanel" aria-label="Advanced"><div class="s2h"><h2>Advanced</h2></div><div class="g2"><div class="c2">
-  <div class="r2"><span class="l">If a channel drops</span><span class="v2">It reconnects by itself (up to 10 tries, a bit longer apart each time), then tells you.</span></div>
-  <div class="r2"><span class="l">Reset the Studio settings</span><button type="button" class="b3" data-click="#resetStudio">Reset</button></div>
-</div><p class="n2">Puts the video size, recording quality, transition, headphone output and Studio options back to how they started. Your scenes, sources and channels stay.</p></div></section><section class="pane" data-pane="system" role="tabpanel" aria-label="System"><div class="s2h"><h2>System</h2></div><div class="g2"><div class="c2">
+</div><p class="n2" id="s2OutNote"></p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="hotkeys" role="tabpanel" aria-label="Hotkeys"><div class="s2h"><h2>Hotkeys</h2><label class="hks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="hkQ" placeholder="Search hotkeys" aria-label="Search hotkeys"></label></div><div class="hkl" id="hkList"></div></section><section class="pane" data-pane="advanced" role="tabpanel" aria-label="Advanced"><div class="s2h"><h2>Advanced</h2></div><div class="g2"><div class="c2">
+  <div class="r2"><span class="l">If a channel drops</span><span class="v2">Reconnects by itself</span></div>
+  <div class="r2"><span class="l">Reset the Production settings</span><button type="button" class="b3" data-click="#resetStudio">Reset</button></div>
+</div><p class="n2">Resets settings only. Scenes, sources and channels stay.</p></div></section><section class="pane" data-pane="system" role="tabpanel" aria-label="System"><div class="s2h"><h2>System</h2></div><div class="g2"><div class="c2">
   <div class="r2"><span class="l">Version</span><span class="v2" id="s2Ver">...</span></div>
   <div class="r2"><span class="l">Updates</span><span class="v2">Checks automatically and tells you when one is ready</span></div>
   <div class="r2"><span class="l">This computer</span><span class="v2" id="s2Sys">...</span></div>
@@ -1540,7 +1560,7 @@ function renderSignal() {}
 setInterval(() => { if (last.obsLive && last.signal && last.signal.startedAt) $('#ovTime').textContent = fmtTime(Date.now() - last.signal.startedAt); }, 1000);
 
 // ---------- video preview ----------
-// The window plays the same stream the Studio sends. It is only decoded for display, never re-encoded.
+// The window plays the same stream the Production sends. It is only decoded for display, never re-encoded.
 let player = null;
 try { $('#pvSwitch').checked = localStorage.getItem('previewOn') !== '0'; } catch {}
 
@@ -1570,7 +1590,7 @@ function stopPreview(keepMessage) {
   if (!keepMessage) setPreviewMsg($('#pvSwitch').checked ? '' : 'Preview is off');
 }
 
-// The preview only plays while the Go Live page is on screen (not on the Multiview, and not while the
+// The preview only plays while the Livestream page is on screen (not on the Multiview, and not while the
 // window is minimised or hidden), so the computer does not decode video nobody is looking at.
 function syncPreview() {
   let onStream = true; try { onStream = page === 'dash'; } catch {} // (page is set further down)
@@ -1701,10 +1721,10 @@ function pollThumbs() {}
 let page = 'dash';
 let crPrev = '';
 const pageTabs = document.querySelectorAll('#sideNav [data-page]');
-// ---------------- pages in the side menu (other than Go Live and Multiview) ----------------
+// ---------------- pages in the side menu (other than Livestream and Multiview) ----------------
 const XPAGES = {};
 
-// OBS engine: the engine draws the picture straight onto the Go Live
+// OBS engine: the engine draws the picture straight onto the Livestream
 // preview box, on the graphics card. Its picture sits on top of the page, so it is taken away whenever the
 // box is not showing (another page, a pop-up window, or the app is minimised).
 (function () {
@@ -1731,7 +1751,7 @@ const XPAGES = {};
     st = s || st;
     last = '';
     const label = document.getElementById('ovPrev');
-    if (label) label.textContent = st.on && st.started ? 'Preview from the OBS engine' : 'Preview from the Studio';
+    if (label) label.textContent = st.on && st.started ? 'Preview from the OBS engine' : 'Preview from the Production';
     tick();
   };
   nat.onEngine(apply);
@@ -1767,7 +1787,7 @@ const XPAGES = {};
     if (on && page === 'cr' && !document.hidden && !popup) {
       const prog = $('#crProg');
       if (prog) want.set('mv-program', { rect: rectOf(prog, 34, 40), src: 'program' });
-      document.querySelectorAll('#crTiles button.mvt[data-n]').forEach((b, i) => {
+      document.querySelectorAll('#crView button.mvt[data-n]').forEach((b, i) => {
         const im = b.querySelector('img');
         if (im) want.set('mv-scene-' + i, { rect: rectOf(im, 26, 30), src: { scene: b.dataset.n } });
       });
@@ -1791,7 +1811,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   i.onkeydown = (e) => { if (e.key === 'Enter') end(i.value); if (e.key === 'Escape') end(null); };
   document.body.appendChild(w); i.focus(); i.select();
 });
-// Auto start: the plan the Studio runs when you press Start streaming (edited here, as in the design), and its progress while it runs
+// Auto start: the plan the Production runs when you press Start streaming (edited here, as in the design), and its progress while it runs
 (() => {
   let plan = null;
   const I = {
@@ -1830,10 +1850,10 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   $('#asRun').addEventListener('click', (e) => { if ($('#asRun').classList.contains('mini') && !e.target.closest('button')) setMini(false); });
   $('#asRunNext').onclick = () => api('/api/autostart/cmd', 'POST', { cmd: 'next' });
   $('#asRunStop').onclick = () => api('/api/autostart/cmd', 'POST', { cmd: 'stop' });
-  // the "Use the Auto start plan?" question (Go Live asks it when you press Start streaming)
+  // the "Use the Auto start plan?" question (Livestream asks it when you press Start streaming)
   window.msAskPlan = (pl) => new Promise((ok) => {
     const w = document.createElement('div'); w.className = 'pop2 ask';
-    w.innerHTML = '<div role="dialog" aria-label="Use the Auto start plan?"><div class="ttl">Use the Auto start plan?</div><div class="sub"></div><div class="rows"></div><div class="ft"><button type="button" class="b2 a1">Go live straight</button><button type="button" class="b2 p a2">Use the plan</button></div></div>';
+    w.innerHTML = '<div role="dialog" aria-label="Use the Auto start plan?"><div class="ttl">Use the Auto start plan?</div><div class="sub"></div><div class="rows"></div><div class="ft"><button type="button" class="b2 a1">Livestream straight</button><button type="button" class="b2 p a2">Use the plan</button></div></div>';
     w.querySelector('.sub').textContent = 'Plan: ' + pl.name;
     pl.steps.filter((x) => x.on !== false).forEach((x, k) => { const d = document.createElement('div'); d.innerHTML = '<i></i><b></b><span></span>'; d.children[0].textContent = k + 1; d.children[1].textContent = x.type === 'video' ? 'Play a video' : 'Show scene'; d.children[2].textContent = x.type === 'video' ? (x.name || 'video') + len(x) : sub(x).replace(', stays on', '') + (x.optional ? ' · optional' : ''); w.querySelector('.rows').appendChild(d); });
     const end = (v) => { w.remove(); ok(v); };
@@ -1841,7 +1861,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     w.querySelector('.a1').onclick = () => end(false); w.querySelector('.a2').onclick = () => end(true);
     document.body.appendChild(w); w.querySelector('.a2').focus();
   });
-  // a scene's picture, from the Studio running inside this window
+  // a scene's picture, from the Production running inside this window
   const studioWin = () => { try { const f = document.querySelector('#studioView iframe'); return f && f.contentWindow && f.contentWindow.byName ? f.contentWindow : null; } catch { return null; } };
   function scenePic(canvas, name) { const w = studioWin(); const c = canvas.getContext('2d'); c.fillStyle = '#0d1430'; c.fillRect(0, 0, canvas.width, canvas.height); if (w && w.drawFit) { try { w.drawFit(c, canvas.width, canvas.height, w.byName(name), false); } catch {} } }
   // one step, in detail (the ⋯ button): a preview on the left, its settings on the right
@@ -1941,8 +1961,8 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     document.body.appendChild(w);
   };
 })();
-// ======================= Go Live (as in the design) =======================
-// The Studio runs inside this window (hidden while you look at other pages), so streaming never stops when you move around.
+// ======================= Livestream (as in the design) =======================
+// The Production runs inside this window (hidden while you look at other pages), so streaming never stops when you move around.
 (() => {
   const ICON_PEN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
   const PLAT = { yt: 'YouTube', fb: 'Facebook', ig: 'Instagram', tt: 'TikTok', tw: 'Twitch', x: 'X', other: 'Custom RTMP' };
@@ -1955,12 +1975,12 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   let stats = null;
   const fmtClock = (ms) => { const s = Math.max(0, Math.floor(ms / 1000)); return String(Math.floor(s / 3600)).padStart(2, '0') + ':' + String(Math.floor(s / 60) % 60).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
 
-  // ---------- the Studio inside this window ----------
+  // ---------- the Production inside this window ----------
   const isMv = location.hash === '#control-room';
   function studio() {
     if (studioFrame) return studioFrame;
     const f = document.createElement('iframe');
-    f.src = '/studio.html?embed=1'; f.title = 'Studio';
+    f.src = '/studio.html?embed=1'; f.title = 'Production';
     f.allow = 'camera; microphone; display-capture; autoplay; fullscreen; clipboard-read; clipboard-write';
     $('#studioView').appendChild(f); studioFrame = f; return f;
   }
@@ -1969,11 +1989,11 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   window.msHotkeyStream = () => { const b = $('#sbBtn'); if (b) b.click(); };
   const studioReady = () => { const w = sw(); return Boolean(w && typeof w.msStart === 'function'); };
   async function waitStudio(ms) { const t0 = Date.now(); studio(); while (!studioReady() && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 200)); return studioReady(); }
-  // start the Studio a moment after the app opens, so its picture shows here before going live
+  // start the Production a moment after the app opens, so its picture shows here before going live
   if (window.msNative && !isMv) setTimeout(() => { try { if (localStorage.getItem('ms_studio_window') !== '1') studio(); } catch { studio(); } }, 1200);
   let navWasSmall = null;
-  XPAGES.studio = { title: 'Studio', el: 'studioView',
-    // like the design: the menu shows only icons next to the Studio
+  XPAGES.studio = { title: 'Production', el: 'studioView',
+    // like the design: the menu shows only icons next to the Production
     open() { studio(); $('#studioView').classList.remove('bg'); if (navWasSmall === null) { navWasSmall = document.documentElement.classList.contains('nav-small'); document.documentElement.classList.add('nav-small'); } setTimeout(() => { try { studioFrame.contentWindow.focus(); } catch {} }, 50); },
     close() { $('#studioView').classList.add('bg'); if (navWasSmall !== null) { document.documentElement.classList.toggle('nav-small', navWasSmall); navWasSmall = null; } } };
   $('#glpStudio').onclick = () => showPage('studio');
@@ -2014,7 +2034,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const out = [], hid = new Set();
     const yt = s.youtube || {}, fbs = s.facebook || {};
     const keyOf = (re) => s.destinations.find((d) => re.test(d.name) && !d.fbPage);
-    if (yt.connected) { const d = keyOf(/youtube/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'youtube', c: 'yt', name: names.youtube || 'YouTube', on: apiOn('youtube'), dest: d, session: Boolean(s.session && s.session.youtube), sub: yt.channelTitle || '', link: (s.session && s.session.ytLink) || '' }); }
+    if (yt.connected) { const d = keyOf(/youtube/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'youtube', c: 'yt', name: yt.channelTitle || 'YouTube', on: apiOn('youtube'), dest: d, session: Boolean(s.session && s.session.youtube), sub: yt.channelTitle || '', link: (s.session && s.session.ytLink) || '' }); }
     if (fbs.hasToken && fbs.pageId) { const d = keyOf(/facebook/i); if (d) hid.add(d.id); out.push({ kind: 'api', site: 'facebook', c: 'fb', name: fbs.pageName || 'Facebook', on: apiOn('facebook'), dest: d, session: Boolean(s.session && s.session.facebook), sub: 'Facebook', link: (s.session && s.session.fbLink) || '' }); }
     // every extra Facebook Page is its own channel (like Restream): its own switch and its own state
     if (fbs.hasToken && fbs.pageId) (fbs.also || []).forEach((p) => {
@@ -2039,26 +2059,26 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const s2 = stateOf(ch, live); if (s2.cls === 'bad' && !small) r.classList.add('err');
     r.innerHTML = tileHTML(ch.c) + '<div class="cmn"><div class="nm"></div><div class="sub"></div></div>' + (small ? '' : '<button type="button" class="ed" title="Edit">' + ICON_PEN + '</button>') + '<button type="button" class="tg2" role="switch"></button>';
     const nm = r.querySelector('.nm'); nm.textContent = ch.name;
-    // the status (Ready, Live, Off...) goes on the second line, so the name is never cut short by it
+    // Like Restream: the name (up to two lines), the stream title, then the status with viewers and a View link
     const sub = r.querySelector('.sub');
     if (small) sub.remove();
-    else if (s2.msg) { sub.textContent = s2.msg; sub.title = s2.msg; sub.style.color = '#ff8a90'; }
-    // sign-in channels show which account or Page they go to (like Restream); the title is on the preview
     else {
-      const rest = [ch.kind === 'api' ? (ch.sub || titleFor(ch.c).title) : (live ? '' : ch.dest.hasKey ? '' : 'Add its stream key')].filter(Boolean).join('');
-      if (live && s2.cls === 'live') { const x = document.createElement('span'); x.className = 'st live'; x.style.display = 'inline'; x.textContent = s2.t; sub.appendChild(x); if (rest) sub.append(' · ' + rest); }
-      else sub.textContent = [s2.t, rest].filter(Boolean).join(' · ');
-    }
-    if (!sub.textContent) sub.remove();
-    // while live on Facebook or YouTube: a link straight to the live video, to check it arrived
-    if (!small && ch.session && (ch.site === 'facebook' || ch.site === 'youtube')) {
-      const fbk = ch.site === 'facebook';
-      const to = fbk ? (ch.link || 'https://www.facebook.com/live/producer') : (ch.link || 'https://studio.youtube.com/channel/UC/livestreaming');
-      const a = document.createElement('button'); a.type = 'button'; a.className = 'fblink';
-      a.textContent = (fbk ? 'Open on Facebook' : 'Open on YouTube') + '\u00a0\u2197';
-      a.title = ch.link ? 'Opens the live video in your browser' : (fbk ? 'Opens Live Producer, where every live video on your Pages is listed' : 'Opens YouTube Studio, where your live videos are listed');
-      a.onclick = (e) => { e.stopPropagation(); window.open(to, '_blank'); };
-      r.querySelector('.cmn').appendChild(a);
+      const ttl = ch.kind === 'api' ? (ch.page ? (ch.title || titleFor('fb').title) : titleFor(ch.c).title) : (ch.dest.hasKey ? '' : 'Add its stream key');
+      if (ttl) { const t = document.createElement('div'); t.className = 'cttl'; t.textContent = ttl; t.title = ttl; sub.before(t); }
+      sub.className = 'meta';
+      const stx = document.createElement('span'); stx.className = 'st ' + s2.cls; stx.textContent = s2.cls === 'live' ? 'Streaming' : s2.t.replace(/ · .*$/, ''); sub.appendChild(stx);
+      if (s2.msg) { stx.title = s2.msg; stx.textContent = 'Problem: ' + s2.msg; }
+      const v = live && s2.cls === 'live' && ch.site && stats && stats[ch.site];
+      if (v) { const e = document.createElement('span'); e.className = 'eye'; e.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'; e.append(String(v.viewers.toLocaleString())); e.title = 'Watching now'; sub.appendChild(e); }
+      // while live on Facebook or YouTube: a link straight to the live video, to check it arrived
+      if (ch.session && (ch.site === 'facebook' || ch.site === 'youtube')) {
+        const fbk = ch.site === 'facebook';
+        const to = fbk ? (ch.link || 'https://www.facebook.com/live/producer') : (ch.link || 'https://studio.youtube.com/channel/UC/livestreaming');
+        const a = document.createElement('button'); a.type = 'button'; a.className = 'fblink'; a.textContent = 'View \u2197';
+        a.title = ch.link ? 'Opens the live video in your browser' : (fbk ? 'Opens Live Producer, where every live video on your Pages is listed' : 'Opens YouTube Studio, where your live videos are listed');
+        a.onclick = (e) => { e.stopPropagation(); window.open(to, '_blank'); };
+        sub.appendChild(a);
+      }
     }
     const tg = r.querySelector('.tg2'); tg.classList.toggle('on', ch.on); tg.setAttribute('aria-checked', String(ch.on)); tg.setAttribute('aria-label', ch.name + (ch.on ? ' on' : ' off'));
     tg.onclick = () => toggleCh(ch, !ch.on);
@@ -2096,7 +2116,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const onList = chs.filter((c) => c.on);
     const sites = onList.map((c) => c.name).join(' + ') || 'no channels yet';
     let q = ''; try { const m = sw() && sw().msState && sw().msState(); if (m) q = ' · ' + m.quality + ' · ' + m.fps + ' fps'; } catch {}
-    $('#glpSub').textContent = (live ? sites : 'Will go to ' + sites) + q + (live && studioRec() ? ' · recording in the Studio' : '');
+    $('#glpSub').textContent = (live ? sites : 'Will go to ' + sites) + q + (live && studioRec() ? ' · recording in the Production' : '');
     paintTitle();
     // channels
     const L = $('#chList'), O = $('#chOff'); L.textContent = ''; O.textContent = '';
@@ -2128,7 +2148,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     $('#igTile').innerHTML = tileHTML(c0 ? c0.c : 'ig');
     $('#igTitle').textContent = $('#glpTitle').textContent;
     const only = chs.length === 1 ? chs[0].name + ' only' : chs.map((c) => c.name).join(' + ') || 'No channels on';
-    $('#igSub').textContent = only + (ms ? ' · ' + (ms.quality === '720p' ? '720 × 1280' : ms.quality === '1440p' ? '1440 × 2560' : ms.quality === '2160p' ? '2160 × 3840' : '1080 × 1920') + ' · ' + ms.fps + ' fps' : '') + (ms && ms.recording ? ' · recording in the Studio' : '');
+    $('#igSub').textContent = only + (ms ? ' · ' + (ms.quality === '720p' ? '720 × 1280' : ms.quality === '1440p' ? '1440 × 2560' : ms.quality === '2160p' ? '2160 × 3840' : '1080 × 1920') + ' · ' + ms.fps + ' fps' : '') + (ms && ms.recording ? ' · recording in the Production' : '');
     $('#igFor').textContent = st.obsLive && st.signal && st.signal.startedAt ? (() => { const s2 = Math.floor((Date.now() - st.signal.startedAt) / 1000); return (s2 >= 3600 ? Math.floor(s2 / 3600) + ':' + String(Math.floor(s2 / 60) % 60).padStart(2, '0') : Math.floor(s2 / 60)) + ':' + String(s2 % 60).padStart(2, '0'); })() : '0:00';
     $('#igScene').textContent = (ms && ms.scene) || '–'; $('#igColl').textContent = (ms && ms.collection) || '–';
     $('#igNote').hidden = !(c0 && c0.c === 'ig');
@@ -2136,7 +2156,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   const studioRec = () => { try { const w = sw(); return Boolean(w && w.msState && w.msState().recording); } catch { return false; } };
   setInterval(() => { if (st && st.obsLive && st.signal && st.signal.startedAt) { const t = fmtClock(Date.now() - st.signal.startedAt); $('#navLiveS').textContent = t; $('#ovTime').textContent = t; } }, 1000);
 
-  // ---------- before going live: the Studio's own picture ----------
+  // ---------- before going live: the Production's own picture ----------
   function offlinePreview() {
     const live = st && st.obsLive, w = sw();
     let cv = null; try { cv = w && w.document && w.document.getElementById('cv'); } catch {}
@@ -2145,12 +2165,12 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const empty = !live && Boolean(cv) && !has;
     const show = !live && Boolean(cv) && has && page === 'dash';
     $('#pvStudio').hidden = !show; $('#offlineView').hidden = live || (Boolean(cv) && has);
-    $('#h1').textContent = empty ? 'Nothing in the picture yet' : 'Waiting for the Studio';
-    $('#lead').textContent = empty ? 'Add a camera, a screen or a picture to this scene in the Studio.' : 'The Studio makes the picture. It starts by itself when the app opens.';
+    $('#h1').textContent = empty ? 'Nothing in the picture yet' : 'Waiting for the Production';
+    $('#lead').textContent = empty ? 'Add a camera, a screen or a picture to this scene in the Production.' : 'The Production makes the picture. It starts by itself when the app opens.';
     $('#offlineView').classList.toggle('empty', empty);
     $('#pv').hidden = !live;
   }
-  // The Studio's picture on Go Live: copied once for each new picture the Studio makes (smooth, like the OBS preview),
+  // The Production's picture on Livestream: copied once for each new picture the Production makes (smooth, like the OBS preview),
   // and the words around it are set only when something changes (they used to be rewritten 10 times a second).
   let pvPf = -1, pvHad = false;
   const pvLoop = () => {
@@ -2166,12 +2186,12 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   requestAnimationFrame(pvLoop);
   // Listen: hear the stream (the live preview's sound) on this computer
   $('#glpListen').onclick = () => {
-    const v = $('#pv'); if (!(st && st.obsLive)) { alert('Listen works while you are live. Before that, use Listen in headphones in the Studio’s Audio Mixer.'); return; }
+    const v = $('#pv'); if (!(st && st.obsLive)) { alert('Listen works while you are live. Before that, use Listen in headphones in the Production’s Audio Mixer.'); return; }
     v.muted = !v.muted; $('#glpListen').classList.toggle('on', !v.muted); $('#glpListen').querySelector('span').textContent = v.muted ? 'Listen' : 'Listening';
   };
 
   // ---------- Private test ----------
-  // The switch is in Settings → Stream and is remembered. Go Live only shows a "Private test: on" button
+  // The switch is in Settings → Stream and is remembered. Livestream only shows a "Private test: on" button
   // while it is on (so nobody goes live privately by mistake); pressing it turns the test off.
   try { $('#fbTest').checked = localStorage.getItem('ms_ptest') !== '0'; $('#fbTest').dispatchEvent(new Event('change')); } catch {}
   $('#fbTest').addEventListener('change', () => { try { localStorage.setItem('ms_ptest', $('#fbTest').checked ? '1' : '0'); } catch {} paintPt(); });
@@ -2199,19 +2219,19 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       starting = false; refresh(); return;
     }
     const chs = st ? channels(st) : [], apis = chs.filter((c) => c.kind === 'api' && c.on);
-    if (!chs.some((c) => c.on)) { if (!confirm('No channel is on. Start streaming anyway (only the Studio and recording)?')) return; }
+    if (!chs.some((c) => c.on)) { if (!confirm('No channel is on. Start streaming anyway (only the Production and recording)?')) return; }
     if (apis.length && !$('#fbTest').checked && !confirm('Private test is off. This goes live publicly on ' + apis.map((c) => c.name).join(' and ') + '. Continue?')) return;
     let usePlan = false;
     try { const plan = await api('/api/autostart'); if (plan && plan.on && (plan.steps || []).length) usePlan = plan.ask ? await askPlan(plan) : true; } catch {}
     if (usePlan === null) return;
     starting = true; sb.disabled = true; sb.querySelector('span').textContent = 'Starting...';
-    if (!(await waitStudio(20000))) { starting = false; sb.disabled = false; alert('The Studio did not start. Open the Studio page and try again.'); return; }
+    if (!(await waitStudio(20000))) { starting = false; sb.disabled = false; alert('The Production did not start. Open the Production page and try again.'); return; }
     await sw().msStart(usePlan);
     // wait for the picture to arrive, then go live on the sign-in channels
     const t0 = Date.now(); let s2 = st;
     while (Date.now() - t0 < 25000) { await new Promise((r) => setTimeout(r, 700)); try { s2 = await api('/api/state'); } catch {} if (s2 && s2.obsLive) break; }
     if (s2 && s2.obsLive) { for (const c of apis) if (!(s2.session && s2.session[c.site])) await goLiveOn(c.site); }
-    else alert('The Studio started, but no picture arrived yet. Check the Studio page.' + (s2 && s2.studio && s2.studio.error ? '\n\n' + s2.studio.error : ''));
+    else alert('The Production started, but no picture arrived yet. Check the Production page.' + (s2 && s2.studio && s2.studio.error ? '\n\n' + s2.studio.error : ''));
     starting = false; refresh();
   };
   const askPlan = (pl) => window.msAskPlan(pl);
@@ -2365,8 +2385,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     } else if (ch.kind === 'api') {
       const fbk = ch.site === 'facebook';
       // Facebook: the name is the Page's own name (it cannot be renamed here); the box is for the title and description
-      f.innerHTML = (fbk ? '<label>Title on Facebook<input type="text" class="e5" maxlength="250" placeholder="Uses All channels until you type here"></label><label>Description on Facebook<textarea class="e6" rows="3" maxlength="5000" placeholder="Uses All channels until you type here"></textarea></label>' : '<label>Name shown in Multistream<input type="text" class="e1"></label>') + '<p class="note">Who can watch follows Private test (Settings → Stream): on, only you see it; off, everyone does.</p><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
-      if (!fbk) f.querySelector('.e1').value = ch.name;
+      f.innerHTML = (fbk ? '<label>Title on Facebook<input type="text" class="e5" maxlength="250" placeholder="Uses All channels until you type here"></label><label>Description on Facebook<textarea class="e6" rows="3" maxlength="5000" placeholder="Uses All channels until you type here"></textarea></label>' : '') + '<p class="note">Who can watch follows Private test in Settings.</p><div class="signin"><span>Sign-in</span><span style="flex:1"></span><button type="button" class="btn sa">Sign in again</button></div>';
       if (fbk) { if (tab === 'fb') titles.fb = { t: $('#glTitle').value.trim(), d: $('#glDesc').value.trim() }; f.querySelector('.e5').value = (titles.fb && titles.fb.t) || ''; f.querySelector('.e6').value = (titles.fb && titles.fb.d) || ''; }
       f.querySelector('.sa').onclick = () => { close(); if (fbk) addChannel('fb'); else openSettings(ch.site); };
       if (fbk) d.querySelector('.rm').textContent = 'Remove this Page';
@@ -2377,12 +2396,13 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       };
       d.querySelector('.o').onclick = () => {
         if (fbk) { titles.fb = { t: f.querySelector('.e5').value.trim(), d: f.querySelector('.e6').value.trim() }; if (!titles.fb.t && !titles.fb.d) delete titles.fb; saveTitles(); paintTabs(); if (tab === 'fb') { $('#glTitle').value = titles.fb.t; $('#glDesc').value = titles.fb.d; } delete names.facebook; }
-        else { const n = f.querySelector('.e1').value.trim(); if (n && n !== 'YouTube') names[ch.site] = n; else delete names[ch.site]; }
+        else delete names[ch.site];
         try { localStorage.setItem('ms_names', JSON.stringify(names)); } catch {} close(); refresh(); };
     } else {
       const x = ch.dest;
       f.innerHTML = '<label>Name shown in Multistream<input type="text" class="e1"></label><label>Server<input type="text" class="e2" placeholder="rtmps://..."></label><label>Stream key<input type="password" class="e3" autocomplete="off"></label><p class="note"></p>';
       f.querySelector('.e1').value = x.name; f.querySelector('.e2').value = x.url || '';
+      if (platform(x.name).c !== 'other') f.querySelector('.e1').parentElement.hidden = true; // a site's channel keeps the site's name
       // Instagram is watched on an upright phone: choose how the wide picture is shown there
       const insta = /instagram/i.test((x.name || '') + ' ' + (x.url || ''));
       if (insta) {
@@ -2646,19 +2666,25 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       if (/\.mkv$/i.test(f.name) && !f.hasMp4 && !(f.job && f.job.kind === 'mp4' && !f.job.error)) btn('Make MP4', () => act('mp4', f.name));
       // upload this one recording to YouTube by hand (the same privacy as chosen at the bottom of this page)
       if (r.youtube && !f.youtube && !f.queued && !(f.job && !f.job.error)) btn(f.job && f.job.error ? 'Try the upload again' : 'Upload to YouTube', () => { if (confirm('Upload "' + title(f) + '" to YouTube as ' + (PRIV[r.privacy] || 'Unlisted') + '?')) act('upload', f.name); });
+      // tidy up without leaving the app
+      if (!(f.job && !f.job.error) && !f.queued) {
+        btn('Move to Done', () => act('done', f.name));
+        if (r.canTrash) btn('Delete', () => { if (confirm('Delete "' + title(f) + '"? It goes to the Recycle Bin.' + (f.youtube ? '' : ' It is NOT on YouTube yet.'))) act('trash', f.name); });
+      }
       c.appendChild(bt); box.appendChild(c);
     });
-    if (!(r.files || []).length) box.innerHTML = '<div class="rc-empty">No recordings yet. Press Start recording in the Studio.</div>';
+    if (!(r.files || []).length) box.innerHTML = '<div class="rc-empty">No recordings yet. Press Start recording in the Production.</div>';
     $('#rcYt').innerHTML = tileHTML('yt');
     const tg = $('#rcAuto'); tg.classList.toggle('on', Boolean(r.auto)); tg.setAttribute('aria-checked', String(Boolean(r.auto)));
     $('#rcAutoN').textContent = r.youtube ? '' : 'Connect YouTube first (Settings → Stream).';
-    $('#rcPriv').value = r.privacy || 'unlisted';
+    $('#rcPriv').value = r.privacy || 'unlisted'; $('#rcAfter').value = r.after || 'keep'; $('#rcAfter').querySelector('[value=trash]').hidden = !r.canTrash;
   }
   async function tick() { try { data = await api('/api/recordings'); } catch { return; } draw(); }
   $('#rcOpen').onclick = () => api('/api/recording/open', 'POST').then((r) => { if (r && r.error) alert(r.error); });
   $('#rcRemux').onclick = () => { if (!confirm('Copy every MKV recording to an MP4 (same quality, the MKV is kept)?')) return; api('/api/recordings/mp4-all', 'POST').then(tick); };
   $('#rcAuto').onclick = () => api('/api/recordings', 'PUT', { auto: !$('#rcAuto').classList.contains('on') }).then(tick);
   $('#rcPriv').onchange = () => api('/api/recordings', 'PUT', { privacy: $('#rcPriv').value }).then(tick);
+  $('#rcAfter').onchange = () => api('/api/recordings', 'PUT', { after: $('#rcAfter').value }).then(tick);
   XPAGES.rec = { title: 'Recordings', el: 'recView', open() { if (!t) { tick(); t = setInterval(tick, 2000); } }, close() { clearInterval(t); t = null; } };
 })();
 // Stream health: how the stream is doing right now, updated every 2 seconds while the page is open
@@ -2720,7 +2746,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
 })();
 function showPage(p) {
   if (p === 'studio') {
-    // the Studio runs inside this window and keeps running when you look at other pages. ms_studio_window is for the automatic test only.
+    // the Production runs inside this window and keeps running when you look at other pages. ms_studio_window is for the automatic test only.
     let m = 'same'; try { if (localStorage.getItem('ms_studio_window') === '1') m = 'window'; } catch {}
     if (m === 'window') { if (window.msNative) window.msNative.openStudio(false); else window.open('/studio.html', '_blank'); return; }
   }
@@ -2728,12 +2754,12 @@ function showPage(p) {
   document.documentElement.classList.toggle('on-studio', page === 'studio');
   $('#glActs').hidden = page !== 'dash'; $('#rcActs').hidden = page !== 'rec'; $('#mvActs').hidden = page !== 'cr'; $('#anActs').hidden = page !== 'stats'; if (page !== 'cr') $('#mvShape').hidden = true;
   { let small = false; try { small = localStorage.getItem('ms_nav_small') === '1'; } catch {} document.documentElement.classList.toggle('nav-small', page === 'cr' || small); } $('#scActs').hidden = page !== 'coll';
-  $('#pageTitle').textContent = page === 'cr' ? 'Multiview' : XPAGES[page] ? XPAGES[page].title : 'Go Live';
+  $('#pageTitle').textContent = page === 'cr' ? 'Multiview' : XPAGES[page] ? XPAGES[page].title : 'Livestream';
   $('.app').hidden = page !== 'dash';
   $('#crView').hidden = page !== 'cr';
   document.querySelectorAll('.xpage').forEach((x) => { x.hidden = !(XPAGES[page] && x.id === XPAGES[page].el); });
   Object.entries(XPAGES).forEach(([k, v]) => { if (k === page) v.open(); else v.close(); });
-  if (page === 'cr') document.documentElement.classList.add('nav-small'); // the same narrow menu as the Studio, so the tabs do not jump
+  if (page === 'cr') document.documentElement.classList.add('nav-small'); // the same narrow menu as the Production, so the tabs do not jump
   pageTabs.forEach((b) => { if (b.dataset.page === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   try { history.replaceState(null, '', page === 'cr' ? '#control-room' : XPAGES[page] ? '#' + page : location.pathname + location.search); } catch {}
   renderCr();
@@ -2787,31 +2813,69 @@ function fitCrTiles() {
   const tall = stu.shape === 'portrait', sq = stu.shape === 'square';
   cr.classList.toggle('tall', tall); cr.classList.toggle('sq', sq);
   const ar = tall ? 9 / 16 : sq ? 1 : 16 / 9; // every box has the picture's own shape
-  const g = $('#crTiles'), pb = $('#crProgBox'), n = g.children.length, gp = 10;
+  const g = $('#crTiles'), top = cr.querySelector('.mv-top'), pb = $('#crProgBox'), gp = 10;
   const W = cr.clientWidth - 24, H = cr.clientHeight - 12, lim = (v, a, b) => Math.max(a, Math.min(b, v));
-  MV_VIEWS.forEach((v) => cr.classList.toggle('v-' + v, mvView === v));
-  ['top', 'bottom', 'left', 'right'].forEach((d) => cr.classList.toggle('sp-' + d, mvView === 'speaker' && mvSide === d));
-  $('#mvViews').querySelectorAll('button').forEach((b) => { b.classList.toggle('on', b.dataset.mv === mvView); b.setAttribute('aria-pressed', String(b.dataset.mv === mvView)); });
-  g.style.gridTemplateColumns = ''; cr.style.paddingLeft = cr.style.paddingRight = '';
-  let tw, th, pw, ph;
-  if (mvView === 'speaker') {
-    if (mvSide === 'top' || mvSide === 'bottom') { // a row: as high as a sixth of the window, smaller if the scenes would not fit side by side
-      th = lim(H * 0.17, 70, 170); tw = th * ar; if (n * tw + gp * (n - 1) > W) { tw = (W - gp * (n - 1)) / Math.max(1, n); th = tw / ar; }
-      const rh = n ? H - th - gp : H; pw = Math.min(W, rh * ar); ph = pw / ar;
-    } else { // a column at the side
-      tw = lim(W * 0.17, 130, 300); th = tw / ar; if (n * th + gp * (n - 1) > H) { th = (H - gp * (n - 1)) / Math.max(1, n); tw = th * ar; }
-      const rw = n ? W - tw - gp : W; pw = Math.min(rw, H * ar); ph = pw / ar;
-    }
-    mvBoxes().forEach((el) => { el.style.order = ''; });
-  } else { // Gallery and Custom: the most boxes a row that keeps each box as big as it can be
-    const boxes = mvView === 'custom' ? n + 1 : n, m = Math.max(1, boxes); let cols = 1; tw = 0;
-    for (let c = 1; c <= m; c++) { const rows = Math.ceil(m / c), w = Math.min((W - gp * (c - 1)) / c, ((H - gp * (rows - 1)) / rows) * ar); if (w > tw) { tw = w; cols = c; } }
-    tw = Math.floor(tw); th = tw / ar; pw = tw; ph = th;
-    { const side = 12 + Math.max(0, Math.floor((W - (cols * tw + gp * (cols - 1))) / 2)) + 'px'; cr.style.paddingLeft = cr.style.paddingRight = side; } // room for exactly this many boxes a row
-    if (mvView === 'custom') mvApplyOrder(); else mvBoxes().forEach((el) => { el.style.order = ''; });
+  const tiles = [...cr.querySelectorAll('button.mvt[data-n]')].sort((a, b) => a.dataset.i - b.dataset.i);
+  mvPins = mvPins.filter((n) => tiles.some((t) => t.dataset.n === n));
+  // the most boxes a row that keeps each of m boxes as big as it can be in a w x h space
+  const grid = (m, w, h) => { let cols = 1, bw = 0; for (let c = 1; c <= Math.max(1, m); c++) { const rows = Math.ceil(m / c), x = Math.min((w - gp * (c - 1)) / c, ((h - gp * (rows - 1)) / rows) * ar); if (x > bw) { bw = x; cols = c; } } return { cols, w: Math.floor(bw) }; };
+  // Speaker: pinned scenes sit in the big area beside the Program picture; with nothing there, it is a gallery
+  const pinned = mvView === 'speaker' ? tiles.filter((t) => mvPins.includes(t.dataset.n)) : [];
+  const mainN = mvView === 'speaker' ? pinned.length + (mvHideProg ? 0 : 1) : 0;
+  const view = mvView === 'speaker' && !mainN ? 'gallery' : mvView;
+  tiles.forEach((t) => { const inTop = pinned.includes(t); if (inTop && t.parentElement !== top) top.appendChild(t); else if (!inTop && t.parentElement !== g) g.appendChild(t); t.classList.toggle('pin', inTop); t.style.order = t.dataset.i; t.style.width = t.style.height = ''; });
+  pb.style.order = '-1';
+  MV_VIEWS.forEach((v) => cr.classList.toggle('v-' + v, view === v));
+  ['top', 'bottom', 'left', 'right'].forEach((d) => cr.classList.toggle('sp-' + d, view === 'speaker' && mvSide === d));
+  cr.classList.toggle('hideprog', mvHideProg || view === 'gallery'); cr.classList.toggle('no-main', false);
+  g.style.gridTemplateColumns = ''; cr.style.paddingLeft = cr.style.paddingRight = ''; g.style.width = g.style.height = '';
+  const n = tiles.length - pinned.length; let tw, th, pw, ph, mw = 0, mh = 0;
+  const horiz = mvSide === 'top' || mvSide === 'bottom';
+  if (view === 'speaker') {
+    if (horiz) { th = n ? lim(H * mvStrip, 60, H * 0.6) : 0; tw = th * ar; mw = W; mh = n ? H - th - gp : H; g.style.width = Math.min(W, n * tw + gp * Math.max(0, n - 1)) + 'px'; }
+    else { tw = n ? lim(W * mvStrip, 100, W * 0.6) : 0; th = tw / ar; mw = n ? W - tw - gp : W; mh = H; g.style.height = Math.min(H, n * th + gp * Math.max(0, n - 1)) + 'px'; }
+    const b = grid(mainN, mw, mh); pw = b.w; ph = pw / ar;
+    pinned.forEach((t) => { t.style.width = Math.floor(pw) + 'px'; t.style.height = Math.floor(ph) + 'px'; });
+    if (!n) g.style.width = g.style.height = '0px';
+  } else { // Gallery and Custom
+    const m = Math.max(1, tiles.length + (view === 'custom' && !mvHideProg ? 1 : 0)), b = grid(m, W, H);
+    tw = b.w; th = tw / ar; pw = tw; ph = th;
+    { const side = 12 + Math.max(0, Math.floor((W - (b.cols * tw + gp * (b.cols - 1))) / 2)) + 'px'; cr.style.paddingLeft = cr.style.paddingRight = side; } // room for exactly this many boxes a row
+    if (view === 'custom') mvApplyOrder();
   }
   cr.style.setProperty('--tw', Math.floor(tw) + 'px'); cr.style.setProperty('--th', Math.floor(th) + 'px');
   pb.style.width = Math.floor(pw) + 'px'; pb.style.height = Math.floor(ph) + 'px';
+  mvExtras(view === 'speaker' && n > 0, horiz);
+}
+// the row's size handle and its arrows (Speaker)
+function mvExtras(show, horiz) {
+  const cr = $('#crView'), g = $('#crTiles');
+  let sz = cr.querySelector('.mv-size'), a1 = cr.querySelector('.mv-arr.a1'), a2 = cr.querySelector('.mv-arr.a2');
+  if (!sz) {
+    sz = document.createElement('div'); sz.className = 'mv-size'; sz.title = 'Drag to make the scenes bigger or smaller'; cr.appendChild(sz);
+    a1 = document.createElement('button'); a1.type = 'button'; a1.className = 'mv-arr a1'; a1.setAttribute('aria-label', 'Earlier scenes'); cr.appendChild(a1);
+    a2 = document.createElement('button'); a2.type = 'button'; a2.className = 'mv-arr a2'; a2.setAttribute('aria-label', 'More scenes'); cr.appendChild(a2);
+    const go = (dir) => { const hz = mvSide === 'top' || mvSide === 'bottom', step = (hz ? g.clientWidth : g.clientHeight) * 0.8 * dir; g.scrollBy(hz ? { left: step } : { top: step }); setTimeout(() => mvExtras(true, hz), 350); };
+    a1.onclick = (e) => { e.stopPropagation(); go(-1); }; a2.onclick = (e) => { e.stopPropagation(); go(1); };
+    g.addEventListener('wheel', (e) => { if (mvView !== 'speaker') return; const hz = mvSide === 'top' || mvSide === 'bottom', d = e.deltaY || e.deltaX; g.scrollBy(hz ? { left: d } : { top: d }); clearTimeout(g._wt); g._wt = setTimeout(() => mvExtras(true, hz), 200); }, { passive: true });
+    sz.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); e.stopPropagation(); sz.classList.add('on');
+      const r = cr.getBoundingClientRect();
+      const move = (ev) => { const x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height; const f = mvSide === 'top' ? y : mvSide === 'bottom' ? 1 - y : mvSide === 'left' ? x : 1 - x; mvStrip = Math.max(0.08, Math.min(0.55, f)); fitCrTiles(); };
+      const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); sz.classList.remove('on'); mvSave(); };
+      addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+    });
+  }
+  sz.hidden = !show; if (!show) { a1.hidden = a2.hidden = true; return; }
+  const c = cr.getBoundingClientRect(), r = g.getBoundingClientRect(), x = r.left - c.left, y = r.top - c.top;
+  sz.className = 'mv-size ' + (horiz ? 'h' : 'v');
+  if (horiz) { sz.style.cssText = 'left:12px;right:12px;top:' + Math.round(mvSide === 'top' ? y + r.height - 1 : y - 11) + 'px'; }
+  else { sz.style.cssText = 'top:0;bottom:12px;left:' + Math.round(mvSide === 'left' ? x + r.width - 1 : x - 11) + 'px'; }
+  const over = horiz ? g.scrollWidth - g.clientWidth : g.scrollHeight - g.clientHeight, at = horiz ? g.scrollLeft : g.scrollTop;
+  a1.hidden = !(over > 4 && at > 4); a2.hidden = !(over > 4 && at < over - 4);
+  a1.textContent = horiz ? '\u2039' : '\u2303'; a2.textContent = horiz ? '\u203A' : '\u2304';
+  if (horiz) { const t = Math.round(y + r.height / 2 - 17) + 'px'; a1.style.cssText = 'top:' + t + ';left:' + Math.round(x + 4) + 'px'; a2.style.cssText = 'top:' + t + ';left:' + Math.round(x + r.width - 38) + 'px'; }
+  else { const l = Math.round(x + r.width / 2 - 17) + 'px'; a1.style.cssText = 'left:' + l + ';top:' + Math.round(y + 4) + 'px'; a2.style.cssText = 'left:' + l + ';top:' + Math.round(y + r.height - 38) + 'px'; }
 }
 new ResizeObserver(() => fitCrTiles()).observe($('#crView')); addEventListener('resize', () => fitCrTiles());
 
@@ -2820,30 +2884,60 @@ new ResizeObserver(() => fitCrTiles()).observe($('#crView')); addEventListener('
 // Gallery: every scene the same size. Custom: like Gallery with the Program picture too, in your own order: drag a box onto another to move it.
 // Boxes always keep the picture's shape. The layout, the side and the order are remembered on this computer.
 const MV_VIEWS = ['speaker', 'gallery', 'custom'];
-let mvView = 'speaker', mvSide = 'bottom', mvOrder = [];
+let mvView = 'speaker', mvSide = 'top', mvOrder = [], mvStrip = 0.2, mvHideProg = false, mvPins = [], mvNames = [];
 try {
   const v = localStorage.getItem('ms_mv_view'); if (MV_VIEWS.includes(v)) mvView = v;
   const sd = localStorage.getItem('ms_mv_side'); if (['top', 'bottom', 'left', 'right'].includes(sd)) mvSide = sd;
   const o = JSON.parse(localStorage.getItem('ms_mv_order') || '[]'); if (Array.isArray(o)) mvOrder = o.map(String);
+  const x = JSON.parse(localStorage.getItem('ms_mv_more') || '{}') || {};
+  if (x.strip > 0.05 && x.strip < 0.6) mvStrip = x.strip; mvHideProg = Boolean(x.hide); if (Array.isArray(x.pins)) mvPins = x.pins.map(String);
 } catch {}
-function mvSave() { try { localStorage.setItem('ms_mv_view', mvView); localStorage.setItem('ms_mv_side', mvSide); localStorage.setItem('ms_mv_order', JSON.stringify(mvOrder)); } catch {} }
+function mvSave() { try { localStorage.setItem('ms_mv_view', mvView); localStorage.setItem('ms_mv_side', mvSide); localStorage.setItem('ms_mv_order', JSON.stringify(mvOrder)); localStorage.setItem('ms_mv_more', JSON.stringify({ strip: mvStrip, hide: mvHideProg, pins: mvPins })); } catch {} }
 const mvKeyOf = (el) => (el.id === 'crProgBox' ? '*program' : el.dataset.n);
-function mvBoxes() { return [$('#crProgBox'), ...document.querySelectorAll('#crTiles button.mvt[data-n]')]; }
+function mvBoxes() { return [$('#crProgBox'), ...document.querySelectorAll('#crView button.mvt[data-n]')]; }
 function mvApplyOrder() { // your order first; boxes it does not know yet (new scenes) go to the end
   const boxes = mvBoxes(), keys = boxes.map(mvKeyOf);
   mvOrder = mvOrder.filter((k) => keys.includes(k)).concat(keys.filter((k) => !mvOrder.includes(k)));
   boxes.forEach((el) => { el.style.order = String(mvOrder.indexOf(mvKeyOf(el))); });
 }
-function mvSetView(v) { mvView = v; mvSave(); fitCrTiles(); }
-$('#mvViews').onclick = (e) => { const b = e.target.closest('button[data-mv]'); if (b) mvSetView(b.dataset.mv); };
-// back to how it starts: Speaker view, the row at the bottom, the scenes in their own order
-$('#mvResetB').onclick = () => { mvView = 'speaker'; mvSide = 'bottom'; mvOrder = []; mvSave(); fitCrTiles(); };
+// The View button (like Zoom's): the views, show or hide the Program picture, and Reset
+function mvMenuDraw() {
+  const m = $('#mvMenu'); m.textContent = '';
+  const add = (t, on, fn) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.textContent = t; b.classList.toggle('on', Boolean(on)); b.onclick = () => { fn(); mvMenuShow(false); mvSave(); fitCrTiles(); }; m.appendChild(b); };
+  add('Speaker', mvView === 'speaker', () => { mvView = 'speaker'; }); add('Gallery', mvView === 'gallery', () => { mvView = 'gallery'; }); add('Custom order', mvView === 'custom', () => { mvView = 'custom'; });
+  m.appendChild(document.createElement('hr'));
+  add(mvHideProg ? 'Show the Program picture' : 'Hide the Program picture', false, () => { mvHideProg = !mvHideProg; });
+  if (mvPins.length) add('Unpin all scenes', false, () => { mvPins = []; });
+  m.appendChild(document.createElement('hr'));
+  add('Reset', false, () => { mvView = 'speaker'; mvSide = 'top'; mvOrder = []; mvStrip = 0.2; mvHideProg = false; mvPins = []; $('#crTiles').scrollTo(0, 0); });
+}
+function mvMenuShow(on) { const m = $('#mvMenu'); if (on) mvMenuDraw(); m.hidden = !on; $('#mvMenuB').setAttribute('aria-expanded', String(on)); }
+$('#mvMenuB').onclick = (e) => { e.stopPropagation(); mvMenuShow($('#mvMenu').hidden); };
+document.addEventListener('click', (e) => { if (!e.target.closest('.mv-menuw')) mvMenuShow(false); const c = document.querySelector('.mv-ctx'); if (c && !e.target.closest('.mv-ctx')) c.remove(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { mvMenuShow(false); const c = document.querySelector('.mv-ctx'); if (c) c.remove(); } });
+// right-click a box (like Zoom): pin a scene to the big area, or hide the Program picture
+$('#crView').addEventListener('contextmenu', (e) => {
+  const box = e.target.closest('.mvt'); if (!box) return; e.preventDefault();
+  const old = document.querySelector('.mv-ctx'); if (old) old.remove();
+  const m = document.createElement('div'); m.className = 'mv-ctx'; m.setAttribute('role', 'menu');
+  const add = (t, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.onclick = () => { m.remove(); fn(); mvSave(); fitCrTiles(); }; m.appendChild(b); };
+  if (box.id === 'crProgBox') add('Hide the Program picture', () => { mvHideProg = true; });
+  else {
+    const n = box.dataset.n, on = mvPins.includes(n);
+    add(on ? 'Unpin' : 'Pin', () => { if (on) mvPins = mvPins.filter((x) => x !== n); else { mvPins.push(n); mvView = 'speaker'; } });
+    add('Switch to this scene', () => crSetScene(n));
+    if (mvHideProg) add('Show the Program picture', () => { mvHideProg = false; });
+  }
+  document.body.appendChild(m);
+  m.style.left = Math.min(e.clientX, innerWidth - m.offsetWidth - 8) + 'px'; m.style.top = Math.min(e.clientY, innerHeight - m.offsetHeight - 8) + 'px';
+});
 // Dragging: in Speaker the whole row of scenes moves to the side you drag it to; in Custom a box moves to the place of the box you drag it onto.
 // A short press without moving is still a click (it switches the scene).
 let mvDragged = false;
 $('#crView').addEventListener('pointerdown', (e) => {
   if (e.button || mvView === 'gallery') return;
   const cr = $('#crView'), box = e.target.closest('.mvt');
+  if (e.target.closest('.mv-size, .mv-arr')) return;
   const strip = mvView === 'speaker' && e.target.closest('#crTiles');
   if (!(strip || (mvView === 'custom' && box))) return;
   const sx = e.clientX, sy = e.clientY; let on = false, side = mvSide, target = null, zones = [];
@@ -2899,7 +2993,7 @@ function renderCr() {
   box.dataset.cols = cols;
   const key = d.scenes.join('\n') + '\n' + slots;
   if (box.dataset.key !== key) {
-    box.dataset.key = key; box.textContent = '';
+    box.dataset.key = key; box.textContent = ''; document.querySelectorAll('#crView .mv-top button.mvt[data-n]').forEach((x) => x.remove()); mvNames = d.scenes.slice();
     for (let k = 0; k < slots; k++) {
       const name = d.scenes[k];
       const b = document.createElement(name ? 'button' : 'div'); b.className = 'mvt' + (name ? '' : ' empty');
@@ -2909,12 +3003,13 @@ function renderCr() {
         const im = document.createElement('img'); im.alt = ''; im.draggable = false; b.prepend(im);
         const lb = document.createElement('div'); lb.className = 'lb'; lb.textContent = name; b.appendChild(lb);
         b.onclick = () => crSetScene(name);
+        b.dataset.i = k;
       }
       box.appendChild(b);
     }
     fitCrTiles();
   }
-  box.querySelectorAll('button.mvt').forEach((b) => {
+  document.querySelectorAll('#crView button.mvt[data-n]').forEach((b) => {
     b.classList.toggle('on', b.dataset.n === d.current); b.setAttribute('aria-pressed', String(b.dataset.n === d.current));
     const u = (stu.shots.thumbs || {})[b.dataset.n]; const im = b.querySelector('img'); if (u && im.src !== u) im.src = u;
   });
@@ -2926,13 +3021,13 @@ function renderCr() {
   if (!ch.hidden) { ch.textContent = c.name + ' '; const bd = document.createElement('b'); bd.textContent = stu.shape === 'portrait' ? '9:16' : '1:1'; ch.appendChild(bd); }
   fitCrTiles();
 }
-let crBusy = false, crLiveCopy = false; // crLiveCopy: the big Program picture is copied live from the Studio
+let crBusy = false, crLiveCopy = false; // crLiveCopy: the big Program picture is copied live from the Production
 async function pollCr() {
   if (page !== 'cr' || crBusy || document.hidden) return;
   crBusy = true;
   try {
     const sh = await api('/api/studio/shots?tv=' + (stu.tv || 0) + (crLiveCopy ? '&live=1' : '')); stu.alive = !!sh.alive; const keep = stu.shots.thumbs; stu.shots = sh; if (!sh.thumbs) stu.shots.thumbs = keep; stu.tv = sh.tv || 0;
-    // the scenes (a big answer) are fetched only when they changed in the Studio
+    // the scenes (a big answer) are fetched only when they changed in the Production
     if (sh.rev == null || sh.rev !== stu.rev) {
       const s = await api('/api/studio'); stu.scenes = s.scenes || []; stu.current = s.current || ''; stu.rev = s.rev != null ? s.rev : sh.rev; stu.shape = s.shape || '';
       try { const cl = await api('/api/collections?details=1'); stu.coll = (cl.list || cl.collections || []).find((x) => x.current) || null; if (stu.coll && stu.coll.shape) stu.shape = stu.coll.shape; } catch {}
@@ -2943,9 +3038,9 @@ async function pollCr() {
   crBusy = false;
 }
 setInterval(pollCr, 200); // 5 pictures a second
-// The big Program picture is copied straight from the Studio's own picture, 30 times a second, so it moves
-// smoothly (no photos in between). The Studio is inside the main window: this page is that window, or a
-// Multiview window opened from it. If the Studio cannot be reached, the photos above are shown instead.
+// The big Program picture is copied straight from the Production's own picture, 30 times a second, so it moves
+// smoothly (no photos in between). The Production is inside the main window: this page is that window, or a
+// Multiview window opened from it. If the Production cannot be reached, the photos above are shown instead.
 (function () {
   const out = $('#crProgC'); if (!out) return;
   const g = out.getContext('2d');
@@ -2957,11 +3052,11 @@ setInterval(pollCr, 200); // 5 pictures a second
   };
   let sw = null, src = null, lookAt = 0, shown = false, lastPf = -1, lastKey = '', tileRev = -1, tileAt = 0;
   const show = (v) => { crLiveCopy = v; if (v === shown) return; shown = v; out.hidden = !v; };
-  // the scene boxes: live pictures from the Studio (the photos stay as the fallback)
+  // the scene boxes: live pictures from the Production (the photos stay as the fallback)
   const paintTiles = () => {
     const tiles = sw.__tiles, rev = sw.__tilesRev | 0; let any = false;
     if (!tiles) return false;
-    document.querySelectorAll('#crTiles button.mvt[data-n]').forEach((b) => {
+    document.querySelectorAll('#crView button.mvt[data-n]').forEach((b) => {
       const t = tiles.get(b.dataset.n); if (!t) return; any = true;
       let c = b._lv; if (!c) { c = b._lv = document.createElement('canvas'); b.insertBefore(c, b.firstChild); }
       if (rev === tileRev && c.width === t.width && c.height === t.height) return;
@@ -2978,11 +3073,11 @@ setInterval(pollCr, 200); // 5 pictures a second
     try {
       const r = (out.parentElement || out).getBoundingClientRect(), k = Math.min(window.devicePixelRatio || 1, 2); // the box around it: the canvas itself has no size while it is hidden
       const w = Math.min(1920, Math.round(r.width * k)), h = Math.min(1080, Math.round(r.height * k));
-      // tell the Studio how big the box is, so it draws 1080p when 720p would be soft
+      // tell the Production how big the box is, so it draws 1080p when 720p would be soft
       const want = sw.__mvWant || (sw.__mvWant = {}); want.w = Math.round(r.width * k); want.at = Date.now();
       if (t - tileAt > 100) { tileAt = t; want.tiles = paintTiles(); }
       if (w < 8 || h < 8) return; // the Program box is not shown (Gallery)
-      // copy a picture once for each new one the Studio makes (not on a timer of our own, which would double or skip some)
+      // copy a picture once for each new one the Production makes (not on a timer of our own, which would double or skip some)
       const pf = sw.__pf | 0, key = w + 'x' + h + ':' + src.width + 'x' + src.height;
       if (pf === lastPf && key === lastKey) return show(true);
       lastPf = pf; lastKey = key;
@@ -3068,7 +3163,7 @@ function undoAcc() { draft = { ...acc }; applyAcc(acc); }
 if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener('change', () => { if (!$('#setOverlay').classList.contains('open')) applyAcc(acc); });
 applyAcc(acc);
 
-// Title and thumbnail for Go live
+// Title and thumbnail for Livestream
 let glLoaded = false;
 function thMsg(text) { const m = $('#thMsg'); m.textContent = text; m.hidden = !text; }
 function setThumb(has) {
@@ -3113,7 +3208,7 @@ function goBtn(id, inSession) {
   const b = $(id);
   b.dataset.end = inSession ? '1' : '';
   b.classList.toggle('end', inSession);
-  if (!b.dataset.busy) b.textContent = inSession ? 'End live' : 'Go live';
+  if (!b.dataset.busy) b.textContent = inSession ? 'End live' : 'Livestream';
 }
 async function endLive(site, name) {
   if (!confirm(`End the live on ${name} now? Viewers will see it stop.`)) return;
@@ -3131,7 +3226,7 @@ function renderFb(fbState, live, inSession) {
   const ready = Boolean(fbState && fbState.hasToken && fbState.pageId);
   goBtn('#fbLive', Boolean(inSession));
   $('#fbLive').disabled = inSession ? false : !(live && ready);
-  $('#fbLive').title = inSession ? 'Stop sending and end the live video on Facebook' : !live ? 'Start Streaming in the Studio first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
+  $('#fbLive').title = inSession ? 'Stop sending and end the live video on Facebook' : !live ? 'Start Streaming in the Production first' : !ready ? 'Add the Facebook Page first' : 'Create a live video on the Facebook Page now';
   const more = ((fbState && fbState.also) || []).map((x) => x.pageName).filter(Boolean);
   $('#fbSub').textContent = ready ? (fbState.pageName || 'Page ' + fbState.pageId) + (more.length ? ' + ' + more.join(', ') : '') : 'No Page added';
   $('#fbSub').title = more.length ? 'Goes live on ' + [fbState.pageName].concat(more).join(', ') : '';
@@ -3283,7 +3378,7 @@ function renderYt(ytState, live, inSession) {
   goBtn('#ytLive', Boolean(inSession));
   $('#ytLive').disabled = inSession ? false : !(live && ytState && ytState.connected);
   $('#ytSub').textContent = ytState && ytState.connected ? (ytState.channelTitle || 'Connected') : 'Not connected';
-  $('#ytLive').title = inSession ? 'Stop sending and end the live broadcast on YouTube' : !live ? 'Start Streaming in the Studio first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
+  $('#ytLive').title = inSession ? 'Stop sending and end the live broadcast on YouTube' : !live ? 'Start Streaming in the Production first' : !(ytState && ytState.connected) ? 'Connect YouTube first' : 'Create a live broadcast on YouTube now';
   if (settingsPane() === 'youtube' && ytState) ytShow(ytState);
 }
 async function loadYt() {
@@ -3331,7 +3426,7 @@ const paneLoaders = { stream: () => { loadYt(); loadFb(); }, system: loadSys, ho
 ['general', 'recording', 'audio', 'video', 'advanced'].forEach((k) => { paneLoaders[k] = () => mirrorLoad(k); });
 const paneSavers = { appearance: async () => { saveAcc(); syncAcc(); return true; }, stream: saveFb, studio: mirrorSave, hotkeys: hkSave };
 const paneOrder = ['appearance', 'stream', 'studio', 'hotkeys'];
-// Studio settings (General, Recording, Audio, Video, Advanced): the boxes here work the same boxes in the Studio running in this window
+// Production settings (General, Recording, Audio, Video, Advanced): the boxes here work the same boxes in the Production running in this window
 const stuWin = () => { try { const w = window.msStudioWin && window.msStudioWin(); return w && w.document && w.document.getElementById('outQ') ? w : null; } catch { return null; } };
 let mirrorPend = new Map();
 function mirrorLoad(k) {
@@ -3380,7 +3475,7 @@ function loadSys() {
   const pf = (window.msNative && window.msNative.platform) || navigator.platform || '';
   $('#s2Sys').textContent = (/win/i.test(pf) ? 'Windows' : /mac|darwin/i.test(pf) ? 'Mac' : /linux/i.test(pf) ? 'Linux' : pf) + (navigator.hardwareConcurrency ? ' \u00B7 ' + navigator.hardwareConcurrency + ' processor threads' : '');
 }
-// Hotkeys: the list comes from the Studio (its scenes and sound inputs). Changes are kept here until Apply or OK.
+// Hotkeys: the list comes from the Production (its scenes and sound inputs). Changes are kept here until Apply or OK.
 let hkRows = [], hkWait = '';
 function hkLoad() {
   const w = stuWin(); hkWait = '';
@@ -3389,7 +3484,7 @@ function hkLoad() {
 }
 function hkDraw() {
   const box = $('#hkList'); box.textContent = '';
-  if (!hkRows.length) { const p = document.createElement('p'); p.className = 'n2'; p.textContent = 'Open the Studio once to see and change the hotkeys.'; box.appendChild(p); return; }
+  if (!hkRows.length) { const p = document.createElement('p'); p.className = 'n2'; p.textContent = 'Open the Production once to see and change the hotkeys.'; box.appendChild(p); return; }
   const q = $('#hkQ').value.trim().toLowerCase(); let grp = '';
   hkRows.forEach((h) => {
     if (q && !h.label.toLowerCase().includes(q) && !(h.key || '').toLowerCase().includes(q)) return;
@@ -3469,7 +3564,7 @@ $('#setOk').onclick = async () => { if (await applySettings()) closeSettings(tru
 $('#setCancel').onclick = () => closeSettings(false);
 $('#setX').onclick = () => closeSettings(false);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && setOverlay.classList.contains('open') && !hkWait) closeSettings(false); });
-// the hotkeys work on every page: keys pressed here are passed to the Studio
+// the hotkeys work on every page: keys pressed here are passed to the Production
 document.addEventListener('keydown', (e) => {
   const t = e.target, tag = t && t.tagName;
   if (e.defaultPrevented || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
@@ -3481,7 +3576,7 @@ document.addEventListener('keydown', (e) => {
   $(id).addEventListener('change', () => setDirty(k));
 });
 
-// Recording is done in the Studio (Start Recording), not on this page
+// Recording is done in the Production (Start Recording), not on this page
 
 // Check everything
 $('#pfBtn').onclick = async () => {
@@ -3497,8 +3592,8 @@ $('#pfBtn').onclick = async () => {
 };
 
 // Alerts: a red bar when something stops
-// Each alert names its source (a channel or the Studio) and the time, so it is easy to trace.
-// Alerts kept until Dismiss. Stream problems show here (Stream and Multiview); Studio problems show in the Studio.
+// Each alert names its source (a channel or the Production) and the time, so it is easy to trace.
+// Alerts kept until Dismiss. Stream problems show here (Stream and Multiview); Production problems show in the Production.
 // Alerts are pushed by the app as they happen (no polling). In the app they come through a pipe;
 // in a browser on the church Wi-Fi they come through an event stream. If the link drops it comes back.
 function listenAlerts(group, onMsg) {
@@ -3637,7 +3732,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) refr
       const fill = (sel, kind, none) => { const v = sel.value; sel.innerHTML = ''; sel.add(new Option(none, '')); ds.filter((d) => d.kind === kind && d.deviceId !== 'default' && d.deviceId !== 'communications').forEach((d, i) => sel.add(new Option(d.label || (kind === 'videoinput' ? 'Camera ' : 'Microphone ') + (i + 1), d.deviceId))); if (v) sel.value = v; else if (sel.options.length > 1) sel.selectedIndex = 1; };
       fill($('#gsCam'), 'videoinput', 'No camera'); fill($('#gsMic'), 'audioinput', 'No microphone');
       meter();
-    } catch { $('#gsLayNote').textContent = 'Allow the camera and microphone to pick them here. You can also set them later in the Studio.'; }
+    } catch { $('#gsLayNote').textContent = 'Allow the camera and microphone to pick them here. You can also set them later in the Production.'; }
   }
   async function meter() {
     cancelAnimationFrame(raf);
@@ -3683,12 +3778,12 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) refr
     if (s2.youtube && s2.youtube.connected) names.push('YouTube');
     if (s2.facebook && s2.facebook.hasToken && s2.facebook.pageId) names.push('Facebook');
     (s2.destinations || []).forEach((d) => { if (!names.includes(d.name)) names.push(d.name); });
-    items.push([names.length ? names.length + (names.length === 1 ? ' channel connected' : ' channels connected') : 'No channels yet', names.length ? names.join(' and ').replace(/ and (?=.* and )/g, ', ') : 'Add them on the Go Live page', names.length > 0]);
+    items.push([names.length ? names.length + (names.length === 1 ? ' channel connected' : ' channels connected') : 'No channels yet', names.length ? names.join(' and ').replace(/ and (?=.* and )/g, ', ') : 'Add them on the Livestream page', names.length > 0]);
     let sc = []; try { const st = await api('/api/studio'); sc = (st.scenes || []).map((x) => x.name); } catch {}
     const LN = { full: 'Church service', camera: 'Camera only', blank: 'Blank', keep: 'Saved setup' };
-    items.push([sc.length ? 'Your layout is ready' : 'No scenes yet', sc.length ? LN[lay] + ' layout: ' + sc.slice(0, 2).map((x) => x.toLowerCase()).join(', ') + (sc.length > 2 ? ' and ' + (sc.length - 2) + ' more' : '') : 'Open the Studio to add some', sc.length > 0]);
+    items.push([sc.length ? 'Your layout is ready' : 'No scenes yet', sc.length ? LN[lay] + ' layout: ' + sc.slice(0, 2).map((x) => x.toLowerCase()).join(', ') + (sc.length > 2 ? ' and ' + (sc.length - 2) + ' more' : '') : 'Open the Production to add some', sc.length > 0]);
     const cam = $('#gsCam').value ? $('#gsCam').selectedOptions[0].text : '', mic = $('#gsMic').value ? $('#gsMic').selectedOptions[0].text : '';
-    items.push([cam && mic ? 'Camera and sound working' : cam ? 'Camera working, no microphone' : mic ? 'Sound working, no camera' : 'No camera or microphone picked', [cam, mic].filter(Boolean).join(' · ') || 'You can add them in the Studio', Boolean(cam && mic)]);
+    items.push([cam && mic ? 'Camera and sound working' : cam ? 'Camera working, no microphone' : mic ? 'Sound working, no camera' : 'No camera or microphone picked', [cam, mic].filter(Boolean).join(' · ') || 'You can add them in the Production', Boolean(cam && mic)]);
     items.push([navigator.onLine ? 'Internet is connected' : 'No internet', navigator.onLine ? 'Its speed shows in Stream health while you stream' : 'Connect to the internet to stream', navigator.onLine]);
     const box = $('#gsCheck'); box.innerHTML = '';
     items.forEach(([t, sub, good]) => { const d = document.createElement('div'); d.className = 'gs-row'; d.innerHTML = '<span class="ok"></span><div class="t"><b></b><small></small></div>'; const o = d.querySelector('.ok'); o.textContent = good ? '\u2713' : '!'; if (!good) o.classList.add('warn'); d.querySelector('b').textContent = t; d.querySelector('small').textContent = sub; box.appendChild(d); });
@@ -3704,7 +3799,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) refr
       showStep(step + 1);
     }
   });
-  // Start a private test: Private test on, then Start streaming on Go Live
+  // Start a private test: Private test on, then Start streaming on Livestream
   $('#gsTest').onclick = () => { close(); showPage('dash'); if (!$('#fbTest').checked) $('#ptBtn').click(); setTimeout(() => $('#sbBtn').click(), 300); };
 })();
 // ---------- saved stream details (title and description), kept on this computer ----------
