@@ -840,7 +840,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mdl .seg3 { display:grid; grid-template-columns:repeat(3,1fr); padding:3px; border-radius:999px; border:1px solid var(--gl-line); background:rgba(5,8,20,.45); }
   .mdl .seg3 button { padding:9px 10px; border:0; border-radius:999px; background:transparent; color:var(--soft); font-size:13px; font-weight:600; } .mdl .seg3 button.on { background:var(--blue); color:var(--onblue); } .mdl .seg3 button:disabled { opacity:.45; }
   /* ---------- Multiview (as in the design) ---------- */
-  .cr.mv2:not([hidden]) { display:flex; flex-direction:column; gap:10px; height:calc(100vh - 90px); padding:0 12px 12px; margin:0; max-width:none; background:transparent; overflow:hidden; box-sizing:border-box; align-items:stretch; justify-content:flex-start; }
+  .cr.mv2:not([hidden]) { display:flex; flex-direction:column; gap:10px; height:calc(100vh - 90px); padding:16px 12px 12px; margin:0; max-width:none; background:transparent; overflow:hidden; box-sizing:border-box; align-items:stretch; justify-content:flex-start; }
   .mv2 .mv-top { flex:1; min-height:0; display:flex; justify-content:center; align-items:center; }
   .mv2 .mvt { position:relative; border-radius:16px; overflow:hidden; border:2px solid rgba(255,255,255,.1); box-shadow:0 10px 24px rgba(0,0,0,.35); background:linear-gradient(135deg,#1d2a5e,#0e1430); padding:0; margin:0; display:block; align-self:start; color:#eef1f8; text-align:left; font:inherit; min-width:0; box-sizing:border-box; }
   .mv2 .mv-grid .mvt { aspect-ratio:16/9; } .mv2.tall .mv-grid .mvt { aspect-ratio:9/16; } .mv2.sq .mv-grid .mvt { aspect-ratio:1; }
@@ -930,7 +930,10 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv-ctx { position:fixed; right:auto; top:auto; }
   .mv-menu button, .mv-ctx button { display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; border:0; border-radius:9px; background:transparent; color:#e8ecf8; font:inherit; font-size:13.5px; text-align:left; cursor:pointer; }
   .mv-menu button:hover, .mv-ctx button:hover { background:rgba(255,255,255,.08); }
+  .mv-menu { min-width:250px; }
   .mv-menu button::before { content:""; width:14px; flex:none; } .mv-menu button.on::before { content:"\2713"; }
+  .mv-menu button .t { flex:1; } .mv-menu button svg { width:20px; height:20px; fill:currentColor; opacity:.9; flex:none; }
+  #mvMenuB svg { width:18px; height:18px; fill:currentColor; vertical-align:-4px; margin-right:8px; }
   .mv-menu hr { border:0; border-top:1px solid rgba(255,255,255,.1); margin:5px 4px; }
   .mv2 .mvt { width:var(--tw); height:var(--th); aspect-ratio:auto !important; flex:none; }
   .mv2 #crProgBox { flex:none; align-self:center; }
@@ -948,8 +951,9 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv-size.h { height:12px; cursor:row-resize; } .mv-size.h::after { width:64px; height:4px; } .mv-size.v { width:12px; cursor:col-resize; } .mv-size.v::after { width:4px; height:64px; }
   .mv-size:hover::after, .mv-size.on::after { background:#fff; }
   /* arrows when there are more scenes than fit */
-  .mv-arr { position:absolute; z-index:8; width:34px; height:34px; border-radius:50%; border:1px solid rgba(255,255,255,.25); background:rgba(10,14,31,.85); color:#fff; font-size:18px; line-height:1; display:grid; place-items:center; cursor:pointer; padding:0; }
-  .mv-arr:hover { background:var(--sel, #3b6cff); } .mv-arr[hidden] { display:none; }
+  .mv-arr { position:absolute; z-index:8; width:34px; height:34px; border-radius:50%; border:0; background:var(--blue); color:#fff; font-size:20px; font-weight:700; line-height:1; display:grid; place-items:center; cursor:pointer; padding:0 0 2px; box-shadow:0 6px 16px rgba(59,108,255,.35); }
+  .mv2.mv-sliding, .mv2.mv-sliding * { cursor:grabbing !important; user-select:none; }
+  .mv-arr:hover { filter:brightness(1.12); } .mv-arr[hidden] { display:none; }
   .mv2.mv-moving .mv-grid { outline:2px dashed rgba(255,255,255,.5); outline-offset:4px; border-radius:18px; cursor:grabbing; }
   /* while dragging: every place you can drop is marked softly, and the one you are heading for is lit */
   .mv-zone { position:absolute; z-index:6; border-radius:14px; border:2px dashed rgba(255,255,255,.35); background:rgba(59,108,255,.10); pointer-events:none; transition:background .12s, border-color .12s; }
@@ -1010,9 +1014,14 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .note.conn-ok { display:inline-block; font-weight:600; color:var(--green) !important; background:color-mix(in srgb, var(--green) 14%, transparent); padding:6px 12px; border-radius:999px; margin:0 0 8px; }
   /* "Open on Facebook" / "Open on YouTube" on a channel while live: always one line */
   /* a channel like Restream: name, stream title, status line (Streaming, viewers, View) */
-  .cc .nm { white-space:normal !important; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-  .cc .cttl { font-size:12.5px; color:var(--text); opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
-  .cc .meta { display:flex; align-items:center; gap:10px; margin-top:3px; font-size:12px; color:var(--soft); min-width:0; white-space:nowrap; }
+  .cc .cttl { font-size:12.5px; color:var(--soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:0; padding:0; min-width:0; }
+  .cc .needkey { border:0; background:none; padding:0; font:inherit; font-size:12.5px; color:var(--blue); cursor:pointer; } .cc .needkey:hover { text-decoration:underline; }
+  .cc.nokey .tile { opacity:.55; } .cc.nokey .nm { color:var(--soft); }
+  .ch-empty { display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; padding:26px 14px 18px; color:var(--soft); }
+  .ch-empty b { color:var(--text); font-size:15px; } .ch-empty small { font-size:12.5px; max-width:240px; line-height:1.4; }
+  .ch-empty .ce-ic { width:46px; height:46px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.07); margin-bottom:4px; }
+  .ch-empty .ce-ic svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+  .cc .meta { display:flex; justify-content:flex-start; padding-top:0; border-top:0; align-items:center; gap:10px; margin-top:2px; font-size:12px; color:var(--soft); min-width:0; white-space:nowrap; }
   .cc .meta .st { font-size:12px; overflow:hidden; text-overflow:ellipsis; } .cc .meta .st.live { color:#5fd38d; } .cc .meta .st.live::before { content:"● "; }
   .cc .meta .eye { display:inline-flex; align-items:center; gap:4px; color:var(--text); } .cc .meta .eye svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; }
   .cc .fblink { margin-left:auto; padding:0; border:0; background:none; color:var(--blue); font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; flex:none; }
@@ -1059,7 +1068,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <span class="sp"></span>
   <span class="gl-acts" id="rcActs" hidden><span class="rc-where" id="rcWhere"></span><button type="button" class="hb pl" id="rcOpen">Open folder</button><button type="button" class="hb pl" id="rcRemux">Remux to MP4</button></span>
   <span class="gl-acts" id="anActs" hidden><span class="rc-where" id="anAddr"></span><button type="button" class="hb pl" id="anEdit">Change address</button><button type="button" class="hb pl" id="anOpen">Open in browser</button></span>
-  <span class="gl-acts" id="mvActs" hidden><span class="mv-menuw"><button type="button" class="hb pl" id="mvMenuB" aria-haspopup="menu" aria-expanded="false" title="Change the view"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:currentColor;vertical-align:-3px;margin-right:6px"><rect x="3" y="4" width="18" height="10" rx="2"/><rect x="3" y="16" width="5" height="4" rx="1"/><rect x="9.5" y="16" width="5" height="4" rx="1"/><rect x="16" y="16" width="5" height="4" rx="1"/></svg>View</button><div class="mv-menu" id="mvMenu" role="menu" hidden></div></span><button type="button" class="hb pl" id="mvDisp" hidden>Show on a display ▾</button><button type="button" class="hb pl" id="mvWin">New window</button></span>
+  <span class="gl-acts" id="mvActs" hidden><span class="mv-menuw"><button type="button" class="hb pl" id="mvMenuB" aria-haspopup="menu" aria-expanded="false" title="Change the view"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:currentColor;vertical-align:-3px;margin-right:6px"><rect x="3" y="4" width="18" height="10" rx="2"/><rect x="3" y="16" width="5" height="4" rx="1"/><rect x="9.5" y="16" width="5" height="4" rx="1"/><rect x="16" y="16" width="5" height="4" rx="1"/></svg>View</button><div class="mv-menu" id="mvMenu" role="menu" hidden></div></span><button type="button" class="hb pl" id="mvWin">New window</button></span>
   <span class="gl-acts" id="scActs" hidden><button type="button" class="hb pl" id="scObs">Import from OBS</button><button type="button" class="hb pl" id="scImp">Import file</button><button type="button" class="hb sb" id="scNew">+ New collection</button></span>
   <span class="gl-acts" id="glActs">
     <button type="button" class="hb" id="glUpd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Update title for all channels</button>
@@ -2088,11 +2097,18 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const sub = r.querySelector('.sub');
     if (small) sub.remove();
     else {
-      const ttl = ch.kind === 'api' ? (ch.page ? (ch.title || titleFor('fb').title) : titleFor(ch.c).title) : (ch.dest.hasKey ? '' : 'Add its stream key');
-      if (ttl) { const t = document.createElement('div'); t.className = 'cttl'; t.textContent = ttl; t.title = ttl; sub.before(t); }
+      // Like Restream: the name, then one quiet line. While live it is the status; otherwise the stream title,
+      // or "Add a stream key" when the channel has none yet (click it to add one). No "Off" / "Ready" words.
+      const noKey = ch.kind !== 'api' && !ch.dest.hasKey;
+      const ttl = ch.kind === 'api' ? (ch.page ? (ch.title || titleFor('fb').title) : titleFor(ch.c).title) : '';
       sub.className = 'meta';
-      const stx = document.createElement('span'); stx.className = 'st ' + s2.cls; stx.textContent = s2.cls === 'live' ? 'Streaming' : s2.t.replace(/ · .*$/, ''); sub.appendChild(stx);
+      const showSt = live || s2.cls === 'bad' || s2.msg || s2.cls === 'live';
+      if (noKey) { const k = document.createElement('button'); k.type = 'button'; k.className = 'needkey'; k.textContent = 'Add a stream key'; k.onclick = (e) => { e.stopPropagation(); editChannel(ch); }; sub.appendChild(k); r.classList.add('nokey'); }
+      else if (!showSt && ttl) { const t = document.createElement('span'); t.className = 'cttl'; t.textContent = ttl; t.title = ttl; sub.appendChild(t); }
+      const stx = document.createElement('span'); stx.className = 'st ' + s2.cls; stx.textContent = s2.cls === 'live' ? 'Streaming' : s2.t.replace(/ · .*$/, '');
       if (s2.msg) { stx.title = s2.msg; stx.textContent = 'Problem: ' + s2.msg; }
+      if (showSt && !noKey) sub.appendChild(stx);
+      if (!sub.childNodes.length) sub.remove();
       const v = live && s2.cls === 'live' && ch.site && stats && stats[ch.site];
       if (v) { const e = document.createElement('span'); e.className = 'eye'; e.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'; e.append(String(v.viewers.toLocaleString())); e.title = 'Watching now'; sub.appendChild(e); }
       // while live on Facebook or YouTube: a link straight to the live video, to check it arrived
@@ -2150,11 +2166,17 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       $('#count').textContent = on.filter((c) => stateOf(c, true).cls === 'live').length + ' of ' + chs.length + ' live';
       on.forEach((c) => L.appendChild(row(c, true)));
       if (off.length) { const h = document.createElement('div'); h.className = 'ch-lbl'; h.textContent = 'Turned off'; O.appendChild(h); off.forEach((c) => O.appendChild(row(c, true, true))); }
-      $('#addBtn').hidden = true;
+      $('#addBtn').hidden = true; $('#count').hidden = false;
     } else {
       const ready = chs.filter((c) => c.on && stateOf(c, false).t === 'Ready').length;
       $('#count').textContent = ready + ' ready';
       chs.forEach((c) => L.appendChild(row(c, false)));
+      if (!chs.length) { // nothing added yet: one clear message and the Add button, like Restream
+        const e = document.createElement('div'); e.className = 'ch-empty';
+        e.innerHTML = '<div class="ce-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 0 1 14 0M8.5 12a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="12" r="1.2"/></svg></div><b>No channels yet</b><small>Add YouTube, Facebook or any site with a stream key.</small>';
+        L.appendChild(e);
+      }
+      $('#count').hidden = !chs.length;
       $('#addBtn').hidden = false;
     }
     // while live: health under the preview instead of the stream details
@@ -2801,29 +2823,7 @@ function setNavSmall(on) {
 try { if (localStorage.getItem('ms_nav_small') === '1') setNavSmall(true); } catch {}
 $('#navToggle').onclick = () => setNavSmall(!document.documentElement.classList.contains('nav-small'));
 // Multiview (as in the design): Program on top, the scenes below, numbered 1 to 0 (press the number to put that scene on air)
-let crMenu = null;
-function closeCrMenu() { if (crMenu) { crMenu.remove(); crMenu = null; document.removeEventListener('keydown', crMenuEsc); document.removeEventListener('pointerdown', crMenuOut, true); } }
-function crMenuEsc(e) { if (e.key === 'Escape') closeCrMenu(); }
-function crMenuOut(e) { if (crMenu && !crMenu.contains(e.target) && e.target !== $('#mvDisp')) closeCrMenu(); }
-let crDisplays = [];
-async function crLoadDisplays() {
-  try { if (window.msNative && window.msNative.displays) crDisplays = await window.msNative.displays(); } catch { crDisplays = []; }
-  const other = crDisplays.find((d) => !d.main);
-  $('#mvDisp').hidden = !crDisplays.length;
-  $('#mvDisp').textContent = (other ? 'Show on display ' + other.n : 'Show on a display') + ' ▾';
-}
 $('#mvWin').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); };
-$('#mvDisp').onclick = async (e) => {
-  if (crMenu) { closeCrMenu(); return; }
-  await crLoadDisplays();
-  const m = crMenu = document.createElement('div'); m.className = 'cr-menu'; m.setAttribute('role', 'menu');
-  const r = e.currentTarget.getBoundingClientRect(); m.style.right = Math.max(8, innerWidth - r.right) + 'px'; m.style.top = (r.bottom + 8) + 'px';
-  crDisplays.forEach((d) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.innerHTML = '<span></span><small></small>'; b.firstChild.textContent = 'Display ' + d.n + (d.main ? ' (main)' : ''); b.lastChild.textContent = 'Full screen on this display. ' + d.w + ' x ' + d.h + '. Press Esc to leave full screen.'; b.onclick = () => { closeCrMenu(); window.msNative.openControlRoom(d.id); }; m.appendChild(b); });
-  document.body.appendChild(m);
-  document.addEventListener('keydown', crMenuEsc); document.addEventListener('pointerdown', crMenuOut, true);
-  const f = m.querySelector('button'); if (f) f.focus();
-};
-crLoadDisplays();
 let stu = { alive: false, scenes: [], current: '', shots: {}, tv: 0, rev: null, shape: '', coll: null };
 function engine() { return 'studio'; }
 function crData() { return { on: true, ok: stu.alive, scenes: stu.scenes.map((s) => s.name), current: stu.current }; }
@@ -2839,7 +2839,7 @@ function fitCrTiles() {
   cr.classList.toggle('tall', tall); cr.classList.toggle('sq', sq);
   const ar = tall ? 9 / 16 : sq ? 1 : 16 / 9; // every box has the picture's own shape
   const g = $('#crTiles'), top = cr.querySelector('.mv-top'), pb = $('#crProgBox'), gp = 10;
-  const W = cr.clientWidth - 24, H = cr.clientHeight - 12, lim = (v, a, b) => Math.max(a, Math.min(b, v));
+  const W = cr.clientWidth - 24, H = cr.clientHeight - 28, lim = (v, a, b) => Math.max(a, Math.min(b, v));
   const tiles = [...cr.querySelectorAll('button.mvt[data-n]')].sort((a, b) => a.dataset.i - b.dataset.i);
   mvPins = mvPins.filter((n) => tiles.some((t) => t.dataset.n === n));
   // the most boxes a row that keeps each of m boxes as big as it can be in a w x h space
@@ -2853,12 +2853,14 @@ function fitCrTiles() {
   MV_VIEWS.forEach((v) => cr.classList.toggle('v-' + v, view === v));
   ['top', 'bottom', 'left', 'right'].forEach((d) => cr.classList.toggle('sp-' + d, view === 'speaker' && mvSide === d));
   cr.classList.toggle('hideprog', mvHideProg || view === 'gallery'); cr.classList.toggle('no-main', false);
-  g.style.gridTemplateColumns = ''; cr.style.paddingLeft = cr.style.paddingRight = ''; g.style.width = g.style.height = '';
+  g.style.gridTemplateColumns = ''; cr.style.paddingLeft = cr.style.paddingRight = ''; g.style.width = g.style.height = g.style.margin = '';
   const n = tiles.length - pinned.length; let tw, th, pw, ph, mw = 0, mh = 0;
   const horiz = mvSide === 'top' || mvSide === 'bottom';
   if (view === 'speaker') {
-    if (horiz) { th = n ? lim(H * mvStrip, 60, H * 0.6) : 0; tw = th * ar; mw = W; mh = n ? H - th - gp : H; g.style.width = Math.min(W, n * tw + gp * Math.max(0, n - 1)) + 'px'; }
-    else { tw = n ? lim(W * mvStrip, 100, W * 0.6) : 0; th = tw / ar; mw = n ? W - tw - gp : W; mh = H; g.style.height = Math.min(H, n * th + gp * Math.max(0, n - 1)) + 'px'; }
+    // when the scenes do not all fit in the row, room is kept at both ends for the arrows, so they never sit on a picture
+    const GUT = 50;
+    if (horiz) { th = n ? lim(H * mvStrip, 60, H * 0.6) : 0; tw = th * ar; mw = W; mh = n ? H - th - gp : H; const full = n * tw + gp * Math.max(0, n - 1), over = full > W; g.style.width = (over ? W - 2 * GUT : full) + 'px'; g.style.margin = over ? '0 ' + GUT + 'px' : ''; }
+    else { tw = n ? lim(W * mvStrip, 100, W * 0.6) : 0; th = tw / ar; mw = n ? W - tw - gp : W; mh = H; const full = n * th + gp * Math.max(0, n - 1), over = full > H; g.style.height = (over ? H - 2 * GUT : full) + 'px'; g.style.margin = over ? GUT + 'px 0' : ''; }
     const b = grid(mainN, mw, mh); pw = b.w; ph = pw / ar;
     pinned.forEach((t) => { t.style.width = Math.floor(pw) + 'px'; t.style.height = Math.floor(ph) + 'px'; });
     if (!n) g.style.width = g.style.height = '0px';
@@ -2899,8 +2901,8 @@ function mvExtras(show, horiz) {
   const over = horiz ? g.scrollWidth - g.clientWidth : g.scrollHeight - g.clientHeight, at = horiz ? g.scrollLeft : g.scrollTop;
   a1.hidden = !(over > 4 && at > 4); a2.hidden = !(over > 4 && at < over - 4);
   a1.textContent = horiz ? '\u2039' : '\u2303'; a2.textContent = horiz ? '\u203A' : '\u2304';
-  if (horiz) { const t = Math.round(y + r.height / 2 - 17) + 'px'; a1.style.cssText = 'top:' + t + ';left:' + Math.round(x + 4) + 'px'; a2.style.cssText = 'top:' + t + ';left:' + Math.round(x + r.width - 38) + 'px'; }
-  else { const l = Math.round(x + r.width / 2 - 17) + 'px'; a1.style.cssText = 'left:' + l + ';top:' + Math.round(y + 4) + 'px'; a2.style.cssText = 'left:' + l + ';top:' + Math.round(y + r.height - 38) + 'px'; }
+  if (horiz) { const t = Math.round(y + r.height / 2 - 17) + 'px'; a1.style.cssText = 'top:' + t + ';left:' + Math.round(x - 42) + 'px'; a2.style.cssText = 'top:' + t + ';left:' + Math.round(x + r.width + 8) + 'px'; }
+  else { const l = Math.round(x + r.width / 2 - 17) + 'px'; a1.style.cssText = 'left:' + l + ';top:' + Math.round(y - 42) + 'px'; a2.style.cssText = 'left:' + l + ';top:' + Math.round(y + r.height + 8) + 'px'; }
 }
 new ResizeObserver(() => fitCrTiles()).observe($('#crView')); addEventListener('resize', () => fitCrTiles());
 
@@ -2926,17 +2928,24 @@ function mvApplyOrder() { // your order first; boxes it does not know yet (new s
   boxes.forEach((el) => { el.style.order = String(mvOrder.indexOf(mvKeyOf(el))); });
 }
 // The View button (like Zoom's): the views, show or hide the Program picture, and Reset
+const MV_ICON = { speaker: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="5.2" height="4" rx="1"/><rect x="9.4" y="4" width="5.2" height="4" rx="1"/><rect x="15.8" y="4" width="5.2" height="4" rx="1"/><rect x="3" y="9.5" width="18" height="10.5" rx="1.5"/></svg>', gallery: '<svg viewBox="0 0 24 24"><rect x="3" y="3.5" width="5.2" height="5" rx="1"/><rect x="9.4" y="3.5" width="5.2" height="5" rx="1"/><rect x="15.8" y="3.5" width="5.2" height="5" rx="1"/><rect x="3" y="9.6" width="5.2" height="5" rx="1"/><rect x="9.4" y="9.6" width="5.2" height="5" rx="1"/><rect x="15.8" y="9.6" width="5.2" height="5" rx="1"/><rect x="3" y="15.7" width="5.2" height="5" rx="1"/><rect x="9.4" y="15.7" width="5.2" height="5" rx="1"/><rect x="15.8" y="15.7" width="5.2" height="5" rx="1"/></svg>', custom: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="8.2" height="7.5" rx="1.2"/><rect x="12.8" y="4" width="8.2" height="7.5" rx="1.2"/><rect x="3" y="13" width="5.2" height="7" rx="1"/><rect x="9.4" y="13" width="5.2" height="7" rx="1"/><rect x="15.8" y="13" width="5.2" height="7" rx="1"/></svg>' };
 function mvMenuDraw() {
   const m = $('#mvMenu'); m.textContent = '';
-  const add = (t, on, fn) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.textContent = t; b.classList.toggle('on', Boolean(on)); b.onclick = () => { fn(); mvMenuShow(false); mvSave(); fitCrTiles(); }; m.appendChild(b); };
-  add('Speaker', mvView === 'speaker', () => { mvView = 'speaker'; }); add('Gallery', mvView === 'gallery', () => { mvView = 'gallery'; }); add('Custom order', mvView === 'custom', () => { mvView = 'custom'; });
-  m.appendChild(document.createElement('hr'));
-  add(mvHideProg ? 'Show the Program picture' : 'Hide the Program picture', false, () => { mvHideProg = !mvHideProg; });
-  if (mvPins.length) add('Unpin all scenes', false, () => { mvPins = []; });
-  m.appendChild(document.createElement('hr'));
+  const add = (t, on, fn, icon) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.innerHTML = '<span class="t"></span>' + (icon || ''); b.firstChild.textContent = t; b.classList.toggle('on', Boolean(on)); b.onclick = () => { fn(); mvMenuShow(false); mvSave(); fitCrTiles(); }; m.appendChild(b); };
+  const hr = () => m.appendChild(document.createElement('hr'));
+  add('Speaker', mvView === 'speaker', () => { mvView = 'speaker'; }, MV_ICON.speaker);
+  add('Gallery', mvView === 'gallery', () => { mvView = 'gallery'; }, MV_ICON.gallery);
+  add('Custom', mvView === 'custom', () => { mvView = 'custom'; }, MV_ICON.custom);
+  hr();
+  add(mvHideProg ? 'Show Program view' : 'Hide Program view', false, () => { mvHideProg = !mvHideProg; });
+  if (mvPins.length) add('Unpin all', false, () => { mvPins = []; });
+  hr();
+  add(document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen', false, () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else document.documentElement.requestFullscreen().catch(() => {}); });
   add('Reset', false, () => { mvView = 'speaker'; mvSide = 'top'; mvOrder = []; mvStrip = 0.2; mvHideProg = false; mvPins = []; $('#crTiles').scrollTo(0, 0); });
 }
-function mvMenuShow(on) { const m = $('#mvMenu'); if (on) mvMenuDraw(); m.hidden = !on; $('#mvMenuB').setAttribute('aria-expanded', String(on)); }
+function mvBtnIcon() { const b = $('#mvMenuB'); if (!b) return; b.innerHTML = MV_ICON[mvView] + 'View'; }
+function mvMenuShow(on) { mvBtnIcon(); const m = $('#mvMenu'); if (on) mvMenuDraw(); m.hidden = !on; $('#mvMenuB').setAttribute('aria-expanded', String(on)); }
+mvBtnIcon();
 $('#mvMenuB').onclick = (e) => { e.stopPropagation(); mvMenuShow($('#mvMenu').hidden); };
 document.addEventListener('click', (e) => { if (!e.target.closest('.mv-menuw')) mvMenuShow(false); const c = document.querySelector('.mv-ctx'); if (c && !e.target.closest('.mv-ctx')) c.remove(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { mvMenuShow(false); const c = document.querySelector('.mv-ctx'); if (c) c.remove(); } });
@@ -2965,11 +2974,19 @@ $('#crView').addEventListener('pointerdown', (e) => {
   if (e.target.closest('.mv-size, .mv-arr')) return;
   const strip = mvView === 'speaker' && e.target.closest('#crTiles');
   if (!(strip || (mvView === 'custom' && box))) return;
-  const sx = e.clientX, sy = e.clientY; let on = false, side = mvSide, target = null, zones = [];
+  const sx = e.clientX, sy = e.clientY; let on = false, side = mvSide, target = null, zones = [], slide = false, s0 = 0;
+  const g = $('#crTiles'), hz = mvSide === 'top' || mvSide === 'bottom';
   const move = (ev) => {
+    if (slide) { if (hz) g.scrollLeft = s0 - (ev.clientX - sx); else g.scrollTop = s0 - (ev.clientY - sy); return; }
     if (!on) {
       if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 10) return;
-      on = true; mvDragged = true; cr.classList.add('mv-moving');
+      on = true; mvDragged = true;
+      // along the row, when there are more scenes than fit: slide the row (like a swipe)
+      const along = hz ? Math.abs(ev.clientX - sx) > Math.abs(ev.clientY - sy) : Math.abs(ev.clientY - sy) > Math.abs(ev.clientX - sx);
+      if (strip && along && (hz ? g.scrollWidth - g.clientWidth : g.scrollHeight - g.clientHeight) > 4) {
+        slide = true; s0 = hz ? g.scrollLeft : g.scrollTop; g.style.scrollBehavior = 'auto'; cr.classList.add('mv-sliding'); return;
+      }
+      cr.classList.add('mv-moving');
       if (strip) zones = ['top', 'bottom', 'left', 'right'].map((z) => { const d = document.createElement('div'); d.className = 'mv-zone'; d.dataset.z = z; cr.appendChild(d); return d; }); // the four places the row can go
       else box.classList.add('drag');
     }
@@ -2985,6 +3002,7 @@ $('#crView').addEventListener('pointerdown', (e) => {
   };
   const up = (ev) => {
     removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+    if (slide) { g.style.scrollBehavior = ''; cr.classList.remove('mv-sliding'); setTimeout(() => { mvDragged = false; }, 0); mvExtras(true, hz); return; }
     cr.classList.remove('mv-moving'); if (box) box.classList.remove('drag'); zones.forEach((z) => z.remove()); if (target) target.classList.remove('target');
     if (!on) return;
     setTimeout(() => { mvDragged = false; }, 0);
