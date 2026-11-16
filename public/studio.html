@@ -205,7 +205,7 @@
   .dock > h2 { touch-action:none; user-select:none; }
   .dock.float { position:fixed; flex:none; z-index:30; resize:both; overflow:auto; min-width:200px; min-height:120px; box-shadow:0 18px 56px rgba(0,0,0,.5), inset 0 1px 0 var(--gl-hi); }
   .dock.float h2 { position:sticky; top:0; z-index:1; }
-  .docks.over { outline:2px dashed var(--sel); outline-offset:-3px; border-radius:var(--r); }
+  .docks.over { background:color-mix(in srgb, var(--sel) 28%, transparent); border-radius:var(--r); transition:background .12s; }
   /* panels keep a readable size: taller on big screens, a minimum width, and a sideways scroll instead of squashing */
   @media (min-width:1001px) { .docks { height:clamp(280px, 38vh, 480px); overflow-x:auto; overflow-y:hidden; } }
   .dock { min-width:170px; } .dock.wide { min-width:260px; } .dock.narrow { min-width:200px; } .dock[data-id=controls] { min-width:215px; }
@@ -244,9 +244,8 @@
   .sdock:not(:empty) { width:clamp(210px, 17vw, 300px); }
   .sdock .dock { flex:1 1 0; min-width:0; min-height:130px; }
   .sdock .dock.wide, .sdock .dock.narrow { flex:1 1 0; min-width:0; }
-  .dz { position:fixed; top:8px; width:110px; display:none; z-index:45; pointer-events:none; border:1px solid var(--gl-line); border-radius:var(--r); background:var(--gl); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
-  .dz.show { display:block; } .dz.hot { border-color:var(--sel); background:color-mix(in srgb, var(--sel) 30%, transparent); }
-  .dz::after { content:attr(data-t); position:absolute; left:0; right:0; top:50%; text-align:center; font-size:12px; font-weight:600; color:var(--text); }
+  .dz { position:fixed; top:8px; width:110px; display:none; z-index:45; pointer-events:none; border-radius:var(--r); background:color-mix(in srgb, var(--sel) 32%, transparent); }
+  .dz.show { display:block; }
   @media (max-width:1000px) { .upper { flex-direction:column; } .sdock:not(:empty) { width:auto; } }
   /* ---------- adjusting sizes, with limits ---------- */
   .dock { position:relative; } .dock.float { position:fixed; max-width:92vw; max-height:92vh; }
@@ -4038,7 +4037,7 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
         const z = dz[k], r = colRect(k);
         if (r) { z.style.left = r.left + 'px'; z.style.right = 'auto'; z.style.width = r.width + 'px'; z.style.top = r.top + 'px'; }
         else { z.style.width = ''; z.style.top = ''; z.style.left = k === 'left' ? '8px' : 'auto'; z.style.right = k === 'right' ? '8px' : 'auto'; }
-        z.style.bottom = bot; z.classList.toggle('show', on); z.classList.toggle('hot', on && zoneOf(ev) === k);
+        z.style.bottom = bot; z.classList.toggle('show', on && zoneOf(ev) === k); // only the place you are over turns blue
       });
     };
     const move = (ev) => {

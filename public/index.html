@@ -850,8 +850,8 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv2 .mvt canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
   .mv2 .mvt.lv img { visibility:hidden; }
   .mv2 .mvt img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; } .mv2 .mvt img:not([src]) { visibility:hidden; }
-  .mv2 .mvt .lb { position:absolute; left:8px; right:8px; bottom:8px; padding:7px 11px; border-radius:10px; font-size:14px; font-weight:600; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.14); display:flex; align-items:center; gap:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .mv2 .mvt .lb small { margin-left:auto; color:#cdd3e4; font-weight:500; font-size:12px; }
+  .mv2 .mvt .lb { position:absolute; left:8px; right:auto; max-width:calc(100% - 16px); box-sizing:border-box; bottom:8px; padding:4px 9px; border-radius:8px; font-size:13px; font-weight:600; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.14); display:flex; align-items:center; gap:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mv2 .mvt .lb small { margin-left:4px; color:#cdd3e4; font-weight:500; font-size:12px; }
   .mv2 .mvt .nb { position:absolute; left:10px; top:10px; z-index:1; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.16); }
   .mv2 .mv-tag { position:absolute; right:12px; top:12px; z-index:1; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:.4px; background:#ff4d5a; }
   .mv2 .mv-grid { flex:none; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
@@ -954,15 +954,14 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv-arr { position:absolute; z-index:8; width:34px; height:34px; border-radius:50%; border:0; background:var(--blue); color:#fff; font-size:20px; font-weight:700; line-height:1; display:grid; place-items:center; cursor:pointer; padding:0 0 2px; box-shadow:0 6px 16px rgba(59,108,255,.35); }
   .mv2.mv-sliding, .mv2.mv-sliding * { cursor:grabbing !important; user-select:none; }
   .mv-arr:hover { filter:brightness(1.12); } .mv-arr[hidden] { display:none; }
-  .mv2.mv-moving .mv-grid { outline:2px dashed rgba(255,255,255,.5); outline-offset:4px; border-radius:18px; cursor:grabbing; }
+  .mv2.mv-moving .mv-grid { cursor:grabbing; }
   /* while dragging: every place you can drop is marked softly, and the one you are heading for is lit */
-  .mv-zone { position:absolute; z-index:6; border-radius:14px; border:2px dashed rgba(255,255,255,.35); background:rgba(59,108,255,.10); pointer-events:none; transition:background .12s, border-color .12s; }
-  .mv-zone.on { background:rgba(59,108,255,.38); border-color:#fff; border-style:solid; }
+  .mv-zone { position:absolute; z-index:6; border-radius:14px; background:rgba(59,108,255,.34); pointer-events:none; opacity:0; transition:opacity .12s; }
+  .mv-zone.on { opacity:1; }
   .mv-zone[data-z=top] { left:12px; right:12px; top:0; height:16%; } .mv-zone[data-z=bottom] { left:12px; right:12px; bottom:12px; height:16%; }
   .mv-zone[data-z=left] { left:12px; top:0; bottom:12px; width:14%; } .mv-zone[data-z=right] { right:12px; top:0; bottom:12px; width:14%; }
   .cr.mv2 { position:relative; }
-  .mv2.v-custom.mv-moving .mvt:not(.drag) { outline:2px dashed rgba(255,255,255,.35); outline-offset:-2px; }
-  .mv2.v-custom.mv-moving .mvt.target { outline:3px solid #fff; outline-offset:-3px; box-shadow:0 0 0 4px rgba(59,108,255,.7); }
+  .mv2.v-custom.mv-moving .mvt.target::after { content:""; position:absolute; inset:0; background:rgba(59,108,255,.38); border-radius:inherit; pointer-events:none; }
   /* Gallery and Custom: one grid of same-size boxes, in the middle of the window */
   .cr.mv2.v-gallery:not([hidden]), .cr.mv2.v-custom:not([hidden]) { display:flex; flex-direction:row; flex-wrap:wrap; justify-content:center; align-content:center; } /* a last row with fewer boxes sits in the middle too */
   .mv2.v-gallery .mv-top, .mv2.v-gallery .mv-grid, .mv2.v-custom .mv-top, .mv2.v-custom .mv-grid { display:contents; }
@@ -1297,8 +1296,8 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
 <!-- Welcome screen: shows each time Multistream opens -->
 <div class="wl" id="welcome" role="dialog" aria-modal="true" aria-label="Welcome">
   <div class="wl-logo"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="var(--red)"/></svg>Multistream</div>
-  <h1>Stream your service<br>everywhere at once</h1>
-  <p class="lead2">Livestream on YouTube, Facebook and more at the same time. Set up your camera and sound, and record your service, all in one app.</p>
+  <h1>Stream your event<br>everywhere at once</h1>
+  <p class="lead2">Livestream on YouTube, Facebook and more at the same time. Set up your cameras and sound, and record it, all in one app.</p>
   <div class="wl-boxes">
     <button type="button" class="pri" id="wlStart"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></i><b>Get started</b><span class="d">New here? We'll help you set up</span></button>
     <button type="button" id="wlStudio"><i class="bl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg></i><b>Open Production</b><span class="d">Set up your camera, slides and sound</span></button>
@@ -1430,15 +1429,8 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
           </details>
         </div><div class="g2 old2" data-svc="custom">
           <div class="grp"><h4>Custom</h4>
-            <p>For Instagram, TikTok, Twitch, LinkedIn, Vimeo or any site that gives you a server and a stream key.</p>
-            <div class="srow"><label class="lb" for="cuName">Name</label>
-              <div class="ctl"><input class="t" id="cuName" type="text" placeholder="For example: Instagram" autocomplete="off"></div></div>
-            <div class="srow"><label class="lb" for="cuUrl">Server</label>
-              <div class="ctl"><input class="t" id="cuUrl" type="text" placeholder="rtmp://... or rtmps://..." autocomplete="off"></div></div>
-            <div class="srow"><label class="lb" for="cuKey">Stream key</label>
-              <div class="ctl"><input class="t" id="cuKey" type="password" placeholder="Paste the key" autocomplete="off"><button class="b2" id="cuShow" type="button">Show</button></div></div>
-            <div class="srow"><p class="lb"></p>
-              <div class="ctl"><button class="b2 pri" id="cuAdd" type="button">Add channel</button><p class="note" id="cuMsg"></p></div></div>
+            <p>Instagram, TikTok, Twitch or any site with a server and stream key. Channels are added on the Livestream page.</p>
+            <div class="srow"><p class="lb"></p><div class="ctl"><button class="b2 pri" id="cuAdd" type="button">Add a channel</button></div></div>
           </div>
         </div><div class="g2 old2 s2pt">
           <div class="grp"><h4>Private test</h4>
@@ -2301,6 +2293,37 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   const KEYSRV = { yt: 'rtmp://a.rtmp.youtube.com/live2', fb: 'rtmps://live-api-s.facebook.com:443/rtmp/', tw: 'rtmp://live.twitch.tv/app', ig: '', tt: '', other: '' };
   // Add channel → Facebook (like Restream): every Page you shared with Facebook, each with Add.
   // Not signed in yet (or a Page is missing): Sign in with Facebook right here, with the code to type.
+  // YouTube in Add channel: add Google's file once, then sign in; it closes by itself when YouTube is connected
+  function ytAddBox(close) {
+    const f = document.createElement('div'); f.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+    f.innerHTML = '<b>Easy way: sign in</b><p class="note ys"></p><label class="yf" hidden>1. File from Google<input type="file" accept=".json,application/json"></label><div class="row"><button type="button" class="btn pri si">Sign in with YouTube</button></div><p class="note ym"></p>';
+    const ys = f.querySelector('.ys'), ym = f.querySelector('.ym'), yf = f.querySelector('.yf'), si = f.querySelector('.si');
+    let timer = 0;
+    const show = (y) => {
+      y = y || {}; ys.textContent = y.connected ? '\u2713 Connected' + (y.channelTitle ? ' to ' + y.channelTitle : '') : y.hasClient ? 'Sign in with the YouTube account you stream to.' : 'First add the file from Google (only once).';
+      yf.hidden = Boolean(y.hasClient); si.disabled = !y.hasClient; si.textContent = y.connected ? 'Switch YouTube account' : (y.hasClient ? '' : '2. ') + 'Sign in with YouTube';
+    };
+    if (window.DEMO) show({ hasClient: true }); else api('/api/youtube').then(show).catch(() => show());
+    yf.querySelector('input').onchange = async (e) => {
+      const file0 = e.target.files[0]; if (!file0) return; let file;
+      try { file = JSON.parse(await file0.text()); } catch { ym.textContent = 'That file could not be read. Choose the .json file from Google.'; return; }
+      const r = await api('/api/youtube/client', 'PUT', { file }); e.target.value = '';
+      if (r.error) { ym.textContent = r.error; return; } ym.textContent = ''; show(r);
+    };
+    si.onclick = async () => {
+      if (window.DEMO) return;
+      const before = await api('/api/youtube').catch(() => ({}));
+      const r = await api('/api/youtube/login'); if (r.error) { ym.textContent = r.error; return; }
+      window.open(r.url, '_blank'); ym.textContent = 'Finish the sign-in in your browser, then come back. This closes by itself.';
+      clearInterval(timer); let n = 0;
+      timer = setInterval(async () => {
+        if (!f.isConnected || ++n > 150) return clearInterval(timer);
+        const y = await api('/api/youtube').catch(() => null);
+        if (y && y.connected && (!before.connected || y.channelTitle !== before.channelTitle)) { clearInterval(timer); prefs.youtube = true; savePrefs(); close(); refresh(); }
+      }, 2000);
+    };
+    return f;
+  }
   function fbAddBox(close) {
     const f = document.createElement('div'); f.className = 'fbl';
     const msg = (t, bad) => { let p = f.querySelector('.note'); if (!p) { p = document.createElement('p'); p.className = 'note'; f.appendChild(p); } p.textContent = t; p.style.color = bad ? '#ff8a90' : ''; };
@@ -2380,11 +2403,9 @@ window.askText = (title, value, hint) => new Promise((ok) => {
         return f;
       };
       if (pick === 'fb') { box.appendChild(fbAddBox(close)); return; }
-      if (pick === 'yt' || pick === 'fb') {
+      if (pick === 'yt') {
         const two = document.createElement('div'); two.className = 'pf-two';
-        const a = document.createElement('div'); a.className = 'on'; a.innerHTML = '<b>Easy way: sign in</b> <button type="button" class="btn pri si" style="margin-left:6px"></button>';
-        a.querySelector('.si').textContent = 'Sign in with ' + PLAT[pick];
-        a.querySelector('.si').onclick = () => { close(); openSettings(pick === 'yt' ? 'youtube' : 'facebook'); };
+        const a = document.createElement('div'); a.className = 'on'; a.appendChild(ytAddBox(close));
         const b = document.createElement('div'); const hb = document.createElement('b'); hb.textContent = 'Or paste a stream key'; b.appendChild(hb); b.appendChild(keyForm(pick === 'fb'));
         two.append(a, b); box.appendChild(two);
       } else {
@@ -2893,7 +2914,7 @@ function mvExtras(show, horiz) {
       addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
     });
   }
-  sz.hidden = !show; if (!show) { a1.hidden = a2.hidden = true; return; }
+  sz.hidden = true; if (!show) { a1.hidden = a2.hidden = true; return; } // the drag-to-size bar is gone; the row has a fixed, comfortable size
   const c = cr.getBoundingClientRect(), r = g.getBoundingClientRect(), x = r.left - c.left, y = r.top - c.top;
   sz.className = 'mv-size ' + (horiz ? 'h' : 'v');
   if (horiz) { sz.style.cssText = 'left:12px;right:12px;top:' + Math.round(mvSide === 'top' ? y + r.height - 1 : y - 11) + 'px'; }
@@ -2911,13 +2932,13 @@ new ResizeObserver(() => fitCrTiles()).observe($('#crView')); addEventListener('
 // Gallery: every scene the same size. Custom: like Gallery with the Program picture too, in your own order: drag a box onto another to move it.
 // Boxes always keep the picture's shape. The layout, the side and the order are remembered on this computer.
 const MV_VIEWS = ['speaker', 'gallery', 'custom'];
-let mvView = 'speaker', mvSide = 'top', mvOrder = [], mvStrip = 0.2, mvHideProg = false, mvPins = [], mvNames = [];
+let mvView = 'speaker', mvSide = 'top', mvOrder = [], mvStrip = 0.26, mvHideProg = false, mvPins = [], mvNames = [];
 try {
   const v = localStorage.getItem('ms_mv_view'); if (MV_VIEWS.includes(v)) mvView = v;
   const sd = localStorage.getItem('ms_mv_side'); if (['top', 'bottom', 'left', 'right'].includes(sd)) mvSide = sd;
   const o = JSON.parse(localStorage.getItem('ms_mv_order') || '[]'); if (Array.isArray(o)) mvOrder = o.map(String);
   const x = JSON.parse(localStorage.getItem('ms_mv_more') || '{}') || {};
-  if (x.strip > 0.05 && x.strip < 0.6) mvStrip = x.strip; mvHideProg = Boolean(x.hide); if (Array.isArray(x.pins)) mvPins = x.pins.map(String);
+   mvHideProg = Boolean(x.hide); if (Array.isArray(x.pins)) mvPins = x.pins.map(String);
 } catch {}
 function mvSave() { try { localStorage.setItem('ms_mv_view', mvView); localStorage.setItem('ms_mv_side', mvSide); localStorage.setItem('ms_mv_order', JSON.stringify(mvOrder)); localStorage.setItem('ms_mv_more', JSON.stringify({ strip: mvStrip, hide: mvHideProg, pins: mvPins })); } catch {} }
 const mvKeyOf = (el) => (el.id === 'crProgBox' ? '*program' : el.dataset.n);
@@ -2941,7 +2962,7 @@ function mvMenuDraw() {
   if (mvPins.length) add('Unpin all', false, () => { mvPins = []; });
   hr();
   add(document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen', false, () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else document.documentElement.requestFullscreen().catch(() => {}); });
-  add('Reset', false, () => { mvView = 'speaker'; mvSide = 'top'; mvOrder = []; mvStrip = 0.2; mvHideProg = false; mvPins = []; $('#crTiles').scrollTo(0, 0); });
+  add('Reset', false, () => { mvView = 'speaker'; mvSide = 'top'; mvOrder = []; mvStrip = 0.26; mvHideProg = false; mvPins = []; $('#crTiles').scrollTo(0, 0); });
 }
 function mvBtnIcon() { const b = $('#mvMenuB'); if (!b) return; b.innerHTML = MV_ICON[mvView] + 'View'; }
 function mvMenuShow(on) { mvBtnIcon(); const m = $('#mvMenu'); if (on) mvMenuDraw(); m.hidden = !on; $('#mvMenuB').setAttribute('aria-expanded', String(on)); }
@@ -2992,8 +3013,9 @@ $('#crView').addEventListener('pointerdown', (e) => {
     }
     if (strip) { // the nearest side of the window is lit; the row goes there when you let go
       const r = cr.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
-      const d = { left: x, right: 1 - x, top: y, bottom: 1 - y }; side = Object.keys(d).sort((a, b) => d[a] - d[b])[0];
-      zones.forEach((z) => z.classList.toggle('on', z.dataset.z === side));
+      const d = { left: x, right: 1 - x, top: y, bottom: 1 - y }, near = Object.keys(d).sort((a, b) => d[a] - d[b])[0];
+      side = d[near] < 0.22 ? near : mvSide; // only when you get close to a side does it light up; elsewhere the row stays put
+      zones.forEach((z) => z.classList.toggle('on', z.dataset.z === side && side !== mvSide));
     } else { // the box under the mouse is lit; the dragged box takes its place when you let go
       const over = document.elementFromPoint(ev.clientX, ev.clientY), t = over && over.closest('#crView .mvt');
       const nt = t && t !== box ? t : null;
@@ -3501,17 +3523,7 @@ function showSvc(v) {
 if ($('#s2Svc')) {
   try { const v = localStorage.getItem('ms_svc'); if (v && [...$('#s2Svc').options].some((o) => o.value === v)) $('#s2Svc').value = v; } catch {}
   $('#s2Svc').onchange = () => showSvc(); showSvc();
-  $('#cuShow').onclick = () => { const k = $('#cuKey'); k.type = k.type === 'password' ? 'text' : 'password'; $('#cuShow').textContent = k.type === 'password' ? 'Show' : 'Hide'; };
-  $('#cuAdd').onclick = async () => {
-    const name = $('#cuName').value.trim(), url = $('#cuUrl').value.trim(), key = $('#cuKey').value.trim(), m = $('#cuMsg');
-    if (!name) { m.textContent = 'Type a name.'; return $('#cuName').focus(); }
-    if (!/^rtmps?:\/\//i.test(url)) { m.textContent = 'The server starts with rtmp:// or rtmps://'; return $('#cuUrl').focus(); }
-    if (window.DEMO) { m.textContent = 'This is a demo. Nothing is saved.'; return; }
-    const r = await api('/api/destinations', 'POST', { name, url, key }).catch(() => ({ error: 'Could not add it' }));
-    if (r.error) { m.textContent = r.error; return; }
-    $('#cuName').value = $('#cuUrl').value = $('#cuKey').value = ''; m.textContent = 'Added. It is on the Livestream page.';
-    if (typeof refresh === 'function') refresh();
-  };
+  $('#cuAdd').onclick = () => { closeSettings(); showPage('dash'); if (window.msAddChannel) window.msAddChannel('other'); };
 }
 const setOverlay = $('#setOverlay');
 const paneLoaders = { stream: () => { loadYt(); loadFb(); }, system: loadSys, hotkeys: () => hkLoad() };
@@ -3797,8 +3809,8 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) refr
       else { const b = document.createElement('button'); b.type = 'button'; b.className = 'gb sm' + (c === 'yt' || c === 'fb' ? ' pri' : ''); b.textContent = btn; b.onclick = fn; d.appendChild(b); }
       g.appendChild(d);
     };
-    row('yt', 'YouTube', yt.connected ? (yt.channelTitle || 'Connected') : 'Sign in to your channel', Boolean(yt.connected), 'Sign in', () => { openSettings('youtube'); reopen(); });
-    row('fb', 'Facebook', fbs.hasToken && fbs.pageId ? (fbs.pageName || 'Your Page') : 'Sign in and pick your Page', Boolean(fbs.hasToken && fbs.pageId), 'Sign in', () => { openSettings('facebook'); reopen(); });
+    row('yt', 'YouTube', yt.connected ? (yt.channelTitle || 'Connected') : 'Sign in to your channel', Boolean(yt.connected), 'Sign in', () => { window.msAddChannel('yt'); reopen(); });
+    row('fb', 'Facebook', fbs.hasToken && fbs.pageId ? (fbs.pageName || 'Your Page') : 'Sign in and pick your Page', Boolean(fbs.hasToken && fbs.pageId), 'Sign in', () => { window.msAddChannel('fb'); reopen(); });
     row('ig', 'Instagram', 'Paste your stream key', has('ig'), 'Add', () => { window.msAddChannel('ig'); reopen(); }, WHERE.ig);
     row('tt', 'TikTok', 'Paste your stream key', has('tt'), 'Add', () => { window.msAddChannel('tt'); reopen(); }, WHERE.tt);
     row('tw', 'Twitch', 'Paste your stream key', has('tw'), 'Add', () => { window.msAddChannel('tw'); reopen(); }, WHERE.tw);
