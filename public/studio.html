@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Multistream Studio</title>
+<title>Multistream Production</title>
 <style>
   /* same colours as the dashboard (and its light theme and accent colour from Settings, Appearance) */
   :root { color-scheme:dark; --bg:#0a0e1f; --card:#10152e; --head:#151b38; --line:#222a4a; --text:#eef1f8; --muted:#a3abc4; --green:#34d27b; --red:#ff4d5a; --field:#0b1026; --sel:#3b6cff; --onsel:#ffffff; --btn:#161c38; --btn2:#1d2546; --hover:#2c3560; }
@@ -393,7 +393,7 @@
   .as-set .f { margin:0 0 8px; }
   .addsrc .dlg-f { display:flex; gap:8px; align-items:center; }
 
-  /* ---------- side menu (small, icons only), the same pages as on Go Live ---------- */
+  /* ---------- side menu (small, icons only), the same pages as on Livestream ---------- */
   body { padding-left:76px; }
   /* inside the app window (the app's own side menu is shown next to it) */
   html.embed body { padding-left:0; } html.embed .snv { display:none; }
@@ -420,7 +420,7 @@
   .dock .ctl button.stop { background:var(--red); border-color:var(--red); color:#fff; box-shadow:0 0 0 2px color-mix(in srgb, var(--red) 30%, transparent); }
   #modeBtn.on { box-shadow:0 0 0 2px color-mix(in srgb, var(--sel) 35%, transparent); }
 
-  /* ---------- Studio as in the design ---------- */
+  /* ---------- Production as in the design ---------- */
   .obs { gap:14px; padding:8px 24px 22px !important; }
   .ptop { height:auto; padding:0; margin:4px -10px 2px; border:0 !important; background:transparent !important; box-shadow:none !important; -webkit-backdrop-filter:none; backdrop-filter:none; border-radius:0; gap:4px; font-size:13px; color:#cdd3e4; }
   .ptitle { font-size:20px !important; margin:0 18px 0 10px !important; color:var(--text); }
@@ -440,11 +440,11 @@
   .dock .list, .dock .pad { background:transparent !important; }
   /* dragging a scene or a source to another place in its list */
 html.a-calm body { background:var(--bg) !important; }
-  .srcbar { display:flex; align-items:center; gap:8px; padding:4px 14px; min-height:34px; flex:none; font-size:13px; color:var(--muted); }
+  .srcbar { display:flex; align-items:center; gap:8px; padding:6px 14px; min-height:40px; flex:none; font-size:13px; color:var(--muted); margin:0 0 8px; border-radius:14px; background:var(--gl); border:1px solid var(--gl-line); }
+  .srcbar button:disabled { opacity:.4; cursor:default; border-color:var(--line) !important; }
   .srcbar .sb-n { margin-right:6px; max-width:38ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .srcbar .sb-n.has { color:var(--text); font-weight:600; }
   .srcbar button { padding:4px 12px; border-radius:999px; border:1px solid var(--line); background:var(--field); color:var(--text); font:inherit; font-size:12.5px; cursor:pointer; } .srcbar button:hover { border-color:var(--sel); }
   .scn.drag, .lyr.drag { opacity:.45; }
-  body.rowdrag-scene .scn:not(.drag), body.rowdrag-source .lyr:not(.drag) { box-shadow:inset 0 2px 0 color-mix(in srgb, var(--sel) 35%, transparent), inset 0 -2px 0 color-mix(in srgb, var(--sel) 35%, transparent); } .scn.dropA, .lyr.dropA { box-shadow:inset 0 3px 0 var(--sel) !important; } .scn.dropB, .lyr.dropB { box-shadow:inset 0 -3px 0 var(--sel) !important; }
   #scenes { padding:4px 0; } #scenes .scn { margin:3px 8px; padding:9px 12px; border-radius:10px; font-size:14px; background:transparent; }
   #scenes .scn.on { background:var(--sel); color:var(--onsel); font-weight:600; } #scenes .scn .dot { display:none; }
   #layers { padding:4px 0; } #layers .lyr { margin:2px 8px; padding:6px 6px 6px 12px; gap:10px; border-radius:10px; font-size:14px; background:transparent; }
@@ -457,6 +457,9 @@ html.a-calm body { background:var(--bg) !important; }
   .stage .screen .cap { font-size:12px; color:#cdd3e4; margin-bottom:8px; } .stage .screen .cap span { color:#cdd3e4; } .livetag { color:#ff6b74; }
   .stage canvas.v { border-radius:14px; border:2px solid var(--sel); } .stage .screen + .mid + .screen canvas.v { border-color:#ff4d5a; }
   body.single .stage canvas.v { border-color:#ff4d5a; }
+  /* each picture box is exactly the picture's shape, as big as fits, in the middle (sized by fitStage) */
+  .stage canvas.v, html.tall .stage canvas.v { flex:none; align-self:center; max-height:none; max-width:none; margin:0; }
+  body.single .stage > .screen:first-child { max-width:none; }
   .stage .mid { width:auto; flex:none; } .stage .mid .note { display:none; }
   button.trans { width:auto !important; padding:10px 18px !important; border-radius:999px !important; font-size:13px; font-weight:600; background:var(--gl2) !important; border:1px solid var(--gl-line) !important; }
   .trp { display:flex; flex-direction:column; gap:10px; padding:14px !important; } .trp .lbl { display:flex; flex-direction:column; gap:6px; font-size:12px; color:#a3abc4; }
@@ -622,7 +625,7 @@ html.a-calm body { background:var(--bg) !important; }
   #sendBtn.stop, #recBtn.stop, #vcBtn.stop, .dock .ctl button#sendBtn.stop, .dock .ctl button#recBtn.stop, .dock .ctl button#vcBtn.stop { background:var(--sel) !important; border-color:var(--sel) !important; color:var(--onsel) !important; box-shadow:0 4px 16px color-mix(in srgb, var(--sel) 45%, transparent) !important; }
   #sendBtn.stop::before, #recBtn.stop::before, #vcBtn.stop::before { background:var(--onsel) !important; }
   #recBtn:not(.stop)::before, #sendBtn:not(.stop)::before { background:var(--sel) !important; }
-  /* ---------- the same look as Go Live: plain panel titles, round buttons, one blue main button ---------- */
+  /* ---------- the same look as Livestream: plain panel titles, round buttons, one blue main button ---------- */
   .dock > h2 { font-size:14px !important; letter-spacing:0 !important; text-transform:none !important; color:var(--text) !important; background:transparent !important; padding:12px 16px 10px !important; }
   .dock .ctl button { height:36px !important; border-radius:999px !important; }
   #sendBtn:not(.stop) { background:var(--sel) !important; color:var(--onsel) !important; } #sendBtn:not(.stop)::before { background:currentColor !important; }
@@ -644,7 +647,7 @@ html.a-calm body { background:var(--bg) !important; }
 })();
 </script>
 <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');
-// Inside the app window the Studio sometimes misses the app's helpers (it then tries a connection that does not exist
+// Inside the app window the Production sometimes misses the app's helpers (it then tries a connection that does not exist
 // in the desktop app and never sends any video). The window around it has them, so it uses those.
 try { if (!window.msNative && window.parent !== window && window.parent.msNative) window.msNative = window.parent.msNative; } catch {}</script>
 <div class="asbar" id="asBar" hidden><div class="as-r1"><span class="as-dot"></span><b id="asStep">Auto start</b><span class="as-left" id="asLeft"></span><button type="button" class="as-min" id="asMin" title="Make smaller" aria-label="Make smaller">−</button><span class="sp"></span><button type="button" id="asNext">Next step now</button><button type="button" id="asStop">Stop plan</button></div><div class="as-seg" id="asSeg"></div></div>
@@ -652,15 +655,15 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
 <aside class="snv" aria-label="Menu">
   <span class="snv-logo"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="var(--red)"/></svg></span>
   <nav class="snv-pages" aria-label="Pages">
-    <button type="button" id="tabStream" title="Go Live" aria-label="Go Live"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg></button>
-    <button type="button" aria-current="page" title="Studio (you are here)" aria-label="Studio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg></button>
+    <button type="button" id="tabStream" title="Livestream" aria-label="Livestream"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg></button>
+    <button type="button" aria-current="page" title="Production (you are here)" aria-label="Production"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg></button>
     <button type="button" id="tabCr" title="Multiview" aria-label="Multiview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg></button>
   </nav>
   <span class="snv-sp"></span>
   <button type="button" id="navSet" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </aside>
 <div class="obs">
-  <header class="ptop"><h1 class="ptitle">Studio</h1><nav class="mbar" id="mbar" aria-label="Menu bar"><button type="button" data-m="file">File</button><button type="button" data-m="edit">Edit</button><button type="button" data-m="view">View</button><button type="button" data-m="help">Help</button></nav><span class="grow"></span><button type="button" class="pcoll" id="pColl" title="Scene collection"></button></header>
+  <header class="ptop"><h1 class="ptitle">Production</h1><nav class="mbar" id="mbar" aria-label="Menu bar"><button type="button" data-m="file">File</button><button type="button" data-m="edit">Edit</button><button type="button" data-m="view">View</button><button type="button" data-m="help">Help</button></nav><span class="grow"></span><button type="button" class="pcoll" id="pColl" title="Scene collection"></button></header>
   <!-- Preview (the scene you are editing) and Program (what viewers see), like OBS Studio Mode -->
   <div class="upper"><aside class="sdock" id="dockL" aria-label="Panels on the left"></aside><div class="split v" id="splitL" title="Drag to make the left panels wider or narrower" hidden></div>
   <div class="stage">
@@ -673,7 +676,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
   </div>
   <div class="split v" id="splitR" title="Drag to make the right panels wider or narrower" hidden></div><aside class="sdock" id="dockR" aria-label="Panels on the right"></aside></div>
   <!-- the source bar under the picture, like OBS: what you can do with the source you picked -->
-  <div class="srcbar" id="srcBar" aria-label="The source you picked"><span class="sb-n" id="sbName">No source picked</span><button type="button" id="sbProps" hidden>Properties</button><button type="button" id="sbFilters" hidden>Filters</button><button type="button" id="sbOff" hidden>Deactivate</button></div>
+  <div class="srcbar" id="srcBar" aria-label="The source you picked"><span class="sb-n" id="sbName">No source selected</span><button type="button" id="sbProps" disabled>Properties</button><button type="button" id="sbFilters" disabled>Filters</button><button type="button" id="sbOff" hidden>Deactivate</button></div>
   <div class="split h" id="splitB" title="Drag to make the bottom panels taller or shorter"></div>
 
   <!-- docks along the bottom, like OBS -->
@@ -711,7 +714,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
   </div>
 
   <!-- status bar, like OBS -->
-  <footer class="status"><button id="backBtn" hidden title="Go back to the Go Live page">&larr; Go Live</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
+  <footer class="status"><button id="backBtn" hidden title="Go back to the Livestream page">&larr; Livestream</button><span class="stat" id="st"></span><span class="grow"></span><span id="liveClock">LIVE: 00:00:00</span><span id="recClock">REC: 00:00:00</span></footer>
 </div>
 
 <!-- Properties window, like OBS -->
@@ -736,10 +739,10 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
       </nav>
       <div class="spanes">
         <section class="sp" data-sp="general">
-          <h3>Studio</h3>
+          <h3>Production</h3>
           <div class="f"><label>Theme</label><span class="lookbtns" id="lookTheme"><button type="button" data-v="system">System</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button></span></div>
           <div class="f"><label>Main colour</label><span class="lookcols" id="lookCols"></span></div>
-          <p class="note">Theme and main colour are the same as on the Go Live page (Settings, Appearance).</p>
+          <p class="note">Theme and main colour are the same as on the Livestream page (Settings, Appearance).</p>
           <div class="f"><label>Snap items</label><label class="chk"><input type="checkbox" id="optSnap"> Snap items to edges, the centre and each other</label></div>
           <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Confirm before stopping the stream</label></div>
           <div class="f"><label>Panels</label><span><button id="resetLayout" type="button">Reset panels</button> <span class="note">Drag a panel by its title to move it. Drag it up to float it; drop it on the bottom row to put it back.</span></span></div>
@@ -776,7 +779,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
           <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Record automatically when the stream starts</label></div>
           <div class="f"><label>Saved in</label><span><code id="recDir2"></code></span></div>
           <div class="row"><button id="recOpen2">Open folder</button><span class="note" id="recMsg2"></span></div>
-          <p class="note">Saved as .mkv, so a file still plays if the power goes out. Open them with VLC.</p>
+          <p class="note">Saved as .mkv. Make an MP4 on the Recordings page.</p>
         </section>
         <section class="sp" data-sp="audio">
           <h3>Monitoring</h3>
@@ -807,16 +810,16 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
             <tr><td><kbd>Ctrl</kbd> + <kbd>Home</kbd> / <kbd>End</kbd></td><td>Move the item to the very front / back</td></tr>
             <tr><td><kbd>F2</kbd></td><td>Rename the item</td></tr>
             <tr><td><kbd>Esc</kbd></td><td>Select nothing</td></tr>
-            <tr><td><kbd>F11</kbd></td><td>Full screen for the Studio window</td></tr>
+            <tr><td><kbd>F11</kbd></td><td>Full screen for the Production window</td></tr>
             <tr><td><kbd>Ctrl</kbd> + <kbd>,</kbd></td><td>Open Settings</td></tr>
           </table>
-          <p class="note">These work when the Studio is the window in front and you are not typing in a box. They cannot be changed yet.</p>
+          <p class="note">These work when the Production is the window in front and you are not typing in a box. They cannot be changed yet.</p>
         </section>
         <section class="sp" data-sp="advanced">
           <h3>Advanced</h3>
-          <div class="f"><label>Dropped channels</label><span>It reconnects by itself (up to 10 tries, a bit longer apart each time), then tells you.</span></div>
-          <div class="f"><label>Reset</label><span><button id="resetStudio">Reset Studio settings</button></span></div>
-          <p class="note">Puts the video size, recording quality, transition, headphone output and the options above back to how they started. Your scenes, sources and channels stay.</p>
+          <div class="f"><label>Dropped channels</label><span>Reconnects by itself</span></div>
+          <div class="f"><label>Reset</label><span><button id="resetStudio">Reset Production settings</button></span></div>
+          <p class="note">Resets settings only. Scenes, sources and channels stay.</p>
         </section>
       </div>
     </div>
@@ -1372,7 +1375,7 @@ function paint(c, scale, now) {
 }
 let engineLive = false; // the OBS engine is running and draws the live picture
 const lightMode = () => engineLive && engineFails < 2 && !wsOut && !recW && !vcOn;
-// Is the Studio on screen? (In the app it keeps running behind the other pages.) Checked twice a second.
+// Is the Production on screen? (In the app it keeps running behind the other pages.) Checked twice a second.
 let studioShown = true;
 setInterval(() => {
   let on = !document.hidden;
@@ -1423,6 +1426,16 @@ function setFps(f) { if (f === frameFps) return; frameFps = f; clearTimeout(fram
 setFps(30);
 // The Program picture is small while nothing is sent (saves the computer's work) and full size while sending.
 let mvBig = false; // the Program picture is 1080p only because the Multiview's big box needs it
+function fitStage() {
+  document.querySelectorAll('.stage .screen').forEach((sc) => {
+    const c = sc.querySelector('canvas.v'); if (!c || !sc.clientWidth || !c.width) return;
+    const cap = sc.querySelector('.cap'), W = sc.clientWidth - 6, H = sc.clientHeight - (cap ? cap.offsetHeight + 10 : 0) - 6, ar = c.width / c.height;
+    const w = Math.max(60, Math.floor(Math.min(W, H * ar))), key = w + ':' + ar.toFixed(3);
+    if (c.dataset.fit === key) return; c.dataset.fit = key; c.style.width = w + 'px'; c.style.height = Math.floor(w / ar) + 'px';
+  });
+}
+try { new ResizeObserver(fitStage).observe(document.querySelector('.stage')); } catch {}
+setInterval(fitStage, 700);
 function setProgramSize(w, h) { mvBig = false; if (cv.width === w && cv.height === h) return; cv.width = w; cv.height = h; PW = w; PH = h; }
 
 // videos play only while their scene is on air (or shown in a preview); each restarts when its scene goes on air
@@ -1536,11 +1549,9 @@ async function syncAudio() {
       n.hp.type = 'allpass'; n.eqL.type = 'lowshelf'; n.eqL.frequency.value = 200; n.eqM.type = 'peaking'; n.eqM.frequency.value = 1000; n.eqM.Q.value = 0.9; n.eqH.type = 'highshelf'; n.eqH.frequency.value = 4000;
       // the chain: input -> delay -> (gate listens here) -> low cut -> bass/mid/treble -> compressor -> noise gate -> limiter -> fader -> scene gate -> master
       // and after the fader a copy goes to the monitor (your headphones)
-      n.delay.connect(n.det); n.delay.connect(n.hp); n.hp.connect(n.eqL); n.eqL.connect(n.eqM); n.eqM.connect(n.eqH); n.eqH.connect(n.comp);
-      n.comp.connect(n.nz); n.nz.connect(n.lim);
       // Mono (both sides the same) and Balance (left/right), like OBS Advanced Audio Properties
       n.mono = actx.createGain(); n.mono.channelCountMode = 'explicit'; n.mono.channelInterpretation = 'speakers'; n.mono.channelCount = 2;
-      n.bal = actx.createStereoPanner(); n.lim.connect(n.mono); n.mono.connect(n.bal); n.bal.connect(n.gain);
+      n.bal = actx.createStereoPanner(); n.mono.connect(n.bal); n.bal.connect(n.gain); // applyFx joins input -> effects that are on -> here
       n.gain.connect(n.an); n.gain.connect(n.gate);
       // left and right meters: the level after the fader, split in two (a one-channel input is copied to both sides)
       n.st = actx.createGain(); n.st.channelCount = 2; n.st.channelCountMode = 'explicit'; n.st.channelInterpretation = 'speakers';
@@ -1562,6 +1573,17 @@ async function syncAudio() {
 const fxOf = (a) => (a.fx = a.fx || {});
 function applyFx(a, n) {
   const f = a.fx || {}, t = actx.currentTime;
+  { // Only the effects that are switched on are in the path. With none on, the sound goes straight from the input to the fader, unchanged.
+    const sig = [f.lowcut && f.lowcut.on, f.eq && f.eq.on, f.comp && f.comp.on, f.lim && f.lim.on].map(Boolean).join();
+    if (n.sig !== sig && n.mono) {
+      n.sig = sig;
+      [n.delay, n.hp, n.eqL, n.eqM, n.eqH, n.comp, n.nz, n.lim].forEach((x) => { try { x.disconnect(); } catch {} });
+      n.delay.connect(n.det); // the noise gate listens here
+      const path = [n.delay]; if (f.lowcut && f.lowcut.on) path.push(n.hp); if (f.eq && f.eq.on) path.push(n.eqL, n.eqM, n.eqH); if (f.comp && f.comp.on) path.push(n.comp);
+      path.push(n.nz); if (f.lim && f.lim.on) path.push(n.lim); path.push(n.mono);
+      for (let i = 0; i < path.length - 1; i++) path[i].connect(path[i + 1]);
+    }
+  }
   n.delay.delayTime.setTargetAtTime(Math.max(0, Math.min(1000, f.delay || 0)) / 1000, t, 0.02);
   const c = f.comp || {};
   if (c.on) { n.comp.threshold.value = c.thr == null ? -18 : c.thr; n.comp.ratio.value = c.ratio || 4; n.comp.knee.value = 12; n.comp.attack.value = 0.005; n.comp.release.value = 0.25; }
@@ -1623,11 +1645,11 @@ function makeFader(a, horiz) {
   show(); return { el, read };
 }
 // the sound tools of one input, in their own small window
-function openTools(a, fx) {
+function openTools(a, fx, what) {
   const m = document.createElement('div'); m.className = 'modal';
   const dlg = document.createElement('div'); dlg.className = 'dlg';
   dlg.innerHTML = '<div class="dlg-h"><b></b><button type="button" aria-label="Close">×</button></div>';
-  dlg.querySelector('b').textContent = 'Sound tools: ' + a.name;
+  dlg.querySelector('b').textContent = (what || 'Filters') + " for '" + a.name + "'";
   const body = document.createElement('div'); body.className = 'dlg-b'; body.appendChild(fx); dlg.appendChild(body); m.appendChild(dlg);
   const close = () => { m.remove(); document.removeEventListener('keydown', esc); }; const esc = (e) => { if (e.key === 'Escape') close(); };
   dlg.querySelector('button').onclick = close; m.onclick = (e) => { if (e.target === m) close(); }; document.addEventListener('keydown', esc);
@@ -1698,15 +1720,17 @@ function renderAudio() {
       sl.value = pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
     }
     const fx = document.createElement('div'); fx.className = 'fxbody';
+    const props = document.createElement('div'); props.className = 'fxbody';
     const row = (label, el) => { const w = document.createElement('div'); w.className = 'fxr'; const l = document.createElement('span'); l.textContent = label; w.append(l, el); fx.appendChild(w); };
     const slider = (min, max, step, val, fmt, set) => { const w = document.createElement('span'); w.className = 'sl'; const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; const o = document.createElement('b'); o.textContent = fmt(val); i.oninput = () => { o.textContent = fmt(i.value); set(Number(i.value)); save(); syncAudio(); }; w.append(i, o); return w; };
     const sw = (on, set) => { const c = document.createElement('input'); c.type = 'checkbox'; c.checked = Boolean(on); c.onchange = () => { set(c.checked); save(); syncAudio(); }; return c; };
     const F = fxOf(a);
     const mon = document.createElement('select'); [['off', 'Off'], ['only', 'Monitor only'], ['both', 'Monitor and output']].forEach(([v, t]) => mon.add(new Option(t, v)));
     mon.value = a.monitor || 'off'; mon.onchange = () => { a.monitor = mon.value; save(); syncAudio(); gateAudio(); };
-    if (!sl.disabled) row('Input', sl);
-    row('Audio monitoring', mon);
-    row('Delay', slider(0, 1000, 10, F.delay || 0, (v) => v + ' ms', (v) => { F.delay = v; }));
+    // Properties: only the device (like OBS). Listening and delay are in Advanced Audio Properties. The effects are in Filters.
+    { const w = document.createElement('div'); w.className = 'fxr'; const l = document.createElement('span');
+      if (!sl.disabled) { l.textContent = 'Device'; w.append(l, sl); } else { l.textContent = 'This source has no device to choose.'; w.append(l); }
+      props.appendChild(w); }
     row('Low cut (rumble)', sw(F.lowcut && F.lowcut.on, (v) => { F.lowcut = { ...(F.lowcut || {}), on: v }; }));
     row('  cuts below', slider(40, 300, 5, F.lowcut && F.lowcut.hz || 80, (v) => v + ' Hz', (v) => { F.lowcut = { ...(F.lowcut || {}), hz: v }; }));
     row('Bass, mid, treble', sw(F.eq && F.eq.on, (v) => { F.eq = { ...(F.eq || {}), on: v }; }));
@@ -1720,7 +1744,7 @@ function renderAudio() {
     row('  strength', slider(1, 20, 0.5, F.comp && F.comp.ratio || 4, (v) => v + ':1', (v) => { F.comp = { ...(F.comp || {}), ratio: v }; }));
     row('Limiter (stops peaks)', sw(F.lim && F.lim.on, (v) => { F.lim = { ...(F.lim || {}), on: v }; }));
     row('  ceiling', slider(-20, 0, 1, F.lim && F.lim.thr != null ? F.lim.thr : -3, (v) => v + ' dB', (v) => { F.lim = { ...(F.lim || {}), thr: v }; }));
-    const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'sm'; tb.textContent = 'Tools'; tb.title = 'Input, headphones, delay, low cut, bass/treble, gate, compressor, limiter'; tb.onclick = () => openTools(a, fx);
+    const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'sm'; tb.textContent = 'Filters'; tb.title = 'Low cut, bass/treble, noise gate, compressor, limiter'; tb.onclick = () => openTools(a, fx, 'Filters');
     const lb = document.createElement('button'); lb.type = 'button'; lb.className = 'sm lsn' + (isHeard(a) ? ' on' : ''); lb.title = 'Listen in headphones'; lb.setAttribute('aria-label', 'Listen to ' + a.name + ' in headphones');
     lb.onclick = (e) => { e.stopPropagation(); openListen(a, lb); };
     if (HZ) {
@@ -1730,7 +1754,7 @@ function renderAudio() {
       const bt = document.createElement('div'); bt.className = 'hbt';
       m.className = a.muted ? 'mut' : ''; m.innerHTML = a.muted ? ICON_MUTE : ICON_SPK; m.title = a.muted ? 'Muted - click to hear it again' : 'Mute'; m.setAttribute('aria-label', (a.muted ? 'Unmute ' : 'Mute ') + a.name);
       lb.className = isHeard(a) ? 'on' : ''; lb.innerHTML = ICON_HP;
-      tb.className = ''; tb.textContent = '⋯'; tb.setAttribute('aria-label', 'Sound tools for ' + a.name);
+      tb.className = ''; tb.textContent = '⋯'; tb.setAttribute('aria-label', 'Filters for ' + a.name);
       bt.append(m, lb, tb); d.append(left, mid, bt);
     } else {
       // up and down (as in the design): name, loudness, fader + meters + scale, then M, listen and the volume
@@ -1747,7 +1771,7 @@ function renderAudio() {
     }
     box.appendChild(d);
     // right-click a sound input (like OBS): rename, mute, hear it in this scene, properties and filters
-    d.addEventListener('contextmenu', (e) => showAudioMenu(e, a, n, fx, on.has(a.id)));
+    d.addEventListener('contextmenu', (e) => showAudioMenu(e, a, n, fx, on.has(a.id), props));
   });
   $('#audNote').textContent = studio.audio.length ? '' : 'No sound inputs yet.';
   if (!studio.audio.length) { box.classList.remove('hz'); box.appendChild(emptyPanel('No sound yet', 'Add a microphone or a sound desk.', 'Add a microphone', () => { openAddSource(); setTimeout(() => { const b = [...document.querySelectorAll('.addsrc2 .as-list button')].find((x) => x.textContent === 'Microphone'); if (b) b.click(); }, 0); })); }
@@ -1944,7 +1968,7 @@ function openProjector(src, displayId) {
 }
 function closeCtx() { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } document.querySelectorAll('#mbar button.on').forEach((b) => b.classList.remove('on')); }
 // the right-click menu on a sound input in the Audio Mixer
-function showAudioMenu(ev, a, nameEl, fx, inScene) {
+function showAudioMenu(ev, a, nameEl, fx, inScene, props) {
   ev.preventDefault(); closeCtx();
   const m = document.createElement('div'); m.className = 'ctxm'; m.setAttribute('role', 'menu');
   const head = document.createElement('div'); head.className = 'ctxh'; head.textContent = a.name; m.appendChild(head);
@@ -1965,7 +1989,8 @@ function showAudioMenu(ev, a, nameEl, fx, inScene) {
     i.onkeydown = (e) => { if (e.key === 'Enter') finish(true); if (e.key === 'Escape') finish(false); }; i.onblur = () => finish(true);
   });
   sep();
-  item('Properties and filters...', () => openTools(a, fx));
+  item('Filters', () => openTools(a, fx, 'Filters'));
+  item('Properties', () => openTools(a, props, 'Properties'));
   item('Advanced Audio Properties...', () => openAdvancedAudio());
   document.body.appendChild(m); ctxMenu = m;
   const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
@@ -2266,8 +2291,8 @@ function renderLayers() {
   renderProps();
   // the source bar under the picture
   const cur = s.layers.find((x) => x.id === sel);
-  $('#sbName').textContent = cur ? (cur.name || ICON[cur.type] || cur.type) : 'No source picked'; $('#sbName').classList.toggle('has', Boolean(cur));
-  $('#sbProps').hidden = $('#sbFilters').hidden = !cur;
+  $('#sbName').textContent = cur ? (cur.name || ICON[cur.type] || cur.type) : 'No source selected'; $('#sbName').classList.toggle('has', Boolean(cur));
+  $('#sbProps').hidden = $('#sbFilters').hidden = false; $('#sbProps').disabled = $('#sbFilters').disabled = !cur;
   $('#sbOff').hidden = !(cur && CAN_OFF.has(cur.type)); if (cur) $('#sbOff').textContent = cur.off ? 'Activate' : 'Deactivate';
 }
 $('#sbProps').onclick = () => { if (curLayer()) { propsOpen = true; renderLayers(); } };
@@ -2523,7 +2548,7 @@ function renderProps(target, draft) {
     box.append(field(win ? 'Window' : 'Screen', sl));
     // Whole screen or one app: switching changes the kind of source
     box.append(field('What to capture', seg([['screen', 'Whole screen'], ['window', 'One app only']], l.type, (v) => { if (v === l.type) return; const old = caps.get(capKey(l)); if (old) { try { old.st && old.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(capKey(l)); } l.type = v; l.display = ''; l.winName = ''; if (draft && /^(Whole screen|One window|Screen|Window)$/.test(l.name || '')) l.name = v === 'window' ? 'One window' : 'Whole screen'; })));
-    if (win) { const h = document.createElement('p'); h.className = 'note'; h.textContent = 'Open the program first (for example the lyrics or slides), then pick it here. If you close it and open it again, the Studio finds it again by its name.'; left.append(h); }
+    if (win) { const h = document.createElement('p'); h.className = 'note'; h.textContent = 'Open the program first (for example the lyrics or slides), then pick it here. If you close it and open it again, the Production finds it again by its name.'; left.append(h); }
   }
 }
 // "Use the camera's sound": the camera's own microphone (same device) is added to the Audio Mixer, or taken out again
@@ -2542,7 +2567,7 @@ function camSound(l) {
   l.camSoundId = n.id; save(); renderAudio(); syncAudio(); flash(n.name + ' added to the Audio Mixer.', true);
 }
 // ---------------- Missing files (like OBS) ----------------
-// When the Studio opens (or another scene collection is opened), it checks that every picture and video file is
+// When the Production opens (or another scene collection is opened), it checks that every picture and video file is
 // on this computer. If some are not, a window lists them: find each one, search a folder for all of them at once,
 // or leave them for now. Sources with a missing file also get a red ! in the Sources list.
 async function checkMissing(show) {
@@ -2614,8 +2639,13 @@ function pickFile(l, accept, done) {
   const f = $('#file'); f.value = ''; f.accept = accept || (l.type === 'video' ? 'video/*' : 'image/*');
   f.onchange = async () => {
     const file = f.files[0]; if (!file) return;
-    const r = await fetch('/api/studio/asset/' + encodeURIComponent(uid() + '-' + file.name), { method: 'PUT', body: file }).then((x) => x.json());
-    if (r.url) { l.url = r.url; l.file = ''; save(); if (done) done(); else { renderLayers(); renderProps(); } setTimeout(() => checkMissing(false), 800); }
+    const fin = () => { save(); if (done) done(); else { renderLayers(); renderProps(); } setTimeout(() => checkMissing(false), 800); };
+    // videos and big files are used from where they are on this computer (copying is only for small files, up to 30 MB)
+    let where = ''; try { where = window.msNative && window.msNative.pathOf ? window.msNative.pathOf(file) : ''; } catch {}
+    if (where && (/^video\//.test(file.type) || file.size > 25e6)) { l.file = where; l.url = ''; fin(); return; }
+    if (file.size > 30e6) { flash('That file is over 30 MB. Type where it is on this computer in the box.', false); return; }
+    let r = null; try { r = await fetch('/api/studio/asset/' + encodeURIComponent(uid() + '-' + file.name), { method: 'PUT', body: file }).then((x) => x.json()); } catch {}
+    if (r && r.url) { l.url = r.url; l.file = ''; fin(); } else flash('Could not add that file.', false);
   }; f.click();
 }
 function newLayer(t) {
@@ -2860,17 +2890,21 @@ function openPipe(p) {
   return o;
 }
 
-// when the Studio replaced the dashboard in the same window, this goes back
+// when the Production replaced the dashboard in the same window, this goes back
 if (/[?&]same=1/.test(location.search) && window.msNative) {
   $('#backBtn').hidden = false;
   $('#backBtn').onclick = () => {
-    if ((wantSend || recWs) && !confirm('Going back to the Go Live page stops streaming and recording. Go back?')) return;
+    if ((wantSend || recWs) && !confirm('Going back to the Livestream page stops streaming and recording. Go back?')) return;
     window.msNative.openDashboard();
   };
 }
 // a message (like "Recording saved") stays on the status line for a few seconds
 let stHold = 0;
-function flash(text, ok) { if (!ok && window.msNice) text = window.msNice(text); $('#st').textContent = text; $('#st').className = 'stat ' + (ok ? 'ok' : 'bad'); stHold = Date.now() + 6000; }
+let flashT = 0;
+function flash(text, ok) {
+  if (!ok && window.msNice) text = window.msNice(text); $('#st').textContent = text; $('#st').className = 'stat ' + (ok ? 'ok' : 'bad'); stHold = Date.now() + 6000;
+  clearTimeout(flashT); flashT = setTimeout(() => { if ($('#st').textContent === text) { $('#st').textContent = ''; $('#st').className = 'stat'; } }, ok ? 5000 : 15000); // good news 5 s, a problem 15 s
+}
 
 // ---------------- OBS engine: the Program box ----------------
 // When the engine is on, the engine paints the Program box itself, so it shows
@@ -3030,7 +3064,7 @@ function askUsePlan(plan) {
   return new Promise((ok) => {
     const m = document.createElement('div'); m.className = 'modal';
     const d = document.createElement('div'); d.className = 'dlg asq'; d.style.height = 'auto'; d.style.width = 'min(480px, 94vw)';
-    d.innerHTML = '<div class="dlg-h"><b>Use the Auto start plan?</b><button type="button" aria-label="Close">×</button></div><div class="dlg-b"><p class="note"></p><ol></ol></div><div class="dlg-f"><button type="button" class="a1">Go live straight</button><button type="button" class="on a2">Use the plan</button></div>';
+    d.innerHTML = '<div class="dlg-h"><b>Use the Auto start plan?</b><button type="button" aria-label="Close">×</button></div><div class="dlg-b"><p class="note"></p><ol></ol></div><div class="dlg-f"><button type="button" class="a1">Livestream straight</button><button type="button" class="on a2">Use the plan</button></div>';
     d.querySelector('.note').textContent = 'Plan: ' + plan.name;
     plan.steps.filter((x) => x.on !== false).forEach((x, i) => { const li = document.createElement('li'); const [a, b] = stepText(x); li.innerHTML = '<i></i><span></span><small></small>'; li.firstChild.textContent = i + 1; li.children[1].textContent = a; li.children[2].textContent = b; d.querySelector('ol').appendChild(li); });
     const end = (v) => { m.remove(); ok(v); };
@@ -3038,8 +3072,8 @@ function askUsePlan(plan) {
     m.appendChild(d); document.body.appendChild(m); d.querySelector('.a2').focus();
   });
 }
-// Go Live (the page around the Studio) starts and stops streaming with these. usePlan: true or false when Go Live
-// already asked about the Auto start plan; left out, the Studio asks itself.
+// Livestream (the page around the Production) starts and stops streaming with these. usePlan: true or false when Livestream
+// already asked about the Auto start plan; left out, the Production asks itself.
 window.msStart = async (usePlan) => {
   if (wantSend) return true;
   if (usePlan === true) { try { const plan = await fetch('/api/autostart').then((r) => r.json()); if (plan && plan.on && (plan.steps || []).length) autoStart(plan); } catch {} }
@@ -3159,7 +3193,7 @@ setInterval(() => {
 }, 500);
 
 // ---------------- recording ----------------
-// Records the Studio picture to a file in the Videos/Multistream folder, at the quality you choose.
+// Records the Production picture to a file in the Videos/Multistream folder, at the quality you choose.
 // It has its own canvas, so 1080p is real 1080p and does not depend on what is being sent.
 const rcv = document.createElement('canvas'), rctx = rcv.getContext('2d');
 let recW = 0, recMr = null, recWs = null, recT0 = 0, recTick = 0, recTrack = null;
@@ -3230,12 +3264,12 @@ $('#recBtn').onclick = () => (recWs ? endRec(false) : startRec());
 document.addEventListener('click', () => ensureAudio(), { once: true });
 
 // ---------------- virtual camera (Zoom) ----------------
-// Sends the Studio picture to the Windows virtual camera. In Zoom, pick the camera called "Multistream Camera".
+// Sends the Production picture to the Windows virtual camera. In Zoom, pick the camera called "Multistream Camera".
 let vcWs = null, vcMr = null, vcFirst = false;
-// The light way (like OBS feeds its camera): each finished picture is handed to the camera as it is. No video coding in the Studio,
+// The light way (like OBS feeds its camera): each finished picture is handed to the camera as it is. No video coding in the Production,
 // no decoding in the app. If this computer cannot do it, the camera switches to the older way by itself and keeps working.
 let vcRaw = false, vcRawOff = false, vcBusy = false, vcPix = null;
-// The repacking runs beside the page (a worker), so the Studio's own drawing is never held up by it.
+// The repacking runs beside the page (a worker), so the Production's own drawing is never held up by it.
 let vcWk = null, vcWkOk = true;
 const vcPackHere = (a, isRgb) => { const out = new Uint8Array(a.length / 4 * 3), r = isRgb ? 2 : 0, b = 2 - r; for (let i = 0, j = 0; j < out.length; i += 4, j += 3) { out[j] = a[i + r]; out[j + 1] = a[i + 1]; out[j + 2] = a[i + b]; } return out.buffer; };
 function vcPack(isRgb) {
@@ -3305,8 +3339,8 @@ function vcConnect() {
     }
     $('#vcBtn').textContent = 'Stop virtual camera'; $('#vcBtn').className = 'stop';
     $('#st').textContent = vcFirst
-      ? 'Virtual camera is on. In Zoom, choose Multistream Camera (Settings → Video → Camera). If Zoom was already open and does not list it, close Zoom and open it again.'
-      : 'Virtual camera is on. In Zoom, choose the camera called Multistream Camera.';
+      ? 'Virtual camera on. In Zoom pick Multistream Camera (reopen Zoom if it is not listed).'
+      : 'Virtual camera on. In Zoom pick Multistream Camera.';
     $('#st').className = 'stat ok'; vcFirst = false;
   };
   ws.onmessage = (m) => { try { const j = JSON.parse(m.data); if (j.error) vcOff('Virtual camera: ' + j.error); } catch {} };
@@ -3569,7 +3603,7 @@ const useFast = (mt) => !fastOff && /h264/.test(mt || '');
 $('#resetStudio').onclick = () => {
   if (!confirm('Put the video size, recording quality, transition, monitoring output and options back to how they started?')) return;
   ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_layout'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
-  flash('Studio settings were reset. Close and open the Studio to see them.', true); closeSettings();
+  flash('Production settings were reset. Close and open the Production to see them.', true); closeSettings();
 };
 // ----- Video pane: which encoder is used -----
 async function loadEnc() { try { const e = await fetch('/api/studio/status').then((r) => r.json()); $('#encName').textContent = e.encoder || 'checking...'; } catch {} }
@@ -3712,7 +3746,7 @@ document.addEventListener('keydown', (e) => {
 });
 $('#keysBtn').onclick = () => { $('#keysBox').hidden = !$('#keysBox').hidden; };
 // ---------------- hotkeys you can change (Settings, Hotkeys). Saved on this computer as ms_hotkeys ----------------
-// A key is written like "Ctrl+Shift+S". The Go Live page sends its keys here too, so they work on every page.
+// A key is written like "Ctrl+Shift+S". The Livestream page sends its keys here too, so they work on every page.
 const HK_DIG = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 function hkDefault(id) {
   if (id === 'stream') return 'Ctrl+Shift+S'; if (id === 'record') return 'Ctrl+Shift+R'; if (id === 'trans') return 'Space';
@@ -3857,7 +3891,7 @@ async function shots() {
 (async () => {
   studio = await fetch('/api/studio').then((r) => r.json()); lastRev = studio.rev;
   studio.audio = studio.audio || []; applyShape(studio.shape); showColl();
-  // the Scene collections page can hand over an OBS file to import here (it needs the Studio's OBS reader)
+  // the Scene collections page can hand over an OBS file to import here (it needs the Production's OBS reader)
   try { const pend = localStorage.getItem('ms_pending_obs'); if (pend) { localStorage.removeItem('ms_pending_obs'); setTimeout(() => importObsText(pend), 800); } } catch {}
   if (!studio.scenes.length) {
     studio.scenes = [{ name: 'Welcome', audio: [], layers: [{ id: uid(), type: 'color', color: '#0b3d1e', x: 0, y: 0, w: SW, h: SH, fit: 'stretch', visible: true }, { id: uid(), type: 'text', text: 'Welcome', size: 180, color: '#ffffff', x: 120, y: 420, w: 1600, h: 240, fit: 'stretch', visible: true }] }];
@@ -4019,8 +4053,8 @@ In the Preview: drag to move, drag corners or edges to resize, <kbd>Alt</kbd>+dr
   const rb = document.getElementById('resetLayout'); if (rb) rb.onclick = () => { L = fresh(); layout(); save(); };
   layout();
 })();
-// Studio alerts (no video arriving, video stopped) and Stream alerts (a channel stopped) both show here,
-// because the Stream is the most important. Dismiss here clears both; Dismiss on the Go Live page clears its own.
+// Production alerts (no video arriving, video stopped) and Stream alerts (a channel stopped) both show here,
+// because the Stream is the most important. Dismiss here clears both; Dismiss on the Livestream page clears its own.
 (function () {
   // Alerts are pushed by the app as they happen (no polling). In the app they come through a pipe;
   // in a browser on the church Wi-Fi they come through an event stream. If the link drops it comes back.
