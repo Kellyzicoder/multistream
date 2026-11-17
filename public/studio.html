@@ -985,10 +985,10 @@ function getCam(l) {
   const modes = (l.res && l.res !== 'auto') || (l.fps && l.fps !== 'auto') ? [] : [[1920, 1080, 25], [1920, 1080, 30], [1920, 1080, 50], [1920, 1080, 60], [1280, 720, 50], [1280, 720, 60], [1280, 720, 30], [1280, 720, 25]];
   let mi = 0;
   const next = () => {
-    if (mi >= modes.length || !c.st) return false;
+    if (mi >= modes.length) return false;
     const [mw, mh, mf] = modes[mi++];
-    try { c.st.getTracks().forEach((t) => t.stop()); } catch {}
-    c.ready = false; c.black = false; c.info = '';
+    try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {}
+    c.ready = false; c.black = false; c.info = ''; c.err = '';
     navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: id }, width: { exact: mw }, height: { exact: mh }, frameRate: { exact: mf } }, audio: false })
       .then(async (st) => { c.st = st; c.v.srcObject = st; await c.v.play(); c.ready = true; c.info = mw + 'x' + mh + ' at ' + mf + ' frames a second'; watchBlack(c, next); })
       .catch(() => { if (!next()) { c.ready = false; c.err = 'the card shows no picture in any usual mode (1080 or 720, 25 to 60 frames). Check that the camera is switched on and sending to the card.'; } });
@@ -1005,12 +1005,13 @@ function getCam(l) {
       const d = devices.video.find((x) => x.deviceId === id);
       if (d && d.label && l.type === 'camera' && l !== addDraft && (isOwnCam(l.label) || (!l.label && l.device))) { l.label = d.label; l.device = d.deviceId; save(); }
     })
-    .catch((e) => { c.err = camWhy(e); c.dead = true; });
+    .catch((e) => { if (/Timeout/i.test(String(e && e.message)) && next()) return; c.err = camWhy(e); c.dead = true; });
   return c;
 }
 // what went wrong, in plain words. "Could not start video source" means another program (OBS, Zoom...) has the camera: Windows lets only one open it.
 function camWhy(e) {
   const t = String((e && e.name) || '') + ' ' + String((e && e.message) || '');
+  if (/Timeout/i.test(t)) return 'no picture came from the camera in time. Check that it is switched on, its cable is in and it is sending a signal to the card. If OBS or another program is open, close it.';
   if (/NotReadable|Could not start|in use|busy/i.test(t)) return 'another program has this camera open (OBS, Zoom...). Windows lets only one program use it. In that program press Deactivate on its Video Capture Device, then it will show here.';
   if (/NotAllowed|Permission/i.test(t)) return 'the camera is blocked. Allow the camera for Multistream in the Windows privacy settings.';
   if (/NotFound/i.test(t)) return 'the camera is not found. Plug it in again.';
