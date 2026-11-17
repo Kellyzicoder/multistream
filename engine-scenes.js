@@ -93,7 +93,7 @@ function cameraList() {
     step('camera list: read');
     const l = listOf(probe, ['device', 'video_device_id']);
     step('camera list: done');
-    if (l) cameras = l.items.filter((i) => i.value);
+    if (l) cameras = l.items.filter((i) => i.value && !/multistream camera/i.test(String(i.name || ''))); // never the app's own virtual camera
   } catch (e) { console.log('[engine] camera list:', e.message); }
   if (probe) try { probe.release(); } catch (e) {}
   return cameras;

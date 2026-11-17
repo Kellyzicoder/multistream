@@ -493,6 +493,11 @@ function startUpdates() {
 
 // ---------- the menu bar (like OBS: File, Edit, View, Help) ----------
 const focusedWin = () => BrowserWindow.getFocusedWindow() || win;
+// opens the Settings window at one part (the main window has it; a separate Production window falls back to its Settings button)
+const openSettingsPane = (pane) => {
+  const w = focusedWin() || win; if (!w || w.isDestroyed()) return;
+  w.webContents.executeJavaScript(`(function(){if(window.msOpenSettings){window.msOpenSettings(${JSON.stringify(pane)});return true;}const b=document.querySelector('#setBtn');if(b)b.click();return false;})()`).catch(() => {});
+};
 const clickIn = (w, sel) => { if (w && !w.isDestroyed()) w.webContents.executeJavaScript(`(function(){const b=document.querySelector(${JSON.stringify(sel)});if(b)b.click();})()`).catch(() => {}); };
 const openFolder = (dir) => { try { fs.mkdirSync(dir, { recursive: true }); } catch {} shell.openPath(dir); };
 // Remux: copy recordings into MP4 files without encoding again (fast, same quality), like OBS
@@ -557,6 +562,8 @@ function buildMenu() {
         { label: 'New window', click: () => openMultiview(null) },
       ] },
     ] },
+    // Settings in the menu bar: each item opens that part of the Settings window
+    { label: 'Settings', submenu: [['General', 'general'], ['Appearance', 'appearance'], ['Stream', 'stream'], ['Output', 'output'], ['Audio', 'audio'], ['Video', 'video'], ['Hotkeys', 'hotkeys'], ['Advanced', 'advanced']].map(([label, pane]) => ({ label, click: () => openSettingsPane(pane) })) },
     { label: 'Help', submenu: [
       { label: 'Download page (latest version)', click: () => shell.openExternal(RELEASE_PAGE) },
       { label: 'Developer tools (for problems)', accelerator: 'F12', click: () => { const w = focusedWin(); if (w) w.webContents.toggleDevTools(); } },
