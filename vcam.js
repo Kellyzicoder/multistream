@@ -35,19 +35,33 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
   // disappear and Zoom would show an error.
   let vc = null, ff = null, idle = null, info = { on: false, error: '' }, fed = 0, size = 0, vw = 0, vh = 0;
 
-  // the picture shown while the camera is not sending: the Multistream "M" logo on dark (plain dark if that fails)
-  let idleBuf = null, idleSize = 0;
+  // the picture shown while the camera is not sending: just the small Multistream "M" in the user's chosen colour, on dark
+  // (drawn here, pixel by pixel, so it needs no other program and no picture file)
+  let idleBuf = null, idleSize = 0, accent = [59, 108, 255];
+  function setAccent(hex) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '')); if (!m) return;
+    const n = parseInt(m[1], 16), c = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    if (c.join() !== accent.join()) { accent = c; idleBuf = null; }
+  }
+  const M_LINE = [[31, 59, 31, 28], [31, 28, 50, 47], [50, 47, 69, 28], [69, 28, 69, 59]]; // the M of the app logo (100-unit box, line 15 wide, round ends)
   function idleFrame() {
     if (idleBuf && idleSize === size) return idleBuf;
     idleSize = size; idleBuf = Buffer.alloc(size, 0x18);
-    try {
-      const w = vw, h = vh;
-      const logo = fs.readFileSync(logoPath || path.join(__dirname, 'public', 'vcam-logo.png'));
-      const r = spawnSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-f', 'lavfi', '-i', `color=c=0x181818:s=${w}x${h}`,
-        '-filter_complex', `[0:v]scale=-1:${Math.round(h * 0.25)}[l];[1:v][l]overlay=(W-w)/2:(H-h)/2`, '-frames:v', '1', '-pix_fmt', 'bgr24', '-f', 'rawvideo', 'pipe:1'],
-        { input: logo, maxBuffer: size * 2, windowsHide: true });
-      if (r.status === 0 && r.stdout.length === size) idleBuf = r.stdout;
-    } catch {}
+    const w = vw, h = vh; if (!w || !h) return idleBuf;
+    const k = Math.max(24, h * 0.16) / 46, cx = w / 2, cy = h / 2; // the M is 53 x 46 units; its middle is at (50, 43.5); it is 16% of the picture's height
+    const [R, G, B] = accent, half = 7.5;
+    for (let py = Math.max(0, Math.floor(cy - 25 * k)); py < Math.min(h, Math.ceil(cy + 25 * k)); py++) {
+      for (let px = Math.max(0, Math.floor(cx - 28 * k)); px < Math.min(w, Math.ceil(cx + 28 * k)); px++) {
+        const ux = (px - cx) / k + 50, uy = (py - cy) / k + 43.5;
+        let d = 1e9;
+        for (const [ax, ay, bx, by] of M_LINE) {
+          const vx = bx - ax, vy = by - ay, t = Math.max(0, Math.min(1, ((ux - ax) * vx + (uy - ay) * vy) / (vx * vx + vy * vy)));
+          d = Math.min(d, Math.hypot(ux - (ax + t * vx), uy - (ay + t * vy)));
+        }
+        const a = Math.max(0, Math.min(1, (half - d) * k + 0.5)); // soft edge
+        if (a > 0) { const o = (py * w + px) * 3, bg = 0x18; idleBuf[o] = Math.round(bg + (B - bg) * a); idleBuf[o + 1] = Math.round(bg + (G - bg) * a); idleBuf[o + 2] = Math.round(bg + (R - bg) * a); }
+      }
+    }
     return idleBuf;
   }
   function idleStart() {
@@ -163,7 +177,7 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
         : { ok: true }));
     });
   }
-  return { available, start, startRaw, stop, quit, install, state: () => ({ available, registered: registered(platform), ...info }) };
+  return { available, setAccent, start, startRaw, stop, quit, install, state: () => ({ available, registered: registered(platform), ...info }) };
 }
 
 module.exports = { createVcam };

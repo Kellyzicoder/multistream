@@ -956,7 +956,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   /* arrows when there are more scenes than fit */
   .mv-arr { position:absolute; z-index:8; width:40px; height:40px; border-radius:50%; border:0; background:var(--blue); color:#fff; display:grid; place-items:center; cursor:pointer; padding:0; box-shadow:0 6px 16px rgba(59,108,255,.35); }
   .mv2.mv-sliding, .mv2.mv-sliding * { cursor:grabbing !important; user-select:none; }
-  .mv-fade { position:absolute; z-index:7; pointer-events:none; -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); background:rgba(10,14,31,.5); }
+  .mv-fade { display:none !important; } /* no blur over the edges of the scenes */
   .mv-fade.f1 { -webkit-mask-image:linear-gradient(90deg,#000 35%,transparent); mask-image:linear-gradient(90deg,#000 35%,transparent); }
   .mv-fade.f2 { -webkit-mask-image:linear-gradient(270deg,#000 35%,transparent); mask-image:linear-gradient(270deg,#000 35%,transparent); }
   .mv-fade.f1.v { -webkit-mask-image:linear-gradient(180deg,#000 35%,transparent); mask-image:linear-gradient(180deg,#000 35%,transparent); }

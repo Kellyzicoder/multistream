@@ -1836,6 +1836,7 @@ app.post('/api/vcam/install', async (req, res) => {
 const vcamWss = new WebSocket.Server({ noServer: true, maxPayload: 64 * 1024 * 1024 });
 vcamWss.on('connection', (w, req) => {
   let s;
+  try { const ac = new URL((req && req.url) || '/', 'http://x').searchParams.get('accent'); if (ac) vcam.setAccent(ac); } catch {}
   const raw = /[?&]raw=1/.test((req && req.url) || ''); // raw pictures from the Studio: no ffmpeg in between
   try { s = raw ? vcam.startRaw(1280, 720, 30) : vcam.start(1280, 720, 30); } catch (e) { try { w.send(JSON.stringify({ error: e.message })); w.close(); } catch {} return; }
   w.on('message', (m) => s.write(m));
