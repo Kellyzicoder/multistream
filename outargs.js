@@ -22,12 +22,13 @@ function parseOut(q) {
   const fps = fpsOf(q.get('fps'));
   const kbps = Math.min(60000, Math.max(1000, Math.round(Number(q.get('kbps'))) || defaultKbps(h, fps)));
   // the sound's bitrate (Settings → Output → Audio bitrate), one of the usual ones; not given: 128
+  const kfn = Number(q.get('kf')), kf = kfn >= 1 && kfn <= 10 ? { kf: Math.round(kfn) } : {};
   const ab = Number(q.get('abps')), abps = [96, 128, 160, 192, 256, 320].includes(ab) ? { abps: ab } : {};
   // a tall (9:16) or square scene collection: "1080p" means 1080 wide
   const shape = q.get('shape');
-  if (shape === 'portrait') return { h: widthFor(h), w: h, fps, kbps, res: h, shape, ...abps };
-  if (shape === 'square') return { h, w: h, fps, kbps, res: h, shape, ...abps };
-  return { h, w: widthFor(h), fps, kbps, ...abps };
+  if (shape === 'portrait') return { h: widthFor(h), w: h, fps, kbps, res: h, shape, ...abps, ...kf };
+  if (shape === 'square') return { h, w: h, fps, kbps, res: h, shape, ...abps, ...kf };
+  return { h, w: widthFor(h), fps, kbps, ...abps, ...kf };
 }
 const resOf = (out) => out.res || out.h;
 
@@ -44,21 +45,25 @@ function ingestArgs(encKey, out, copy = false) {
   if (copy) return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-c:v', 'copy',
     '-c:a', 'aac', '-b:a', ab, '-ar', '44100', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'];
   return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0',
-    '-vf', `scale=${out.w}:${out.h}`, ...videoArgs(encKey, out.kbps, out.fps * 2), '-pix_fmt', 'yuv420p', '-r', String(out.fps),
+    '-vf', `scale=${out.w}:${out.h}`, ...videoArgs(encKey, out.kbps, out.fps * (out.kf || 2)), '-pix_fmt', 'yuv420p', '-r', String(out.fps),
     '-c:a', 'aac', '-b:a', ab, '-ar', '44100', '-flvflags', 'no_duration_filesize', '-f', 'flv', 'pipe:1'];
 }
 
 // the Studio's video -> a file
 // copy = true: the recording canvas is already the right size and H.264, so the file is only wrapped (no second encode)
-function recordArgs(encKey, { h, mbit, fps, shape }, file, copy = false) {
+// the file types a recording can have; mp4 and mov are written in pieces, so a stopped computer does not lose the whole file
+const REC_FORMATS = { mkv: ['-f', 'matroska'], mp4: ['-movflags', '+frag_keyframe+empty_moov+default_base_moof', '-f', 'mp4'], mov: ['-movflags', '+frag_keyframe+empty_moov+default_base_moof', '-f', 'mov'] };
+const recFormat = (v) => (REC_FORMATS[v] ? v : 'mkv');
+function recordArgs(encKey, { h, mbit, fps, shape, kf }, file, copy = false, fmt = 'mkv') {
+  const mux = REC_FORMATS[recFormat(fmt)], gop = Math.min(10, Math.max(1, Math.round(Number(kf)) || 2));
   const hh = SIZES.includes(Number(h)) ? Number(h) : 720;
   const size = shape === 'portrait' ? `${hh}:${widthFor(hh)}` : shape === 'square' ? `${hh}:${hh}` : `${widthFor(hh)}:${hh}`;
   const mb = Math.min(80, Math.max(2, Number(mbit) || 8));
   const f = Number(fps) === 60 ? 60 : 30;
   if (copy) return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-c:v', 'copy',
-    '-c:a', 'aac', '-b:a', '160k', '-f', 'matroska', file];
+    '-c:a', 'aac', '-b:a', '160k', ...mux, file];
   return ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-vf', `scale=${size}`,
-    ...videoArgs(encKey, mb * 1000, f * 2), '-pix_fmt', 'yuv420p', '-r', String(f), '-c:a', 'aac', '-b:a', '160k', '-f', 'matroska', file];
+    ...videoArgs(encKey, mb * 1000, f * gop), '-pix_fmt', 'yuv420p', '-r', String(f), '-c:a', 'aac', '-b:a', '160k', ...mux, file];
 }
 
 // Facebook allows at most 1920x1080, 60 frames and 9000 kbps (Facebook Live API reference).
@@ -92,4 +97,4 @@ function channelVideoArgs(dest, out, encKey) {
   };
 }
 
-module.exports = { tallFilter, TALL, SIZES, widthFor, defaultKbps, parseOut, label, ingestArgs, recordArgs, needsCap, channelVideoArgs, LIMIT };
+module.exports = { tallFilter, TALL, SIZES, widthFor, defaultKbps, parseOut, label, ingestArgs, recordArgs, recFormat, needsCap, channelVideoArgs, LIMIT };

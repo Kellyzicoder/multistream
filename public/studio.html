@@ -774,6 +774,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
           <div class="f"><label>Frames a second</label><input id="outFps" type="number" min="10" max="60" step="1"></div>
           <div class="f"><label>Bitrate (kbps)</label><input id="outKbps" type="number" min="1000" max="60000" step="500"></div>
           <div class="f"><label>Audio bitrate</label><select id="outAbps"><option value="96">96</option><option value="128">128</option><option value="160">160</option><option value="192">192</option><option value="256">256</option><option value="320">320</option></select></div>
+          <div class="f"><label>Keyframe interval</label><select id="outKf"><option value="1">1 second</option><option value="2">2 seconds (YouTube and Facebook want 2 or less)</option><option value="3">3 seconds</option><option value="4">4 seconds</option><option value="5">5 seconds</option><option value="10">10 seconds</option></select></div>
           <p class="note" id="outNote"></p>
           <div class="f"><label>Canvas</label><span>1920 x 1080 (the size scenes are built at)</span></div>
           <div class="f"><label>Encoder</label><span id="encName">...</span></div>
@@ -783,11 +784,12 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
         <section class="sp" data-sp="output">
           <h3>Recording</h3>
           <div class="f"><label>Quality</label><select id="recQ"><option value="2160-35">4K (very large files)</option><option value="1440-16">1440p high</option><option value="1080-12">1080p high</option><option value="1080-8">1080p normal (about 3.6 GB an hour)</option><option value="1080-4">1080p small file (about 1.8 GB an hour)</option><option value="720-6">720p normal (about 2.7 GB an hour)</option><option value="720-3">720p small file (about 1.4 GB an hour)</option></select></div>
+          <div class="f"><label>Recording format</label><select id="recFmt"><option value="mkv">Matroska Video (.mkv), safe if the computer stops</option><option value="mp4">MPEG-4 (.mp4), safe if the computer stops</option><option value="mov">QuickTime (.mov), safe if the computer stops</option></select></div>
           <div class="f"><label>Record automatically</label><label class="chk"><input type="checkbox" id="recAuto2"> Record automatically when the stream starts</label></div>
           <div class="f"><label>MP4 copy</label><label class="chk"><input type="checkbox" id="recRemux"> Automatically remux to MP4</label></div>
           <div class="f"><label>Saved in</label><span><code id="recDir2"></code></span></div>
           <div class="row"><button id="recOpen2">Open folder</button><span class="note" id="recMsg2"></span></div>
-          <p class="note">Saved as .mkv (safe if the computer stops). With remux on, an .mp4 copy is made when it finishes.</p>
+          <p class="note">All three formats are saved so a stopped computer does not lose the file. With .mkv and remux on, an .mp4 copy is made when it finishes.</p>
         </section>
         <section class="sp" data-sp="audio">
           <h3>Monitoring</h3>
@@ -860,7 +862,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
 let SW = 1920, SH = 1080;             // the size scenes are drawn in (same as OBS); a tall (9:16) collection is 1080 x 1920
 let PW = 1280, PH = 720;              // the size of the Program picture (small while idle, the real size while sending)
 // What viewers get. Saved on this computer. Facebook and Instagram take 1080p at most; the app makes them a smaller copy.
-const OUT = { h: 1080, fps: 30, kbps: 6000, abps: 160 };
+const OUT = { h: 1080, fps: 30, kbps: 6000, abps: 160, kf: 2 }; // kf = keyframe interval in seconds
 try { Object.assign(OUT, JSON.parse(localStorage.getItem('ms_out') || '{}')); } catch {}
 const outW = (h) => Math.round(h * 16 / 9 / 2) * 2;
 // the picture size for a chosen quality: "1080p" is 1920 x 1080 wide, 1080 x 1920 tall, 1080 x 1080 square
@@ -889,6 +891,13 @@ function applyShape(shape) {
   trPairs.clear();
 }
 let studio = { scenes: [], audio: [], current: '' };
+// Older scenes that fit a camera, screen or video inside the whole scene (black bars) now fill it instead
+function fillOld(st) {
+  (st.scenes || []).forEach((sc) => (sc.layers || []).forEach((l) => {
+    if (['camera', 'screen', 'window', 'ipcam', 'video'].includes(l.type) && l.fit === 'fit' && !l.x && !l.y && (!l.w || l.w >= SW - 2) && (!l.h || l.h >= SH - 2)) l.fit = 'cover';
+  }));
+  return st;
+}
 let editing = '';        // scene being edited
 let sel = '';            // layer being edited
 let missing = [], missingIds = new Set(); // sources whose picture or video file is not on this computer
@@ -969,9 +978,26 @@ function getCam(l) {
   const [w, h] = RES[l.res || 'auto'] || RES.auto;
   const video = { deviceId: id ? { exact: id } : undefined, width: { ideal: w }, height: { ideal: h } };
   if (l.fps && l.fps !== 'auto') video.frameRate = { ideal: Number(l.fps) };
-  navigator.mediaDevices.getUserMedia({ video, audio: false })
+  // a capture card (Blackmagic...) only takes the modes it has: if it does not like the size asked for, ask for the card's own mode
+  const open = () => navigator.mediaDevices.getUserMedia({ video, audio: false }).catch((e) => (e && /Overconstrained|Constraint/i.test(e.name + e.message) ? navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: id } }, audio: false }) : Promise.reject(e)));
+  // A capture card shows black when it was opened in a mode it has no signal in (a Blackmagic set to 25 frames, say). If the picture stays black,
+  // the usual modes are tried one by one, each for a few seconds. (Only when the source is on "Auto"; a size or rate you picked is kept.)
+  const modes = (l.res && l.res !== 'auto') || (l.fps && l.fps !== 'auto') ? [] : [[1920, 1080, 25], [1920, 1080, 30], [1920, 1080, 50], [1920, 1080, 60], [1280, 720, 50], [1280, 720, 60], [1280, 720, 30], [1280, 720, 25]];
+  let mi = 0;
+  const next = () => {
+    if (mi >= modes.length) return false;
+    const [mw, mh, mf] = modes[mi++];
+    try { c.st && c.st.getTracks().forEach((t) => t.stop()); } catch {}
+    c.ready = false; c.black = false; c.info = ''; c.err = '';
+    navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: id }, width: { exact: mw }, height: { exact: mh }, frameRate: { exact: mf } }, audio: false })
+      .then(async (st) => { c.st = st; c.v.srcObject = st; await c.v.play(); c.ready = true; c.info = mw + 'x' + mh + ' at ' + mf + ' frames a second'; watchBlack(c, next); })
+      .catch(() => { if (!next()) { c.ready = false; c.err = 'the card shows no picture in any usual mode (1080 or 720, 25 to 60 frames). Check that the camera is switched on and sending to the card.'; } });
+    return true;
+  };
+  open()
     .then(async (st) => {
       c.st = st; c.v.srcObject = st; await c.v.play(); c.ready = true;
+      watchBlack(c, next);
       const t = st.getVideoTracks()[0], g = t && t.getSettings ? t.getSettings() : {};
       c.info = (g.width || c.v.videoWidth) + 'x' + (g.height || c.v.videoHeight) + (g.frameRate ? ' at ' + Math.round(g.frameRate) + ' frames a second' : '');
       if (t) t.onended = () => { c.ready = false; c.err = 'The camera was unplugged'; c.dead = true; };
@@ -979,8 +1005,32 @@ function getCam(l) {
       const d = devices.video.find((x) => x.deviceId === id);
       if (d && d.label && l.type === 'camera' && l !== addDraft && (isOwnCam(l.label) || (!l.label && l.device))) { l.label = d.label; l.device = d.deviceId; save(); }
     })
-    .catch((e) => { c.err = e.message; c.dead = true; });
+    .catch((e) => { if (/Timeout/i.test(String(e && e.message)) && next()) return; c.err = camWhy(e); c.dead = true; });
   return c;
+}
+// what went wrong, in plain words. "Could not start video source" means another program (OBS, Zoom...) has the camera: Windows lets only one open it.
+function camWhy(e) {
+  const t = String((e && e.name) || '') + ' ' + String((e && e.message) || '');
+  if (/Timeout/i.test(t)) return 'no picture came from the camera in time. Check that it is switched on, its cable is in and it is sending a signal to the card. If OBS or another program is open, close it.';
+  if (/NotReadable|Could not start|in use|busy/i.test(t)) return 'another program has this camera open (OBS, Zoom...). Windows lets only one program use it. In that program press Deactivate on its Video Capture Device, then it will show here.';
+  if (/NotAllowed|Permission/i.test(t)) return 'the camera is blocked. Allow the camera for Multistream in the Windows privacy settings.';
+  if (/NotFound/i.test(t)) return 'the camera is not found. Plug it in again.';
+  return (e && e.message) || 'the camera did not start';
+}
+// A capture card with no signal, or one another program is using, gives a black picture without any error. If the picture stays black, say why.
+function watchBlack(c, onBlack) {
+  const tok = c.wt = (c.wt || 0) + 1;
+  const cv = document.createElement('canvas'); cv.width = 32; cv.height = 18; const x = cv.getContext('2d', { willReadFrequently: true });
+  let dark = 0, n = 0;
+  const t = setInterval(() => {
+    if (c.dead || !c.st || !c.st.active || c.wt !== tok) { clearInterval(t); return; }
+    try {
+      x.drawImage(c.v, 0, 0, 32, 18); const d = x.getImageData(0, 0, 32, 18).data; let sum = 0; for (let i = 0; i < d.length; i += 4) sum += d[i] + d[i + 1] + d[i + 2];
+      if (sum / (d.length / 4 * 3) < 3) dark++; else { dark = 0; c.black = false; }
+      if (dark >= 4) { if (onBlack && onBlack()) { clearInterval(t); return; } c.black = true; }
+    } catch {}
+    if (++n > 600) clearInterval(t);
+  }, 1000);
 }
 // cameras nobody uses any more (removed, or changed to another setting) are released so the device is free again
 setInterval(() => {
@@ -1028,7 +1078,12 @@ function getVid(l) {
   if (!actx) ensureAudio();
   const el = document.createElement('video');
   el.preload = 'metadata'; el.loop = l.loop !== false; el.playsInline = true; el.src = fileUrl(l);
-  el.onerror = () => { c.bad = true; };
+  el.onerror = () => {
+    c.bad = true;
+    const code = el.error && el.error.code;
+    c.why = code === 4 ? 'This video cannot be played here. Use an MP4 (H.264) file. MKV, AVI, WMV and some others do not work.' : code === 3 ? 'This video is damaged or uses a format that cannot be read. Try exporting it again as an MP4 (H.264).' : code === 2 ? 'The video could not be loaded. Check that the file is still where you chose it.' : 'This video could not be played.';
+    if (!c.told) { c.told = true; try { flash(c.why, false); } catch {} }
+  };
   c = { el, active: false, bad: false }; vids.set(l.id, c);
   if (actx) { const g = actx.createGain(); g.gain.value = 0; try { actx.createMediaElementSource(el).connect(g); g.connect(master); c.gain = g; } catch {} }
   return c;
@@ -1067,6 +1122,7 @@ function place(l, sw, sh) {
   if (l.fit === 'natural') return [l.x, l.y, sw * sx, sh * sy];
   const w = l.w || SW, h = l.h || SH;
   if (l.fit === 'fit') { const k = Math.min(w / sw, h / sh); const dw = sw * k, dh = sh * k; return [l.x + (w - dw) / 2, l.y + (h - dh) / 2, dw, dh]; }
+  if (l.fit === 'cover') { const k = Math.max(w / sw, h / sh); const dw = sw * k, dh = sh * k; return [l.x + (w - dw) / 2, l.y + (h - dh) / 2, dw, dh]; }
   return [l.x, l.y, w, h];
 }
 // A source with no picture (a camera not connected, a file not found...): like OBS, a dark shade of the main colour with
@@ -1108,7 +1164,7 @@ setInterval(() => {
   studio.scenes.forEach((sc) => sc.layers.forEach((l) => {
     if (l.type !== 'lower' || l.visible === false || !l.hideAfter) return;
     const st = lowerState.get(l.id); if (!st || st.want !== 1) return;
-    if (Date.now() - st.shownAt > l.hideAfter * 1000) { l.visible = false; changed = true; }
+    if (Date.now() - st.shownAt > l.hideAfter * 1000) { l.visible = false; st.want = 0; changed = true; } // st.want = 0: when it is shown again the timer starts from zero (otherwise it hid again at once and flickered)
   }));
   if (changed) { save(); renderLayers(); }
 }, 500);
@@ -1207,7 +1263,11 @@ function drawBg(c, l, x, y, w, h) {
   const cover = (el, sw, sh) => { const k = Math.max(w / sw, h / sh), dw = sw * k, dh = sh * k; c.beginPath(); c.rect(x, y, w, h); c.clip(); c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); };
   if (b.kind === 'colour') { c.fillStyle = b.color || '#0a0e1f'; c.fillRect(x, y, w, h); }
   else if (b.kind === 'picture') { const i = getImg(fileUrl(b)); if (i.complete && i.naturalWidth) cover(i, i.naturalWidth, i.naturalHeight); }
-  else if (b.kind === 'video') { const v = getVid(bgVidOf(l)); if (!v.bad && v.el.readyState >= 2 && v.el.videoWidth) cover(v.el, v.el.videoWidth, v.el.videoHeight); }
+  else if (b.kind === 'video') {
+    const v = getVid(bgVidOf(l));
+    if (v.bad) { if (!phQuiet()) { c.fillStyle = '#000'; c.fillRect(x, y, w, h); c.fillStyle = 'rgba(205,211,228,.85)'; c.font = '26px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Background video: ' + (v.why || 'could not be played'), x + w / 2, y + 40, w - 60); } }
+    else if (v.el.readyState >= 2 && v.el.videoWidth) cover(v.el, v.el.videoWidth, v.el.videoHeight);
+  }
   c.restore();
 }
 // Speaker + screen: the screen and a camera, the same height; "Screen big" makes the screen wider
@@ -1298,15 +1358,19 @@ function chromaKey(cx, w, h, k) {
   }
   cx.putImageData(img, 0, 0);
 }
+// "Fill the screen" cuts off what does not fit, so the filters still work on it: the picture is drawn big and the box clips it
 function pic(c, l, el, sw, sh) {
-  // "Fill the screen" (crop the sides) and "Fit with blurred background" (for a wide camera in a tall picture)
-  if (l.fit === 'cover' || l.fit === 'blur') {
+  if (l.fit === 'cover') { c.save(); c.beginPath(); c.rect(l.x, l.y, l.w || SW, l.h || SH); c.clip(); try { pic2(c, l, el, sw, sh); } finally { c.restore(); } return; }
+  pic2(c, l, el, sw, sh);
+}
+function pic2(c, l, el, sw, sh) {
+  // "Fit with blurred background" (for a wide camera in a tall picture)
+  if (l.fit === 'blur') {
     const bx = l.x, by = l.y, bw = l.w || SW, bh = l.h || SH, k = Math.max(bw / sw, bh / sh), dw = sw * k, dh = sh * k;
     c.save(); c.beginPath(); c.rect(bx, by, bw, bh); c.clip();
     if (l.fit === 'blur') c.filter = 'blur(' + Math.round(bw / 30) + 'px) brightness(0.7)';
     c.drawImage(el, bx + (bw - dw) / 2, by + (bh - dh) / 2, dw, dh); c.restore();
-    if (l.fit === 'cover') return;
-    pic(c, { ...l, fit: 'fit' }, el, sw, sh); return;
+    pic2(c, { ...l, fit: 'fit' }, el, sw, sh); return;
   }
   const f = l.pfx;
   if (!hasPfx(f)) { const [x, y, w, h] = place(l, sw, sh); c.drawImage(el, x, y, w, h); return; }
@@ -1365,7 +1429,8 @@ function drawLayer(c, l, live) {
       else if (v.el.readyState >= 2 && v.el.videoWidth) { v.sw = false; pic(c, l, v.el, v.el.videoWidth, v.el.videoHeight); }
     } else if (l.type === 'camera') {
       const cm = getCam(l);
-      if (cm.ready && cm.v.videoWidth) { pic(c, l, cm.v, cm.v.videoWidth, cm.v.videoHeight); }
+      if (cm.ready && cm.v.videoWidth && cm.black) { pic(c, l, cm.v, cm.v.videoWidth, cm.v.videoHeight); note(c, { ...l, fit: 'stretch', x: 0, y: SH - 130, w: SW, h: 110 }, 'Black picture: no signal on the card, or another program (OBS) has it. Only one program can use it.'); }
+      else if (cm.ready && cm.v.videoWidth) { pic(c, l, cm.v, cm.v.videoWidth, cm.v.videoHeight); }
       else note(c, l, cm.off ? (l.off ? 'Video capture device: deactivated' : 'Video capture device: off until this scene is shown') : cm.err ? 'Video capture device: ' + cm.err : 'Starting the video capture device...');
     } else if (l.type === 'screen' || l.type === 'window') {
       const sc = getCapture(l), nm = l.type === 'window' ? 'Window' : 'Screen';
@@ -1537,7 +1602,7 @@ setInterval(updateVideos, 300);
 // countdown background videos play (with no sound) while their scene is shown
 setInterval(() => {
   const show = new Set();
-  [byName(studio.current), byName(serverPreview), byName(editing)].forEach((sc) => sc && sc.layers.forEach((l) => { if (l.type === 'timer' && l.visible !== false && l.bg && l.bg.kind === 'video') show.add(bgKey(l)); }));
+  [byName(studio.current), byName(serverPreview), byName(editing)].forEach((sc) => sc && sc.layers.forEach((l) => { if ((l.type === 'timer' || l.type === 'duo') && l.visible !== false && l.bg && l.bg.kind === 'video') show.add(bgKey(l)); }));
   studio.scenes.forEach((sc) => sc.layers.forEach((l) => {
     if (!(l.bg && l.bg.kind === 'video')) return;
     const k = bgKey(l); if (!show.has(k) && !vids.has(k)) return;
@@ -2153,7 +2218,7 @@ function showSourceMenu(ev, l, nameEl) {
   const transform = [
     ['Edit position and size...', () => { posOpen = true; propsOpen = true; renderLayers(); }, 'Ctrl+E'],
     ['Reset', T(() => { if (MEDIA.has(l.type)) { l.fit = 'natural'; l.sx = l.sy = 1; const F = (l.pfx = l.pfx || {}); delete F.crop; F.flip = false; } delete l.rot; delete l.flipH; delete l.flipV; }), 'Ctrl+R'], null,
-    ['Fit to screen', T(() => Object.assign(l, { x: 0, y: 0, w: SW, h: SH, fit: MEDIA.has(l.type) ? 'fit' : l.fit })), 'Ctrl+F'],
+    ['Fit to screen', T(() => Object.assign(l, { x: 0, y: 0, w: SW, h: SH, fit: MEDIA.has(l.type) ? (l.type === 'image' ? 'fit' : 'cover') : l.fit })), 'Ctrl+F'],
     ['Stretch to screen', T(() => Object.assign(l, { x: 0, y: 0, w: SW, h: SH, fit: MEDIA.has(l.type) ? 'stretch' : l.fit })), 'Ctrl+S'],
     ['Centre on screen', T(() => centerOf(l)), 'Ctrl+D'],
     ['Centre vertically', T(() => { const b = boundsOf(l); l.y = Math.round(l.y + (SH - b[3]) / 2 - b[1]); })],
@@ -2709,24 +2774,27 @@ function pickFile(l, accept, done) {
     // videos and big files are used from where they are on this computer (copying is only for small files, up to 30 MB)
     let where = ''; try { where = window.msNative && window.msNative.pathOf ? window.msNative.pathOf(file) : ''; } catch {}
     if (where && (/^video\//.test(file.type) || file.size > 25e6)) { l.file = where; l.url = ''; fin(); return; }
-    if (file.size > 30e6) { flash('That file is over 30 MB. Type where it is on this computer in the box.', false); return; }
+    const mb = (file.size / 1e6).toFixed(1);
+    if (file.size > 30e6) { flash('That file is ' + mb + ' MB. The most that can be added here is 30 MB. Make it smaller, or type where it is on this computer in the box.', false); return; }
+    if (/^video\//.test(file.type) && !/^video\/(mp4|webm|ogg|quicktime)$/.test(file.type)) { flash('This video type (' + (file.type || file.name.split('.').pop()) + ') may not play. An MP4 (H.264) file works best.', false); }
     let r = null; try { r = await fetch('/api/studio/asset/' + encodeURIComponent(uid() + '-' + file.name), { method: 'PUT', body: file }).then((x) => x.json()); } catch {}
-    if (r && r.url) { l.url = r.url; l.file = ''; fin(); } else flash('Could not add that file.', false);
+    if (r && r.url) { l.url = r.url; l.file = ''; fin(); } else flash('Could not add that file (' + mb + ' MB). ' + (r && r.error ? r.error : 'The app did not take it. Try a smaller file, or type where it is on this computer in the box.'), false);
   }; f.click();
 }
 function newLayer(t) {
   const l = { id: uid(), type: t, x: 0, y: 0, w: SW, h: SH, fit: 'stretch', visible: true };
   if (t === 'text') Object.assign(l, { text: 'Welcome', size: 110, color: '#ffffff', x: 120, y: 800, w: 1600, h: 160 });
   if (t === 'color') l.color = '#3b6cff';
-  if (t === 'window') { l.display = ''; l.winName = ''; l.fit = 'fit'; }
-  if (t === 'screen' || t === 'camera') l.fit = 'fit';
+  if (t === 'window') { l.display = ''; l.winName = ''; l.fit = 'cover'; }
+  if (t === 'screen' || t === 'camera') l.fit = 'cover'; // fills the whole scene, no black bars
   if (t === 'lower') Object.assign(l, { title: 'Name here', sub: 'Role', tag: 'person', style: 'clean', anim: 'wipe', font: 'inter', hideAfter: 8, color: '#3b6cff', textColor: '#ffffff', x: 80, y: 860, w: 820, h: 130, fit: 'stretch' });
   if (t === 'duo') Object.assign(l, { layout: 'big', corners: 'round', scrType: 'screen', display: '', winName: '', camLabel: '', camDevice: '', bg: { kind: 'colour', color: '#0a0e1f' } });
   if (t === 'timer') Object.assign(l, { mode: 'duration', minutes: 10, at: '10:00', label: 'Starting soon', doneText: 'Starting now', font: 'inter', bg: { kind: 'none', op: 60, loop: true }, size: 220, color: '#ffffff', x: 0, y: 330, w: SW, h: 420 });
   if (t === 'clock') Object.assign(l, { size: 120, color: '#ffffff', x: 0, y: 60, w: SW, h: 200, h24: false, secs: false, date: false });
   if (t === 'browser') { l.url = 'http://'; l.bw = SW; l.bh = SH; }
-  if (t === 'ipcam') { l.url = 'http://192.168.0.0:4747/video'; l.fit = 'fit'; }
-  if (t === 'video' || t === 'image') l.fit = 'fit';
+  if (t === 'ipcam') { l.url = 'http://192.168.0.0:4747/video'; l.fit = 'cover'; }
+  if (t === 'video') l.fit = 'cover';
+  if (t === 'image') Object.assign(l, { fit: 'fit', x: Math.round(SW * 0.72), y: Math.round(SH * 0.05), w: Math.round(SW * 0.23), h: Math.round(SH * 0.23) }); // a logo starts at a reasonable size in the corner; Ctrl+F makes it fill the screen
   return l;
 }
 function addLayer(l) {
@@ -2978,7 +3046,7 @@ function askName(title, value) {
 }
 async function reloadStudio() {
   const s = await fetch('/api/studio').then((r) => r.json());
-  studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '', shape: s.shape || 'landscape' }; lastRev = s.rev; applyShape(studio.shape); showColl();
+  studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '', shape: s.shape || 'landscape' }; lastRev = s.rev; applyShape(studio.shape); fillOld(studio); showColl();
   editing = studio.current; sel = ''; propsOpen = false;
   asrc.forEach((n) => { try { n.node && n.node.disconnect(); n.gain.disconnect(); n.gate.disconnect(); } catch {} }); asrc.clear();
   renderAll(); syncAudio();
@@ -3150,12 +3218,12 @@ async function connectSend() {
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
   const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
   const fast = useFast(mt);
-  wsOut = openPipe(`/studio-ingest?h=${OUT.h}&fps=${OUT.fps}&kbps=${OUT.kbps}&abps=${OUT.abps}&shape=${SHAPE_OF()}${fast ? '&copy=1' : ''}`);
+  wsOut = openPipe(`/studio-ingest?h=${OUT.h}&fps=${OUT.fps}&kbps=${OUT.kbps}&abps=${OUT.abps}&kf=${OUT.kf || 2}&shape=${SHAPE_OF()}${fast ? '&copy=1' : ''}`);
   wsOut.binaryType = 'arraybuffer';
   wsOut.onopen = () => {
     // fast: the browser's bitrate is the one we send, so it is set to the target exactly
     // a keyframe every 2 seconds: Facebook needs it to play the live, and a channel that reconnects can join straight away
-    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: fast ? OUT.kbps * 1000 : Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: Math.max(128000, OUT.abps * 1000), videoKeyFrameIntervalDuration: 2000 });
+    rec = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: fast ? OUT.kbps * 1000 : Math.min(60000000, Math.round(OUT.kbps * 1400)), audioBitsPerSecond: Math.max(128000, OUT.abps * 1000), videoKeyFrameIntervalDuration: (OUT.kf || 2) * 1000 });
     rec.ondataavailable = inOrder((buf) => { if (wsOut && wsOut.readyState === 1) wsOut.send(buf); });
     rec.start(250);
     cv.classList.add('live');
@@ -3373,6 +3441,9 @@ function idleSize() { return recW ? [recW, rcv.height] : SH > SW ? [720, 1280] :
 try { $('#recQ').value = localStorage.getItem('ms_recq') || '1080-8'; } catch {}
 if (!$('#recQ').value) $('#recQ').value = '1080-8';
 $('#recQ').onchange = () => { try { localStorage.setItem('ms_recq', $('#recQ').value); } catch {} };
+try { $('#recFmt').value = localStorage.getItem('ms_recfmt') || 'mkv'; } catch {}
+if (!$('#recFmt').value) $('#recFmt').value = 'mkv';
+$('#recFmt').onchange = () => { try { localStorage.setItem('ms_recfmt', $('#recFmt').value); } catch {} };
 async function startRec() {
   const [res, mb] = $('#recQ').value.split('-').map(Number);
   // the OBS engine is on: it records the file itself
@@ -3395,11 +3466,11 @@ async function startRec() {
   dest.stream.getAudioTracks().forEach((t) => out.addTrack(t));
   const mt = ['video/webm;codecs=h264,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m));
   const fast = useFast(mt);
-  const ws = recWs = openPipe(`/studio-record?h=${res}&mbit=${mb}&fps=${rfps}&shape=${SHAPE_OF()}${fast ? '&copy=1' : ''}`);
+  const ws = recWs = openPipe(`/studio-record?h=${res}&mbit=${mb}&fps=${rfps}&kf=${OUT.kf || 2}&fmt=${$('#recFmt').value}&shape=${SHAPE_OF()}${fast ? '&copy=1' : ''}`);
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
     // fast (encode once): the file is exactly what the browser makes, so use the chosen size. Normal way: give ffmpeg a bit more to work from.
-    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: (fast ? mb : Math.min(80, Math.max(mb, 6))) * 1000000, audioBitsPerSecond: 160000, videoKeyFrameIntervalDuration: 2000 });
+    recMr = new MediaRecorder(out, { mimeType: mt, videoBitsPerSecond: (fast ? mb : Math.min(80, Math.max(mb, 6))) * 1000000, audioBitsPerSecond: 160000, videoKeyFrameIntervalDuration: (OUT.kf || 2) * 1000 });
     recMr.ondataavailable = inOrder((buf) => { if (ws.readyState === 1) ws.send(buf); });
     recMr.start(500);
     recT0 = Date.now(); $('#recBtn').textContent = 'Stop recording'; $('#recBtn').className = 'stop';
@@ -3493,7 +3564,7 @@ $('#vcBtn').onclick = async () => {
 };
 function vcConnect() {
   const raw = !vcRawOff && typeof VideoFrame === 'function' && Boolean(window.msNative && window.msNative.pipe);
-  const ws = vcWs = openPipe('/studio-vcam' + (raw ? '?raw=1' : ''));
+  const ws = vcWs = openPipe('/studio-vcam?accent=' + encodeURIComponent((getComputedStyle(document.documentElement).getPropertyValue('--sel').trim().match(/^#[0-9a-f]{6}$/i) || ['#3b6cff'])[0]) + (raw ? '&raw=1' : ''));
   ws.binaryType = 'arraybuffer';
   ws.onopen = () => {
     vcOn = true;
@@ -3637,10 +3708,10 @@ function cropBy(l, d, dx, dy) {
   if (h.includes('n')) { const nt = clamp(k0.t * 100 + dy / bh * visH * 100, 0, 90 - k0.b * 100), mv = (nt - k0.t * 100) / 100 / visH * bh; C.t = Math.round(nt * 10) / 10; l.y = Math.round(d.l0.y + mv); if (!nat) l.h = Math.round(d.l0.h - mv); }
   if (h.includes('s')) { const nb = clamp(k0.b * 100 - dy / bh * visH * 100, 0, 90 - k0.t * 100), mv = (nb - k0.b * 100) / 100 / visH * bh; C.b = Math.round(nb * 10) / 10; if (!nat) l.h = Math.round(d.l0.h - mv); }
 }
-// Click empty space anywhere (not a button, a list row, a slider, a window or a menu) and the selected source is let go.
+// Click anywhere else in the app (not on the source list, its tools, a slider, a window or a menu) and the selected source is let go.
 document.addEventListener('pointerdown', (e) => {
   if (e.button !== 0 || !sel || !e.target.closest) return;
-  if (e.target.closest('button, input, select, textarea, a, label, canvas, summary, .lyr, .modal, .dlg, .ctxm, .menu2, [role="menu"], [role="menuitem"], [role="slider"], #srcBar, #propsBox, .au, .fdr, [draggable="true"], [contenteditable]')) return;
+  if (e.target.closest('input, select, textarea, canvas, .lyr, .modal, .dlg, .ctxm, .menu2, [role="menu"], [role="menuitem"], [role="slider"], #srcBar, #propsBox, .au, .fdr, [draggable="true"], [contenteditable]')) return;
   sel = ''; renderLayers();
 });
 ev.addEventListener('pointerdown', (e) => {
@@ -3720,7 +3791,7 @@ function outNote() {
 }
 function saveOut() { try { localStorage.setItem('ms_out', JSON.stringify(OUT)); } catch {} outNote(); }
 function lockOut() {
-  $('#outQ').disabled = $('#outKbps').disabled = $('#outH').disabled = $('#outFps').disabled = $('#outAbps').disabled = wantSend;
+  $('#outQ').disabled = $('#outKbps').disabled = $('#outH').disabled = $('#outFps').disabled = $('#outAbps').disabled = $('#outKf').disabled = wantSend;
   if (wantSend) $('#outNote').textContent = 'Stop streaming to change the video size.'; else outNote();
 }
 (function () {
@@ -3738,6 +3809,8 @@ function lockOut() {
   $('#outFps').onchange = () => { OUT.fps = okF($('#outFps').value) || OUT.fps; show(); saveOut(); };
   $('#outAbps').value = String([96, 128, 160, 192, 256, 320].includes(Number(OUT.abps)) ? OUT.abps : 160);
   $('#outAbps').onchange = () => { OUT.abps = Number($('#outAbps').value) || 160; saveOut(); };
+  $('#outKf').value = String([1, 2, 3, 4, 5, 10].includes(Number(OUT.kf)) ? OUT.kf : 2);
+  $('#outKf').onchange = () => { OUT.kf = Number($('#outKf').value) || 2; saveOut(); };
   $('#outKbps').onchange = () => { OUT.kbps = Math.min(60000, Math.max(1000, Math.round(Number($('#outKbps').value)) || OUT.kbps)); $('#outKbps').value = OUT.kbps; saveOut(); };
 })();
 function fillMon() {
@@ -3775,7 +3848,7 @@ let fastOff = false;
 const useFast = (mt) => !fastOff && /h264/.test(mt || '');
 $('#resetStudio').onclick = async () => {
   if (!await msAsk('Put the video size, recording quality, transition, monitoring output and options back to how they started?')) return;
-  ['ms_out', 'ms_recq', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_layout'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  ['ms_out', 'ms_recq', 'ms_recfmt', 'ms_trans', 'ms_mondev', 'ms_snap', 'ms_askstop', 'ms_layout'].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
   flash('Production settings were reset. Close and open the Production to see them.', true); closeSettings();
 };
 // ----- Video pane: which encoder is used -----
@@ -3889,7 +3962,7 @@ document.addEventListener('keydown', (e) => {
   if (k === 'c' && !e.shiftKey) { e.preventDefault(); clip = JSON.stringify(cl); flash('Copied "' + (cl.name || ICON[cl.type] || cl.type) + '". Ctrl+V pastes it.', true); return; }
   if (k === 'e') { e.preventDefault(); propsOpen = true; renderLayers(); return; }
   if (cl.locked) return;
-  if (k === 'f') { e.preventDefault(); cl.fit = MEDIA.has(cl.type) ? 'fit' : cl.fit; cl.x = 0; cl.y = 0; cl.w = SW; cl.h = SH; delete cl.sx; delete cl.sy; save(); renderLayers(); return; }
+  if (k === 'f') { e.preventDefault(); cl.fit = MEDIA.has(cl.type) ? (cl.type === 'image' ? 'fit' : 'cover') : cl.fit; cl.x = 0; cl.y = 0; cl.w = SW; cl.h = SH; delete cl.sx; delete cl.sy; save(); renderLayers(); return; }
   if (k === 's') { e.preventDefault(); if (MEDIA.has(cl.type)) cl.fit = 'stretch'; cl.x = 0; cl.y = 0; cl.w = SW; cl.h = SH; delete cl.sx; delete cl.sy; save(); renderLayers(); return; }
   if (k === 'd') { e.preventDefault(); centerOf(cl); save(); renderLayers(); return; }
   if (k === 'r') { e.preventDefault(); if (MEDIA.has(cl.type)) { cl.fit = 'natural'; cl.sx = cl.sy = 1; const F = (cl.pfx = cl.pfx || {}); delete F.crop; F.flip = false; } delete cl.rot; delete cl.flipH; delete cl.flipV; save(); renderLayers(); return; }
@@ -3989,7 +4062,7 @@ async function poll() {
     serverPreview = s.preview || '';
     if (!s.same && s.rev !== lastRev && !saveT && !drag) {
       const wasEditing = editing;
-      studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '', shape: s.shape || 'landscape' }; lastRev = s.rev; applyShape(studio.shape); showColl();
+      studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '', shape: s.shape || 'landscape' }; lastRev = s.rev; applyShape(studio.shape); fillOld(studio); showColl();
       editing = byName(wasEditing) ? wasEditing : studio.current;
       renderAll();
     }
