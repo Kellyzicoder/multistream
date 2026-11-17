@@ -1077,7 +1077,12 @@ function getVid(l) {
   if (!actx) ensureAudio();
   const el = document.createElement('video');
   el.preload = 'metadata'; el.loop = l.loop !== false; el.playsInline = true; el.src = fileUrl(l);
-  el.onerror = () => { c.bad = true; };
+  el.onerror = () => {
+    c.bad = true;
+    const code = el.error && el.error.code;
+    c.why = code === 4 ? 'This video cannot be played here. Use an MP4 (H.264) file. MKV, AVI, WMV and some others do not work.' : code === 3 ? 'This video is damaged or uses a format that cannot be read. Try exporting it again as an MP4 (H.264).' : code === 2 ? 'The video could not be loaded. Check that the file is still where you chose it.' : 'This video could not be played.';
+    if (!c.told) { c.told = true; try { flash(c.why, false); } catch {} }
+  };
   c = { el, active: false, bad: false }; vids.set(l.id, c);
   if (actx) { const g = actx.createGain(); g.gain.value = 0; try { actx.createMediaElementSource(el).connect(g); g.connect(master); c.gain = g; } catch {} }
   return c;
@@ -1257,7 +1262,11 @@ function drawBg(c, l, x, y, w, h) {
   const cover = (el, sw, sh) => { const k = Math.max(w / sw, h / sh), dw = sw * k, dh = sh * k; c.beginPath(); c.rect(x, y, w, h); c.clip(); c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); };
   if (b.kind === 'colour') { c.fillStyle = b.color || '#0a0e1f'; c.fillRect(x, y, w, h); }
   else if (b.kind === 'picture') { const i = getImg(fileUrl(b)); if (i.complete && i.naturalWidth) cover(i, i.naturalWidth, i.naturalHeight); }
-  else if (b.kind === 'video') { const v = getVid(bgVidOf(l)); if (!v.bad && v.el.readyState >= 2 && v.el.videoWidth) cover(v.el, v.el.videoWidth, v.el.videoHeight); }
+  else if (b.kind === 'video') {
+    const v = getVid(bgVidOf(l));
+    if (v.bad) { if (!phQuiet()) { c.fillStyle = '#000'; c.fillRect(x, y, w, h); c.fillStyle = 'rgba(205,211,228,.85)'; c.font = '26px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Background video: ' + (v.why || 'could not be played'), x + w / 2, y + 40, w - 60); } }
+    else if (v.el.readyState >= 2 && v.el.videoWidth) cover(v.el, v.el.videoWidth, v.el.videoHeight);
+  }
   c.restore();
 }
 // Speaker + screen: the screen and a camera, the same height; "Screen big" makes the screen wider
@@ -1592,7 +1601,7 @@ setInterval(updateVideos, 300);
 // countdown background videos play (with no sound) while their scene is shown
 setInterval(() => {
   const show = new Set();
-  [byName(studio.current), byName(serverPreview), byName(editing)].forEach((sc) => sc && sc.layers.forEach((l) => { if (l.type === 'timer' && l.visible !== false && l.bg && l.bg.kind === 'video') show.add(bgKey(l)); }));
+  [byName(studio.current), byName(serverPreview), byName(editing)].forEach((sc) => sc && sc.layers.forEach((l) => { if ((l.type === 'timer' || l.type === 'duo') && l.visible !== false && l.bg && l.bg.kind === 'video') show.add(bgKey(l)); }));
   studio.scenes.forEach((sc) => sc.layers.forEach((l) => {
     if (!(l.bg && l.bg.kind === 'video')) return;
     const k = bgKey(l); if (!show.has(k) && !vids.has(k)) return;
@@ -2764,9 +2773,11 @@ function pickFile(l, accept, done) {
     // videos and big files are used from where they are on this computer (copying is only for small files, up to 30 MB)
     let where = ''; try { where = window.msNative && window.msNative.pathOf ? window.msNative.pathOf(file) : ''; } catch {}
     if (where && (/^video\//.test(file.type) || file.size > 25e6)) { l.file = where; l.url = ''; fin(); return; }
-    if (file.size > 30e6) { flash('That file is over 30 MB. Type where it is on this computer in the box.', false); return; }
+    const mb = (file.size / 1e6).toFixed(1);
+    if (file.size > 30e6) { flash('That file is ' + mb + ' MB. The most that can be added here is 30 MB. Make it smaller, or type where it is on this computer in the box.', false); return; }
+    if (/^video\//.test(file.type) && !/^video\/(mp4|webm|ogg|quicktime)$/.test(file.type)) { flash('This video type (' + (file.type || file.name.split('.').pop()) + ') may not play. An MP4 (H.264) file works best.', false); }
     let r = null; try { r = await fetch('/api/studio/asset/' + encodeURIComponent(uid() + '-' + file.name), { method: 'PUT', body: file }).then((x) => x.json()); } catch {}
-    if (r && r.url) { l.url = r.url; l.file = ''; fin(); } else flash('Could not add that file.', false);
+    if (r && r.url) { l.url = r.url; l.file = ''; fin(); } else flash('Could not add that file (' + mb + ' MB). ' + (r && r.error ? r.error : 'The app did not take it. Try a smaller file, or type where it is on this computer in the box.'), false);
   }; f.click();
 }
 function newLayer(t) {
