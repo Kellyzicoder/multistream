@@ -661,7 +661,7 @@ const saveUp = () => { try { fs.writeFileSync(UP_FILE, JSON.stringify(upCfg, nul
 const recJobs = new Map(); // file name -> { kind: 'mp4' | 'upload', pct, error }
 const upQueue = [];
 const durCache = new Map(); // name|size -> seconds
-const recPath = (name) => { const n = path.basename(String(name || '')); if (!/\.(mkv|mp4)$/i.test(n)) return ''; const f = path.join(REC_DIR, n); return fs.existsSync(f) ? f : ''; };
+const recPath = (name) => { const n = path.basename(String(name || '')); if (!/\.(mkv|mp4|mov)$/i.test(n)) return ''; const f = path.join(REC_DIR, n); return fs.existsSync(f) ? f : ''; };
 function recDuration(f, size) {
   const k = f + '|' + size; if (durCache.has(k)) return durCache.get(k);
   durCache.set(k, null);
@@ -671,7 +671,7 @@ function recDuration(f, size) {
   return null;
 }
 function recList() {
-  let names = []; try { names = fs.readdirSync(REC_DIR).filter((n) => /\.(mkv|mp4)$/i.test(n)); } catch {}
+  let names = []; try { names = fs.readdirSync(REC_DIR).filter((n) => /\.(mkv|mp4|mov)$/i.test(n)); } catch {}
   return names.map((n) => { const f = path.join(REC_DIR, n); let st; try { st = fs.statSync(f); } catch { return null; }
     const base = n.replace(/\.[^.]+$/, ''), hasMp4 = /\.mkv$/i.test(n) && names.some((x) => x.toLowerCase() === (base + '.mp4').toLowerCase());
     const base2 = n.replace(/\.[^.]+$/, ''), title = (upCfg.titles || {})[n] || (upCfg.titles || {})[base2 + '.mkv'] || '';
@@ -1802,10 +1802,11 @@ studioRecWss.on('connection', (w, req) => {
   const q = new URL(req.url, 'http://x').searchParams;
   try { fs.mkdirSync(REC_DIR, { recursive: true }); } catch (e) { w.send(JSON.stringify({ error: 'Cannot make the folder: ' + e.message })); return w.close(); }
   const d = new Date(), two = (n) => String(n).padStart(2, '0');
-  const name = `Studio ${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}.mkv`;
+  const fmt = outargs.recFormat(q.get('fmt'));
+  const name = `Studio ${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}.${fmt}`;
   if (gl.title) { upCfg.titles = upCfg.titles || {}; upCfg.titles[name] = gl.title; saveUp(); } // the recording is named after the stream title on the Recordings page
   const copy = q.get('copy') === '1'; // the browser already made H.264 at the right size (encode once)
-  const args = outargs.recordArgs(studioEncoder.key, { h: q.get('h'), mbit: q.get('mbit'), fps: q.get('fps'), shape: q.get('shape') }, path.join(REC_DIR, name), copy);
+  const args = outargs.recordArgs(studioEncoder.key, { h: q.get('h'), mbit: q.get('mbit'), fps: q.get('fps'), shape: q.get('shape'), kf: q.get('kf') }, path.join(REC_DIR, name), copy, fmt);
   const ff = spawn(FFMPEG, args, { windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
   if (copy) liftPriority(ff);
   recActive++; ff.once('exit', () => { recActive = Math.max(0, recActive - 1); });

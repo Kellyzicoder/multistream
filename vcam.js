@@ -44,7 +44,7 @@ function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe,
       const w = vw, h = vh;
       const logo = fs.readFileSync(logoPath || path.join(__dirname, 'public', 'vcam-logo.png'));
       const r = spawnSync(ffmpeg, ['-hide_banner', '-loglevel', 'error', '-i', 'pipe:0', '-f', 'lavfi', '-i', `color=c=0x181818:s=${w}x${h}`,
-        '-filter_complex', `[0:v]scale=-1:${Math.round(h * 0.4)}[l];[1:v][l]overlay=(W-w)/2:(H-h)/2`, '-frames:v', '1', '-pix_fmt', 'bgr24', '-f', 'rawvideo', 'pipe:1'],
+        '-filter_complex', `[0:v]scale=-1:${Math.round(h * 0.25)}[l];[1:v][l]overlay=(W-w)/2:(H-h)/2`, '-frames:v', '1', '-pix_fmt', 'bgr24', '-f', 'rawvideo', 'pipe:1'],
         { input: logo, maxBuffer: size * 2, windowsHide: true });
       if (r.status === 0 && r.stdout.length === size) idleBuf = r.stdout;
     } catch {}
