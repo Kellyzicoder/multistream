@@ -287,9 +287,13 @@ async function until(fn, ms, what) {
   const saved = await until(() => studio.evaluate(() => /Saved/.test(document.getElementById('st').textContent) && document.getElementById('st').textContent), 20000, 'the Saved message').catch(() => '');
   await until(() => fs.existsSync(REC) && fs.readdirSync(REC).some((f) => f.startsWith('Studio ')), 20000, 'recording file');
   await sleep(1500);
-  const recs = fs.readdirSync(REC).filter((f) => f.startsWith('Studio '));
+  const recs = fs.readdirSync(REC).filter((f) => f.startsWith('Studio ') && /\.mkv$/i.test(f));
   console.log('Studio said:', saved || '(no Saved message)');
   assert.strictEqual(recs.length, 1);
+  // "Automatically remux to MP4" is on by default: an .mp4 copy of the recording is made when it finishes
+  const mp4 = recs[0].replace(/\.mkv$/i, '.mp4');
+  await until(() => fs.existsSync(path.join(REC, mp4)) && mediaInfo(path.join(REC, mp4)).video, 20000, 'the MP4 copy');
+  ok('the recording also gets an MP4 copy (automatically remux to MP4)');
   const ri = mediaInfo(path.join(REC, recs[0]));
   assert.ok(ri.video && ri.w === 1280 && ri.secs > 3, 'recording ' + JSON.stringify(ri));
   ok(`Studio recording saved (${ri.w}x${ri.h}, ${ri.secs.toFixed(1)} s, sound: ${ri.audio ? 'yes' : 'no'})`);

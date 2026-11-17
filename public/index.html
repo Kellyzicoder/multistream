@@ -681,6 +681,10 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .sd-pre button { border:1px solid var(--line); background:var(--btn); color:var(--soft); border-radius:999px; padding:5px 12px; font-size:12px; }
   .sd-pre button.on { background:var(--blue); color:var(--onblue); border-color:transparent; }
   .sd-pre button.add { border-style:dashed; background:transparent; color:var(--muted); }
+  .sd-pre button.pre { display:inline-flex; align-items:center; gap:7px; position:relative; }
+  .sd-pre button.pre img { width:32px; height:18px; object-fit:cover; border-radius:3px; flex:none; }
+  .sd-pre button.pre .x { opacity:0; margin-left:2px; font-size:14px; line-height:1; padding:0 2px; border-radius:4px; }
+  .sd-pre button.pre:hover .x, .sd-pre button.pre:focus-visible .x { opacity:.75; } .sd-pre button.pre .x:hover { opacity:1; background:rgba(255,255,255,.15); }
   .chs .gl { padding:0; }
   .chs .gl .gr:first-child { border-top:0; }
   @media (max-width:1000px) { .mainc { display:contents; } .sd { order:2; grid-template-columns:1fr; } .sd-f { grid-template-columns:1fr; } }
@@ -836,7 +840,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mdl .seg3 { display:grid; grid-template-columns:repeat(3,1fr); padding:3px; border-radius:999px; border:1px solid var(--gl-line); background:rgba(5,8,20,.45); }
   .mdl .seg3 button { padding:9px 10px; border:0; border-radius:999px; background:transparent; color:var(--soft); font-size:13px; font-weight:600; } .mdl .seg3 button.on { background:var(--blue); color:var(--onblue); } .mdl .seg3 button:disabled { opacity:.45; }
   /* ---------- Multiview (as in the design) ---------- */
-  .cr.mv2:not([hidden]) { display:flex; flex-direction:column; gap:10px; height:calc(100vh - 90px); padding:0 12px 12px; margin:0; max-width:none; background:transparent; overflow:hidden; box-sizing:border-box; align-items:stretch; justify-content:flex-start; }
+  .cr.mv2:not([hidden]) { display:flex; flex-direction:column; gap:10px; height:calc(100vh - 90px); padding:16px 12px 12px; margin:0; max-width:none; background:transparent; overflow:hidden; box-sizing:border-box; align-items:stretch; justify-content:flex-start; }
   .mv2 .mv-top { flex:1; min-height:0; display:flex; justify-content:center; align-items:center; }
   .mv2 .mvt { position:relative; border-radius:16px; overflow:hidden; border:2px solid rgba(255,255,255,.1); box-shadow:0 10px 24px rgba(0,0,0,.35); background:linear-gradient(135deg,#1d2a5e,#0e1430); padding:0; margin:0; display:block; align-self:start; color:#eef1f8; text-align:left; font:inherit; min-width:0; box-sizing:border-box; }
   .mv2 .mv-grid .mvt { aspect-ratio:16/9; } .mv2.tall .mv-grid .mvt { aspect-ratio:9/16; } .mv2.sq .mv-grid .mvt { aspect-ratio:1; }
@@ -846,8 +850,8 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv2 .mvt canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
   .mv2 .mvt.lv img { visibility:hidden; }
   .mv2 .mvt img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; } .mv2 .mvt img:not([src]) { visibility:hidden; }
-  .mv2 .mvt .lb { position:absolute; left:8px; right:8px; bottom:8px; padding:7px 11px; border-radius:10px; font-size:14px; font-weight:600; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.14); display:flex; align-items:center; gap:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .mv2 .mvt .lb small { margin-left:auto; color:#cdd3e4; font-weight:500; font-size:12px; }
+  .mv2 .mvt .lb { position:absolute; left:8px; right:auto; max-width:calc(100% - 16px); box-sizing:border-box; bottom:8px; padding:4px 9px; border-radius:8px; font-size:13px; font-weight:600; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.14); display:flex; align-items:center; gap:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .mv2 .mvt .lb small { margin-left:4px; color:#cdd3e4; font-weight:500; font-size:12px; }
   .mv2 .mvt .nb { position:absolute; left:10px; top:10px; z-index:1; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:700; background:rgba(10,14,31,.45); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.16); }
   .mv2 .mv-tag { position:absolute; right:12px; top:12px; z-index:1; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:.4px; background:#ff4d5a; }
   .mv2 .mv-grid { flex:none; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
@@ -877,6 +881,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   #setOverlay .n2 { margin:0; font-size:12.5px; color:#8a93ad; line-height:1.5; }
   #setOverlay .i3 { height:36px; padding:0 12px; border-radius:10px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.12); color:#eef1f8; font-size:13px; min-width:220px; }
   #setOverlay input.i3 { width:140px; min-width:0; }
+  #setOverlay .u2 { display:inline-flex; align-items:center; gap:8px; color:var(--soft); font-size:13px; }
   #setOverlay .pth { font-size:12px; color:#a3abc4; max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #setOverlay .b3 { padding:8px 16px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#eef1f8; font-size:13px; font-weight:600; }
   #setOverlay .b3:disabled, #setOverlay .tg2:disabled, #setOverlay .i3:disabled { opacity:.45; }
@@ -925,7 +930,10 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv-ctx { position:fixed; right:auto; top:auto; }
   .mv-menu button, .mv-ctx button { display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; border:0; border-radius:9px; background:transparent; color:#e8ecf8; font:inherit; font-size:13.5px; text-align:left; cursor:pointer; }
   .mv-menu button:hover, .mv-ctx button:hover { background:rgba(255,255,255,.08); }
+  .mv-menu { min-width:250px; }
   .mv-menu button::before { content:""; width:14px; flex:none; } .mv-menu button.on::before { content:"\2713"; }
+  .mv-menu button .t { flex:1; } .mv-menu button svg { width:20px; height:20px; fill:currentColor; opacity:.9; flex:none; }
+  #mvMenuB svg { width:18px; height:18px; fill:currentColor; vertical-align:-4px; margin-right:8px; }
   .mv-menu hr { border:0; border-top:1px solid rgba(255,255,255,.1); margin:5px 4px; }
   .mv2 .mvt { width:var(--tw); height:var(--th); aspect-ratio:auto !important; flex:none; }
   .mv2 #crProgBox { flex:none; align-self:center; }
@@ -943,17 +951,23 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv-size.h { height:12px; cursor:row-resize; } .mv-size.h::after { width:64px; height:4px; } .mv-size.v { width:12px; cursor:col-resize; } .mv-size.v::after { width:4px; height:64px; }
   .mv-size:hover::after, .mv-size.on::after { background:#fff; }
   /* arrows when there are more scenes than fit */
-  .mv-arr { position:absolute; z-index:8; width:34px; height:34px; border-radius:50%; border:1px solid rgba(255,255,255,.25); background:rgba(10,14,31,.85); color:#fff; font-size:18px; line-height:1; display:grid; place-items:center; cursor:pointer; padding:0; }
-  .mv-arr:hover { background:var(--sel, #3b6cff); } .mv-arr[hidden] { display:none; }
-  .mv2.mv-moving .mv-grid { outline:2px dashed rgba(255,255,255,.5); outline-offset:4px; border-radius:18px; cursor:grabbing; }
+  .mv-arr { position:absolute; z-index:8; width:34px; height:34px; border-radius:50%; border:0; background:var(--blue); color:#fff; font-size:20px; font-weight:700; line-height:1; display:grid; place-items:center; cursor:pointer; padding:0 0 2px; box-shadow:0 6px 16px rgba(59,108,255,.35); }
+  .mv2.mv-sliding, .mv2.mv-sliding * { cursor:grabbing !important; user-select:none; }
+  .mv-fade { position:absolute; z-index:7; pointer-events:none; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); background:rgba(10,14,31,.25); }
+  .mv-fade.f1 { -webkit-mask-image:linear-gradient(90deg,#000 15%,transparent); mask-image:linear-gradient(90deg,#000 15%,transparent); }
+  .mv-fade.f2 { -webkit-mask-image:linear-gradient(270deg,#000 15%,transparent); mask-image:linear-gradient(270deg,#000 15%,transparent); }
+  .mv-fade.f1.v { -webkit-mask-image:linear-gradient(180deg,#000 15%,transparent); mask-image:linear-gradient(180deg,#000 15%,transparent); }
+  .mv-fade.f2.v { -webkit-mask-image:linear-gradient(0deg,#000 15%,transparent); mask-image:linear-gradient(0deg,#000 15%,transparent); }
+  .mv-fade[hidden] { display:none; }
+  .mv-arr:hover { filter:brightness(1.12); } .mv-arr[hidden] { display:none; }
+  .mv2.mv-moving .mv-grid { cursor:grabbing; }
   /* while dragging: every place you can drop is marked softly, and the one you are heading for is lit */
-  .mv-zone { position:absolute; z-index:6; border-radius:14px; border:2px dashed rgba(255,255,255,.35); background:rgba(59,108,255,.10); pointer-events:none; transition:background .12s, border-color .12s; }
-  .mv-zone.on { background:rgba(59,108,255,.38); border-color:#fff; border-style:solid; }
+  .mv-zone { position:absolute; z-index:6; border-radius:14px; background:rgba(59,108,255,.34); pointer-events:none; opacity:0; transition:opacity .12s; }
+  .mv-zone.on { opacity:1; }
   .mv-zone[data-z=top] { left:12px; right:12px; top:0; height:16%; } .mv-zone[data-z=bottom] { left:12px; right:12px; bottom:12px; height:16%; }
   .mv-zone[data-z=left] { left:12px; top:0; bottom:12px; width:14%; } .mv-zone[data-z=right] { right:12px; top:0; bottom:12px; width:14%; }
   .cr.mv2 { position:relative; }
-  .mv2.v-custom.mv-moving .mvt:not(.drag) { outline:2px dashed rgba(255,255,255,.35); outline-offset:-2px; }
-  .mv2.v-custom.mv-moving .mvt.target { outline:3px solid #fff; outline-offset:-3px; box-shadow:0 0 0 4px rgba(59,108,255,.7); }
+  .mv2.v-custom.mv-moving .mvt.target::after { content:""; position:absolute; inset:0; background:rgba(59,108,255,.38); border-radius:inherit; pointer-events:none; }
   /* Gallery and Custom: one grid of same-size boxes, in the middle of the window */
   .cr.mv2.v-gallery:not([hidden]), .cr.mv2.v-custom:not([hidden]) { display:flex; flex-direction:row; flex-wrap:wrap; justify-content:center; align-content:center; } /* a last row with fewer boxes sits in the middle too */
   .mv2.v-gallery .mv-top, .mv2.v-gallery .mv-grid, .mv2.v-custom .mv-top, .mv2.v-custom .mv-grid { display:contents; }
@@ -1005,9 +1019,14 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .note.conn-ok { display:inline-block; font-weight:600; color:var(--green) !important; background:color-mix(in srgb, var(--green) 14%, transparent); padding:6px 12px; border-radius:999px; margin:0 0 8px; }
   /* "Open on Facebook" / "Open on YouTube" on a channel while live: always one line */
   /* a channel like Restream: name, stream title, status line (Streaming, viewers, View) */
-  .cc .nm { white-space:normal !important; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-  .cc .cttl { font-size:12.5px; color:var(--text); opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
-  .cc .meta { display:flex; align-items:center; gap:10px; margin-top:3px; font-size:12px; color:var(--soft); min-width:0; white-space:nowrap; }
+  .cc .cttl { font-size:12.5px; color:var(--soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border:0; padding:0; min-width:0; }
+  .cc .needkey { border:0; background:none; padding:0; font:inherit; font-size:12.5px; color:var(--blue); cursor:pointer; } .cc .needkey:hover { text-decoration:underline; }
+  .cc.nokey .tile { opacity:.55; } .cc.nokey .nm { color:var(--soft); }
+  .ch-empty { display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; padding:26px 14px 18px; color:var(--soft); }
+  .ch-empty b { color:var(--text); font-size:15px; } .ch-empty small { font-size:12.5px; max-width:240px; line-height:1.4; }
+  .ch-empty .ce-ic { width:46px; height:46px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.07); margin-bottom:4px; }
+  .ch-empty .ce-ic svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+  .cc .meta { display:flex; justify-content:flex-start; padding-top:0; border-top:0; align-items:center; gap:10px; margin-top:2px; font-size:12px; color:var(--soft); min-width:0; white-space:nowrap; }
   .cc .meta .st { font-size:12px; overflow:hidden; text-overflow:ellipsis; } .cc .meta .st.live { color:#5fd38d; } .cc .meta .st.live::before { content:"● "; }
   .cc .meta .eye { display:inline-flex; align-items:center; gap:4px; color:var(--text); } .cc .meta .eye svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; }
   .cc .fblink { margin-left:auto; padding:0; border:0; background:none; color:var(--blue); font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; flex:none; }
@@ -1054,7 +1073,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <span class="sp"></span>
   <span class="gl-acts" id="rcActs" hidden><span class="rc-where" id="rcWhere"></span><button type="button" class="hb pl" id="rcOpen">Open folder</button><button type="button" class="hb pl" id="rcRemux">Remux to MP4</button></span>
   <span class="gl-acts" id="anActs" hidden><span class="rc-where" id="anAddr"></span><button type="button" class="hb pl" id="anEdit">Change address</button><button type="button" class="hb pl" id="anOpen">Open in browser</button></span>
-  <span class="gl-acts" id="mvActs" hidden><span class="mv-menuw"><button type="button" class="hb pl" id="mvMenuB" aria-haspopup="menu" aria-expanded="false" title="Change the view"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:currentColor;vertical-align:-3px;margin-right:6px"><rect x="3" y="4" width="18" height="10" rx="2"/><rect x="3" y="16" width="5" height="4" rx="1"/><rect x="9.5" y="16" width="5" height="4" rx="1"/><rect x="16" y="16" width="5" height="4" rx="1"/></svg>View</button><div class="mv-menu" id="mvMenu" role="menu" hidden></div></span><button type="button" class="hb pl" id="mvDisp" hidden>Show on a display ▾</button><button type="button" class="hb pl" id="mvWin">New window</button></span>
+  <span class="gl-acts" id="mvActs" hidden><span class="mv-menuw"><button type="button" class="hb pl" id="mvMenuB" aria-haspopup="menu" aria-expanded="false" title="Change the view"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:currentColor;vertical-align:-3px;margin-right:6px"><rect x="3" y="4" width="18" height="10" rx="2"/><rect x="3" y="16" width="5" height="4" rx="1"/><rect x="9.5" y="16" width="5" height="4" rx="1"/><rect x="16" y="16" width="5" height="4" rx="1"/></svg>View</button><div class="mv-menu" id="mvMenu" role="menu" hidden></div></span><button type="button" class="hb pl" id="mvWin">New window</button></span>
   <span class="gl-acts" id="scActs" hidden><button type="button" class="hb pl" id="scObs">Import from OBS</button><button type="button" class="hb pl" id="scImp">Import file</button><button type="button" class="hb sb" id="scNew">+ New collection</button></span>
   <span class="gl-acts" id="glActs">
     <button type="button" class="hb" id="glUpd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Update title for all channels</button>
@@ -1283,8 +1302,8 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
 <!-- Welcome screen: shows each time Multistream opens -->
 <div class="wl" id="welcome" role="dialog" aria-modal="true" aria-label="Welcome">
   <div class="wl-logo"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="var(--red)"/></svg>Multistream</div>
-  <h1>Stream your service<br>everywhere at once</h1>
-  <p class="lead2">Livestream on YouTube, Facebook and more at the same time. Set up your camera and sound, and record your service, all in one app.</p>
+  <h1>Stream your event<br>everywhere at once</h1>
+  <p class="lead2">Livestream on YouTube, Facebook and more at the same time. Set up your cameras and sound, and record it, all in one app.</p>
   <div class="wl-boxes">
     <button type="button" class="pri" id="wlStart"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></i><b>Get started</b><span class="d">New here? We'll help you set up</span></button>
     <button type="button" id="wlStudio"><i class="bl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg></i><b>Open Production</b><span class="d">Set up your camera, slides and sound</span></button>
@@ -1304,7 +1323,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
     <div class="gs-card" data-step="2" style="width:960px" hidden>
       <h2>What should your stream look like?</h2>
       <div class="gs-lay" id="gsLay">
-        <button type="button" data-l="full" aria-pressed="true"><div class="th th-full"><span></span></div><b>Church service</b><small>Camera, welcome slide, name bars and a backup screen, ready to use</small></button>
+        <button type="button" data-l="full" aria-pressed="true"><div class="th th-full"><span></span></div><b>Event</b><small>Camera, welcome slide, name bars and a backup screen, ready to use</small></button>
         <button type="button" data-l="camera"><div class="th th-cam"></div><b>Camera only</b><small>Just your camera</small></button>
         <button type="button" data-l="blank"><div class="th th-blank"></div><b>Start blank</b><small>Start empty and build it yourself</small></button>
         <button type="button" data-l="keep"><div class="th th-saved"><svg viewBox="0 0 24 24" fill="none" stroke="#a3abc4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg></div><b>Saved setup</b><small>Use a setup you saved before</small></button>
@@ -1327,7 +1346,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
 </div>
 <div class="overlay" id="setOverlay">
   <div class="swin set2" role="dialog" aria-modal="true" aria-label="Settings">
-    <nav class="snav" id="setNav" role="tablist" aria-orientation="vertical" aria-label="Settings sections"><div class="s2t">Settings</div><button type="button" role="tab" data-pane="general"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>General</button><button type="button" role="tab" data-pane="appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg>Appearance</button><button type="button" role="tab" data-pane="stream"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8"/></svg>Stream</button><button type="button" role="tab" data-pane="recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>Recording</button><button type="button" role="tab" data-pane="audio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/></svg>Audio</button><button type="button" role="tab" data-pane="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/></svg>Video</button><button type="button" role="tab" data-pane="hotkeys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6"/></svg>Hotkeys</button><button type="button" role="tab" data-pane="advanced"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/></svg>Advanced</button><button type="button" role="tab" data-pane="system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="4" width="16" height="12" rx="1.5"/><path d="M9 20h6M12 16v4"/></svg>System</button></nav>
+    <nav class="snav" id="setNav" role="tablist" aria-orientation="vertical" aria-label="Settings sections"><div class="s2t">Settings</div><button type="button" role="tab" data-pane="general"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>General</button><button type="button" role="tab" data-pane="appearance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg>Appearance</button><button type="button" role="tab" data-pane="stream"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8"/></svg>Stream</button><button type="button" role="tab" data-pane="output"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>Output</button><button type="button" role="tab" data-pane="audio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/></svg>Audio</button><button type="button" role="tab" data-pane="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1.5"/></svg>Video</button><button type="button" role="tab" data-pane="hotkeys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6"/></svg>Hotkeys</button><button type="button" role="tab" data-pane="advanced"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/></svg>Advanced</button><button type="button" role="tab" data-pane="system"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="4" width="16" height="12" rx="1.5"/><path d="M9 20h6M12 16v4"/></svg>System</button></nav>
     <div class="s2r">
       <div class="smain"><section class="pane" data-pane="general" role="tabpanel" aria-label="General"><div class="s2h"><h2>General</h2></div><div class="g2"><h3>Production</h3><div class="c2">
   <div class="r2"><span class="l">Snap items to edges, the centre and each other</span><button type="button" class="tg2" data-mirror="#optSnap" aria-label="Snap items"></button></div>
@@ -1362,13 +1381,9 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <button type="button" class="opt2" data-v="solid"><div class="pv2"><div class="cd2" style="background:#121833">Solid</div></div><span>Solid <small class="fs">· fastest</small><small class="iu">· in use</small></span></button>
 </div></div>
 <div class="g2"><h3>Theme</h3><div class="seg2" id="themes"><button type="button" data-v="dark">Dark</button><button type="button" data-v="light">Light</button><button type="button" data-v="system">Match computer</button></div></div>
-<div class="g2"><h3>Colour</h3><div class="sws2" id="sws"></div></div></section><section class="pane" data-pane="stream" role="tabpanel" aria-label="Stream"><div class="s2h"><h2>Stream</h2></div><div class="g2 old2">
-          <div class="grp"><h4>Private test</h4>
-            <p>On: only you can see the live. Off: everyone can watch.</p>
-            <div class="srow"><p class="lb">Private test</p>
-              <div class="ctl"><label class="sw"><input type="checkbox" id="setPt" aria-label="Private test"><span></span></label></div></div>
-          </div>
-        </div><div class="g2 old2">
+<div class="g2"><h3>Colour</h3><div class="sws2" id="sws"></div></div></section><section class="pane" data-pane="stream" role="tabpanel" aria-label="Stream"><div class="s2h"><h2>Stream</h2></div><div class="g2"><div class="c2">
+  <div class="r2"><span class="l">Service</span><select class="i3" id="s2Svc" aria-label="Service"><option value="youtube">YouTube</option><option value="facebook">Facebook Live</option><option value="custom">Custom (any site with a server and stream key)</option></select></div>
+</div></div><div class="g2 old2" data-svc="youtube">
           <div class="grp"><h4>YouTube</h4>
             <p>Add the file from Google once, then sign in.</p>
             <div class="srow"><label class="lb" for="yt-file">1. File from Google</label>
@@ -1378,7 +1393,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
             <div class="srow"><p class="lb">Status</p>
               <div class="ctl"><p class="note" id="yt-status"></p><p class="note" id="yt-msg"></p></div></div>
           </div>
-        </div><div class="g2 old2">
+        </div><div class="g2 old2" data-svc="facebook">
           <div class="grp"><h4>Facebook</h4>
             <p>Pages are added on Livestream with <b>Add channel</b>. Sign in here only if Facebook shows an error.</p>
             <div class="srow"><p class="lb">Facebook</p>
@@ -1418,20 +1433,37 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
               <div class="ctl"><p class="note" id="fb-saved"></p><p class="note" id="fb-msg"></p></div></div>
           </div>
           </details>
-        </div></section><section class="pane" data-pane="recording" role="tabpanel" aria-label="Recording"><div class="s2h"><h2>Recording</h2></div><div class="g2"><div class="c2">
-  <div class="r2"><span class="l">Quality</span><select class="i3" data-mirror="#recQ"></select></div>
-  <div class="r2"><span class="l">Record automatically when the stream starts</span><button type="button" class="tg2" data-mirror="#recAuto2" aria-label="Record automatically"></button></div>
-  <div class="r2"><span class="l">Saved in</span><code class="pth" id="s2RecDir"></code><button type="button" class="b3" id="s2RecOpen">Open folder</button></div>
-</div><p class="n2">Saved as .mkv. Make an MP4 on the Recordings page.</p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="audio" role="tabpanel" aria-label="Audio"><div class="s2h"><h2>Audio</h2></div><div class="g2"><h3>Monitoring</h3><div class="c2">
+        </div><div class="g2 old2" data-svc="custom">
+          <div class="grp"><h4>Custom</h4>
+            <p>Instagram, TikTok, Twitch or any site with a server and stream key. Channels are added on the Livestream page.</p>
+            <div class="srow"><p class="lb"></p><div class="ctl"><button class="b2 pri" id="cuAdd" type="button">Add a channel</button></div></div>
+          </div>
+        </div><div class="g2 old2 s2pt">
+          <div class="grp"><h4>Private test</h4>
+            <p>On: only you can see the live. Off: everyone can watch.</p>
+            <div class="srow"><p class="lb">Private test</p>
+              <div class="ctl"><label class="sw"><input type="checkbox" id="setPt" aria-label="Private test"><span></span></label></div></div>
+          </div>
+        </div></section><section class="pane" data-pane="output" role="tabpanel" aria-label="Output"><div class="s2h"><h2>Output</h2></div><div class="g2"><h3>Streaming</h3><div class="c2">
+  <div class="r2"><span class="l">Video bitrate</span><span class="u2"><input class="i3" type="number" min="1000" max="60000" step="500" data-mirror="#outKbps"> Kbps</span></div>
+  <div class="r2"><span class="l">Audio bitrate</span><select class="i3" data-mirror="#outAbps"></select></div>
+  <div class="r2"><span class="l">Video encoder</span><span class="v2" id="s2Enc">...</span></div>
+  <div class="r2"><span class="l">Keyframe interval</span><span class="v2">2 s</span></div>
+</div><p class="n2" id="s2OutNote"></p></div>
+<div class="g2"><h3>Recording</h3><div class="c2">
+  <div class="r2"><span class="l">Recording path</span><code class="pth" id="s2RecDir"></code><button type="button" class="b3" id="s2RecOpen">Open folder</button></div>
+  <div class="r2"><span class="l">Recording quality</span><select class="i3" data-mirror="#recQ"></select></div>
+  <div class="r2"><span class="l">Recording format</span><span class="v2">Matroska Video (.mkv)</span></div>
+  <div class="r2"><span class="l">Automatically remux to MP4</span><button type="button" class="tg2" data-mirror="#recRemux" aria-label="Automatically remux to MP4"></button></div>
+  <div class="r2"><span class="l">Record when the stream starts</span><button type="button" class="tg2" data-mirror="#recAuto2" aria-label="Record automatically"></button></div>
+</div><p class="n2">.mkv is kept safe if the computer stops. Remux makes an .mp4 copy at the end (same quality).</p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="audio" role="tabpanel" aria-label="Audio"><div class="s2h"><h2>Audio</h2></div><div class="g2"><h3>Monitoring</h3><div class="c2">
   <div class="r2"><span class="l">Monitoring output (your headphones)</span><select class="i3" data-mirror="#monDev"></select></div>
-</div><p class="n2">Hear an input in your headphones. Turn it on for each input with Listen in the Production's mixer. Use headphones, or the microphone will pick up the speakers.</p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="video" role="tabpanel" aria-label="Video"><div class="s2h"><h2>Video</h2></div><div class="g2"><h3>What viewers get</h3><div class="c2">
-  <div class="r2"><span class="l">Quality</span><select class="i3" data-mirror="#outQ"></select></div>
-  <div class="r2"><span class="l">Picture height (pixels)</span><input class="i3" type="number" min="360" max="2160" step="2" data-mirror="#outH"></div>
-  <div class="r2"><span class="l">Frames a second</span><input class="i3" type="number" min="10" max="60" step="1" data-mirror="#outFps"></div>
-  <div class="r2"><span class="l">Bitrate (kbps)</span><input class="i3" type="number" min="1000" max="60000" step="500" data-mirror="#outKbps"></div>
-  <div class="r2"><span class="l">Encoder</span><span class="v2" id="s2Enc">...</span></div>
-  <div class="r2"><span class="l">Keyframes</span><span class="v2">Every 2 seconds (what YouTube and Facebook ask for)</span></div>
-</div><p class="n2" id="s2OutNote"></p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="hotkeys" role="tabpanel" aria-label="Hotkeys"><div class="s2h"><h2>Hotkeys</h2><label class="hks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="hkQ" placeholder="Search hotkeys" aria-label="Search hotkeys"></label></div><div class="hkl" id="hkList"></div></section><section class="pane" data-pane="advanced" role="tabpanel" aria-label="Advanced"><div class="s2h"><h2>Advanced</h2></div><div class="g2"><div class="c2">
+</div><p class="n2">Hear an input in your headphones. Turn it on for each input with Listen in the Production's mixer. Use headphones, or the microphone will pick up the speakers.</p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="video" role="tabpanel" aria-label="Video"><div class="s2h"><h2>Video</h2></div><div class="g2"><div class="c2">
+  <div class="r2"><span class="l">Preset</span><select class="i3" data-mirror="#outQ"></select></div>
+  <div class="r2"><span class="l">Base (canvas) resolution</span><span class="v2">1920x1080</span></div>
+  <div class="r2"><span class="l">Output (scaled) resolution</span><span class="u2"><input class="i3" type="number" min="360" max="2160" step="2" data-mirror="#outH"> p high</span></div>
+  <div class="r2"><span class="l">FPS</span><input class="i3" type="number" min="10" max="60" step="1" data-mirror="#outFps"></div>
+</div><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="hotkeys" role="tabpanel" aria-label="Hotkeys"><div class="s2h"><h2>Hotkeys</h2><label class="hks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="hkQ" placeholder="Search hotkeys" aria-label="Search hotkeys"></label></div><div class="hkl" id="hkList"></div></section><section class="pane" data-pane="advanced" role="tabpanel" aria-label="Advanced"><div class="s2h"><h2>Advanced</h2></div><div class="g2"><div class="c2">
   <div class="r2"><span class="l">If a channel drops</span><span class="v2">Reconnects by itself</span></div>
   <div class="r2"><span class="l">Reset the Production settings</span><button type="button" class="b3" data-click="#resetStudio">Reset</button></div>
 </div><p class="n2">Resets settings only. Scenes, sources and channels stay.</p></div></section><section class="pane" data-pane="system" role="tabpanel" aria-label="System"><div class="s2h"><h2>System</h2></div><div class="g2"><div class="c2">
@@ -2063,11 +2095,18 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const sub = r.querySelector('.sub');
     if (small) sub.remove();
     else {
-      const ttl = ch.kind === 'api' ? (ch.page ? (ch.title || titleFor('fb').title) : titleFor(ch.c).title) : (ch.dest.hasKey ? '' : 'Add its stream key');
-      if (ttl) { const t = document.createElement('div'); t.className = 'cttl'; t.textContent = ttl; t.title = ttl; sub.before(t); }
+      // Like Restream: the name, then one quiet line. While live it is the status; otherwise the stream title,
+      // or "Add a stream key" when the channel has none yet (click it to add one). No "Off" / "Ready" words.
+      const noKey = ch.kind !== 'api' && !ch.dest.hasKey;
+      const ttl = ch.kind === 'api' ? (ch.page ? (ch.title || titleFor('fb').title) : titleFor(ch.c).title) : '';
       sub.className = 'meta';
-      const stx = document.createElement('span'); stx.className = 'st ' + s2.cls; stx.textContent = s2.cls === 'live' ? 'Streaming' : s2.t.replace(/ · .*$/, ''); sub.appendChild(stx);
+      const showSt = live || s2.cls === 'bad' || s2.msg || s2.cls === 'live';
+      if (noKey) { const k = document.createElement('button'); k.type = 'button'; k.className = 'needkey'; k.textContent = 'Add a stream key'; k.onclick = (e) => { e.stopPropagation(); editChannel(ch); }; sub.appendChild(k); r.classList.add('nokey'); }
+      else if (!showSt && ttl) { const t = document.createElement('span'); t.className = 'cttl'; t.textContent = ttl; t.title = ttl; sub.appendChild(t); }
+      const stx = document.createElement('span'); stx.className = 'st ' + s2.cls; stx.textContent = s2.cls === 'live' ? 'Streaming' : s2.t.replace(/ · .*$/, '');
       if (s2.msg) { stx.title = s2.msg; stx.textContent = 'Problem: ' + s2.msg; }
+      if (showSt && !noKey) sub.appendChild(stx);
+      if (!sub.childNodes.length) sub.remove();
       const v = live && s2.cls === 'live' && ch.site && stats && stats[ch.site];
       if (v) { const e = document.createElement('span'); e.className = 'eye'; e.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'; e.append(String(v.viewers.toLocaleString())); e.title = 'Watching now'; sub.appendChild(e); }
       // while live on Facebook or YouTube: a link straight to the live video, to check it arrived
@@ -2125,11 +2164,17 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       $('#count').textContent = on.filter((c) => stateOf(c, true).cls === 'live').length + ' of ' + chs.length + ' live';
       on.forEach((c) => L.appendChild(row(c, true)));
       if (off.length) { const h = document.createElement('div'); h.className = 'ch-lbl'; h.textContent = 'Turned off'; O.appendChild(h); off.forEach((c) => O.appendChild(row(c, true, true))); }
-      $('#addBtn').hidden = true;
+      $('#addBtn').hidden = true; $('#count').hidden = false;
     } else {
       const ready = chs.filter((c) => c.on && stateOf(c, false).t === 'Ready').length;
       $('#count').textContent = ready + ' ready';
       chs.forEach((c) => L.appendChild(row(c, false)));
+      if (!chs.length) { // nothing added yet: one clear message and the Add button, like Restream
+        const e = document.createElement('div'); e.className = 'ch-empty';
+        e.innerHTML = '<div class="ce-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 0 1 14 0M8.5 12a3.5 3.5 0 0 1 7 0"/><circle cx="12" cy="12" r="1.2"/></svg></div><b>No channels yet</b><small>Add YouTube, Facebook or any site with a stream key.</small>';
+        L.appendChild(e);
+      }
+      $('#count').hidden = !chs.length;
       $('#addBtn').hidden = false;
     }
     // while live: health under the preview instead of the stream details
@@ -2205,7 +2250,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const t = titleFor(site === 'youtube' ? 'yt' : 'fb');
     const r = await api('/api/' + site + '/live', 'POST', { test: $('#fbTest').checked, privacy: 'public', title: t.title, description: t.description });
     if (r && r.error) alert((site === 'youtube' ? 'YouTube' : 'Facebook') + ': ' + r.error);
-    else if (r && r.thumbnailError) alert('You are live on YouTube, but YouTube did not take the thumbnail: ' + r.thumbnailError);
+    else if (r && r.thumbnailError) thMsg((site === 'youtube' ? 'YouTube did not take the thumbnail: ' + thWhy(r.thumbnailError) : 'Facebook did not take the thumbnail: ' + r.thumbnailError));
   }
   $('#sbBtn').onclick = async () => {
     const sb = $('#sbBtn');
@@ -2254,6 +2299,37 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   const KEYSRV = { yt: 'rtmp://a.rtmp.youtube.com/live2', fb: 'rtmps://live-api-s.facebook.com:443/rtmp/', tw: 'rtmp://live.twitch.tv/app', ig: '', tt: '', other: '' };
   // Add channel → Facebook (like Restream): every Page you shared with Facebook, each with Add.
   // Not signed in yet (or a Page is missing): Sign in with Facebook right here, with the code to type.
+  // YouTube in Add channel: add Google's file once, then sign in; it closes by itself when YouTube is connected
+  function ytAddBox(close) {
+    const f = document.createElement('div'); f.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+    f.innerHTML = '<b>Easy way: sign in</b><p class="note ys"></p><label class="yf" hidden>1. File from Google<input type="file" accept=".json,application/json"></label><div class="row"><button type="button" class="btn pri si">Sign in with YouTube</button></div><p class="note ym"></p>';
+    const ys = f.querySelector('.ys'), ym = f.querySelector('.ym'), yf = f.querySelector('.yf'), si = f.querySelector('.si');
+    let timer = 0;
+    const show = (y) => {
+      y = y || {}; ys.textContent = y.connected ? '\u2713 Connected' + (y.channelTitle ? ' to ' + y.channelTitle : '') : y.hasClient ? 'Sign in with the YouTube account you stream to.' : 'First add the file from Google (only once).';
+      yf.hidden = Boolean(y.hasClient); si.disabled = !y.hasClient; si.textContent = y.connected ? 'Switch YouTube account' : (y.hasClient ? '' : '2. ') + 'Sign in with YouTube';
+    };
+    if (window.DEMO) show({ hasClient: true }); else api('/api/youtube').then(show).catch(() => show());
+    yf.querySelector('input').onchange = async (e) => {
+      const file0 = e.target.files[0]; if (!file0) return; let file;
+      try { file = JSON.parse(await file0.text()); } catch { ym.textContent = 'That file could not be read. Choose the .json file from Google.'; return; }
+      const r = await api('/api/youtube/client', 'PUT', { file }); e.target.value = '';
+      if (r.error) { ym.textContent = r.error; return; } ym.textContent = ''; show(r);
+    };
+    si.onclick = async () => {
+      if (window.DEMO) return;
+      const before = await api('/api/youtube').catch(() => ({}));
+      const r = await api('/api/youtube/login'); if (r.error) { ym.textContent = r.error; return; }
+      window.open(r.url, '_blank'); ym.textContent = 'Finish the sign-in in your browser, then come back. This closes by itself.';
+      clearInterval(timer); let n = 0;
+      timer = setInterval(async () => {
+        if (!f.isConnected || ++n > 150) return clearInterval(timer);
+        const y = await api('/api/youtube').catch(() => null);
+        if (y && y.connected && (!before.connected || y.channelTitle !== before.channelTitle)) { clearInterval(timer); prefs.youtube = true; savePrefs(); close(); refresh(); }
+      }, 2000);
+    };
+    return f;
+  }
   function fbAddBox(close) {
     const f = document.createElement('div'); f.className = 'fbl';
     const msg = (t, bad) => { let p = f.querySelector('.note'); if (!p) { p = document.createElement('p'); p.className = 'note'; f.appendChild(p); } p.textContent = t; p.style.color = bad ? '#ff8a90' : ''; };
@@ -2333,11 +2409,9 @@ window.askText = (title, value, hint) => new Promise((ok) => {
         return f;
       };
       if (pick === 'fb') { box.appendChild(fbAddBox(close)); return; }
-      if (pick === 'yt' || pick === 'fb') {
+      if (pick === 'yt') {
         const two = document.createElement('div'); two.className = 'pf-two';
-        const a = document.createElement('div'); a.className = 'on'; a.innerHTML = '<b>Easy way: sign in</b> <button type="button" class="btn pri si" style="margin-left:6px"></button>';
-        a.querySelector('.si').textContent = 'Sign in with ' + PLAT[pick];
-        a.querySelector('.si').onclick = () => { close(); openSettings(pick === 'yt' ? 'youtube' : 'facebook'); };
+        const a = document.createElement('div'); a.className = 'on'; a.appendChild(ytAddBox(close));
         const b = document.createElement('div'); const hb = document.createElement('b'); hb.textContent = 'Or paste a stream key'; b.appendChild(hb); b.appendChild(keyForm(pick === 'fb'));
         two.append(a, b); box.appendChild(two);
       } else {
@@ -2504,7 +2578,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     let pk = 0, pkAt = 0; hist.forEach((h) => { const v = (h.youtube || 0) + (h.facebook || 0) + (h.zoom || 0); if (v > pk) { pk = v; pkAt = h.t; } });
     const live = SITES.some(([k]) => d.platforms[k] && d.platforms[k].status === 'live');
     const since = Math.min(...SITES.map(([k]) => (d.platforms[k] && d.platforms[k].since) || Infinity));
-    $('#anSub').textContent = (d.church || 'Live service') + ' · ' + (live ? 'live now' + (isFinite(since) ? ' since ' + tm(since) : '') : hist.length ? tm(hist[0].t) + ' – ' + tm(hist[hist.length - 1].t) : 'nothing live yet');
+    $('#anSub').textContent = (d.church || d.name || 'Live event') + ' · ' + (live ? 'live now' + (isFinite(since) ? ' since ' + tm(since) : '') : hist.length ? tm(hist[0].t) + ' – ' + tm(hist[hist.length - 1].t) : 'nothing live yet');
     const yv = ls.youtube ? ls.youtube.views : null;
     $('#akViews').textContent = N(yv); $('#akViewsS').textContent = yv != null ? 'YouTube, this stream' : 'Shows while you are live on YouTube';
     $('#akPeak').textContent = N(Math.max(pk, d.peak || 0)); $('#akPeakS').textContent = pkAt ? 'at ' + tm(pkAt) : 'No viewers yet';
@@ -2776,29 +2850,7 @@ function setNavSmall(on) {
 try { if (localStorage.getItem('ms_nav_small') === '1') setNavSmall(true); } catch {}
 $('#navToggle').onclick = () => setNavSmall(!document.documentElement.classList.contains('nav-small'));
 // Multiview (as in the design): Program on top, the scenes below, numbered 1 to 0 (press the number to put that scene on air)
-let crMenu = null;
-function closeCrMenu() { if (crMenu) { crMenu.remove(); crMenu = null; document.removeEventListener('keydown', crMenuEsc); document.removeEventListener('pointerdown', crMenuOut, true); } }
-function crMenuEsc(e) { if (e.key === 'Escape') closeCrMenu(); }
-function crMenuOut(e) { if (crMenu && !crMenu.contains(e.target) && e.target !== $('#mvDisp')) closeCrMenu(); }
-let crDisplays = [];
-async function crLoadDisplays() {
-  try { if (window.msNative && window.msNative.displays) crDisplays = await window.msNative.displays(); } catch { crDisplays = []; }
-  const other = crDisplays.find((d) => !d.main);
-  $('#mvDisp').hidden = !crDisplays.length;
-  $('#mvDisp').textContent = (other ? 'Show on display ' + other.n : 'Show on a display') + ' ▾';
-}
 $('#mvWin').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); };
-$('#mvDisp').onclick = async (e) => {
-  if (crMenu) { closeCrMenu(); return; }
-  await crLoadDisplays();
-  const m = crMenu = document.createElement('div'); m.className = 'cr-menu'; m.setAttribute('role', 'menu');
-  const r = e.currentTarget.getBoundingClientRect(); m.style.right = Math.max(8, innerWidth - r.right) + 'px'; m.style.top = (r.bottom + 8) + 'px';
-  crDisplays.forEach((d) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.innerHTML = '<span></span><small></small>'; b.firstChild.textContent = 'Display ' + d.n + (d.main ? ' (main)' : ''); b.lastChild.textContent = 'Full screen on this display. ' + d.w + ' x ' + d.h + '. Press Esc to leave full screen.'; b.onclick = () => { closeCrMenu(); window.msNative.openControlRoom(d.id); }; m.appendChild(b); });
-  document.body.appendChild(m);
-  document.addEventListener('keydown', crMenuEsc); document.addEventListener('pointerdown', crMenuOut, true);
-  const f = m.querySelector('button'); if (f) f.focus();
-};
-crLoadDisplays();
 let stu = { alive: false, scenes: [], current: '', shots: {}, tv: 0, rev: null, shape: '', coll: null };
 function engine() { return 'studio'; }
 function crData() { return { on: true, ok: stu.alive, scenes: stu.scenes.map((s) => s.name), current: stu.current }; }
@@ -2814,7 +2866,7 @@ function fitCrTiles() {
   cr.classList.toggle('tall', tall); cr.classList.toggle('sq', sq);
   const ar = tall ? 9 / 16 : sq ? 1 : 16 / 9; // every box has the picture's own shape
   const g = $('#crTiles'), top = cr.querySelector('.mv-top'), pb = $('#crProgBox'), gp = 10;
-  const W = cr.clientWidth - 24, H = cr.clientHeight - 12, lim = (v, a, b) => Math.max(a, Math.min(b, v));
+  const W = cr.clientWidth - 24, H = cr.clientHeight - 28, lim = (v, a, b) => Math.max(a, Math.min(b, v));
   const tiles = [...cr.querySelectorAll('button.mvt[data-n]')].sort((a, b) => a.dataset.i - b.dataset.i);
   mvPins = mvPins.filter((n) => tiles.some((t) => t.dataset.n === n));
   // the most boxes a row that keeps each of m boxes as big as it can be in a w x h space
@@ -2828,12 +2880,14 @@ function fitCrTiles() {
   MV_VIEWS.forEach((v) => cr.classList.toggle('v-' + v, view === v));
   ['top', 'bottom', 'left', 'right'].forEach((d) => cr.classList.toggle('sp-' + d, view === 'speaker' && mvSide === d));
   cr.classList.toggle('hideprog', mvHideProg || view === 'gallery'); cr.classList.toggle('no-main', false);
-  g.style.gridTemplateColumns = ''; cr.style.paddingLeft = cr.style.paddingRight = ''; g.style.width = g.style.height = '';
+  g.style.gridTemplateColumns = ''; cr.style.paddingLeft = cr.style.paddingRight = ''; g.style.width = g.style.height = g.style.margin = '';
   const n = tiles.length - pinned.length; let tw, th, pw, ph, mw = 0, mh = 0;
   const horiz = mvSide === 'top' || mvSide === 'bottom';
   if (view === 'speaker') {
-    if (horiz) { th = n ? lim(H * mvStrip, 60, H * 0.6) : 0; tw = th * ar; mw = W; mh = n ? H - th - gp : H; g.style.width = Math.min(W, n * tw + gp * Math.max(0, n - 1)) + 'px'; }
-    else { tw = n ? lim(W * mvStrip, 100, W * 0.6) : 0; th = tw / ar; mw = n ? W - tw - gp : W; mh = H; g.style.height = Math.min(H, n * th + gp * Math.max(0, n - 1)) + 'px'; }
+    // when the scenes do not all fit in the row, room is kept at both ends for the arrows, so they never sit on a picture
+    const GUT = 50;
+    if (horiz) { th = n ? lim(H * mvStrip, 60, H * 0.6) : 0; tw = th * ar; mw = W; mh = n ? H - th - gp : H; const full = n * tw + gp * Math.max(0, n - 1), over = full > W; g.style.width = (over ? W - 2 * GUT : full) + 'px'; g.style.margin = over ? '0 ' + GUT + 'px' : ''; }
+    else { tw = n ? lim(W * mvStrip, 100, W * 0.6) : 0; th = tw / ar; mw = n ? W - tw - gp : W; mh = H; const full = n * th + gp * Math.max(0, n - 1), over = full > H; g.style.height = (over ? H - 2 * GUT : full) + 'px'; g.style.margin = over ? GUT + 'px 0' : ''; }
     const b = grid(mainN, mw, mh); pw = b.w; ph = pw / ar;
     pinned.forEach((t) => { t.style.width = Math.floor(pw) + 'px'; t.style.height = Math.floor(ph) + 'px'; });
     if (!n) g.style.width = g.style.height = '0px';
@@ -2857,6 +2911,7 @@ function mvExtras(show, horiz) {
     a2 = document.createElement('button'); a2.type = 'button'; a2.className = 'mv-arr a2'; a2.setAttribute('aria-label', 'More scenes'); cr.appendChild(a2);
     const go = (dir) => { const hz = mvSide === 'top' || mvSide === 'bottom', step = (hz ? g.clientWidth : g.clientHeight) * 0.8 * dir; g.scrollBy(hz ? { left: step } : { top: step }); setTimeout(() => mvExtras(true, hz), 350); };
     a1.onclick = (e) => { e.stopPropagation(); go(-1); }; a2.onclick = (e) => { e.stopPropagation(); go(1); };
+    g.addEventListener('scroll', () => { cancelAnimationFrame(g._sf); g._sf = requestAnimationFrame(() => mvExtras(true, mvSide === 'top' || mvSide === 'bottom')); }, { passive: true });
     g.addEventListener('wheel', (e) => { if (mvView !== 'speaker') return; const hz = mvSide === 'top' || mvSide === 'bottom', d = e.deltaY || e.deltaX; g.scrollBy(hz ? { left: d } : { top: d }); clearTimeout(g._wt); g._wt = setTimeout(() => mvExtras(true, hz), 200); }, { passive: true });
     sz.addEventListener('pointerdown', (e) => {
       e.preventDefault(); e.stopPropagation(); sz.classList.add('on');
@@ -2866,7 +2921,10 @@ function mvExtras(show, horiz) {
       addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
     });
   }
-  sz.hidden = !show; if (!show) { a1.hidden = a2.hidden = true; return; }
+  // soft blur over the cut-off edge when there are more scenes than fit (like a swipe row), on the side(s) there is more
+  let f1 = cr.querySelector('.mv-fade.f1'), f2 = cr.querySelector('.mv-fade.f2');
+  if (!f1) { f1 = document.createElement('div'); f1.className = 'mv-fade f1'; f2 = document.createElement('div'); f2.className = 'mv-fade f2'; cr.append(f1, f2); }
+  sz.hidden = true; if (!show) { a1.hidden = a2.hidden = f1.hidden = f2.hidden = true; return; } // the drag-to-size bar is gone; the row has a fixed, comfortable size
   const c = cr.getBoundingClientRect(), r = g.getBoundingClientRect(), x = r.left - c.left, y = r.top - c.top;
   sz.className = 'mv-size ' + (horiz ? 'h' : 'v');
   if (horiz) { sz.style.cssText = 'left:12px;right:12px;top:' + Math.round(mvSide === 'top' ? y + r.height - 1 : y - 11) + 'px'; }
@@ -2874,8 +2932,12 @@ function mvExtras(show, horiz) {
   const over = horiz ? g.scrollWidth - g.clientWidth : g.scrollHeight - g.clientHeight, at = horiz ? g.scrollLeft : g.scrollTop;
   a1.hidden = !(over > 4 && at > 4); a2.hidden = !(over > 4 && at < over - 4);
   a1.textContent = horiz ? '\u2039' : '\u2303'; a2.textContent = horiz ? '\u203A' : '\u2304';
-  if (horiz) { const t = Math.round(y + r.height / 2 - 17) + 'px'; a1.style.cssText = 'top:' + t + ';left:' + Math.round(x + 4) + 'px'; a2.style.cssText = 'top:' + t + ';left:' + Math.round(x + r.width - 38) + 'px'; }
-  else { const l = Math.round(x + r.width / 2 - 17) + 'px'; a1.style.cssText = 'left:' + l + ';top:' + Math.round(y + 4) + 'px'; a2.style.cssText = 'left:' + l + ';top:' + Math.round(y + r.height - 38) + 'px'; }
+  f1.hidden = a1.hidden; f2.hidden = a2.hidden; const FW = 70;
+  f1.classList.toggle('v', !horiz); f2.classList.toggle('v', !horiz);
+  if (horiz) { f1.style.cssText = `left:${x}px;top:${y}px;width:${FW}px;height:${r.height}px`; f2.style.cssText = `left:${x + r.width - FW}px;top:${y}px;width:${FW}px;height:${r.height}px`; }
+  else { f1.style.cssText = `left:${x}px;top:${y}px;width:${r.width}px;height:${FW}px`; f2.style.cssText = `left:${x}px;top:${y + r.height - FW}px;width:${r.width}px;height:${FW}px`; }
+  if (horiz) { const t = Math.round(y + r.height / 2 - 17) + 'px'; a1.style.cssText = 'top:' + t + ';left:' + Math.round(x - 42) + 'px'; a2.style.cssText = 'top:' + t + ';left:' + Math.round(x + r.width + 8) + 'px'; }
+  else { const l = Math.round(x + r.width / 2 - 17) + 'px'; a1.style.cssText = 'left:' + l + ';top:' + Math.round(y - 42) + 'px'; a2.style.cssText = 'left:' + l + ';top:' + Math.round(y + r.height + 8) + 'px'; }
 }
 new ResizeObserver(() => fitCrTiles()).observe($('#crView')); addEventListener('resize', () => fitCrTiles());
 
@@ -2884,13 +2946,13 @@ new ResizeObserver(() => fitCrTiles()).observe($('#crView')); addEventListener('
 // Gallery: every scene the same size. Custom: like Gallery with the Program picture too, in your own order: drag a box onto another to move it.
 // Boxes always keep the picture's shape. The layout, the side and the order are remembered on this computer.
 const MV_VIEWS = ['speaker', 'gallery', 'custom'];
-let mvView = 'speaker', mvSide = 'top', mvOrder = [], mvStrip = 0.2, mvHideProg = false, mvPins = [], mvNames = [];
+let mvView = 'speaker', mvSide = 'top', mvOrder = [], mvStrip = 0.26, mvHideProg = false, mvPins = [], mvNames = [];
 try {
   const v = localStorage.getItem('ms_mv_view'); if (MV_VIEWS.includes(v)) mvView = v;
   const sd = localStorage.getItem('ms_mv_side'); if (['top', 'bottom', 'left', 'right'].includes(sd)) mvSide = sd;
   const o = JSON.parse(localStorage.getItem('ms_mv_order') || '[]'); if (Array.isArray(o)) mvOrder = o.map(String);
   const x = JSON.parse(localStorage.getItem('ms_mv_more') || '{}') || {};
-  if (x.strip > 0.05 && x.strip < 0.6) mvStrip = x.strip; mvHideProg = Boolean(x.hide); if (Array.isArray(x.pins)) mvPins = x.pins.map(String);
+   mvHideProg = Boolean(x.hide); if (Array.isArray(x.pins)) mvPins = x.pins.map(String);
 } catch {}
 function mvSave() { try { localStorage.setItem('ms_mv_view', mvView); localStorage.setItem('ms_mv_side', mvSide); localStorage.setItem('ms_mv_order', JSON.stringify(mvOrder)); localStorage.setItem('ms_mv_more', JSON.stringify({ strip: mvStrip, hide: mvHideProg, pins: mvPins })); } catch {} }
 const mvKeyOf = (el) => (el.id === 'crProgBox' ? '*program' : el.dataset.n);
@@ -2901,17 +2963,24 @@ function mvApplyOrder() { // your order first; boxes it does not know yet (new s
   boxes.forEach((el) => { el.style.order = String(mvOrder.indexOf(mvKeyOf(el))); });
 }
 // The View button (like Zoom's): the views, show or hide the Program picture, and Reset
+const MV_ICON = { speaker: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="5.2" height="4" rx="1"/><rect x="9.4" y="4" width="5.2" height="4" rx="1"/><rect x="15.8" y="4" width="5.2" height="4" rx="1"/><rect x="3" y="9.5" width="18" height="10.5" rx="1.5"/></svg>', gallery: '<svg viewBox="0 0 24 24"><rect x="3" y="3.5" width="5.2" height="5" rx="1"/><rect x="9.4" y="3.5" width="5.2" height="5" rx="1"/><rect x="15.8" y="3.5" width="5.2" height="5" rx="1"/><rect x="3" y="9.6" width="5.2" height="5" rx="1"/><rect x="9.4" y="9.6" width="5.2" height="5" rx="1"/><rect x="15.8" y="9.6" width="5.2" height="5" rx="1"/><rect x="3" y="15.7" width="5.2" height="5" rx="1"/><rect x="9.4" y="15.7" width="5.2" height="5" rx="1"/><rect x="15.8" y="15.7" width="5.2" height="5" rx="1"/></svg>', custom: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="8.2" height="7.5" rx="1.2"/><rect x="12.8" y="4" width="8.2" height="7.5" rx="1.2"/><rect x="3" y="13" width="5.2" height="7" rx="1"/><rect x="9.4" y="13" width="5.2" height="7" rx="1"/><rect x="15.8" y="13" width="5.2" height="7" rx="1"/></svg>' };
 function mvMenuDraw() {
   const m = $('#mvMenu'); m.textContent = '';
-  const add = (t, on, fn) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.textContent = t; b.classList.toggle('on', Boolean(on)); b.onclick = () => { fn(); mvMenuShow(false); mvSave(); fitCrTiles(); }; m.appendChild(b); };
-  add('Speaker', mvView === 'speaker', () => { mvView = 'speaker'; }); add('Gallery', mvView === 'gallery', () => { mvView = 'gallery'; }); add('Custom order', mvView === 'custom', () => { mvView = 'custom'; });
-  m.appendChild(document.createElement('hr'));
-  add(mvHideProg ? 'Show the Program picture' : 'Hide the Program picture', false, () => { mvHideProg = !mvHideProg; });
-  if (mvPins.length) add('Unpin all scenes', false, () => { mvPins = []; });
-  m.appendChild(document.createElement('hr'));
-  add('Reset', false, () => { mvView = 'speaker'; mvSide = 'top'; mvOrder = []; mvStrip = 0.2; mvHideProg = false; mvPins = []; $('#crTiles').scrollTo(0, 0); });
+  const add = (t, on, fn, icon) => { const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.innerHTML = '<span class="t"></span>' + (icon || ''); b.firstChild.textContent = t; b.classList.toggle('on', Boolean(on)); b.onclick = () => { fn(); mvMenuShow(false); mvSave(); fitCrTiles(); }; m.appendChild(b); };
+  const hr = () => m.appendChild(document.createElement('hr'));
+  add('Speaker', mvView === 'speaker', () => { mvView = 'speaker'; }, MV_ICON.speaker);
+  add('Gallery', mvView === 'gallery', () => { mvView = 'gallery'; }, MV_ICON.gallery);
+  add('Custom', mvView === 'custom', () => { mvView = 'custom'; }, MV_ICON.custom);
+  hr();
+  add(mvHideProg ? 'Show Program view' : 'Hide Program view', false, () => { mvHideProg = !mvHideProg; });
+  if (mvPins.length) add('Unpin all', false, () => { mvPins = []; });
+  hr();
+  add(document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen', false, () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else document.documentElement.requestFullscreen().catch(() => {}); });
+  add('Reset', false, () => { mvView = 'speaker'; mvSide = 'top'; mvOrder = []; mvStrip = 0.26; mvHideProg = false; mvPins = []; $('#crTiles').scrollTo(0, 0); });
 }
-function mvMenuShow(on) { const m = $('#mvMenu'); if (on) mvMenuDraw(); m.hidden = !on; $('#mvMenuB').setAttribute('aria-expanded', String(on)); }
+function mvBtnIcon() { const b = $('#mvMenuB'); if (!b) return; b.innerHTML = MV_ICON[mvView] + 'View'; }
+function mvMenuShow(on) { mvBtnIcon(); const m = $('#mvMenu'); if (on) mvMenuDraw(); m.hidden = !on; $('#mvMenuB').setAttribute('aria-expanded', String(on)); }
+mvBtnIcon();
 $('#mvMenuB').onclick = (e) => { e.stopPropagation(); mvMenuShow($('#mvMenu').hidden); };
 document.addEventListener('click', (e) => { if (!e.target.closest('.mv-menuw')) mvMenuShow(false); const c = document.querySelector('.mv-ctx'); if (c && !e.target.closest('.mv-ctx')) c.remove(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { mvMenuShow(false); const c = document.querySelector('.mv-ctx'); if (c) c.remove(); } });
@@ -2940,18 +3009,27 @@ $('#crView').addEventListener('pointerdown', (e) => {
   if (e.target.closest('.mv-size, .mv-arr')) return;
   const strip = mvView === 'speaker' && e.target.closest('#crTiles');
   if (!(strip || (mvView === 'custom' && box))) return;
-  const sx = e.clientX, sy = e.clientY; let on = false, side = mvSide, target = null, zones = [];
+  const sx = e.clientX, sy = e.clientY; let on = false, side = mvSide, target = null, zones = [], slide = false, s0 = 0;
+  const g = $('#crTiles'), hz = mvSide === 'top' || mvSide === 'bottom';
   const move = (ev) => {
+    if (slide) { if (hz) g.scrollLeft = s0 - (ev.clientX - sx); else g.scrollTop = s0 - (ev.clientY - sy); return; }
     if (!on) {
       if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 10) return;
-      on = true; mvDragged = true; cr.classList.add('mv-moving');
+      on = true; mvDragged = true;
+      // along the row, when there are more scenes than fit: slide the row (like a swipe)
+      const along = hz ? Math.abs(ev.clientX - sx) > Math.abs(ev.clientY - sy) : Math.abs(ev.clientY - sy) > Math.abs(ev.clientX - sx);
+      if (strip && along && (hz ? g.scrollWidth - g.clientWidth : g.scrollHeight - g.clientHeight) > 4) {
+        slide = true; s0 = hz ? g.scrollLeft : g.scrollTop; g.style.scrollBehavior = 'auto'; cr.classList.add('mv-sliding'); return;
+      }
+      cr.classList.add('mv-moving');
       if (strip) zones = ['top', 'bottom', 'left', 'right'].map((z) => { const d = document.createElement('div'); d.className = 'mv-zone'; d.dataset.z = z; cr.appendChild(d); return d; }); // the four places the row can go
       else box.classList.add('drag');
     }
     if (strip) { // the nearest side of the window is lit; the row goes there when you let go
       const r = cr.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height;
-      const d = { left: x, right: 1 - x, top: y, bottom: 1 - y }; side = Object.keys(d).sort((a, b) => d[a] - d[b])[0];
-      zones.forEach((z) => z.classList.toggle('on', z.dataset.z === side));
+      const d = { left: x, right: 1 - x, top: y, bottom: 1 - y }, near = Object.keys(d).sort((a, b) => d[a] - d[b])[0];
+      side = d[near] < 0.22 ? near : mvSide; // only when you get close to a side does it light up; elsewhere the row stays put
+      zones.forEach((z) => z.classList.toggle('on', z.dataset.z === side && side !== mvSide));
     } else { // the box under the mouse is lit; the dragged box takes its place when you let go
       const over = document.elementFromPoint(ev.clientX, ev.clientY), t = over && over.closest('#crView .mvt');
       const nt = t && t !== box ? t : null;
@@ -2960,6 +3038,7 @@ $('#crView').addEventListener('pointerdown', (e) => {
   };
   const up = (ev) => {
     removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+    if (slide) { g.style.scrollBehavior = ''; cr.classList.remove('mv-sliding'); setTimeout(() => { mvDragged = false; }, 0); mvExtras(true, hz); return; }
     cr.classList.remove('mv-moving'); if (box) box.classList.remove('drag'); zones.forEach((z) => z.remove()); if (target) target.classList.remove('target');
     if (!on) return;
     setTimeout(() => { mvDragged = false; }, 0);
@@ -3075,7 +3154,7 @@ setInterval(pollCr, 200); // 5 pictures a second
       const w = Math.min(1920, Math.round(r.width * k)), h = Math.min(1080, Math.round(r.height * k));
       // tell the Production how big the box is, so it draws 1080p when 720p would be soft
       const want = sw.__mvWant || (sw.__mvWant = {}); want.w = Math.round(r.width * k); want.at = Date.now();
-      if (t - tileAt > 100) { tileAt = t; want.tiles = paintTiles(); }
+      if (sw.__tilesRev !== tileRev || t - tileAt > 500) { tileAt = t; want.tiles = paintTiles(); } // each new set of scene pictures, as soon as it is made
       if (w < 8 || h < 8) return; // the Program box is not shown (Gallery)
       // copy a picture once for each new one the Production makes (not on a timer of our own, which would double or skip some)
       const pf = sw.__pf | 0, key = w + 'x' + h + ':' + src.width + 'x' + src.height;
@@ -3165,7 +3244,7 @@ applyAcc(acc);
 
 // Title and thumbnail for Livestream
 let glLoaded = false;
-function thMsg(text) { const m = $('#thMsg'); m.textContent = text; m.hidden = !text; }
+function thMsg(text) { const m = $('#thMsg'); m.classList.add('bad'); m.textContent = text; m.hidden = !text; }
 function setThumb(has) {
   $('#thImg').hidden = !has; $('#thNone').hidden = has; $('#thClear').hidden = !has;
   if (has) $('#thImg').src = '/api/golive/thumbnail?t=' + Date.now();
@@ -3180,18 +3259,45 @@ async function loadGl() {
   } catch {}
 }
 $('#thBtn').onclick = () => $('#thFile').click();
+// YouTube takes a thumbnail up to 2 MB, best 1280 x 720. A bigger picture is made smaller here first (a JPG), so it is never refused for its size.
+function shrinkThumb(f) {
+  return new Promise((ok) => {
+    const u = URL.createObjectURL(f), im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(u);
+      if (f.size <= 1900000 && im.naturalWidth <= 1920) return ok(f);
+      const k = Math.min(1, 1280 / im.naturalWidth), c = document.createElement('canvas');
+      c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+      const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(im, 0, 0, c.width, c.height);
+      const tryQ = (q) => c.toBlob((b) => { if (!b) return ok(f); if (b.size > 1900000 && q > 0.5) return tryQ(q - 0.15); ok(b); }, 'image/jpeg', q);
+      tryQ(0.9);
+    };
+    im.onerror = () => { URL.revokeObjectURL(u); ok(f); };
+    im.src = u;
+  });
+}
+// the usual reasons, in plain words
+function thWhy(e) {
+  e = String(e || '');
+  if (/verif|forbidden|not allowed|custom thumbnail|thumbnails/i.test(e) && !/facebook/i.test(e)) return e + ' (YouTube only allows custom thumbnails on a verified channel: youtube.com/verify)';
+  return e;
+}
 $('#thFile').onchange = async (e) => {
-  const f = e.target.files[0];
+  const f0 = e.target.files[0];
   e.target.value = '';
-  if (!f) return;
+  if (!f0) return;
   thMsg('');
   if (window.DEMO) return thMsg('This is a demo. Nothing is saved.');
-  if (!/^image\/(png|jpeg)$/.test(f.type)) return thMsg('Choose a PNG or JPG picture.');
-  if (f.size > 10 * 1024 * 1024) return thMsg('That picture is too big. Keep it under 10 MB.');
-  const r = await fetch('/api/golive/thumbnail', { method: 'PUT', headers: { 'Content-Type': f.type }, body: f }).then((x) => x.json()).catch(() => ({ error: 'Could not save the picture' }));
-  if (r.error) return thMsg(r.error);
+  if (!/^image\/(png|jpeg)$/.test(f0.type)) return thMsg('Choose a PNG or JPG picture.');
+  if (f0.size > 30 * 1024 * 1024) return thMsg('That picture is too big. Keep it under 30 MB.');
+  const f = await shrinkThumb(f0);
+  const r = await fetch('/api/golive/thumbnail', { method: 'PUT', headers: { 'Content-Type': f.type || 'image/jpeg' }, body: f }).then((x) => x.json()).catch(() => ({ error: 'Could not save the picture' }));
+  if (r.error && !r.ok) return thMsg(r.error);
   setThumb(true);
+  if (r.error) thMsg('Saved, but: ' + thWhy(r.error));
+  else if (r.live) flashThumb('Sent to the live');
 };
+function flashThumb(t) { const m = $('#thMsg'); m.textContent = t; m.hidden = false; m.classList.remove('bad'); clearTimeout(flashThumb.t); flashThumb.t = setTimeout(() => { m.hidden = true; m.classList.add('bad'); }, 4000); }
 $('#thClear').onclick = async () => { thMsg(''); if (!window.DEMO) { const r = await api('/api/golive/thumbnail', 'DELETE'); if (r.error) return thMsg(r.error); } setThumb(false); };
 loadGl();
 
@@ -3356,6 +3462,7 @@ $('#fbLive').onclick = async () => {
   delete btn.dataset.busy;
   if (r.error) alert(r.error);
   else if (r.warning) alert('Live on the main Page, but not on every extra Page: ' + r.warning);
+  if (r.thumbnailError) thMsg('Facebook did not take the thumbnail: ' + r.thumbnailError);
   refresh();
 };
 
@@ -3400,7 +3507,7 @@ $('#yt-connect').onclick = async () => {
   const r = await api('/api/youtube/login');
   if (r.error) return ytNote('#yt-msg', r.error, true);
   window.open(r.url, '_blank');
-  ytNote('#yt-msg', 'Finish the sign-in in your browser. Choose the church YouTube account. Then come back here.', false);
+  ytNote('#yt-msg', 'Finish the sign-in in your browser. Choose the YouTube account you stream to. Then come back here.', false);
 };
 $('#ytLive').onclick = async () => {
   const btn = $('#ytLive');
@@ -3416,14 +3523,25 @@ $('#ytLive').onclick = async () => {
   const r = await api('/api/youtube/live', 'POST', { test, title: $('#glTitle').value.trim(), description: $('#glDesc').value.trim() });
   delete btn.dataset.busy;
   if (r.error) alert(r.error);
-  else if (r.thumbnailError) alert('You are live, but YouTube did not take the thumbnail: ' + r.thumbnailError);
+  else if (r.thumbnailError) thMsg('YouTube did not take the thumbnail: ' + thWhy(r.thumbnailError));
   refresh();
 };
 
 // Settings window: sidebar of sections, OK / Cancel / Apply at the bottom
+// Settings → Stream: one service at a time, like OBS
+function showSvc(v) {
+  const sel = $('#s2Svc'); if (!sel) return; if (v) sel.value = v;
+  document.querySelectorAll('#setOverlay [data-svc]').forEach((g) => { g.hidden = g.dataset.svc !== sel.value; });
+  try { localStorage.setItem('ms_svc', sel.value); } catch {}
+}
+if ($('#s2Svc')) {
+  try { const v = localStorage.getItem('ms_svc'); if (v && [...$('#s2Svc').options].some((o) => o.value === v)) $('#s2Svc').value = v; } catch {}
+  $('#s2Svc').onchange = () => showSvc(); showSvc();
+  $('#cuAdd').onclick = () => { closeSettings(); showPage('dash'); if (window.msAddChannel) window.msAddChannel('other'); };
+}
 const setOverlay = $('#setOverlay');
 const paneLoaders = { stream: () => { loadYt(); loadFb(); }, system: loadSys, hotkeys: () => hkLoad() };
-['general', 'recording', 'audio', 'video', 'advanced'].forEach((k) => { paneLoaders[k] = () => mirrorLoad(k); });
+['general', 'output', 'audio', 'video', 'advanced'].forEach((k) => { paneLoaders[k] = () => mirrorLoad(k); });
 const paneSavers = { appearance: async () => { saveAcc(); syncAcc(); return true; }, stream: saveFb, studio: mirrorSave, hotkeys: hkSave };
 const paneOrder = ['appearance', 'stream', 'studio', 'hotkeys'];
 // Production settings (General, Recording, Audio, Video, Advanced): the boxes here work the same boxes in the Production running in this window
@@ -3434,7 +3552,7 @@ function mirrorLoad(k) {
   pane.querySelectorAll('.s2-nostudio').forEach((n) => { n.hidden = Boolean(w); });
   pane.querySelectorAll('[data-mirror],[data-click]').forEach((el) => { el.disabled = !w; });
   if (!w) return;
-  try { if (k === 'audio') w.fillMon(); if (k === 'video') { w.lockOut(); w.loadEnc(); } if (k === 'recording') w.loadRec(); } catch {}
+  try { if (k === 'audio') w.fillMon(); if (k === 'output') { w.lockOut(); w.loadEnc(); w.loadRec(); } if (k === 'video') w.lockOut(); } catch {}
   try { w.document.getElementById('optSnap').checked = localStorage.getItem('ms_snap') !== '0'; w.document.getElementById('optConfirm').checked = localStorage.getItem('ms_askstop') === '1'; } catch {}
   setTimeout(() => {
     pane.querySelectorAll('[data-mirror]').forEach((el) => {
@@ -3454,7 +3572,7 @@ document.querySelectorAll('#setOverlay [data-mirror]').forEach((el) => {
   if (el.classList.contains('tg2')) el.onclick = () => { el.classList.toggle('on'); set(el.classList.contains('on')); };
   else el.onchange = () => set(el.value);
 });
-// Settings → Video: picking a ready-made quality fills in its numbers; typing your own numbers shows "Custom"
+// Settings → Video: picking a preset fills in its numbers; typing your own numbers shows "Custom"
 (function () {
   const g = (sel) => document.querySelector('#setOverlay [data-mirror="' + sel + '"]');
   const q = g('#outQ'), h = g('#outH'), f = g('#outFps'), k = g('#outKbps'); if (!q || !h || !f || !k) return;
@@ -3532,7 +3650,8 @@ function showPane(name) {
   $('#hkReset').hidden = name !== 'hotkeys';
 }
 function openSettings(name) {
-  name = { youtube: 'stream', facebook: 'stream', access: 'general' }[name] || name;
+  if (name === 'youtube' || name === 'facebook') showSvc(name);
+  name = { youtube: 'stream', facebook: 'stream', access: 'general', recording: 'output' }[name] || name;
   dirty = {}; loaded = {}; mirrorPend.clear(); hkWait = '';
   $('#setApply').disabled = true;
   draft = { ...acc }; syncAcc();
@@ -3704,8 +3823,8 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) refr
       else { const b = document.createElement('button'); b.type = 'button'; b.className = 'gb sm' + (c === 'yt' || c === 'fb' ? ' pri' : ''); b.textContent = btn; b.onclick = fn; d.appendChild(b); }
       g.appendChild(d);
     };
-    row('yt', 'YouTube', yt.connected ? (yt.channelTitle || 'Connected') : 'Sign in to your channel', Boolean(yt.connected), 'Sign in', () => { openSettings('youtube'); reopen(); });
-    row('fb', 'Facebook', fbs.hasToken && fbs.pageId ? (fbs.pageName || 'Your Page') : 'Sign in and pick your Page', Boolean(fbs.hasToken && fbs.pageId), 'Sign in', () => { openSettings('facebook'); reopen(); });
+    row('yt', 'YouTube', yt.connected ? (yt.channelTitle || 'Connected') : 'Sign in to your channel', Boolean(yt.connected), 'Sign in', () => { window.msAddChannel('yt'); reopen(); });
+    row('fb', 'Facebook', fbs.hasToken && fbs.pageId ? (fbs.pageName || 'Your Page') : 'Sign in and pick your Page', Boolean(fbs.hasToken && fbs.pageId), 'Sign in', () => { window.msAddChannel('fb'); reopen(); });
     row('ig', 'Instagram', 'Paste your stream key', has('ig'), 'Add', () => { window.msAddChannel('ig'); reopen(); }, WHERE.ig);
     row('tt', 'TikTok', 'Paste your stream key', has('tt'), 'Add', () => { window.msAddChannel('tt'); reopen(); }, WHERE.tt);
     row('tw', 'Twitch', 'Paste your stream key', has('tw'), 'Add', () => { window.msAddChannel('tw'); reopen(); }, WHERE.tw);
@@ -3780,7 +3899,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) refr
     (s2.destinations || []).forEach((d) => { if (!names.includes(d.name)) names.push(d.name); });
     items.push([names.length ? names.length + (names.length === 1 ? ' channel connected' : ' channels connected') : 'No channels yet', names.length ? names.join(' and ').replace(/ and (?=.* and )/g, ', ') : 'Add them on the Livestream page', names.length > 0]);
     let sc = []; try { const st = await api('/api/studio'); sc = (st.scenes || []).map((x) => x.name); } catch {}
-    const LN = { full: 'Church service', camera: 'Camera only', blank: 'Blank', keep: 'Saved setup' };
+    const LN = { full: 'Event', camera: 'Camera only', blank: 'Blank', keep: 'Saved setup' };
     items.push([sc.length ? 'Your layout is ready' : 'No scenes yet', sc.length ? LN[lay] + ' layout: ' + sc.slice(0, 2).map((x) => x.toLowerCase()).join(', ') + (sc.length > 2 ? ' and ' + (sc.length - 2) + ' more' : '') : 'Open the Production to add some', sc.length > 0]);
     const cam = $('#gsCam').value ? $('#gsCam').selectedOptions[0].text : '', mic = $('#gsMic').value ? $('#gsMic').selectedOptions[0].text : '';
     items.push([cam && mic ? 'Camera and sound working' : cam ? 'Camera working, no microphone' : mic ? 'Sound working, no camera' : 'No camera or microphone picked', [cam, mic].filter(Boolean).join(' · ') || 'You can add them in the Production', Boolean(cam && mic)]);
@@ -3802,29 +3921,64 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) refr
   // Start a private test: Private test on, then Start streaming on Livestream
   $('#gsTest').onclick = () => { close(); showPage('dash'); if (!$('#fbTest').checked) $('#ptBtn').click(); setTimeout(() => $('#sbBtn').click(), 300); };
 })();
-// ---------- saved stream details (title and description), kept on this computer ----------
+// ---------- saved stream details (title, description and thumbnail), kept in the app's data on this computer ----------
 (function () {
   const box = $('#presets'); if (!box) return;
-  const load = () => { try { return JSON.parse(localStorage.getItem('ms_presets') || '[]') || []; } catch { return []; } };
-  const save = (l) => { try { localStorage.setItem('ms_presets', JSON.stringify(l)); } catch {} };
+  let list = [];
+  const oldOnes = () => { try { return JSON.parse(localStorage.getItem('ms_presets') || '[]') || []; } catch { return []; } };
+  async function load() {
+    if (window.DEMO) { list = oldOnes().map((p, i) => ({ id: 'd' + i, name: p.name, title: p.title, desc: p.desc || '' })); return render(); }
+    try {
+      const r = await api('/api/golive/saved'); list = r.list || [];
+      // ones saved by an older version (in this window only): moved into the app's data once, without a picture
+      const old = oldOnes();
+      if (old.length && !list.length) { for (const p of old) { const k = await api('/api/golive/saved', 'POST', { name: p.name, title: p.title, desc: p.desc || '', thumb: false }); if (k.list) list = k.list; } }
+      if (old.length) { try { localStorage.removeItem('ms_presets'); } catch {} }
+    } catch {}
+    render();
+  }
   function render() {
-    const l = load(), t = $('#glTitle').value.trim(), d = $('#glDesc').value.trim();
+    const t = $('#glTitle').value.trim(), d = $('#glDesc').value.trim();
     box.innerHTML = '';
-    l.forEach((p, i) => {
-      const b = document.createElement('button'); b.type = 'button'; b.textContent = p.name;
-      if (p.title === t && (p.desc || '') === d) b.className = 'on';
-      b.title = 'Use these details. Right-click to remove.';
-      b.onclick = () => { $('#glTitle').value = p.title; $('#glDesc').value = p.desc || ''; render(); };
-      b.oncontextmenu = (e) => { e.preventDefault(); const n = load(); n.splice(i, 1); save(n); render(); };
+    list.forEach((p) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pre' + (p.title === t && (p.desc || '') === d ? ' on' : '');
+      b.title = 'Use this title' + (p.hasThumb ? ', description and thumbnail' : ' and description') + '. Right-click to remove.';
+      if (p.hasThumb) { const im = document.createElement('img'); im.alt = ''; im.src = '/api/golive/saved/' + p.id + '/thumb?t=' + Date.now(); b.appendChild(im); }
+      b.appendChild(document.createTextNode(p.name));
+      const x = document.createElement('span'); x.className = 'x'; x.textContent = '×'; x.title = 'Remove'; x.setAttribute('role', 'button'); x.setAttribute('aria-label', 'Remove ' + p.name);
+      x.onclick = (e) => { e.stopPropagation(); remove(p); };
+      b.appendChild(x);
+      b.onclick = () => use(p);
+      b.oncontextmenu = (e) => { e.preventDefault(); remove(p); };
       box.appendChild(b);
     });
-    const a = document.createElement('button'); a.type = 'button'; a.className = 'add'; a.textContent = '+ Save as new';
-    a.title = 'Save this title and description so you can use them again';
-    a.onclick = () => { const title = $('#glTitle').value.trim(); if (!title) { $('#glTitle').focus(); return; } const n = load().filter((p) => p.name !== title); n.push({ name: title.slice(0, 40), title, desc: $('#glDesc').value.trim() }); save(n.slice(-8)); render(); };
+    const a = document.createElement('button'); a.type = 'button'; a.className = 'add'; a.textContent = '+ Save';
+    a.title = 'Save this title, description and thumbnail to use again';
+    a.onclick = async () => {
+      const title = $('#glTitle').value.trim(); if (!title) { $('#glTitle').focus(); return; }
+      if (window.DEMO) return;
+      const r = await api('/api/golive/saved', 'POST', { title, desc: $('#glDesc').value.trim() });
+      if (r.error) return thMsg(r.error);
+      list = r.list || list; render();
+    };
     box.appendChild(a);
   }
+  async function use(p) {
+    $('#glTitle').value = p.title; $('#glDesc').value = p.desc || '';
+    if (!window.DEMO) {
+      const r = await api('/api/golive/saved/' + p.id + '/use', 'POST', {});
+      if (r.hasThumb) setThumb(true);
+      if (r.error) thMsg(thWhy(r.error));
+    }
+    render();
+  }
+  async function remove(p) {
+    if (!confirm('Remove the saved "' + p.name + '"?')) return;
+    if (window.DEMO) { list = list.filter((x) => x !== p); return render(); }
+    const r = await api('/api/golive/saved/' + p.id, 'DELETE'); list = r.list || list.filter((x) => x !== p); render();
+  }
   $('#glTitle').addEventListener('input', render); $('#glDesc').addEventListener('input', render);
-  render(); setTimeout(render, 1500);
+  load();
 })();
 </script>
 </body>
