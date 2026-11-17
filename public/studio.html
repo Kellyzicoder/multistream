@@ -72,7 +72,7 @@
   .ptop { display:flex; align-items:center; gap:14px; height:48px; flex:none; padding:0 16px; border-radius:999px; border:1px solid var(--gl-line); background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
   .stage { flex:1; min-height:0; display:flex; align-items:center; gap:10px; padding:10px; }
   .screen { flex:1; min-width:0; display:flex; flex-direction:column; height:100%; justify-content:center; }
-  .screen .cap { text-align:center; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  .screen .cap { text-align:center; font-size:12px; line-height:18px; height:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--muted); margin-bottom:4px; } /* one fixed line, so a long scene name or the LIVE tag never changes the picture's size */
   .screen .cap span { color:var(--text); }
   .stage canvas.v { width:100%; max-height:calc(100% - 22px); object-fit:contain; border:2px solid var(--line); border-radius:8px; background:#000; }
   #cv.live { border-color:var(--red); }
@@ -2390,7 +2390,7 @@ function openAddSource() {
 const ICON = { camera: 'Video capture', window: 'Window', image: 'Picture', video: 'Video', text: 'Text', color: 'Colour', screen: 'Screen', browser: 'Web page', ipcam: 'Phone camera', lower: 'Name bar', timer: 'Countdown', clock: 'Clock', duo: 'Speaker + screen' };
 function renderLayers() {
   const s = byName(editing), box = $('#layers'); box.textContent = '';
-  $('#editName').textContent = editing ? '(' + editing + ')' : ''; $('#airName').textContent = studio.current ? '(' + studio.current + ')' : '';
+  $('#editName').textContent = editing ? '(' + editing + ')' : ''; $('#airName').textContent = studio.current ? '(' + studio.current + ')' : ''; fitStage();
   $('#evT').textContent = studioMode ? 'Preview' : 'Live';
   $('#hint').textContent = sel ? 'Drag to move. Drag a corner or edge to resize. Hold Alt and drag an edge to crop.' : (studioMode ? 'Pick a scene, then press Transition to put it on air. Click an item in the Preview to move it.' : 'Click a scene to put it on air. Click an item in the picture to move it.');
   if (!s) { box.appendChild(emptyPanel('No scene yet', 'Add a scene first, then its sources show here.', 'Add a scene', () => $('#addScene').click())); $('#propsBox').hidden = true; return; }
