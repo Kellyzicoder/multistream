@@ -258,7 +258,10 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .rcc .up { display:flex; flex-direction:column; gap:5px; font-size:12px; } .rcc .up > div:first-child { display:flex; align-items:center; gap:6px; color:var(--soft); } .rcc .up .tile { width:16px; height:16px; border-radius:5px; } .rcc .up .tile svg { width:9px; height:9px; }
   .rcc .up .pc { margin-left:auto; color:var(--link); font-weight:700; } .rcc .bar { height:5px; border-radius:3px; background:rgba(255,255,255,.08); overflow:hidden; } .rcc .bar i { display:block; height:100%; background:var(--blue); }
   .rcc .okl { display:flex; align-items:center; gap:6px; font-size:12px; color:#4ade80; font-weight:600; } .rcc .okl a { margin-left:auto; font-weight:600; text-decoration:none; color:var(--link); cursor:pointer; } .rcc .errl { font-size:12px; color:#ff8a90; }
-  .rcc .bt { display:flex; gap:6px; flex-wrap:wrap; } .mini { padding:7px 12px; border-radius:999px; border:0; background:rgba(255,255,255,.08); color:var(--text); font-size:12px; font-weight:600; } .mini.pri { background:var(--blue); color:#fff; }
+  .rcc .bt { display:flex; gap:6px; align-items:center; } .rcc .bt .more { margin-left:auto; width:32px; height:32px; padding:0; display:grid; place-items:center; } .rcc .bt .more svg { width:18px; height:18px; fill:currentColor; }
+  .rcc .th { cursor:pointer; position:relative; } .rcc .th .pl { position:absolute; inset:0; margin:auto; width:46px; height:46px; border-radius:50%; background:rgba(10,14,31,.55); display:grid; place-items:center; opacity:0; transition:opacity .15s; } .rcc .th .pl svg { width:22px; height:22px; fill:#fff; margin-left:2px; }
+  .rcc .th:hover .pl, .rcc .th:focus-visible .pl { opacity:1; }
+  .rc-who select { height:36px; padding:0 12px !important; min-width:200px; } .mini { padding:7px 12px; border-radius:999px; border:0; background:rgba(255,255,255,.08); color:var(--text); font-size:12px; font-weight:600; } .mini.pri { background:var(--blue); color:#fff; }
   .rc-empty { grid-column:1 / -1; padding:28px; text-align:center; color:var(--muted); font-size:13px; }
   .rc-auto { margin-top:auto; display:flex; align-items:center; gap:16px; padding:14px 18px; border-radius:16px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); font-size:13px; color:var(--soft); }
   .rc-auto .tile { width:36px; height:36px; border-radius:11px; } .rc-a1 { flex:1; line-height:1.45; } .rc-a1 b { color:var(--text); font-size:14px; display:block; } .rc-a1 small { color:var(--muted); font-size:12px; } .rc-a1 small:empty { display:none; }
@@ -951,14 +954,15 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv-size.h { height:12px; cursor:row-resize; } .mv-size.h::after { width:64px; height:4px; } .mv-size.v { width:12px; cursor:col-resize; } .mv-size.v::after { width:4px; height:64px; }
   .mv-size:hover::after, .mv-size.on::after { background:#fff; }
   /* arrows when there are more scenes than fit */
-  .mv-arr { position:absolute; z-index:8; width:34px; height:34px; border-radius:50%; border:0; background:var(--blue); color:#fff; font-size:20px; font-weight:700; line-height:1; display:grid; place-items:center; cursor:pointer; padding:0 0 2px; box-shadow:0 6px 16px rgba(59,108,255,.35); }
+  .mv-arr { position:absolute; z-index:8; width:40px; height:40px; border-radius:50%; border:0; background:var(--blue); color:#fff; display:grid; place-items:center; cursor:pointer; padding:0; box-shadow:0 6px 16px rgba(59,108,255,.35); }
   .mv2.mv-sliding, .mv2.mv-sliding * { cursor:grabbing !important; user-select:none; }
-  .mv-fade { position:absolute; z-index:7; pointer-events:none; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); background:rgba(10,14,31,.25); }
-  .mv-fade.f1 { -webkit-mask-image:linear-gradient(90deg,#000 15%,transparent); mask-image:linear-gradient(90deg,#000 15%,transparent); }
-  .mv-fade.f2 { -webkit-mask-image:linear-gradient(270deg,#000 15%,transparent); mask-image:linear-gradient(270deg,#000 15%,transparent); }
-  .mv-fade.f1.v { -webkit-mask-image:linear-gradient(180deg,#000 15%,transparent); mask-image:linear-gradient(180deg,#000 15%,transparent); }
-  .mv-fade.f2.v { -webkit-mask-image:linear-gradient(0deg,#000 15%,transparent); mask-image:linear-gradient(0deg,#000 15%,transparent); }
+  .mv-fade { display:none !important; } /* no blur over the edges of the scenes */
+  .mv-fade.f1 { -webkit-mask-image:linear-gradient(90deg,#000 35%,transparent); mask-image:linear-gradient(90deg,#000 35%,transparent); }
+  .mv-fade.f2 { -webkit-mask-image:linear-gradient(270deg,#000 35%,transparent); mask-image:linear-gradient(270deg,#000 35%,transparent); }
+  .mv-fade.f1.v { -webkit-mask-image:linear-gradient(180deg,#000 35%,transparent); mask-image:linear-gradient(180deg,#000 35%,transparent); }
+  .mv-fade.f2.v { -webkit-mask-image:linear-gradient(0deg,#000 35%,transparent); mask-image:linear-gradient(0deg,#000 35%,transparent); }
   .mv-fade[hidden] { display:none; }
+  .mv-arr svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2.8; stroke-linecap:round; stroke-linejoin:round; display:block; }
   .mv-arr:hover { filter:brightness(1.12); } .mv-arr[hidden] { display:none; }
   .mv2.mv-moving .mv-grid { cursor:grabbing; }
   /* while dragging: every place you can drop is marked softly, and the one you are heading for is lit */
@@ -1448,15 +1452,15 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <div class="r2"><span class="l">Video bitrate</span><span class="u2"><input class="i3" type="number" min="1000" max="60000" step="500" data-mirror="#outKbps"> Kbps</span></div>
   <div class="r2"><span class="l">Audio bitrate</span><select class="i3" data-mirror="#outAbps"></select></div>
   <div class="r2"><span class="l">Video encoder</span><span class="v2" id="s2Enc">...</span></div>
-  <div class="r2"><span class="l">Keyframe interval</span><span class="v2">2 s</span></div>
+  <div class="r2"><span class="l">Keyframe interval</span><select class="i3" data-mirror="#outKf"></select></div>
 </div><p class="n2" id="s2OutNote"></p></div>
 <div class="g2"><h3>Recording</h3><div class="c2">
   <div class="r2"><span class="l">Recording path</span><code class="pth" id="s2RecDir"></code><button type="button" class="b3" id="s2RecOpen">Open folder</button></div>
   <div class="r2"><span class="l">Recording quality</span><select class="i3" data-mirror="#recQ"></select></div>
-  <div class="r2"><span class="l">Recording format</span><span class="v2">Matroska Video (.mkv)</span></div>
+  <div class="r2"><span class="l">Recording format</span><select class="i3" data-mirror="#recFmt"></select></div>
   <div class="r2"><span class="l">Automatically remux to MP4</span><button type="button" class="tg2" data-mirror="#recRemux" aria-label="Automatically remux to MP4"></button></div>
   <div class="r2"><span class="l">Record when the stream starts</span><button type="button" class="tg2" data-mirror="#recAuto2" aria-label="Record automatically"></button></div>
-</div><p class="n2">.mkv is kept safe if the computer stops. Remux makes an .mp4 copy at the end (same quality).</p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="audio" role="tabpanel" aria-label="Audio"><div class="s2h"><h2>Audio</h2></div><div class="g2"><h3>Monitoring</h3><div class="c2">
+</div><p class="n2">All three formats are written so the file survives if the computer stops. With .mkv, remux makes an .mp4 copy at the end (same quality).</p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="audio" role="tabpanel" aria-label="Audio"><div class="s2h"><h2>Audio</h2></div><div class="g2"><h3>Monitoring</h3><div class="c2">
   <div class="r2"><span class="l">Monitoring output (your headphones)</span><select class="i3" data-mirror="#monDev"></select></div>
 </div><p class="n2">Hear an input in your headphones. Turn it on for each input with Listen in the Production's mixer. Use headphones, or the microphone will pick up the speakers.</p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="video" role="tabpanel" aria-label="Video"><div class="s2h"><h2>Video</h2></div><div class="g2"><div class="c2">
   <div class="r2"><span class="l">Preset</span><select class="i3" data-mirror="#outQ"></select></div>
@@ -1477,6 +1481,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
 </div>
 
 <script src="/plain.js"></script>
+<script src="/ui.js"></script>
 <script>
 // every pop-up message in plain words (see plain.js); a short "YouTube: " in front is kept
 (function () {
@@ -1687,7 +1692,7 @@ $('#list').addEventListener('click', async (e) => {
   if (restartId) { await api('/api/destinations/' + restartId + '/restart', 'POST'); editing.delete(restartId); return refresh(); }
   if (deleteId) {
     const d = last.destinations.find((x) => x.id === deleteId);
-    if (!confirm('Delete ' + (d ? d.name : 'this channel') + '?')) return;
+    if (!await msAsk('Delete ' + (d ? d.name : 'this channel') + '?')) return;
     await api('/api/destinations/' + deleteId, 'DELETE');
     editing.delete(deleteId);
     return refresh();
@@ -2128,12 +2133,12 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   async function toggleCh(ch, on) {
     if (ch.page) {
       // an extra Facebook Page: on or off by itself (during a live, its live starts or ends now)
-      if (!on && ch.session && !confirm('End the live on ' + ch.name + ' now?')) return;
+      if (!on && ch.session && !await msAsk('End the live on ' + ch.name + ' now?')) return;
       const r = await api('/api/facebook/also/' + ch.page, 'PUT', { on });
       if (r && r.error) alert(ch.name + ': ' + r.error);
     } else if (ch.kind === 'api') {
       prefs[ch.site] = on; savePrefs();
-      if (!on && ch.session) { if (confirm('End the live on ' + ch.name + ' now?')) { await api('/api/' + ch.site + '/end', 'POST'); } }
+      if (!on && ch.session) { if (await msAsk('End the live on ' + ch.name + ' now?')) { await api('/api/' + ch.site + '/end', 'POST'); } }
       else if (on && st && st.obsLive && !ch.session) await goLiveOn(ch.site);
       else if (!on && ch.dest && ch.dest.enabled) await api('/api/destinations/' + ch.dest.id, 'PUT', { enabled: false });
     } else await api('/api/destinations/' + ch.dest.id, 'PUT', { enabled: on });
@@ -2255,7 +2260,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   $('#sbBtn').onclick = async () => {
     const sb = $('#sbBtn');
     if (st && st.obsLive) {
-      if (!confirm('Stop streaming now? Every channel stops.')) return;
+      if (!await msAsk('Stop streaming now? Every channel stops.')) return;
       starting = true; sb.disabled = true; sb.querySelector('span').textContent = 'Stopping...';
       // the lives end first, then the video stops (so no "the live is still open" warning in between)
       if (st.session && st.session.youtube) await api('/api/youtube/end', 'POST');
@@ -2264,8 +2269,8 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       starting = false; refresh(); return;
     }
     const chs = st ? channels(st) : [], apis = chs.filter((c) => c.kind === 'api' && c.on);
-    if (!chs.some((c) => c.on)) { if (!confirm('No channel is on. Start streaming anyway (only the Production and recording)?')) return; }
-    if (apis.length && !$('#fbTest').checked && !confirm('Private test is off. This goes live publicly on ' + apis.map((c) => c.name).join(' and ') + '. Continue?')) return;
+    if (!chs.some((c) => c.on)) { if (!await msAsk('No channel is on. Start streaming anyway (only the Production and recording)?')) return; }
+    if (apis.length && !$('#fbTest').checked && !await msAsk('Private test is off. This goes live publicly on ' + apis.map((c) => c.name).join(' and ') + '. Continue?')) return;
     let usePlan = false;
     try { const plan = await api('/api/autostart'); if (plan && plan.on && (plan.steps || []).length) usePlan = plan.ask ? await askPlan(plan) : true; } catch {}
     if (usePlan === null) return;
@@ -2446,7 +2451,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       of.onclick = () => window.open(ch.session ? (ch.link || 'https://www.facebook.com/live/producer') : 'https://www.facebook.com/' + encodeURIComponent(ch.page), '_blank');
       d.querySelector('.rm').textContent = 'Remove this Page';
       d.querySelector('.rm').onclick = async () => {
-        if (!confirm(ch.session ? 'Remove ' + ch.name + '? Its live ends now. You can add it again in Settings → Stream.' : 'Remove ' + ch.name + '? You can add it again in Settings → Stream.')) return;
+        if (!await msAsk(ch.session ? 'Remove ' + ch.name + '? Its live ends now. You can add it again in Settings → Stream.' : 'Remove ' + ch.name + '? You can add it again in Settings → Stream.')) return;
         const r = await api('/api/facebook/also/' + ch.page, 'DELETE');
         if (r && r.error) { alert(r.error); return; } if (r && r.warning) alert(r.warning);
         close(); refresh();
@@ -2464,8 +2469,8 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       f.querySelector('.sa').onclick = () => { close(); if (fbk) addChannel('fb'); else openSettings(ch.site); };
       if (fbk) d.querySelector('.rm').textContent = 'Remove this Page';
       d.querySelector('.rm').onclick = async () => {
-        if (!fbk) { if (confirm('Remove ' + ch.name + '? You can sign in again later.')) { prefs[ch.site] = false; savePrefs(); close(); openSettings(ch.site); refresh(); } return; }
-        if (!confirm('Remove ' + ch.name + '? You can add it again with Add channel.')) return;
+        if (!fbk) { if (await msAsk('Remove ' + ch.name + '? You can sign in again later.')) { prefs[ch.site] = false; savePrefs(); close(); openSettings(ch.site); refresh(); } return; }
+        if (!await msAsk('Remove ' + ch.name + '? You can add it again with Add channel.')) return;
         const r = await api('/api/facebook/main', 'DELETE'); if (r && r.error) { alert(r.error); return; } close(); refresh();
       };
       d.querySelector('.o').onclick = () => {
@@ -2489,7 +2494,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       f.querySelector('.e3').placeholder = x.hasKey ? 'Saved, ends in ' + x.keyEnd + ' (leave empty to keep it)' : 'Paste the stream key';
       f.querySelector('.note').textContent = st2.msg || '';
       if (x.status && x.status.state === 'error') { const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'btn'; rs.textContent = 'Restart'; rs.onclick = async () => { await api('/api/destinations/' + x.id + '/restart', 'POST'); close(); refresh(); }; d.querySelector('.c').before(rs); }
-      d.querySelector('.rm').onclick = async () => { if (!confirm('Remove ' + x.name + '?')) return; await api('/api/destinations/' + x.id, 'DELETE'); close(); refresh(); };
+      d.querySelector('.rm').onclick = async () => { if (!await msAsk('Remove ' + x.name + '?')) return; await api('/api/destinations/' + x.id, 'DELETE'); close(); refresh(); };
       d.querySelector('.o').onclick = async () => {
         const r = await api('/api/destinations/' + x.id, 'PUT', { name: f.querySelector('.e1').value.trim() || x.name, url: f.querySelector('.e2').value.trim(), key: f.querySelector('.e3').value.trim(), ...(f.querySelector('.e7') ? { tall: f.querySelector('.e7').value } : {}) });
         if (r && r.error) { alert(r.error); return; } close(); refresh();
@@ -2642,7 +2647,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       el.innerHTML = c.shape === 'landscape' ? '<div class="g6">' + G6.slice(0, Math.max(n, 6)).map((x, k) => '<i style="background:linear-gradient(135deg,' + x + ');opacity:' + (k < c.scenes ? 1 : .35) + '"></i>').join('') + '</div>' : '<div class="g3' + (c.shape === 'square' ? ' sq' : '') + '">' + G3.map((x, k) => '<i style="background:linear-gradient(160deg,' + x + ');opacity:' + (k < c.scenes ? 1 : .35) + '"></i>').join('') + '</div>';
       const hd = document.createElement('div'); hd.className = 'hd'; const b = document.createElement('b'); b.textContent = c.name; hd.appendChild(b);
       if (c.current) { const s2 = document.createElement('span'); s2.className = 'in'; s2.textContent = 'In use'; hd.appendChild(s2); }
-      else { const sb = document.createElement('button'); sb.type = 'button'; sb.className = 'mini pri'; sb.textContent = 'Switch to this'; sb.onclick = () => { if (last.obsLive && !confirm('You are live. The scenes on air change to "' + c.name + '". Continue?')) return; post({ do: 'switch', name: c.name }); }; hd.appendChild(sb); }
+      else { const sb = document.createElement('button'); sb.type = 'button'; sb.className = 'mini pri'; sb.textContent = 'Switch to this'; sb.onclick = async () => { if (last.obsLive && !await msAsk('You are live. The scenes on air change to "' + c.name + '". Continue?')) return; post({ do: 'switch', name: c.name }); }; hd.appendChild(sb); }
       el.appendChild(hd);
       const m1 = document.createElement('div'); m1.className = 'meta2'; m1.innerHTML = '<span class="shp' + (c.shape === 'portrait' ? ' p' : '') + '"></span>'; m1.firstChild.textContent = SHP[c.shape][0]; m1.append(' ' + SHP[c.shape][1]); el.appendChild(m1);
       const m2 = document.createElement('div'); m2.className = 'meta2'; m2.textContent = c.scenes + (c.scenes === 1 ? ' scene' : ' scenes') + ' · ' + c.sources + (c.sources === 1 ? ' source' : ' sources') + (c.only && c.only.length ? ' · turns on: ' + c.only.join(', ') + ' only' : ago(c.at) ? ' · ' + ago(c.at) : ''); el.appendChild(m2);
@@ -2651,7 +2656,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       btn('Rename', async () => { const v = await window.askText('New name for "' + c.name + '"', c.name); if (v && v.trim() && v.trim() !== c.name) post({ do: 'rename', name: v.trim(), from: c.name }); });
       btn('Duplicate', async () => { const v = await window.askText('Name for the copy', c.name + ' copy'); if (v && v.trim()) post({ do: 'duplicate', name: v.trim(), from: c.name }); });
       btn('Export', () => exportOne(c.name));
-      if (!c.current && (r.list || []).length > 1) btn('Remove', () => { if (confirm('Remove "' + c.name + '"? Its scenes are deleted.')) post({ do: 'remove', from: c.name }); }, 'red');
+      if (!c.current && (r.list || []).length > 1) btn('Remove', async () => { if (await msAsk('Remove "' + c.name + '"? Its scenes are deleted.')) post({ do: 'remove', from: c.name }); }, 'red');
       el.appendChild(bt); g.appendChild(el);
     });
     const add = document.createElement('button'); add.type = 'button'; add.className = 'sc-add'; add.innerHTML = '<span class="pl">+</span>New collection<small>Pick landscape or portrait</small>'; add.onclick = () => openForm(); g.appendChild(add);
@@ -2734,17 +2739,29 @@ window.askText = (title, value, hint) => new Promise((ok) => {
         u.querySelector('.pc').textContent = f.job.pct + '% done' + leftText(f.name + '|' + f.job.kind, f.job.pct); u.querySelector('.bar i').style.width = f.job.pct + '%'; c.appendChild(u);
       } else if (f.queued) { const q = document.createElement('div'); q.className = 'okl'; q.style.color = 'var(--link)'; q.textContent = 'Waiting to upload to YouTube'; c.appendChild(q); }
       else if (f.youtube) { const o = document.createElement('div'); o.className = 'okl'; o.textContent = '\u2713 On YouTube · ' + (PRIV[f.youtube.privacy] || ''); if (f.youtube.id) { const a = document.createElement('a'); a.textContent = 'Open'; a.onclick = () => window.open('https://youtu.be/' + f.youtube.id, '_blank'); o.appendChild(a); } c.appendChild(o); }
+      // Kept simple: the picture plays the recording, one main button (Upload to YouTube), and the rest under "More"
+      const th = c.querySelector('.th'); th.title = 'Play'; th.setAttribute('role', 'button'); th.tabIndex = 0;
+      th.insertAdjacentHTML('afterbegin', '<span class="pl" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>');
+      th.onclick = () => act('play', f.name); th.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act('play', f.name); } };
       const bt = document.createElement('div'); bt.className = 'bt';
-      const btn = (label, fn, pri) => { const x = document.createElement('button'); x.type = 'button'; x.className = 'mini' + (pri ? ' pri' : ''); x.textContent = label; x.onclick = fn; bt.appendChild(x); };
-      btn('Play', () => act('play', f.name), true); btn('Show file', () => act('show', f.name));
-      if (/\.mkv$/i.test(f.name) && !f.hasMp4 && !(f.job && f.job.kind === 'mp4' && !f.job.error)) btn('Make MP4', () => act('mp4', f.name));
+      const busy = (f.job && !f.job.error) || f.queued;
       // upload this one recording to YouTube by hand (the same privacy as chosen at the bottom of this page)
-      if (r.youtube && !f.youtube && !f.queued && !(f.job && !f.job.error)) btn(f.job && f.job.error ? 'Try the upload again' : 'Upload to YouTube', () => { if (confirm('Upload "' + title(f) + '" to YouTube as ' + (PRIV[r.privacy] || 'Unlisted') + '?')) act('upload', f.name); });
-      // tidy up without leaving the app
-      if (!(f.job && !f.job.error) && !f.queued) {
-        btn('Move to Done', () => act('done', f.name));
-        if (r.canTrash) btn('Delete', () => { if (confirm('Delete "' + title(f) + '"? It goes to the Recycle Bin.' + (f.youtube ? '' : ' It is NOT on YouTube yet.'))) act('trash', f.name); });
+      if (r.youtube && !f.youtube && !f.queued && !(f.job && !f.job.error)) {
+        const u = document.createElement('button'); u.type = 'button'; u.className = 'mini pri'; u.textContent = f.job && f.job.error ? 'Try the upload again' : 'Upload to YouTube';
+        u.onclick = async () => { if (await msAsk('Upload "' + title(f) + '" to YouTube as ' + (PRIV[r.privacy] || 'Unlisted') + '?', { ok: 'Upload' })) act('upload', f.name); };
+        bt.appendChild(u);
       }
+      const more = document.createElement('button'); more.type = 'button'; more.className = 'mini more'; more.setAttribute('aria-label', 'More for ' + title(f)); more.title = 'More'; more.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
+      more.onclick = () => {
+        const it = [{ t: 'Play', fn: () => act('play', f.name) }, { t: 'Show file', fn: () => act('show', f.name) }];
+        if (/\.mkv$/i.test(f.name) && !f.hasMp4 && !(f.job && f.job.kind === 'mp4' && !f.job.error)) it.push({ t: 'Make MP4', fn: () => act('mp4', f.name) });
+        if (!busy) { // tidy up without leaving the app
+          it.push(null, { t: 'Move to Done', fn: () => act('done', f.name) });
+          if (r.canTrash) it.push({ t: 'Delete', danger: true, fn: async () => { if (await msAsk('Delete "' + title(f) + '"? It goes to the Recycle Bin.' + (f.youtube ? '' : ' It is NOT on YouTube yet.'), { ok: 'Delete', danger: true })) act('trash', f.name); } });
+        }
+        window.msMenu(more, it);
+      };
+      bt.appendChild(more);
       c.appendChild(bt); box.appendChild(c);
     });
     if (!(r.files || []).length) box.innerHTML = '<div class="rc-empty">No recordings yet. Press Start recording in the Production.</div>';
@@ -2755,7 +2772,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   }
   async function tick() { try { data = await api('/api/recordings'); } catch { return; } draw(); }
   $('#rcOpen').onclick = () => api('/api/recording/open', 'POST').then((r) => { if (r && r.error) alert(r.error); });
-  $('#rcRemux').onclick = () => { if (!confirm('Copy every MKV recording to an MP4 (same quality, the MKV is kept)?')) return; api('/api/recordings/mp4-all', 'POST').then(tick); };
+  $('#rcRemux').onclick = async () => { if (!await msAsk('Copy every MKV recording to an MP4 (same quality, the MKV is kept)?')) return; api('/api/recordings/mp4-all', 'POST').then(tick); };
   $('#rcAuto').onclick = () => api('/api/recordings', 'PUT', { auto: !$('#rcAuto').classList.contains('on') }).then(tick);
   $('#rcPriv').onchange = () => api('/api/recordings', 'PUT', { privacy: $('#rcPriv').value }).then(tick);
   $('#rcAfter').onchange = () => api('/api/recordings', 'PUT', { after: $('#rcAfter').value }).then(tick);
@@ -2885,7 +2902,7 @@ function fitCrTiles() {
   const horiz = mvSide === 'top' || mvSide === 'bottom';
   if (view === 'speaker') {
     // when the scenes do not all fit in the row, room is kept at both ends for the arrows, so they never sit on a picture
-    const GUT = 50;
+    const GUT = 56;
     if (horiz) { th = n ? lim(H * mvStrip, 60, H * 0.6) : 0; tw = th * ar; mw = W; mh = n ? H - th - gp : H; const full = n * tw + gp * Math.max(0, n - 1), over = full > W; g.style.width = (over ? W - 2 * GUT : full) + 'px'; g.style.margin = over ? '0 ' + GUT + 'px' : ''; }
     else { tw = n ? lim(W * mvStrip, 100, W * 0.6) : 0; th = tw / ar; mw = n ? W - tw - gp : W; mh = H; const full = n * th + gp * Math.max(0, n - 1), over = full > H; g.style.height = (over ? H - 2 * GUT : full) + 'px'; g.style.margin = over ? GUT + 'px 0' : ''; }
     const b = grid(mainN, mw, mh); pw = b.w; ph = pw / ar;
@@ -2931,13 +2948,14 @@ function mvExtras(show, horiz) {
   else { sz.style.cssText = 'top:0;bottom:12px;left:' + Math.round(mvSide === 'left' ? x + r.width - 1 : x - 11) + 'px'; }
   const over = horiz ? g.scrollWidth - g.clientWidth : g.scrollHeight - g.clientHeight, at = horiz ? g.scrollLeft : g.scrollTop;
   a1.hidden = !(over > 4 && at > 4); a2.hidden = !(over > 4 && at < over - 4);
-  a1.textContent = horiz ? '\u2039' : '\u2303'; a2.textContent = horiz ? '\u203A' : '\u2304';
-  f1.hidden = a1.hidden; f2.hidden = a2.hidden; const FW = 70;
+  const chev = (d) => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>';
+  a1.innerHTML = chev(horiz ? 'M15 5l-7 7 7 7' : 'M5 15l7-7 7 7'); a2.innerHTML = chev(horiz ? 'M9 5l7 7-7 7' : 'M5 9l7 7 7-7');
+  f1.hidden = a1.hidden; f2.hidden = a2.hidden; const FW = 130;
   f1.classList.toggle('v', !horiz); f2.classList.toggle('v', !horiz);
   if (horiz) { f1.style.cssText = `left:${x}px;top:${y}px;width:${FW}px;height:${r.height}px`; f2.style.cssText = `left:${x + r.width - FW}px;top:${y}px;width:${FW}px;height:${r.height}px`; }
   else { f1.style.cssText = `left:${x}px;top:${y}px;width:${r.width}px;height:${FW}px`; f2.style.cssText = `left:${x}px;top:${y + r.height - FW}px;width:${r.width}px;height:${FW}px`; }
-  if (horiz) { const t = Math.round(y + r.height / 2 - 17) + 'px'; a1.style.cssText = 'top:' + t + ';left:' + Math.round(x - 42) + 'px'; a2.style.cssText = 'top:' + t + ';left:' + Math.round(x + r.width + 8) + 'px'; }
-  else { const l = Math.round(x + r.width / 2 - 17) + 'px'; a1.style.cssText = 'left:' + l + ';top:' + Math.round(y - 42) + 'px'; a2.style.cssText = 'left:' + l + ';top:' + Math.round(y + r.height + 8) + 'px'; }
+  if (horiz) { const t = Math.round(y + r.height / 2 - 20) + 'px'; a1.style.cssText = 'top:' + t + ';left:' + Math.round(x - 48) + 'px'; a2.style.cssText = 'top:' + t + ';left:' + Math.round(x + r.width + 8) + 'px'; }
+  else { const l = Math.round(x + r.width / 2 - 20) + 'px'; a1.style.cssText = 'left:' + l + ';top:' + Math.round(y - 48) + 'px'; a2.style.cssText = 'left:' + l + ';top:' + Math.round(y + r.height + 8) + 'px'; }
 }
 new ResizeObserver(() => fitCrTiles()).observe($('#crView')); addEventListener('resize', () => fitCrTiles());
 
@@ -3317,7 +3335,7 @@ function goBtn(id, inSession) {
   if (!b.dataset.busy) b.textContent = inSession ? 'End live' : 'Livestream';
 }
 async function endLive(site, name) {
-  if (!confirm(`End the live on ${name} now? Viewers will see it stop.`)) return;
+  if (!await msAsk(`End the live on ${name} now? Viewers will see it stop.`)) return;
   const b = $(site === 'youtube' ? '#ytLive' : '#fbLive');
   b.dataset.busy = '1'; b.disabled = true; b.textContent = 'Ending...';
   const r = await api(`/api/${site}/end`, 'POST');
@@ -3454,7 +3472,7 @@ $('#fbLive').onclick = async () => {
   btn.textContent = 'Going live...';
   const test = $('#fbTest').checked;
   const nPages = 1 + ((fbState0 && fbState0.also) || []).length;
-  if (!test && !confirm('Private test is off. This goes live publicly on ' + (nPages > 1 ? nPages + ' Facebook Pages' : 'the Facebook Page') + '. Continue?')) {
+  if (!test && !await msAsk('Private test is off. This goes live publicly on ' + (nPages > 1 ? nPages + ' Facebook Pages' : 'the Facebook Page') + '. Continue?')) {
     delete btn.dataset.busy;
     return refresh();
   }
@@ -3516,7 +3534,7 @@ $('#ytLive').onclick = async () => {
   btn.dataset.busy = '1';
   btn.textContent = 'Going live...';
   const test = $('#fbTest').checked;
-  if (!test && !confirm('Private test is off. This goes live publicly on YouTube. Continue?')) {
+  if (!test && !await msAsk('Private test is off. This goes live publicly on YouTube. Continue?')) {
     delete btn.dataset.busy;
     return refresh();
   }
@@ -3848,7 +3866,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) refr
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true }).catch(() => navigator.mediaDevices.getUserMedia({ audio: true }));
       const ds = await navigator.mediaDevices.enumerateDevices();
-      const fill = (sel, kind, none) => { const v = sel.value; sel.innerHTML = ''; sel.add(new Option(none, '')); ds.filter((d) => d.kind === kind && d.deviceId !== 'default' && d.deviceId !== 'communications').forEach((d, i) => sel.add(new Option(d.label || (kind === 'videoinput' ? 'Camera ' : 'Microphone ') + (i + 1), d.deviceId))); if (v) sel.value = v; else if (sel.options.length > 1) sel.selectedIndex = 1; };
+      const fill = (sel, kind, none) => { const v = sel.value; sel.innerHTML = ''; sel.add(new Option(none, '')); ds.filter((d) => d.kind === kind && d.deviceId !== 'default' && d.deviceId !== 'communications' && !/multistream camera/i.test(d.label || '')).forEach((d, i) => sel.add(new Option(d.label || (kind === 'videoinput' ? 'Camera ' : 'Microphone ') + (i + 1), d.deviceId))); if (v) sel.value = v; else if (sel.options.length > 1) sel.selectedIndex = 1; };
       fill($('#gsCam'), 'videoinput', 'No camera'); fill($('#gsMic'), 'audioinput', 'No microphone');
       meter();
     } catch { $('#gsLayNote').textContent = 'Allow the camera and microphone to pick them here. You can also set them later in the Production.'; }
@@ -3973,7 +3991,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) refr
     render();
   }
   async function remove(p) {
-    if (!confirm('Remove the saved "' + p.name + '"?')) return;
+    if (!await msAsk('Remove the saved "' + p.name + '"?')) return;
     if (window.DEMO) { list = list.filter((x) => x !== p); return render(); }
     const r = await api('/api/golive/saved/' + p.id, 'DELETE'); list = r.list || list.filter((x) => x !== p); render();
   }

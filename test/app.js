@@ -232,8 +232,8 @@ async function until(fn, ms, what) {
   await studio.selectOption('#chType', 'other'); await studio.fill('#chName', 'Extra'); await studio.fill('#chUrl', 'rtmp://127.0.0.1:19999/live'); await studio.fill('#chKey', 'k');
   await studio.click('#chAdd');
   await until(() => studio.evaluate(() => document.querySelectorAll('.ch').length === 3), 10000, 'the added channel');
-  studio.once('dialog', (d) => d.accept());
   await studio.locator('.ch').nth(2).locator('button', { hasText: 'Remove' }).click();
+  await studio.click('.ms-box .b button:last-child'); // the app's own question window: press the button that goes ahead
   await until(() => studio.evaluate(() => document.querySelectorAll('.ch').length === 2), 10000, 'the channel to be removed');
   ok('Settings > Channels: lists the channels, shows the 1080p limit, adds and removes a channel');
   // Recording pane

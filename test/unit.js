@@ -125,6 +125,14 @@ function outTests() {
   const cr = oa.recordArgs('nvenc', { h: '1080', mbit: '8', fps: '30' }, 'z.mkv', true);
   assert.ok(cr[cr.indexOf('-c:v') + 1] === 'copy' && cr[cr.length - 1] === 'z.mkv' && !cr.includes('scale=1920:1080'), cr.join(' '));
   ok('faster video: copy the picture, no second encode, normal way unchanged');
+  // keyframe interval and recording format can be chosen
+  const kfIn = oa.ingestArgs('software', oa.parseOut(q({ h: '1080', fps: '30', kbps: '6000', kf: '4' })));
+  assert.ok(kfIn.includes('120'), 'keyframe every 4 s at 30 fps = 120 frames: ' + kfIn.join(' '));
+  const mp = oa.recordArgs('software', { h: '1080', mbit: '8', fps: '30', kf: '1' }, 'a.mp4', false, 'mp4');
+  assert.ok(mp.includes('mp4') && mp.some((x) => /frag_keyframe/.test(x)) && mp.includes('30') && mp[mp.length - 1] === 'a.mp4', mp.join(' '));
+  assert.ok(oa.recordArgs('software', { h: '720' }, 'a.mkv', true, 'bogus').includes('matroska'), 'an unknown format falls back to mkv');
+  assert.ok(oa.recFormat('mov') === 'mov' && oa.recFormat('x') === 'mkv');
+  ok('keyframe interval and recording format (mkv, mp4, mov)');
   // Facebook / Instagram get at most 1080p and 9000 kbps; YouTube gets everything
   const fb = { url: 'rtmps://live-api-s.facebook.com:443/rtmp/' }, ig = { url: 'rtmps://edgetee-upload.instagram.com:443/rtmp/' }, yt = { url: 'rtmp://a.rtmp.youtube.com/live2' };
   const big = oa.parseOut(q({ h: '2160', fps: '30', kbps: '20000' })), ok1080 = oa.parseOut(q({ h: '1080', fps: '60', kbps: '9000' })), heavy = oa.parseOut(q({ h: '1080', fps: '30', kbps: '12000' }));
