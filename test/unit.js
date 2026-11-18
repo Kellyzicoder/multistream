@@ -201,8 +201,8 @@ async function vcamTests() {
   const rawN = +fs.readFileSync(log, 'utf8'), rawLast = fs.readFileSync(log + '.last');
   assert.strictEqual(rawN % FR, 0, 'raw: only whole pictures: ' + rawN);
   assert.ok(rawN > after && rawLast.length === FR && rawLast.every((v) => v === 200), 'raw: the picture reached the camera unchanged');
-  r.stop(); await new Promise((x) => setTimeout(x, 1200));
-  const rawAfter = +fs.readFileSync(log, 'utf8');
+  r.stop();
+  let rawAfter = rawN; for (let i = 0; i < 30 && !(rawAfter > rawN); i++) { await new Promise((x) => setTimeout(x, 200)); rawAfter = +fs.readFileSync(log, 'utf8'); } // wait for it (a slow machine needs longer than a fixed time)
   assert.ok(rawAfter > rawN && rawAfter % FR === 0, 'raw: the resting picture comes back after stop');
   ok('virtual camera, light way: raw pictures go straight to the camera, whole pictures only');
   vc.quit(); await new Promise((r) => setTimeout(r, 400));
