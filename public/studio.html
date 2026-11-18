@@ -258,6 +258,7 @@
   .rzx { top:10px; bottom:10px; right:0; width:7px; cursor:col-resize; border-radius:999px; } .rzy { left:10px; right:10px; bottom:0; height:7px; cursor:row-resize; border-radius:999px; }
   @media (max-width:1000px) { .split, .rz { display:none; } }
   /* ---------- Studio Mode off: only the live picture ---------- */
+  body:not(.more) .dock:has(#trType) { display:none; }
   body.single .stage > .mid, body.single .stage > .screen:last-child { display:none; }
   body.single .stage > .screen:first-child { max-width:min(100%, calc((100vh - 360px) * 16 / 9)); margin:0 auto; }
   body.single #ev { border-color:var(--red); box-shadow:0 0 0 1px var(--red), 0 0 40px rgba(255,77,90,.3), 0 14px 44px rgba(0,0,0,.45); }
@@ -410,6 +411,7 @@
   .dock .ctl button { display:flex; align-items:center; justify-content:flex-start; gap:10px; height:32px; padding:0 14px; font-size:12.5px; font-weight:600; border-radius:10px; }
   .dock .ctl button::before { content:""; width:16px; height:16px; flex:none; background:currentColor; -webkit-mask:center/contain no-repeat; mask:center/contain no-repeat; }
   #sendBtn::before { -webkit-mask-image:none; mask-image:none; width:9px; height:9px; margin:0 3.5px; border-radius:50%; }
+  #moreBtn::before { -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22black%22%3E%3Ccircle%20cx%3D%225%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3C/svg%3E"); mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22black%22%3E%3Ccircle%20cx%3D%225%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3C/svg%3E"); }
   #recBtn::before { -webkit-mask-image:none; mask-image:none; width:9px; height:9px; margin:0 3.5px; border-radius:50%; background:var(--red); }
   #sendBtn.stop::before, #recBtn.stop::before, #vcBtn.stop::before { -webkit-mask-image:none; mask-image:none; width:9px; height:9px; margin:0 3.5px; border-radius:2px; background:#fff; }
   #modeBtn::before { -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%229%22%20height%3D%2212%22%20rx%3D%221.5%22/%3E%3Crect%20x%3D%2213%22%20y%3D%226%22%20width%3D%229%22%20height%3D%2212%22%20rx%3D%221.5%22/%3E%3C/svg%3E"); mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Crect%20x%3D%222%22%20y%3D%226%22%20width%3D%229%22%20height%3D%2212%22%20rx%3D%221.5%22/%3E%3Crect%20x%3D%2213%22%20y%3D%226%22%20width%3D%229%22%20height%3D%2212%22%20rx%3D%221.5%22/%3E%3C/svg%3E"); }
@@ -682,7 +684,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
   </div>
   <div class="split v" id="splitR" title="Drag to make the right panels wider or narrower" hidden></div><aside class="sdock" id="dockR" aria-label="Panels on the right"></aside></div>
   <!-- the source bar under the picture, like OBS: what you can do with the source you picked -->
-  <div class="srcbar" id="srcBar" aria-label="The source you picked"><span class="sb-n" id="sbName">No source selected</span><button type="button" id="sbProps" disabled>Properties</button><button type="button" id="sbFilters" disabled>Filters</button><button type="button" id="sbOff" hidden>Deactivate</button></div>
+  <div class="srcbar" id="srcBar" aria-label="The source you picked"><span class="sb-n" id="sbName">Click a source below to change it</span><button type="button" id="sbProps" disabled>Properties</button><button type="button" id="sbFilters" disabled>Filters</button><button type="button" id="sbOff" hidden>Deactivate</button></div>
   <div class="split h" id="splitB" title="Drag to make the bottom panels taller or shorter"></div>
 
   <!-- docks along the bottom, like OBS -->
@@ -710,10 +712,11 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
     </section>
     <section class="dock narrow"><h2>Controls</h2>
       <div class="pad ctl">
-        <button id="modeBtn" type="button" aria-pressed="true" title="On: a Preview and a Program picture, and a Transition button (like OBS Studio Mode). Off: only the live picture, and a click on a scene puts it on air.">Studio mode: On</button>
+        <button id="modeBtn" type="button" aria-pressed="true" title="Off (simple): one live picture, a click on a scene puts it on air. On: a Preview and a Program picture with a Transition button.">Studio mode: On</button>
         <button id="sendBtn">Start streaming</button>
         <button id="recBtn">Start recording</button>
         <button id="vcBtn" hidden>Start virtual camera</button>
+        <button id="moreBtn" type="button" aria-pressed="false" title="Show or hide the extra tools (Transitions)">More tools</button>
         <button id="setBtn">Settings</button>
       </div>
     </section>
@@ -2081,7 +2084,7 @@ $('#pColl').onclick = async (e) => {
 };
 // Transition: put the Preview scene on air, like OBS Studio Mode
 // Studio Mode (like OBS): on = Preview and Program with a Transition button, off = only the live picture
-let studioMode = true; try { studioMode = localStorage.getItem('ms_studiomode') !== '0'; } catch {}
+let studioMode = false; try { studioMode = localStorage.getItem('ms_studiomode') === '1'; } catch {}
 function applyMode() {
   document.body.classList.toggle('single', !studioMode);
   const b = $('#modeBtn'); b.setAttribute('aria-pressed', String(studioMode)); b.classList.toggle('on', studioMode); b.textContent = 'Studio mode: ' + (studioMode ? 'On' : 'Off');
@@ -2090,6 +2093,10 @@ $('#modeBtn').onclick = () => {
   studioMode = !studioMode; try { localStorage.setItem('ms_studiomode', studioMode ? '1' : '0'); } catch {}
   applyMode(); if (!studioMode) editing = studio.current || editing; renderAll();
 };
+let moreOn = false; try { moreOn = localStorage.getItem('ms_more') === '1'; } catch {}
+function applyMore() { document.body.classList.toggle('more', moreOn); const m = $('#moreBtn'); m.setAttribute('aria-pressed', String(moreOn)); m.classList.toggle('on', moreOn); m.textContent = moreOn ? 'Fewer tools' : 'More tools'; }
+$('#moreBtn').onclick = () => { moreOn = !moreOn; try { localStorage.setItem('ms_more', moreOn ? '1' : '0'); } catch {} applyMore(); };
+applyMore();
 applyMode();
 // right-click on the Preview or Program picture (like OBS projectors): show it full screen on a display, or in its own window
 let ctxMenu = null;
@@ -2394,8 +2401,8 @@ function renderLayers() {
   $('#editName').textContent = editing ? '(' + editing + ')' : ''; $('#airName').textContent = studio.current ? '(' + studio.current + ')' : '';
   $('#evT').textContent = studioMode ? 'Preview' : 'Live';
   $('#hint').textContent = sel ? 'Drag to move. Drag a corner or edge to resize. Hold Alt and drag an edge to crop.' : (studioMode ? 'Pick a scene, then press Transition to put it on air. Click an item in the Preview to move it.' : 'Click a scene to put it on air. Click an item in the picture to move it.');
-  if (!s) { box.appendChild(emptyPanel('No scene yet', 'Add a scene first, then its sources show here.', 'Add a scene', () => $('#addScene').click())); $('#propsBox').hidden = true; return; }
-  if (!s.layers.length) box.appendChild(emptyPanel('Nothing in this scene', 'Add a camera, a screen, a picture or words.', 'Add a source', () => openAddSource()));
+  if (!s) { box.appendChild(emptyPanel('Start here', 'Click + to make your first scene. A scene is one screen layout, like "Welcome" or "Sermon".', 'Add a scene', () => $('#addScene').click())); $('#propsBox').hidden = true; return; }
+  if (!s.layers.length) box.appendChild(emptyPanel('Next: add a source', 'A source is what people see: your camera, your screen, a picture or words.', 'Add a source', () => openAddSource()));
   for (let i = s.layers.length - 1; i >= 0; i--) {
     const l = s.layers[i];
     const d = document.createElement('div'); d.className = 'lyr' + (l.id === sel ? ' on' : '');
@@ -2423,7 +2430,7 @@ function renderLayers() {
   renderProps();
   // the source bar under the picture
   const cur = s.layers.find((x) => x.id === sel);
-  $('#sbName').textContent = cur ? (cur.name || ICON[cur.type] || cur.type) : 'No source selected'; $('#sbName').classList.toggle('has', Boolean(cur));
+  $('#sbName').textContent = cur ? (cur.name || ICON[cur.type] || cur.type) : 'Click a source below to change it'; $('#sbName').classList.toggle('has', Boolean(cur));
   $('#sbProps').hidden = $('#sbFilters').hidden = false; $('#sbProps').disabled = $('#sbFilters').disabled = !cur;
   $('#sbOff').hidden = !(cur && CAN_OFF.has(cur.type)); if (cur) $('#sbOff').textContent = cur.off ? 'Activate' : 'Deactivate';
 }
