@@ -2903,8 +2903,8 @@ function fitCrTiles() {
   if (view === 'speaker') {
     // when the scenes do not all fit in the row, room is kept at both ends for the arrows, so they never sit on a picture
     const GUT = 56;
-    if (horiz) { th = n ? lim(H * mvStrip, 60, H * 0.6) : 0; tw = th * ar; mw = W; mh = n ? H - th - gp : H; const full = n * tw + gp * Math.max(0, n - 1), over = full > W; g.style.width = (over ? W - 2 * GUT : full) + 'px'; g.style.margin = over ? '0 ' + GUT + 'px' : ''; }
-    else { tw = n ? lim(W * mvStrip, 100, W * 0.6) : 0; th = tw / ar; mw = n ? W - tw - gp : W; mh = H; const full = n * th + gp * Math.max(0, n - 1), over = full > H; g.style.height = (over ? H - 2 * GUT : full) + 'px'; g.style.margin = over ? GUT + 'px 0' : ''; }
+    if (horiz) { th = n ? lim(H * mvStrip, 60, H * MV_STRIP_MAX) : 0; tw = th * ar; mw = W; mh = n ? H - th - gp : H; const full = n * tw + gp * Math.max(0, n - 1), over = full > W; g.style.width = (over ? W - 2 * GUT : full) + 'px'; g.style.margin = over ? '0 ' + GUT + 'px' : ''; }
+    else { tw = n ? lim(W * mvStrip, 100, W * MV_STRIP_MAX) : 0; th = tw / ar; mw = n ? W - tw - gp : W; mh = H; const full = n * th + gp * Math.max(0, n - 1), over = full > H; g.style.height = (over ? H - 2 * GUT : full) + 'px'; g.style.margin = over ? GUT + 'px 0' : ''; }
     const b = grid(mainN, mw, mh); pw = b.w; ph = pw / ar;
     pinned.forEach((t) => { t.style.width = Math.floor(pw) + 'px'; t.style.height = Math.floor(ph) + 'px'; });
     if (!n) g.style.width = g.style.height = '0px';
@@ -2933,7 +2933,7 @@ function mvExtras(show, horiz) {
     sz.addEventListener('pointerdown', (e) => {
       e.preventDefault(); e.stopPropagation(); sz.classList.add('on');
       const r = cr.getBoundingClientRect();
-      const move = (ev) => { const x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height; const f = mvSide === 'top' ? y : mvSide === 'bottom' ? 1 - y : mvSide === 'left' ? x : 1 - x; mvStrip = Math.max(0.08, Math.min(0.55, f)); fitCrTiles(); };
+      const move = (ev) => { const x = (ev.clientX - r.left) / r.width, y = (ev.clientY - r.top) / r.height; const f = mvSide === 'top' ? y : mvSide === 'bottom' ? 1 - y : mvSide === 'left' ? x : 1 - x; mvStrip = Math.max(MV_STRIP_MIN, Math.min(MV_STRIP_MAX, f)); fitCrTiles(); };
       const up = () => { removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); sz.classList.remove('on'); mvSave(); };
       addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
     });
@@ -2941,7 +2941,7 @@ function mvExtras(show, horiz) {
   // soft blur over the cut-off edge when there are more scenes than fit (like a swipe row), on the side(s) there is more
   let f1 = cr.querySelector('.mv-fade.f1'), f2 = cr.querySelector('.mv-fade.f2');
   if (!f1) { f1 = document.createElement('div'); f1.className = 'mv-fade f1'; f2 = document.createElement('div'); f2.className = 'mv-fade f2'; cr.append(f1, f2); }
-  sz.hidden = true; if (!show) { a1.hidden = a2.hidden = f1.hidden = f2.hidden = true; return; } // the drag-to-size bar is gone; the row has a fixed, comfortable size
+  sz.hidden = !show; if (!show) { a1.hidden = a2.hidden = f1.hidden = f2.hidden = true; return; } // the bar between the Program and the row of scenes: drag it to make the row bigger or smaller (between 12% and 40%)
   const c = cr.getBoundingClientRect(), r = g.getBoundingClientRect(), x = r.left - c.left, y = r.top - c.top;
   sz.className = 'mv-size ' + (horiz ? 'h' : 'v');
   if (horiz) { sz.style.cssText = 'left:12px;right:12px;top:' + Math.round(mvSide === 'top' ? y + r.height - 1 : y - 11) + 'px'; }
@@ -2964,6 +2964,7 @@ new ResizeObserver(() => fitCrTiles()).observe($('#crView')); addEventListener('
 // Gallery: every scene the same size. Custom: like Gallery with the Program picture too, in your own order: drag a box onto another to move it.
 // Boxes always keep the picture's shape. The layout, the side and the order are remembered on this computer.
 const MV_VIEWS = ['speaker', 'gallery', 'custom'];
+const MV_STRIP_MIN = 0.12, MV_STRIP_MAX = 0.4; // the row of scenes cannot be dragged smaller or bigger than this
 let mvView = 'speaker', mvSide = 'top', mvOrder = [], mvStrip = 0.26, mvHideProg = false, mvPins = [], mvNames = [];
 try {
   const v = localStorage.getItem('ms_mv_view'); if (MV_VIEWS.includes(v)) mvView = v;
