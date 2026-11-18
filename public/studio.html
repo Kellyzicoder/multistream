@@ -2664,6 +2664,9 @@ function renderProps(target, draft) {
     const fill = async () => {
       if (!window.msNative) return;
       list = await window.msNative.sources(win ? 'window' : 'screen').catch(() => []);
+      // Do not rebuild the list while it is open or when nothing changed: the open list points at the old items, so a click on one did nothing and it jumped back to the first screen
+      const sig = list.map((x) => x.id + '~' + x.name).join('|') + '#' + (l.display || '') + '#' + (l.winName || '');
+      if (sl.dataset.sig === sig && sl.options.length) return; sl.dataset.sig = sig;
       const keep = sl.value; sl.textContent = ''; sl.add(new Option(win ? 'Pick a window...' : 'First screen', ''));
       if (win && l.winName && !list.some((x) => x.id === l.display)) sl.add(new Option('Saved: ' + l.winName, '__saved'));
       list.forEach((x) => sl.add(new Option(x.name, x.id)));
