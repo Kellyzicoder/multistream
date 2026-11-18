@@ -1468,8 +1468,8 @@ const trCfg = { type: 'fade', ms: 500 };
 try { Object.assign(trCfg, JSON.parse(localStorage.getItem('ms_trans') || '{}')); } catch {}
 const trPairs = new Map(); // one pair of scratch canvases per output width
 function trPair(w, h) {
-  let p = trPairs.get(w);
-  if (!p) { const a = document.createElement('canvas'), b = document.createElement('canvas'); a.width = b.width = w; a.height = b.height = h; p = { a, b, ac: a.getContext('2d'), bc: b.getContext('2d') }; trPairs.set(w, p); }
+  const key = w + 'x' + h; let p = trPairs.get(key); // (a tall and a wide picture of the same width must not share one)
+  if (!p) { const a = document.createElement('canvas'), b = document.createElement('canvas'); a.width = b.width = w; a.height = b.height = h; p = { a, b, ac: a.getContext('2d'), bc: b.getContext('2d') }; trPairs.set(key, p); }
   return p;
 }
 let shown = null, trans = null;
@@ -1485,10 +1485,11 @@ function copyFit(c, W, H, src) {
   c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#000'; c.fillRect(0, 0, W, H); c.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh); c.restore();
 }
 function drawTransition(c, from, to, p, type, k) {
-  const W = Math.round(SW * k), H = Math.round(SH * k), e = ease(p), t = trPair(W, H);
-  drawScene(t.ac, from, k, true); drawScene(t.bc, to, k, true);
+  // Both scenes are drawn only 960 wide while they change (the change is over in a moment, and this halves the work of every picture), then stretched to fill the picture
+  const W0 = Math.round(SW * k), H0 = Math.round(SH * k), kk = Math.min(k, 960 / Math.max(SW, SH)), W = Math.round(SW * kk), H = Math.round(SH * kk), e = ease(p), t = trPair(W, H);
+  drawScene(t.ac, from, kk, true); drawScene(t.bc, to, kk, true);
   c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
-  c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+  c.fillStyle = '#000'; c.fillRect(0, 0, W0, H0); c.setTransform(W0 / W, 0, 0, H0 / H, 0, 0);
   if (type === 'slide') { c.drawImage(t.a, -e * W, 0); c.drawImage(t.b, W - e * W, 0); }
   else if (type === 'circle') { c.drawImage(t.a, 0, 0); c.beginPath(); c.arc(W / 2, H / 2, e * Math.hypot(W, H) / 2 + 1, 0, Math.PI * 2); c.clip(); c.drawImage(t.b, 0, 0); }
   else if (type === 'line') { c.drawImage(t.a, 0, 0); c.beginPath(); c.rect(0, 0, e * W, H); c.clip(); c.drawImage(t.b, 0, 0); }
