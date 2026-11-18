@@ -896,6 +896,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   #setOverlay .opt2 small { font-weight:500; color:#a3abc4; } #setOverlay .opt2 small.iu { display:none; color:#9db6ff; font-weight:600; } #setOverlay .opt2.used small.iu { display:inline; } #setOverlay .opt2.used small.fs { display:none; }
   #setOverlay .pv2 { height:120px; border-radius:12px; position:relative; overflow:hidden; background:radial-gradient(120px 90px at 30% 30%,#3b6cff,transparent 70%),radial-gradient(120px 90px at 75% 75%,#a855f7,transparent 70%),radial-gradient(90px 70px at 85% 20%,#14b8a6,transparent 70%),#0a0e1f; }
   #setOverlay .cd2 { position:absolute; inset:22px 26px; border-radius:12px; display:grid; place-items:center; font-size:18px; font-weight:700; color:#eef1f8; }
+  #setOverlay .otabs { margin:0 0 14px; } #setOverlay [data-ot][hidden] { display:none; }
   #setOverlay .seg2 { display:flex; padding:3px; border-radius:999px; background:rgba(10,14,31,.6); border:1px solid rgba(255,255,255,.12); width:max-content; }
   #setOverlay .seg2 button { white-space:nowrap; padding:8px 18px; border-radius:999px; border:0; background:transparent; color:#a3abc4; font-size:13px; font-weight:600; } #setOverlay .seg2 button[aria-pressed="true"] { background:var(--blue); color:var(--onblue, #fff); }
   #setOverlay .sws2 { display:flex; gap:12px; align-items:center; }
@@ -1448,19 +1449,21 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
             <div class="srow"><p class="lb">Private test</p>
               <div class="ctl"><label class="sw"><input type="checkbox" id="setPt" aria-label="Private test"><span></span></label></div></div>
           </div>
-        </div></section><section class="pane" data-pane="output" role="tabpanel" aria-label="Output"><div class="s2h"><h2>Output</h2></div><div class="g2"><h3>Streaming</h3><div class="c2">
+        </div></section><section class="pane" data-pane="output" role="tabpanel" aria-label="Output"><div class="s2h"><h2>Output</h2></div><div class="seg2 otabs" id="otabs" role="tablist" aria-label="Output"><button type="button" data-ot="stream" aria-pressed="true">Streaming</button><button type="button" data-ot="rec" aria-pressed="false">Recording</button></div><div class="g2" data-ot="stream"><h3>Streaming</h3><div class="c2">
   <div class="r2"><span class="l">Video bitrate</span><span class="u2"><input class="i3" type="number" min="1000" max="60000" step="500" data-mirror="#outKbps"> Kbps</span></div>
   <div class="r2"><span class="l">Audio bitrate</span><select class="i3" data-mirror="#outAbps"></select></div>
   <div class="r2"><span class="l">Video encoder</span><span class="v2" id="s2Enc">...</span></div>
   <div class="r2"><span class="l">Keyframe interval</span><select class="i3" data-mirror="#outKf"></select></div>
 </div><p class="n2" id="s2OutNote"></p></div>
-<div class="g2"><h3>Recording</h3><div class="c2">
+<div class="g2" data-ot="rec" hidden><h3>Recording</h3><div class="c2">
   <div class="r2"><span class="l">Recording path</span><code class="pth" id="s2RecDir"></code><button type="button" class="b3" id="s2RecOpen">Open folder</button></div>
   <div class="r2"><span class="l">Recording quality</span><select class="i3" data-mirror="#recQ"></select></div>
   <div class="r2"><span class="l">Recording format</span><select class="i3" data-mirror="#recFmt"></select></div>
   <div class="r2"><span class="l">Automatically remux to MP4</span><button type="button" class="tg2" data-mirror="#recRemux" aria-label="Automatically remux to MP4"></button></div>
   <div class="r2"><span class="l">Record when the stream starts</span><button type="button" class="tg2" data-mirror="#recAuto2" aria-label="Record automatically"></button></div>
 </div><p class="n2">All three formats are written so the file survives if the computer stops. With .mkv, remux makes an .mp4 copy at the end (same quality).</p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="audio" role="tabpanel" aria-label="Audio"><div class="s2h"><h2>Audio</h2></div><div class="g2"><h3>Monitoring</h3><div class="c2">
+  <div class="r2"><span class="l">Sample rate</span><span class="v2">48 kHz</span></div>
+  <div class="r2"><span class="l">Channels</span><span class="v2">Stereo</span></div>
   <div class="r2"><span class="l">Monitoring output (your headphones)</span><select class="i3" data-mirror="#monDev"></select></div>
 </div><p class="n2">Hear an input in your headphones. Turn it on for each input with Listen in the Production's mixer. Use headphones, or the microphone will pick up the speakers.</p><p class="n2 s2-nostudio" hidden>Open the Production once to change these.</p></div></section><section class="pane" data-pane="video" role="tabpanel" aria-label="Video"><div class="s2h"><h2>Video</h2></div><div class="g2"><div class="c2">
   <div class="r2"><span class="l">Preset</span><select class="i3" data-mirror="#outQ"></select></div>
@@ -3691,6 +3694,8 @@ async function applySettings() {
   $('#setApply').disabled = true;
   return true;
 }
+// Output has two tabs like OBS: Streaming and Recording
+$('#otabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-ot]'); if (!b) return; document.querySelectorAll('#otabs button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); document.querySelectorAll('.pane[data-pane="output"] .g2[data-ot]').forEach((g) => { g.hidden = g.dataset.ot !== b.dataset.ot; }); });
 $('#setNav').addEventListener('click', (e) => { const b = e.target.closest('button[data-pane]'); if (b) showPane(b.dataset.pane); });
 $('#setBtn').onclick = () => openSettings('appearance');
 $('#ytBtn').onclick = () => openSettings('stream');
