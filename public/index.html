@@ -964,7 +964,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .mv-fade.f2.v { -webkit-mask-image:linear-gradient(0deg,#000 35%,transparent); mask-image:linear-gradient(0deg,#000 35%,transparent); }
   .mv-fade[hidden] { display:none; }
   .mv-arr svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2.8; stroke-linecap:round; stroke-linejoin:round; display:block; }
-  .mv-arr:hover { filter:brightness(1.12); } .mv-arr[hidden] { display:none; }
+  .mv-arr svg { pointer-events:none; } .mv-arr:hover { filter:brightness(1.12); } .mv-arr[hidden] { display:none; }
   .mv2.mv-moving .mv-grid { cursor:grabbing; }
   /* while dragging: every place you can drop is marked softly, and the one you are heading for is lit */
   .mv-zone { position:absolute; z-index:6; border-radius:14px; background:rgba(59,108,255,.34); pointer-events:none; opacity:0; transition:opacity .12s; }
@@ -2874,9 +2874,19 @@ $('#mvWin').onclick = () => { if (window.msNative) window.msNative.openControlRo
 let stu = { alive: false, scenes: [], current: '', shots: {}, tv: 0, rev: null, shape: '', coll: null };
 function engine() { return 'studio'; }
 function crData() { return { on: true, ok: stu.alive, scenes: stu.scenes.map((s) => s.name), current: stu.current }; }
+// the Production window (inside this window, or the one that opened this Multiview window)
+function crStudioWin() {
+  for (const w of [window, window.opener]) {
+    try { const f = w && w.document.querySelector('#studioView iframe'); const cw = f && f.contentWindow; if (cw && typeof cw.__goScene === 'function') return cw; } catch {}
+  }
+  return null;
+}
+// one click: the box lights up at once, and the Production puts the scene on air and selects it
 async function crSetScene(name) {
-  const r = await api('/api/studio/scene', 'POST', { name }); if (!r.error) stu.current = name;
-  renderCr(); refresh();
+  const was = stu.current; stu.current = name; renderCr();
+  let done = false; try { const sw = crStudioWin(); done = Boolean(sw && sw.__goScene(name)); } catch {}
+  if (!done) { const r = await api('/api/studio/scene', 'POST', { name }); if (r.error) { stu.current = was; renderCr(); } }
+  refresh();
 }
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 // the boxes keep their shape (16:9, or 9:16 for a portrait collection) and fill the page
@@ -2952,7 +2962,8 @@ function mvExtras(show, horiz) {
   const over = horiz ? g.scrollWidth - g.clientWidth : g.scrollHeight - g.clientHeight, at = horiz ? g.scrollLeft : g.scrollTop;
   a1.hidden = !(over > 4 && at > 4); a2.hidden = !(over > 4 && at < over - 4);
   const chev = (d) => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + d + '"/></svg>';
-  a1.innerHTML = chev(horiz ? 'M15 5l-7 7 7 7' : 'M5 15l7-7 7 7'); a2.innerHTML = chev(horiz ? 'M9 5l7 7-7 7' : 'M5 9l7 7 7-7');
+  // the icons are only redrawn when the row changes direction: redrawing them under the mouse would lose the click
+  if (a1.dataset.dir !== String(horiz)) { a1.dataset.dir = a2.dataset.dir = String(horiz); a1.innerHTML = chev(horiz ? 'M15 5l-7 7 7 7' : 'M5 15l7-7 7 7'); a2.innerHTML = chev(horiz ? 'M9 5l7 7-7 7' : 'M5 9l7 7 7-7'); }
   f1.hidden = a1.hidden; f2.hidden = a2.hidden; const FW = 130;
   f1.classList.toggle('v', !horiz); f2.classList.toggle('v', !horiz);
   if (horiz) { f1.style.cssText = `left:${x}px;top:${y}px;width:${FW}px;height:${r.height}px`; f2.style.cssText = `left:${x + r.width - FW}px;top:${y}px;width:${FW}px;height:${r.height}px`; }
