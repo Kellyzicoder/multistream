@@ -1922,20 +1922,22 @@ function openListen(a, anchor) {
     + '<div class="cd"><div class="r"><span class="l">Headphones</span><select class="hpd"></select></div>'
     + '<div class="r"><span class="l">What I hear</span><div class="sg"><button type="button" data-w="0">This sound</button><button type="button" data-w="1">Whole stream</button></div></div>'
     + '<div class="rf"><span class="l">Headphone volume</span><div class="vr"><input type="range" min="0" max="100" step="1"><b></b></div></div></div>'
+    + '<div class="wn dflt" hidden><span>⚠</span><span>Headphones is set to Default output. If this computer\'s sound goes to the speakers or the sound desk, the sound will loop back (echo, feedback, distortion). Pick your headphones above.</span></div>'
     + '<div class="wn"><span>⚠</span><span>Bluetooth headphones can be a little behind. Wired is best for checking sound.</span></div>';
   p.querySelector('.ti b').textContent = a.name;
   const paint = () => {
     const onNow = isHeard(a); p.classList.toggle('on', onNow);
     p.querySelector('.ti small').textContent = onNow ? '● Only you can hear this' : 'Off - you are not listening to this';
     p.querySelector('.tgl').setAttribute('aria-pressed', String(onNow));
+    p.querySelector('.wn.dflt').hidden = !(onNow && !monDev);
     p.querySelectorAll('[data-w]').forEach((b) => b.classList.toggle('on', (b.dataset.w === '1') === monPref.whole));
   };
-  p.querySelector('.tgl').onclick = () => { a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); paint(); renderAudio(); };
+  p.querySelector('.tgl').onclick = () => { a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); paint(); renderAudio(); if (isHeard(a) && !monDev) flash('Listening goes to Default output. Pick your headphones, or the sound can loop back through the speakers.', false); };
   p.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => { monPref.whole = b.dataset.w === '1'; try { localStorage.setItem('ms_mon_whole', monPref.whole ? '1' : '0'); } catch {} applyMonitorMix(); paint(); }; });
   const sel = p.querySelector('.hpd'); sel.add(new Option('Default output', ''));
   (devices.out || []).forEach((x) => sel.add(new Option(x.label || 'Output', x.deviceId)));
   sel.value = [...sel.options].some((o) => o.value === monDev) ? monDev : '';
-  sel.onchange = () => { setMonitorDevice(sel.value); const mm = $('#monDev'); if (mm) mm.value = sel.value; };
+  sel.onchange = () => { setMonitorDevice(sel.value); const mm = $('#monDev'); if (mm) mm.value = sel.value; paint(); };
   const vr = p.querySelector('.vr input'), vb = p.querySelector('.vr b');
   vr.value = Math.round(monPref.vol * 100); vb.textContent = vr.value + '%';
   vr.oninput = () => { monPref.vol = vr.value / 100; vb.textContent = vr.value + '%'; try { localStorage.setItem('ms_mon_vol', String(monPref.vol)); } catch {} applyMonitorMix(); };
@@ -4159,6 +4161,9 @@ async function shots() {
 (async () => {
   studio = await fetch('/api/studio').then((r) => r.json()); lastRev = studio.rev;
   studio.audio = studio.audio || []; applyShape(studio.shape); showColl();
+  // listening in headphones starts off each time the app opens, so a forgotten "listen" can never loop the sound back at the next event.
+  // "Monitor only" inputs keep their setting: turning them off would put them into the stream.
+  { let ch = false; studio.audio.forEach((x) => { if (x.monitor === 'both') { x.monitor = 'off'; ch = true; } }); if (ch) setTimeout(save, 0); }
   // the Scene collections page can hand over an OBS file to import here (it needs the Production's OBS reader)
   try { const pend = localStorage.getItem('ms_pending_obs'); if (pend) { localStorage.removeItem('ms_pending_obs'); setTimeout(() => importObsText(pend), 800); } } catch {}
   if (!studio.scenes.length) {
