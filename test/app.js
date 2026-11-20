@@ -189,7 +189,8 @@ async function until(fn, ms, what) {
   const mic = await until(() => studio.evaluate(() => { const n = asrc.get('mic'); return n && n.node ? { mon: n.mon.gain.value, gate: n.gate.gain.value } : null; }), 15000, 'the sound input');
   await sleep(600);
   let m = await studio.evaluate(() => { const n = asrc.get('mic'); return { mon: n.mon.gain.value, gate: n.gate.gain.value }; });
-  assert.ok(m.mon > 0.9 && m.gate > 0.9, 'monitor and stream: ' + JSON.stringify(m));
+  // listening in headphones starts off each time the app opens (so it cannot loop the sound by surprise); the stream still gets the sound
+  assert.ok(m.mon < 0.1 && m.gate > 0.9, 'listening starts off, the stream has the sound: ' + JSON.stringify(m));
   const setMon = async (v) => { await studio.evaluate((x) => { studio.audio[0].monitor = x; syncAudio(); gateAudio(); }, v); await sleep(700); return studio.evaluate(() => { const n = asrc.get('mic'); return { mon: n.mon.gain.value, gate: n.gate.gain.value }; }); };
   m = await setMon('only'); assert.ok(m.mon > 0.9 && m.gate < 0.1, 'monitor only: ' + JSON.stringify(m));
   m = await setMon('off'); assert.ok(m.mon < 0.1 && m.gate > 0.9, 'monitor off: ' + JSON.stringify(m));
