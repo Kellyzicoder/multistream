@@ -621,7 +621,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   html.nav-small .snv { padding:20px 12px; align-items:stretch; }
   html.nav-small .snv-top { flex-direction:column; gap:12px; margin:0 0 18px; }
   html.nav-small .snv-name, html.nav-small #pageTabs span, html.nav-small .snv-b span { display:none; }
-  html.nav-small .snv-tg svg { transform:rotate(180deg); }
+  html.nav-pref .snv-tg svg { transform:rotate(180deg); }
   html.nav-small #pageTabs button, html.nav-small .snv-b { justify-content:center; padding:12px 0; }
   @media (max-width:700px) { html { --navw:64px; } .snv { padding:16px 8px; } .snv-name, #pageTabs span, .snv-b span, .snv-tg { display:none; } #pageTabs button, .snv-b { justify-content:center; padding:12px 0; } }
 
@@ -2028,11 +2028,10 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   async function waitStudio(ms) { const t0 = Date.now(); studio(); while (!studioReady() && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 200)); return studioReady(); }
   // start the Production a moment after the app opens, so its picture shows here before going live
   if (window.msNative && !isMv) setTimeout(() => { try { if (localStorage.getItem('ms_studio_window') !== '1') studio(); } catch { studio(); } }, 1200);
-  let navWasSmall = null;
   XPAGES.studio = { title: 'Production', el: 'studioView',
     // like the design: the menu shows only icons next to the Production
-    open() { studio(); $('#studioView').classList.remove('bg'); if (navWasSmall === null) { navWasSmall = document.documentElement.classList.contains('nav-small'); document.documentElement.classList.add('nav-small'); } setTimeout(() => { try { studioFrame.contentWindow.focus(); } catch {} }, 50); },
-    close() { $('#studioView').classList.add('bg'); if (navWasSmall !== null) { document.documentElement.classList.toggle('nav-small', navWasSmall); navWasSmall = null; } } };
+    open() { studio(); $('#studioView').classList.remove('bg'); document.documentElement.classList.add('nav-small'); /* the Production always shows the narrow menu; your own choice (the arrow) is kept separately */ setTimeout(() => { try { studioFrame.contentWindow.focus(); } catch {} }, 50); },
+    close() { $('#studioView').classList.add('bg'); } };
   $('#glpStudio').onclick = () => showPage('studio');
   $('#openStudioBtn').onclick = () => showPage('studio');
 
@@ -2898,13 +2897,15 @@ function showPage(p) {
 }
 pageTabs.forEach((b) => { b.onclick = () => { if (b.dataset.page === page) return; showPage(b.dataset.page); }; }); // the open tab stays as it is
 // the side menu: big (with words) or small (icons only); remembered on this computer
+// "on" is the choice made with the arrow; it is kept for every page. The Production and the Multiview always show the narrow menu, whatever the choice.
 function setNavSmall(on) {
-  document.documentElement.classList.toggle('nav-small', on);
+  document.documentElement.classList.toggle('nav-pref', on);
+  document.documentElement.classList.toggle('nav-small', on || page === 'cr' || page === 'studio');
   const t = $('#navToggle'); const w = on ? 'Make the menu bigger' : 'Make the menu smaller'; t.setAttribute('aria-label', w); t.title = w;
   try { localStorage.setItem('ms_nav_small', on ? '1' : '0'); } catch {}
 }
 try { if (localStorage.getItem('ms_nav_small') === '1') setNavSmall(true); } catch {}
-$('#navToggle').onclick = () => setNavSmall(!document.documentElement.classList.contains('nav-small'));
+$('#navToggle').onclick = () => setNavSmall(!document.documentElement.classList.contains('nav-pref'));
 // Multiview (as in the design): Program on top, the scenes below, numbered 1 to 0 (press the number to put that scene on air)
 $('#mvWin').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); };
 let stu = { alive: false, scenes: [], current: '', shots: {}, tv: 0, rev: null, shape: '', coll: null };
