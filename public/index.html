@@ -6,6 +6,7 @@
 <title>Multistream</title>
 <script>
 // the welcome screen is decided before anything is drawn, so the page behind it never flashes first
+try { if (location.hash === '#control-room') document.documentElement.classList.add('is-mv'); } catch (e) {}
 try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#control-room' && !/[?&]demo/.test(location.search)) document.documentElement.classList.add('wl-first'); } catch (e) {}
 </script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -216,7 +217,17 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .an-empty { margin:auto; padding:28px; text-align:center; color:var(--muted); font-size:13px; }
   /* ---------- Help ---------- */
   .hp-q { padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:var(--field); color:var(--text); font-size:14px; max-width:520px; }
-  .hp-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(380px, 1fr)); gap:12px; align-items:start; }
+  .hp-list { display:flex; flex-direction:column; gap:20px; max-width:760px; }
+  .hp-g h3 { margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); }
+  details.hp-t { border:1px solid var(--line); background:var(--card); border-radius:12px; margin-bottom:8px; }
+  details.hp-t > summary { cursor:pointer; padding:12px 16px; font-weight:600; font-size:14px; list-style:none; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  details.hp-t > summary::-webkit-details-marker { display:none; }
+  details.hp-t > summary::after { content:"\25BE"; color:var(--muted); transition:transform .15s; } details.hp-t[open] > summary::after { transform:rotate(180deg); }
+  details.hp-t .hp-body { padding:0 16px 14px; color:var(--muted); font-size:13.5px; line-height:1.55; }
+  .hp-idx[hidden] { display:none; }
+  .hp-idx { display:flex; flex-direction:column; gap:6px; max-width:760px; padding:12px; border:1px solid var(--line); background:var(--card2); border-radius:12px; }
+  .hp-ih { font-size:12px; color:var(--muted); font-weight:600; }
+  .hp-ib { display:flex; justify-content:space-between; align-items:center; gap:10px; text-align:left; border:0; background:transparent; color:var(--text); padding:8px 10px; border-radius:8px; font-size:13.5px; } .hp-ib:hover { background:var(--btn); } .hp-ib small { color:var(--muted); font-size:11.5px; }
   .hp-c { padding:18px 20px; font-size:13.5px; line-height:1.55; } .hp-c h3 { margin:0 0 10px; font-size:15px; }
   .hp-c ol, .hp-c ul { margin:0; padding-left:20px; display:flex; flex-direction:column; gap:8px; }
   .hp-c dl { margin:0; } .hp-c dt { font-weight:600; margin-top:10px; } .hp-c dt:first-child { margin-top:0; } .hp-c dd { margin:2px 0 0; color:var(--muted); }
@@ -592,6 +603,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   :root { --navw:220px; }
   html.nav-small { --navw:76px; }
   body { padding-left:var(--navw); }
+  html.is-mv { --navw:0px !important; } html.is-mv .snv { display:none !important; }
   .snv { position:fixed; left:0; top:0; bottom:0; width:var(--navw); z-index:6; display:flex; flex-direction:column; gap:4px; padding:20px 14px; border-right:1px solid var(--gl-line, var(--line)); background:var(--gl, var(--card)); -webkit-backdrop-filter:var(--gl-blur, none); backdrop-filter:var(--gl-blur, none); transition:width .2s ease; overflow:hidden; }
   .snv-top { display:flex; align-items:center; gap:10px; margin:0 4px 22px; min-height:32px; }
   .snv-logo svg { width:24px; height:30px; color:var(--blue); }
@@ -609,7 +621,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   html.nav-small .snv { padding:20px 12px; align-items:stretch; }
   html.nav-small .snv-top { flex-direction:column; gap:12px; margin:0 0 18px; }
   html.nav-small .snv-name, html.nav-small #pageTabs span, html.nav-small .snv-b span { display:none; }
-  html.nav-small .snv-tg svg { transform:rotate(180deg); }
+  html.nav-pref .snv-tg svg { transform:rotate(180deg); }
   html.nav-small #pageTabs button, html.nav-small .snv-b { justify-content:center; padding:12px 0; }
   @media (max-width:700px) { html { --navw:64px; } .snv { padding:16px 8px; } .snv-name, #pageTabs span, .snv-b span, .snv-tg { display:none; } #pageTabs button, .snv-b { justify-content:center; padding:12px 0; } }
 
@@ -672,6 +684,20 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   /* ---------- Livestream layout: picture and stream details on the left, channels and chat on the right ---------- */
   .mainc { display:flex; flex-direction:column; gap:18px; min-height:0; min-width:0; overflow:auto; }
   .mainc .stage { flex:1; min-height:340px; padding:22px; align-items:center; }
+  /* Stream details is a pop-up opened by the Title & thumbnail button */
+  #glDetails { display:none !important; }
+  #sdBack { position:fixed; inset:0; z-index:69; background:rgba(3,6,16,.62); }
+  #sdBack[hidden] { display:none; }
+  body.sd-open #glDetails:not([hidden]) { display:flex !important; position:fixed; z-index:70; left:50%; top:50%; transform:translate(-50%,-50%); height:min(92vh,880px); width:min(560px,94vw); overflow:auto; background:var(--card); border:1px solid var(--line); box-shadow:0 24px 80px rgba(0,0,0,.55); backdrop-filter:none; flex-direction:column; flex-wrap:nowrap; gap:16px; padding:20px; }
+  /* tall (portrait): the thumbnail on top, the words under it */
+  body.sd-open #glDetails .sd-thumb { width:100%; flex:none; }
+  body.sd-open #glDetails .thp { height:auto; min-height:0; aspect-ratio:16/9; }
+  body.sd-open #glDetails .sd-main { min-width:0; flex:1; }
+  body.sd-open #glDetails .sd-h { flex-wrap:wrap; }
+  body.sd-open #glDetails .sd-f { grid-template-columns:1fr; gap:12px; }
+  body.sd-open #glDetails .sd-f textarea { min-height:110px; }
+  .sd-x { order:5; margin-left:auto !important; border:0; background:transparent; color:var(--muted); font-size:24px; line-height:1; width:32px; height:32px; border-radius:8px; margin-left:6px; } .sd-x:hover { background:var(--btn); color:var(--text); }
+  .gt.need .t2 { border-color:var(--red); box-shadow:0 0 0 3px color-mix(in srgb, var(--red) 28%, transparent); }
   .sd { display:grid; grid-template-columns:260px minmax(0,1fr); gap:20px; padding:18px 20px; }
   .sd-thumb .th { flex-direction:column; align-items:stretch; margin:0; }
   .sd-thumb .thp { width:100%; border-radius:14px; }
@@ -1060,8 +1086,8 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
     <button type="button" class="snv-tg" id="navToggle" aria-label="Make the menu smaller" title="Make the menu smaller"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
   </div>
   <nav id="pageTabs" aria-label="Pages">
-    <button type="button" data-page="dash" aria-current="page" title="Livestream"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg><span>Livestream</span></button>
-    <button type="button" data-page="studio" title="Production: scenes, cameras, sound, recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg><span>Production</span></button>
+    <button type="button" data-page="studio" aria-current="page" title="Production: scenes, cameras, sound, recording"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg><span>Production</span></button>
+    <button type="button" data-page="dash" title="Livestream"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg><span>Livestream</span></button>
     <button type="button" data-page="cr" title="Multiview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><span>Multiview</span></button>
     <button type="button" data-page="health" title="Stream health"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>Stream health</span></button>
     <button type="button" data-page="stats" title="Analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Analytics</span></button>
@@ -1081,6 +1107,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <span class="gl-acts" id="mvActs" hidden><span class="mv-menuw"><button type="button" class="hb pl" id="mvMenuB" aria-haspopup="menu" aria-expanded="false" title="Change the view"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:currentColor;vertical-align:-3px;margin-right:6px"><rect x="3" y="4" width="18" height="10" rx="2"/><rect x="3" y="16" width="5" height="4" rx="1"/><rect x="9.5" y="16" width="5" height="4" rx="1"/><rect x="16" y="16" width="5" height="4" rx="1"/></svg>View</button><div class="mv-menu" id="mvMenu" role="menu" hidden></div></span><button type="button" class="hb pl" id="mvWin">New window</button></span>
   <span class="gl-acts" id="scActs" hidden><button type="button" class="hb pl" id="scObs">Import from OBS</button><button type="button" class="hb pl" id="scImp">Import file</button><button type="button" class="hb sb" id="scNew">+ New collection</button></span>
   <span class="gl-acts" id="glActs">
+    <button type="button" class="hb" id="sdBtn" title="Title, description and thumbnail for the stream">Title &amp; thumbnail</button>
     <button type="button" class="hb" id="glUpd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Update title for all channels</button>
     <button type="button" class="hb" id="ptBtn" title="Private test: only you can see the live" hidden>Private test: on</button>
     <button type="button" class="hb as-tg" id="asBtn" title="Auto start: what happens when you press Start streaming"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Auto start: Off</span></button>
@@ -1162,7 +1189,8 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
         <div class="card gh-ch"><small>Each channel</small><div id="ghCh"></div></div>
       </div>
     </section>
-    <section class="card sd" id="glDetails" aria-label="Stream details">
+    <div id="sdBack" hidden></div>
+    <section class="card sd" id="glDetails" role="dialog" aria-modal="true" aria-label="Stream details">
       <div class="sd-thumb">
         <div class="thp"><img id="thImg" alt="Thumbnail" hidden><span id="thNone"><b id="thBig">Your stream</b><small>Thumbnail</small></span>
           <button type="button" class="th-up" id="thBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>Upload thumbnail</button>
@@ -1172,9 +1200,9 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
         <input type="file" id="thFile" accept="image/png,image/jpeg" hidden>
       </div>
       <div class="sd-main">
-        <div class="sd-h"><span class="sd-t">Stream details</span><span class="grow"></span><span class="sd-tabs" id="sdTabs"><button type="button" data-t="all" class="on">All channels</button><button type="button" data-t="yt"><i class="d yt"></i>YouTube</button><button type="button" data-t="fb"><i class="d fb"></i>Facebook</button></span></div>
+        <div class="sd-h"><span class="sd-t">Stream details</span><span class="grow"></span><button type="button" class="sd-x" id="sdX" aria-label="Close" title="Close">×</button><span class="sd-tabs" id="sdTabs"><button type="button" data-t="all" class="on">All channels</button><button type="button" data-t="yt"><i class="d yt"></i>YouTube</button><button type="button" data-t="fb"><i class="d fb"></i>Facebook</button></span></div>
         <div class="sd-f">
-          <div class="gt"><label class="fl" for="glTitle" id="glTitleL">Title</label><input class="t2" id="glTitle" type="text" maxlength="100" placeholder="Title (the date is used if empty)" autocomplete="off"></div>
+          <div class="gt"><label class="fl" for="glTitle" id="glTitleL">Title</label><input class="t2" id="glTitle" type="text" maxlength="100" placeholder="Type a title for this stream" autocomplete="off"><small class="bad" id="sdNeed" hidden>Type a title, then press Start streaming again.</small></div>
           <div class="gt"><label class="fl" for="glDesc" id="glDescL">Description</label><textarea class="t2" id="glDesc" rows="2" maxlength="5000" placeholder="What is this stream about?"></textarea></div>
         </div>
         <div class="sd-pre-row"><span class="fl">Saved:</span><span class="sd-pre" id="presets" aria-label="Saved details"></span></div>
@@ -1228,41 +1256,10 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   <input type="file" id="scFile" accept=".json,application/json" hidden>
 </section>
 <section class="xpage hp" id="helpView" hidden aria-label="Help">
-  <input type="search" class="hp-q" id="hpQ" placeholder="Search help (for example: echo, camera, Facebook)" aria-label="Search help">
-  <div class="hp-grid" id="hpGrid">
-    <div class="card hp-c"><h3>Start here</h3><ol>
-      <li><b>Add your channels.</b> On Livestream, press Set up for YouTube or Facebook, or + Add for any other site (you need its server address and stream key).</li>
-      <li><b>Make your scenes.</b> Open the Production. A scene is one screen, like Welcome or Camera. Press + under Sources to add a camera, screen, picture, name bar and more.</li>
-      <li><b>Add sound.</b> In the Production's Audio Mixer, press Add and pick your microphone or sound desk. Watch the meter move when you talk.</li>
-      <li><b>Press Start Streaming</b> in the Production. The app now has your video, but nobody sees it yet.</li>
-      <li><b>Livestream.</b> On Livestream, type a title and press Livestream on each channel (or let the channels with a stream key start by themselves).</li>
-    </ol></div>
-    <div class="card hp-c"><h3>Fix a problem</h3><dl>
-      <dt>The meters move but nobody hears me</dt><dd>Check the input is heard in the scene (the eye next to its name in the mixer) and not muted. Check the channel is live on Livestream.</dd>
-      <dt>Echo or feedback</dt><dd>Turn off Listen in headphones, or use headphones. If two inputs pick up the same sound, mute one.</dd>
-      <dt>Camera not found</dt><dd>Close other apps that use the camera (Zoom, Teams, the Camera app), unplug it and plug it in again, then pick it again in its settings.</dd>
-      <dt>A channel keeps dropping</dt><dd>Open Stream health. If Sending goes up and down, lower the quality in Settings → Video, or use a network cable instead of Wi-Fi.</dd>
-      <dt>Screen or window is black on a Mac</dt><dd>In System Settings → Privacy & Security → Screen Recording, turn on Multistream, then reopen the app.</dd>
-      <dt>Facebook says the stream is too big</dt><dd>Facebook takes 1080p at most. The app sends Facebook a smaller copy by itself; keep the cap on in the channel's settings.</dd>
-      <dt>Wrong video played at the start</dt><dd>Open Auto start on Livestream and check the steps, or keep Ask me first each time turned on.</dd>
-    </dl></div>
-    <div class="card hp-c"><h3>Production keys</h3><table class="hp-k">
-      <tr><td><kbd>1</kbd>–<kbd>9</kbd></td><td>Put that scene on air</td></tr>
-      <tr><td><kbd>Alt</kbd> + <kbd>1</kbd>–<kbd>9</kbd></td><td>Mute or unmute a sound input</td></tr>
-      <tr><td><kbd>R</kbd></td><td>Start or stop recording</td></tr>
-      <tr><td><kbd>Shift</kbd> + <kbd>G</kbd></td><td>Start or stop streaming</td></tr>
-      <tr><td><kbd>Ctrl</kbd> + <kbd>F</kbd> / <kbd>S</kbd></td><td>Fit / stretch the selected item to the screen</td></tr>
-      <tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td>Undo</td></tr>
-      <tr><td><kbd>F11</kbd></td><td>Full screen Production</td></tr>
-    </table><p class="hp-n">See every key in Settings → Hotkeys.</p></div>
-    <div class="card hp-c"><h3>Good to know</h3><ul>
-      <li><b>Private test:</b> turn it on in Settings → Stream before a real service to check everything without anyone seeing it.</li>
-      <li><b>Recordings</b> are saved on this computer. Find them on the Recordings page.</li>
-      <li><b>Tall video (9:16)</b> for Instagram or TikTok: make a Portrait collection on the Scene collections page.</li>
-      <li><b>Zoom:</b> in the Production, start the virtual camera, then pick Multistream Camera in Zoom.</li>
-      <li><b>Updates</b> come by themselves. Do not restart while you are live.</li>
-    </ul><div class="hp-b"><button type="button" class="ghost" id="hpRel">Download page</button><span class="hp-v" id="hpVer"></span></div></div>
-  </div>
+  <input type="search" class="hp-q" id="hpQ" placeholder="Search help (for example: echo, camera, Facebook)" aria-label="Search help" autocomplete="off">
+  <div class="hp-idx" id="hpIdx" hidden aria-live="polite"></div>
+  <div class="hp-list" id="hpList"></div>
+  <div class="hp-b"><button type="button" class="ghost" id="hpRel">Download page</button><span class="hp-v" id="hpVer"></span></div>
 </section>
 <section class="xpage an2" id="statsView" hidden aria-label="Analytics">
   <div class="an-sub" id="anSub"></div>
@@ -2031,11 +2028,10 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   async function waitStudio(ms) { const t0 = Date.now(); studio(); while (!studioReady() && Date.now() - t0 < ms) await new Promise((r) => setTimeout(r, 200)); return studioReady(); }
   // start the Production a moment after the app opens, so its picture shows here before going live
   if (window.msNative && !isMv) setTimeout(() => { try { if (localStorage.getItem('ms_studio_window') !== '1') studio(); } catch { studio(); } }, 1200);
-  let navWasSmall = null;
   XPAGES.studio = { title: 'Production', el: 'studioView',
     // like the design: the menu shows only icons next to the Production
-    open() { studio(); $('#studioView').classList.remove('bg'); if (navWasSmall === null) { navWasSmall = document.documentElement.classList.contains('nav-small'); document.documentElement.classList.add('nav-small'); } setTimeout(() => { try { studioFrame.contentWindow.focus(); } catch {} }, 50); },
-    close() { $('#studioView').classList.add('bg'); if (navWasSmall !== null) { document.documentElement.classList.toggle('nav-small', navWasSmall); navWasSmall = null; } } };
+    open() { studio(); $('#studioView').classList.remove('bg'); document.documentElement.classList.add('nav-small'); /* the Production always shows the narrow menu; your own choice (the arrow) is kept separately */ setTimeout(() => { try { studioFrame.contentWindow.focus(); } catch {} }, 50); },
+    close() { $('#studioView').classList.add('bg'); } };
   $('#glpStudio').onclick = () => showPage('studio');
   $('#openStudioBtn').onclick = () => showPage('studio');
 
@@ -2186,7 +2182,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
       $('#addBtn').hidden = false;
     }
     // while live: health under the preview instead of the stream details
-    $('#glHealth').hidden = !live; $('#glDetails').hidden = live;
+    $('#glHealth').hidden = !live; $('#glDetails').hidden = live; $('#sdBtn').hidden = live; if (live) closeDetails();
     syncPreview(); offlinePreview();
   };
   // a tall (9:16) stream: a tall preview with a card about it (as in the design)
@@ -2274,6 +2270,8 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     const chs = st ? channels(st) : [], apis = chs.filter((c) => c.kind === 'api' && c.on);
     if (!chs.some((c) => c.on)) { if (!await msAsk('No channel is on. Start streaming anyway (only the Production and recording)?')) return; }
     if (apis.length && !$('#fbTest').checked && !await msAsk('Private test is off. This goes live publicly on ' + apis.map((c) => c.name).join(' and ') + '. Continue?')) return;
+    // YouTube and Facebook need a title: ask for it now, so last Sunday's title or a date is never used by accident
+    if (apis.length && !$('#glTitle').value.trim() && !(titles && Object.values(titles).some((o) => o && o.t))) { openDetails(true); return; }
     let usePlan = false;
     try { const plan = await api('/api/autostart'); if (plan && plan.on && (plan.steps || []).length) usePlan = plan.ask ? await askPlan(plan) : true; } catch {}
     if (usePlan === null) return;
@@ -2615,18 +2613,55 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   $('#anEdit').onclick = async () => { const v = await window.askText('Address of your live dashboard', get(), 'Leave it empty to remove it. It must start with https://'); if (v == null) return; let u = v.trim(); if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u; if (u && !/^https:\/\//i.test(u)) { alert('The address must start with https://'); return; } try { localStorage.setItem('ms_dash_url', u); } catch {} load(); };
   XPAGES.stats = { title: 'Analytics', el: 'statsView', open() { load(); if (!t) t = setInterval(load, 15000); }, close() { clearInterval(t); t = null; } };
 })();
-// Help: start here, fixing problems, keys; the search box hides what does not match
+// Help: short topics that open and close, grouped. Searching shows an index of the topics that match.
 (() => {
-  const items = () => [...document.querySelectorAll('#hpGrid li, #hpGrid dt, #hpGrid tr')];
-  $('#hpQ').oninput = () => {
+  const TOPICS = [
+    ['Start here', 'Add your channels', 'On Livestream, press Set up for YouTube or Facebook, or + Add for any other site (you need its server address and stream key).'],
+    ['Start here', 'Make your scenes', 'Open the Production. A scene is one screen, like Welcome or Camera. Press + under Sources to add a camera, screen, picture, name bar and more.'],
+    ['Start here', 'Add sound', 'In the Production\'s Audio Mixer, press Add and pick your microphone or sound desk. Watch the meter move when you talk.'],
+    ['Start here', 'Go live', 'On Livestream, type a title (press Title & thumbnail) and press Start streaming. Every channel that is on goes live.'],
+    ['Fix a problem', 'The meters move but nobody hears me', 'Check the input is heard in the scene (the eye next to its name in the mixer) and not muted. Check the channel is live on Livestream.'],
+    ['Fix a problem', 'Echo or feedback', 'Turn off Listen in headphones, or pick your real headphones (not Default output). If two inputs pick up the same sound, mute one.'],
+    ['Fix a problem', 'Camera not found', 'Close other apps that use the camera (Zoom, Teams, the Camera app), unplug it and plug it in again, then pick it again in its settings.'],
+    ['Fix a problem', 'A channel keeps dropping', 'Open Stream health. If Sending goes up and down, lower the quality in Settings > Video, or use a network cable instead of Wi-Fi.'],
+    ['Fix a problem', 'Screen or window is black on a Mac', 'In System Settings > Privacy & Security > Screen Recording, turn on Multistream, then reopen the app.'],
+    ['Fix a problem', 'Facebook says the stream is too big', 'Facebook takes 1080p at most. The app sends Facebook a smaller copy by itself; keep the cap on in the channel\'s settings.'],
+    ['Fix a problem', 'Wrong video played at the start', 'Open Auto start on Livestream and check the steps, or keep Ask me first each time turned on.'],
+    ['Keys', 'Production keys', '<table class="hp-k"><tr><td><kbd>1</kbd>-<kbd>9</kbd></td><td>Put that scene on air</td></tr><tr><td><kbd>Alt</kbd> + <kbd>1</kbd>-<kbd>9</kbd></td><td>Mute or unmute a sound input</td></tr><tr><td><kbd>R</kbd></td><td>Start or stop recording</td></tr><tr><td><kbd>Shift</kbd> + <kbd>G</kbd></td><td>Start or stop streaming</td></tr><tr><td><kbd>Ctrl</kbd> + <kbd>F</kbd> / <kbd>S</kbd></td><td>Fit / stretch the selected item to the screen</td></tr><tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td>Undo</td></tr><tr><td><kbd>F11</kbd></td><td>Full screen Production</td></tr></table><p class="hp-n">See every key in Settings > Hotkeys.</p>', true],
+    ['Good to know', 'Private test', 'Turn it on in Settings > Stream before a real service to check everything without anyone seeing it.'],
+    ['Good to know', 'Where recordings are saved', 'On this computer. Find them on the Recordings page.'],
+    ['Good to know', 'Tall video (9:16) for Instagram or TikTok', 'Make a Portrait collection on the Scene collections page.'],
+    ['Good to know', 'Use it in Zoom', 'In the Production, start the virtual camera, then pick Multistream Camera in Zoom.'],
+    ['Good to know', 'Updates', 'They come by themselves. Do not restart while you are live.'],
+  ];
+  const list = $('#hpList'), idx = $('#hpIdx');
+  const els = TOPICS.map(([g, t, b, html], n) => {
+    const d = document.createElement('details'); d.className = 'hp-t'; d.id = 'hp' + n;
+    const sm = document.createElement('summary'); sm.textContent = t;
+    const body = document.createElement('div'); body.className = 'hp-body'; if (html) body.innerHTML = b; else body.textContent = b;
+    d.append(sm, body); return d;
+  });
+  let lastG = '', gbox = null;
+  TOPICS.forEach(([g], n) => {
+    if (g !== lastG) { lastG = g; gbox = document.createElement('div'); gbox.className = 'hp-g'; const h = document.createElement('h3'); h.textContent = g; gbox.appendChild(h); list.appendChild(gbox); }
+    gbox.appendChild(els[n]);
+  });
+  const search = () => {
     const q = $('#hpQ').value.trim().toLowerCase();
-    items().forEach((el) => {
-      const dd = el.tagName === 'DT' ? el.nextElementSibling : null;
-      const text = (el.textContent + ' ' + (dd ? dd.textContent : '')).toLowerCase();
-      const hide = q && !text.includes(q); el.classList.toggle('hp-hide', hide); if (dd) dd.classList.toggle('hp-hide', hide);
+    const hit = TOPICS.map((tp, n) => [tp, n]).filter(([tp]) => !q || (tp[1] + ' ' + tp[2].replace(/<[^>]+>/g, ' ')).toLowerCase().includes(q));
+    const set = new Set(hit.map(([, n]) => n));
+    els.forEach((d, n) => { d.classList.toggle('hp-hide', !set.has(n)); if (q) d.open = false; });
+    list.querySelectorAll('.hp-g').forEach((g) => g.classList.toggle('hp-hide', !g.querySelector('details:not(.hp-hide)')));
+    idx.hidden = !q; idx.textContent = '';
+    if (!q) return;
+    const h = document.createElement('div'); h.className = 'hp-ih'; h.textContent = hit.length ? 'Index: ' + hit.length + (hit.length === 1 ? ' answer' : ' answers') : 'Nothing found. Try another word.'; idx.appendChild(h);
+    hit.forEach(([tp, n]) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'hp-ib'; const a = document.createElement('span'); a.textContent = tp[1]; const c = document.createElement('small'); c.textContent = tp[0]; b.append(a, c);
+      b.onclick = () => { els[n].open = true; els[n].scrollIntoView({ block: 'center', behavior: 'smooth' }); };
+      idx.appendChild(b);
     });
-    document.querySelectorAll('#hpGrid .hp-c').forEach((c) => { c.classList.toggle('hp-hide', Boolean(q) && !c.querySelector('li:not(.hp-hide), dt:not(.hp-hide), tr:not(.hp-hide)')); });
   };
+  $('#hpQ').oninput = search;
   $('#hpRel').onclick = () => window.open('https://github.com/Kellyzicoder/multistream/releases/tag/v3-latest', '_blank');
   XPAGES.help = { title: 'Help', el: 'helpView', open() { try { if (window.msNative && window.msNative.appVersion) window.msNative.appVersion().then((v) => { if (v) $('#hpVer').textContent = 'You have version ' + v; }); } catch {} }, close() {} };
 })();
@@ -2855,20 +2890,22 @@ function showPage(p) {
   Object.entries(XPAGES).forEach(([k, v]) => { if (k === page) v.open(); else v.close(); });
   if (page === 'cr') document.documentElement.classList.add('nav-small'); // the same narrow menu as the Production, so the tabs do not jump
   pageTabs.forEach((b) => { if (b.dataset.page === page) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
-  try { history.replaceState(null, '', page === 'cr' ? '#control-room' : XPAGES[page] ? '#' + page : location.pathname + location.search); } catch {}
+  try { history.replaceState(null, '', page === 'cr' ? (document.documentElement.classList.contains('is-mv') ? '#control-room' : '#multiview') : XPAGES[page] ? '#' + page : location.pathname + location.search); } catch {}
   renderCr();
   pollThumbs();
   syncPreview();
 }
-pageTabs.forEach((b) => { b.onclick = () => showPage(b.dataset.page); });
+pageTabs.forEach((b) => { b.onclick = () => { if (b.dataset.page === page) return; showPage(b.dataset.page); }; }); // the open tab stays as it is
 // the side menu: big (with words) or small (icons only); remembered on this computer
+// "on" is the choice made with the arrow; it is kept for every page. The Production and the Multiview always show the narrow menu, whatever the choice.
 function setNavSmall(on) {
-  document.documentElement.classList.toggle('nav-small', on);
+  document.documentElement.classList.toggle('nav-pref', on);
+  document.documentElement.classList.toggle('nav-small', on || page === 'cr' || page === 'studio');
   const t = $('#navToggle'); const w = on ? 'Make the menu bigger' : 'Make the menu smaller'; t.setAttribute('aria-label', w); t.title = w;
   try { localStorage.setItem('ms_nav_small', on ? '1' : '0'); } catch {}
 }
 try { if (localStorage.getItem('ms_nav_small') === '1') setNavSmall(true); } catch {}
-$('#navToggle').onclick = () => setNavSmall(!document.documentElement.classList.contains('nav-small'));
+$('#navToggle').onclick = () => setNavSmall(!document.documentElement.classList.contains('nav-pref'));
 // Multiview (as in the design): Program on top, the scenes below, numbered 1 to 0 (press the number to put that scene on air)
 $('#mvWin').onclick = () => { if (window.msNative) window.msNative.openControlRoom(); else window.open('/#control-room', 'ms_cr', 'width=1280,height=800'); };
 let stu = { alive: false, scenes: [], current: '', shots: {}, tv: 0, rev: null, shape: '', coll: null };
@@ -3204,10 +3241,11 @@ setInterval(pollCr, 200); // 5 pictures a second
   };
   requestAnimationFrame(loop);
 })();
-if (location.hash === '#control-room') setTimeout(() => showPage('cr'), 0);
+if (location.hash === '#control-room' || location.hash === '#multiview') setTimeout(() => showPage('cr'), 0);
 window.addEventListener('resize', () => { if (page === 'cr') renderCr(); });
-window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' ? 'cr' : XPAGES[location.hash.slice(1)] ? location.hash.slice(1) : 'dash'));
+window.addEventListener('hashchange', () => showPage(location.hash === '#control-room' || location.hash === '#multiview' ? 'cr' : XPAGES[location.hash.slice(1)] ? location.hash.slice(1) : 'dash'));
 if (XPAGES[location.hash.slice(1)]) setTimeout(() => showPage(location.hash.slice(1)), 0);
+else if (location.hash !== '#control-room' && location.hash !== '#multiview') setTimeout(() => showPage('studio'), 0); // the app opens on the Production
 
 // Appearance and accessibility: saved in this browser only
 const SWATCHES = ['#3b6cff', '#22c55e', '#a855f7', '#f97316', '#f5f5f5'];
@@ -3276,6 +3314,18 @@ if (darkQuery && darkQuery.addEventListener) darkQuery.addEventListener('change'
 applyAcc(acc);
 
 // Title and thumbnail for Livestream
+// the pop-up lives straight in the page, so nothing around it can clip or move it
+(() => { const d = $('#glDetails'), bk = $('#sdBack'); if (d && bk) { document.body.append(bk, d); } })();
+function openDetails(need) {
+  document.body.classList.add('sd-open'); $('#sdBack').hidden = false;
+  const g = $('#glTitle').closest('.gt'); g.classList.toggle('need', Boolean(need)); $('#sdNeed').hidden = !need;
+  setTimeout(() => $('#glTitle').focus(), 30);
+}
+function closeDetails() { document.body.classList.remove('sd-open'); $('#sdBack').hidden = true; $('#glTitle').closest('.gt').classList.remove('need'); $('#sdNeed').hidden = true; }
+$('#sdBtn').onclick = () => openDetails(false);
+$('#sdX').onclick = closeDetails; $('#sdBack').onclick = closeDetails;
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('sd-open')) closeDetails(); });
+$('#glTitle').addEventListener('input', () => { $('#glTitle').closest('.gt').classList.remove('need'); $('#sdNeed').hidden = true; });
 let glLoaded = false;
 function thMsg(text) { const m = $('#thMsg'); m.classList.add('bad'); m.textContent = text; m.hidden = !text; }
 function setThumb(has) {
@@ -3287,6 +3337,8 @@ async function loadGl() {
     const g = await api('/api/golive');
     if (!glLoaded && g && typeof g.title === 'string') $('#glTitle').value = g.title;
     if (!glLoaded && g && typeof g.description === 'string') $('#glDesc').value = g.description;
+    // a new start of the app: forget the per-channel titles of last time too
+    try { if (g && g.boot && localStorage.getItem('ms_boot') !== g.boot) { localStorage.setItem('ms_boot', g.boot); localStorage.removeItem('ms_titles'); $('#glTitle').value = ''; $('#glDesc').value = ''; } } catch {}
     glLoaded = true;
     setThumb(Boolean(g && g.hasThumbnail));
   } catch {}

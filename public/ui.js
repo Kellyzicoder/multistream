@@ -114,3 +114,40 @@
   // a question: await msAsk('Delete it?', { ok: 'Delete', danger: true }) gives true or false
   window.msAsk = (text, o) => box(text, Object.assign({ ask: true }, o || {}));
 })();
+
+// ---- 3. an X on every pop-up window ----
+// A pop-up that has no close button of its own gets one in the top right corner. It closes the pop-up the same way
+// clicking outside it (or pressing Esc) does; a question (msAsk) counts as Cancel.
+(function () {
+  const st = document.createElement('style');
+  st.textContent = `.ms-x { position:absolute; top:10px; right:10px; z-index:5; width:30px; height:30px; padding:0; border:0; border-radius:8px; background:rgba(255,255,255,.09); color:inherit; font:400 20px/1 system-ui, sans-serif; cursor:pointer; display:grid; place-items:center; }
+  .ms-x:hover, .ms-x:focus-visible { background:rgba(255,255,255,.2); outline:none; } .lt .ms-x, html.t-light .ms-x { background:rgba(0,0,0,.07); } html.t-light .ms-x:hover { background:rgba(0,0,0,.14); }`;
+  document.head.appendChild(st);
+  const CARDS = '.overlay > .modal, .overlay > .swin, .modal > .dlg, .mdl > div, .ms-box > .c, .lsp, dialog[open]';
+  const OWN = 'button.as-x, button.sd-x, button.ms-x, button.x, button[aria-label="Close"], button[aria-label="Close dialog"], button[title="Close"], #setClose, #propsClose';
+  const shown = (el) => el.isConnected && el.getClientRects().length > 0;
+  const hasX = (card) => Boolean(card.querySelector(OWN)) || [...card.querySelectorAll('button')].some((b) => /^[×✕x]$/i.test(b.textContent.trim()));
+  function closeIt(card) {
+    const back = card.parentElement, wait = (fn) => setTimeout(() => { if (shown(card)) fn(); }, 70);
+    // 1. like a click outside the window
+    if (back && back !== document.body) { try { back.dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); back.dispatchEvent(new MouseEvent('click', { bubbles: true })); } catch {} }
+    // 2. like the Esc key (a question answers Cancel)
+    wait(() => { try { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })); } catch {} 
+      // 3. the Cancel / Close / Done button, or hide it
+      wait(() => { const b = [...card.querySelectorAll('button')].find((x) => /^(cancel|close|done|back|no)$/i.test(x.textContent.trim())); if (b) b.click(); else if (back) { back.hidden = true; back.classList.remove('open'); } }); });
+  }
+  function scan() {
+    document.querySelectorAll(CARDS).forEach((card) => {
+      if (card.dataset.msx || !shown(card)) return;
+      card.dataset.msx = '1';
+      if (hasX(card)) return;
+      if (getComputedStyle(card).position === 'static') card.style.position = 'relative';
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ms-x'; b.textContent = '×'; b.title = 'Close'; b.setAttribute('aria-label', 'Close');
+      b.onclick = (e) => { e.stopPropagation(); closeIt(card); };
+      card.appendChild(b);
+    });
+  }
+  let raf = 0; const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; scan(); }); };
+  new MutationObserver(later).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class', 'open'] });
+  later();
+})();
