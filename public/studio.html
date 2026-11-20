@@ -918,6 +918,8 @@ function save() {
     try { const r = await fetch('/api/studio', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); if (r.rev) lastRev = r.rev; } catch {}
   }, 300);
 }
+// the Multiview puts a scene on air straight away (same as clicking it here), instead of waiting for the next check
+window.__goScene = (name) => { if (!byName(name)) return false; editing = name; sel = ''; if (studio.current !== name) setCurrent(name); else renderAll(); return true; };
 function setCurrent(name, byPlan) { if (!byPlan && auto && auto.plan.takeover !== false) autoStop('You changed the scene, so the plan stopped.'); studio.current = name; dirtyCurrent = true; try { trTell(); } catch {} save(); renderAll(); }
 
 // ---------------- media ----------------
@@ -1630,15 +1632,21 @@ setInterval(() => {
 }, 500);
 
 // ---------------- sound ----------------
-let actx = null, master = null, dest = null;
+let actx = null, master = null, dest = null, masterLim = null;
 const asrc = new Map();   // audio source id -> { gain, gate, an, stream }
 const streams = new Map(); // device id -> MediaStream
 function ensureAudio() {
   if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
-  actx = new AudioContext(); master = actx.createGain(); dest = actx.createMediaStreamDestination(); master.connect(dest);
+  // 48 kHz: the rate the stream and recording use (no extra resampling)
+  try { actx = new AudioContext({ sampleRate: 48000 }); } catch { actx = new AudioContext(); }
+  master = actx.createGain(); dest = actx.createMediaStreamDestination();
+  // safety limiter on the final mix: when inputs add up past 0 dB the encoder would clip them (crackly, distorted sound).
+  // It only acts on the loudest peaks, just under 0 dB; normal sound passes unchanged.
+  masterLim = actx.createDynamicsCompressor(); masterLim.threshold.value = -1.5; masterLim.knee.value = 0; masterLim.ratio.value = 20; masterLim.attack.value = 0.001; masterLim.release.value = 0.1;
+  master.connect(masterLim); masterLim.connect(dest);
   // everything you hear in your headphones goes through monBus (its volume is the headphone volume);
   // wholeMon lets you hear the whole stream instead of single inputs
-  monBus = actx.createGain(); monBus.connect(actx.destination); wholeMon = actx.createGain(); wholeMon.gain.value = 0; master.connect(wholeMon); wholeMon.connect(monBus);
+  monBus = actx.createGain(); monBus.connect(actx.destination); wholeMon = actx.createGain(); wholeMon.gain.value = 0; masterLim.connect(wholeMon); wholeMon.connect(monBus);
   applyMonitorMix();
   setMonitorDevice(monDev);
   syncAudio();
@@ -4072,9 +4080,10 @@ async function poll() {
     const s = await fetch('/api/studio?rev=' + encodeURIComponent(lastRev || '')).then((r) => r.json());
     serverPreview = s.preview || '';
     if (!s.same && s.rev !== lastRev && !saveT && !drag) {
-      const wasEditing = editing;
+      const wasEditing = editing, wasCurrent = studio.current;
       studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '', shape: s.shape || 'landscape' }; lastRev = s.rev; applyShape(studio.shape); fillOld(studio); showColl();
-      editing = byName(wasEditing) ? wasEditing : studio.current;
+      // a scene put on air from the Multiview or the phone is also the one selected here
+      editing = byName(wasEditing) && studio.current === wasCurrent ? wasEditing : studio.current;
       renderAll();
     }
     if (!rec) return;
