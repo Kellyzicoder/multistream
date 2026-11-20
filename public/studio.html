@@ -410,6 +410,7 @@
   /* ---------- Controls: icons and words lined up on the left; Stop is red; Studio mode lights up when on ---------- */
   .dock .ctl button { display:flex; align-items:center; justify-content:flex-start; gap:10px; height:32px; padding:0 14px; font-size:12.5px; font-weight:600; border-radius:10px; }
   .dock .ctl button::before { content:""; width:16px; height:16px; flex:none; background:currentColor; -webkit-mask:center/contain no-repeat; mask:center/contain no-repeat; }
+  #sendBtn[hidden], .dock .ctl button#sendBtn[hidden] { display:none !important; }
   #sendBtn::before { -webkit-mask-image:none; mask-image:none; width:9px; height:9px; margin:0 3.5px; border-radius:50%; }
   #moreBtn::before { -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22black%22%3E%3Ccircle%20cx%3D%225%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3C/svg%3E"); mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22black%22%3E%3Ccircle%20cx%3D%225%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3C/svg%3E"); }
   #recBtn::before { -webkit-mask-image:none; mask-image:none; width:9px; height:9px; margin:0 3.5px; border-radius:50%; background:var(--red); }
@@ -713,7 +714,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
     <section class="dock narrow"><h2>Controls</h2>
       <div class="pad ctl">
         <button id="modeBtn" type="button" aria-pressed="true" title="Off (simple): one live picture, a click on a scene puts it on air. On: a Preview and a Program picture with a Transition button.">Studio mode: On</button>
-        <button id="sendBtn">Start streaming</button>
+        <button id="sendBtn" hidden>Start streaming</button>
         <button id="recBtn">Start recording</button>
         <button id="vcBtn" hidden>Start virtual camera</button>
         <button id="moreBtn" type="button" aria-pressed="false" title="Show or hide the extra tools (Transitions)">More tools</button>
@@ -1250,6 +1251,13 @@ function drawWords(c, l) {
   const size = l.size || 60, w = l.w || SW, al = l.align || 'left';
   c.font = `bold ${size}px ${fontOf(l)}`; c.textBaseline = 'top'; c.textAlign = al === 'centre' ? 'center' : al;
   const ax = al === 'centre' ? l.x + w / 2 : al === 'right' ? l.x + w : l.x;
+  if (l.back) { // a box behind the words, with its own opacity (the words stay solid)
+    const lines = String(l.text || '').split('\n'), pad = size * 0.3;
+    const tw = Math.min(w, Math.max(size * 0.5, ...lines.map((t) => c.measureText(t).width)));
+    const bx = (al === 'centre' ? ax - tw / 2 : al === 'right' ? ax - tw : ax) - pad, by = l.y - pad * 0.35, bw = tw + pad * 2, bh = lines.length * size * 1.2 + pad * 0.7;
+    c.save(); c.globalAlpha *= (l.backOp == null ? 100 : l.backOp) / 100; c.fillStyle = l.backColor || '#000000';
+    c.beginPath(); if (c.roundRect) c.roundRect(bx, by, bw, bh, size * 0.18); else c.rect(bx, by, bw, bh); c.fill(); c.restore();
+  }
   if (l.shadow) { c.shadowColor = 'rgba(0,0,0,0.6)'; c.shadowBlur = size * 0.18; c.shadowOffsetY = size * 0.06; }
   String(l.text || '').split('\n').forEach((t, i) => {
     const ty = l.y + i * size * 1.2;
@@ -1682,6 +1690,14 @@ async function openStream(id) {
   const p = navigator.mediaDevices.getUserMedia({ audio: { deviceId: id ? { exact: id } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
   streams.set(key, p); p.catch(() => streams.delete(key)); return p;
 }
+// a short, plain reason when an input cannot be opened
+function audioWhy(e) {
+  const t = String((e && (e.name + ' ' + e.message)) || e || '');
+  if (/NotAllowed|Permission/i.test(t)) return 'Blocked. Allow the microphone for Multistream in your computer\'s privacy settings.';
+  if (/NotFound|Requested device/i.test(t)) return 'Not found. Plug it in again.';
+  if (/NotReadable|Could not start|in use|busy|Timeout/i.test(t)) return 'In use by another program.';
+  return 'Could not open it.';
+}
 async function syncAudio() {
   if (!actx) return;
   for (const a of studio.audio) {
@@ -1707,7 +1723,8 @@ async function syncAudio() {
       n.mon.gain.value = 0; n.gain.connect(n.mon); n.mon.connect(monBus || actx.destination);
       asrc.set(a.id, n);
       const id = pickDevice('audio', a.label, a.device);
-      try { const st = a.kind === 'desktop' ? await openDesktopAudio() : await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = ''; } catch (e) { n.err = e.message; }
+      if (a.device === 'none' && a.kind !== 'desktop') { n.err = ''; continue; } // nothing chosen yet: nothing is opened or heard
+      try { const st = a.kind === 'desktop' ? await openDesktopAudio() : await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = ''; } catch (e) { n.err = audioWhy(e); }
     }
     n.gain.gain.setTargetAtTime(a.muted ? 0 : (a.vol == null ? 1 : a.vol), actx.currentTime, 0.02);
     if (n.mono) { n.mono.channelCount = a.mono ? 1 : 2; n.bal.pan.setTargetAtTime(Math.max(-1, Math.min(1, a.bal || 0)), actx.currentTime, 0.02); }
@@ -1862,9 +1879,9 @@ function renderAudio() {
     const sl = document.createElement('select');
     if (a.kind === 'desktop') { sl.add(new Option('The sound this computer plays', '')); sl.disabled = true; }
     else {
-      sl.add(new Option('Default input', ''));
+      sl.add(new Option('No audio selected', 'none')); sl.add(new Option('Default input', ''));
       devices.audio.forEach((x) => sl.add(new Option(x.label || 'Input', x.deviceId)));
-      sl.value = pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
+      sl.value = a.device === 'none' ? 'none' : pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
     }
     const fx = document.createElement('div'); fx.className = 'fxbody';
     const props = document.createElement('div'); props.className = 'fxbody';
@@ -1952,7 +1969,7 @@ function openListen(a, anchor) {
 document.addEventListener('pointerdown', (e) => { if (lspEl && !lspEl.contains(e.target) && !e.target.closest('.lsn, .hbt button')) closeListen(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeListen(); });
 function addAudioInput(kind) {
-  const a = { id: uid(), name: kind === 'desktop' ? 'Computer sound' : 'Sound ' + (studio.audio.length + 1), device: '', label: '', vol: 1, muted: false };
+  const a = { id: uid(), name: kind === 'desktop' ? 'Computer sound' : 'Sound ' + (studio.audio.length + 1), device: kind === 'desktop' ? '' : 'none', label: '', vol: 1, muted: false };
   if (kind === 'desktop') a.kind = 'desktop';
   studio.audio.push(a); const s = byName(editing); if (s) (s.audio = s.audio || []).push(a.id);
   save(); renderAudio(); syncAudio();
@@ -2278,7 +2295,7 @@ function openAddSource() {
   let pick = 'camera', mode = 'new';
   const kindInfo = (t) => { for (const [, ks] of ADD_GROUPS) { const k = ks.find((x) => x[0] === t); if (k) return k; } return [t, t, '']; };
   const makeDraft = (t) => {
-    if (t === 'mic') return { mic: true, name: 'Microphone', device: '', vol: 0.8, nr: true, mono: false };
+    if (t === 'mic') return { mic: true, name: 'Microphone', device: 'none', vol: 0.8, nr: true, mono: false };
     if (t === 'pptx') { const l = newLayer('window'); l.name = 'PowerPoint slides'; return l; }
     if (t === 'card') { const l = newLayer('camera'); l.name = 'Video Capture Card'; l.card = true; return l; }
     const l = newLayer(t); l.name = kindInfo(t)[1]; return l;
@@ -2304,7 +2321,7 @@ function openAddSource() {
   let nameIn = null;
   const addNew = () => {
     if (pick === 'mic') {
-      const a = { id: uid(), name: (nameIn && nameIn.value.trim()) || 'Microphone', device: draft.device || '', label: '', vol: draft.vol, muted: false, mono: Boolean(draft.mono) };
+      const a = { id: uid(), name: (nameIn && nameIn.value.trim()) || 'Microphone', device: draft.device === 'none' ? 'none' : (draft.device || ''), label: '', vol: draft.vol, muted: false, mono: Boolean(draft.mono) };
       if (draft.nr) { const F = fxOf(a); F.gate = { on: true, thr: -50 }; }
       studio.audio.push(a); const sc = byName(editing); if (sc) (sc.audio = sc.audio || []).push(a.id);
       close(); save(); renderAudio(); syncAudio(); flash(a.name + ' added to the Audio Mixer.', true); return;
@@ -2330,15 +2347,16 @@ function openAddSource() {
     const st = box.querySelector('.as-st'), bars = box.querySelectorAll('.as-bars i');
     const start = async () => {
       stopMic(); ensureAudio();
-      try { micSt = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: draft.device ? { exact: draft.device } : undefined, noiseSuppression: Boolean(draft.nr), echoCancellation: false, autoGainControl: false } }); } catch { st.className = 'as-st wait'; st.textContent = 'This microphone could not be opened.'; return; }
+      if (draft.device === 'none') { st.className = 'as-st'; st.textContent = 'Choose a device to hear it.'; bars.forEach((b) => { b.style.width = '0%'; }); return; }
+      try { micSt = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: draft.device ? { exact: draft.device } : undefined, noiseSuppression: Boolean(draft.nr), echoCancellation: false, autoGainControl: false } }); } catch (e) { st.className = 'as-st wait'; st.textContent = audioWhy(e); return; }
       const src = actx.createMediaStreamSource(micSt); const sp2 = actx.createChannelSplitter(2); src.connect(sp2); micAn = [actx.createAnalyser(), actx.createAnalyser()]; sp2.connect(micAn[0], 0); sp2.connect(micAn[1], src.channelCount > 1 ? 1 : 0);
       const g = actx.createGain(); g.gain.value = draft.vol; src.connect(g); micHear = g;
       const buf = new Float32Array(2048);
-      const loop = () => { if (!micAn || !alive) return; const v = micAn.map((a) => peakOf(a, buf) + 20 * Math.log10(Math.max(0.001, draft.vol))); bars.forEach((b, k) => { b.style.width = meterPct(v[k]) + '%'; }); const top = Math.max(v[0], v[1]); st.className = 'as-st' + (top > -55 ? ' ok' : ''); st.textContent = top > -55 ? 'Sound is coming through · ' + lvlOf(top) : 'No sound yet. Speak or play something.'; micHear.gain.value = draft.vol; requestAnimationFrame(loop); };
+      const loop = () => { if (!micAn || !alive) return; const v = micAn.map((a) => peakOf(a, buf) + 20 * Math.log10(Math.max(0.001, draft.vol))); bars.forEach((b, k) => { b.style.width = meterPct(v[k]) + '%'; }); const top = Math.max(v[0], v[1]); st.className = 'as-st' + (top > -55 ? ' ok' : ''); st.textContent = top > -55 ? 'Sound is coming through · ' + lvlOf(top) : 'Listening...'; micHear.gain.value = draft.vol; requestAnimationFrame(loop); };
       loop();
     };
     hear.onclick = () => { if (!micHear) return; const on = hear.classList.toggle('on'); try { if (on) micHear.connect(actx.destination); else micHear.disconnect(actx.destination); } catch {} hear.textContent = on ? 'Stop listening' : 'Listen in headphones'; };
-    const dev = document.createElement('select'); dev.add(new Option('Default input', '')); devices.audio.forEach((x) => dev.add(new Option(x.label || 'Input', x.deviceId))); dev.value = draft.device || ''; dev.onchange = () => { draft.device = dev.value; start(); };
+    const dev = document.createElement('select'); dev.add(new Option('No audio selected', 'none')); dev.add(new Option('Default input', '')); devices.audio.forEach((x) => dev.add(new Option(x.label || 'Input', x.deviceId))); dev.value = draft.device === 'none' ? 'none' : (draft.device || ''); dev.onchange = () => { draft.device = dev.value; start(); };
     row(card, 'Device', dev);
     const vw = document.createElement('div'); vw.className = 'as-vol'; vw.innerHTML = '<span>🔈</span><input type="range" min="0" max="100" step="1"><span>🔊</span><b></b>'; const vi = vw.querySelector('input'); vi.value = Math.round(draft.vol * 100); vw.querySelector('b').textContent = vi.value + '%'; vi.oninput = () => { draft.vol = vi.value / 100; vw.querySelector('b').textContent = vi.value + '%'; };
     const vr = row(card, 'Volume', vw); vr.classList.add('col');
@@ -2535,6 +2553,11 @@ function renderProps(target, draft) {
     box.append(field('Outline', tick(l.outline, (v) => { l.outline = v; })));
     if (l.outline) box.append(field('Outline colour', swatches(['#000000', '#ffffff', '#3b6cff'], l.outlineColor || '#000000', (v) => { l.outlineColor = v; })));
     box.append(field('Shadow', tick(l.shadow, (v) => { l.shadow = v; })));
+    box.append(field('Background', tick(l.back, (v) => { l.back = v; })));
+    if (l.back) {
+      box.append(field('Background colour', swatches(['#000000', '#0a0e1f', '#3b6cff', '#ffffff', '#ef4444', '#22c55e'], l.backColor || '#000000', (v) => { l.backColor = v; })));
+      box.append(field('Background opacity', rng(0, 100, 1, l.backOp == null ? 100 : l.backOp, (v) => v + '%', (v) => { l.backOp = v; })));
+    }
   }
   if (l.type === 'duo') {
     // the layout as two pictures under the preview

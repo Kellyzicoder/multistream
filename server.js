@@ -836,8 +836,12 @@ app.post('/api/autostart/cmd', (req, res) => { const c = (req.body || {}).cmd; i
 // The title the person typed is remembered. The thumbnail picture is kept in this computer's data folder.
 const GL_FILE = path.join(DATA_DIR, 'golive.json');
 let gl = { title: '', description: '' };
-try { gl = { ...gl, ...JSON.parse(fs.readFileSync(GL_FILE, 'utf8')) }; } catch {}
 const THUMBS = { 'image/png': path.join(DATA_DIR, 'thumbnail.png'), 'image/jpeg': path.join(DATA_DIR, 'thumbnail.jpg') };
+// Every time the app starts, the title, description and thumbnail start empty. A title from last Sunday must never go out on this stream.
+// (Saved details, the ones the person chose to keep, stay in their list.)
+try { fs.writeFileSync(GL_FILE, JSON.stringify({ title: '', description: '' }, null, 2)); } catch {}
+for (const f of Object.values(THUMBS)) { try { fs.unlinkSync(f); } catch {} }
+const GL_BOOT = Date.now().toString(36); // the page uses this to clear its own per-channel titles once per start
 function thumbFile() {
   for (const [type, file] of Object.entries(THUMBS)) if (fs.existsSync(file)) return { type, file };
   return null;
@@ -913,7 +917,7 @@ app.post('/api/golive/title', async (req, res) => {
   if (errs.length) return res.json({ error: errs.join(' · ') });
   res.json({ ok: true });
 });
-app.get('/api/golive', (req, res) => res.json({ title: gl.title, description: gl.description || '', hasThumbnail: Boolean(thumbFile()) }));
+app.get('/api/golive', (req, res) => res.json({ title: gl.title, description: gl.description || '', hasThumbnail: Boolean(thumbFile()), boot: GL_BOOT }));
 app.put('/api/golive/thumbnail', express.raw({ type: '*/*', limit: '10mb' }), (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const b = req.body;
