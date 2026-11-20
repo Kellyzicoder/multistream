@@ -255,7 +255,9 @@ async function until(fn, ms, what) {
 
   // 6. Start sending: the video goes Studio -> app -> fake YouTube, with no local server
   assert.strictEqual((await studio.textContent('#sendBtn')).trim(), 'Start streaming');
-  await studio.click('#sendBtn');
+  // Start streaming is only on the Livestream page now: the Production's own button is hidden and is pressed by the hotkey, as here
+  assert.strictEqual(await studio.evaluate(() => Boolean(document.querySelector('#sendBtn').offsetParent)), false, 'Start streaming is not shown on the Production');
+  await studio.evaluate(() => document.querySelector('#sendBtn').click());
   await until(() => dash.evaluate(() => fetch('/api/state').then((r) => r.json()).then((s) => s.obsLive)), 30000, 'video coming in');
   assert.strictEqual((await studio.textContent('#sendBtn')).trim(), 'Stop streaming');
   ok('Studio video reaches the app');
@@ -300,7 +302,7 @@ async function until(fn, ms, what) {
 
   // 9. stop sending: the fake YouTube gets a proper video
   await sleep(3000);
-  await studio.click('#sendBtn');
+  await studio.evaluate(() => document.querySelector('#sendBtn').click());
   await until(() => dash.evaluate(() => fetch('/api/state').then((r) => r.json()).then((s) => !s.obsLive)), 20000, 'stopped');
   await until(() => fakeYt.exitCode !== null && fakeFb.exitCode !== null, 25000, 'fake YouTube and Facebook to finish');
   const yi = mediaInfo(yt);

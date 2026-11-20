@@ -410,6 +410,7 @@
   /* ---------- Controls: icons and words lined up on the left; Stop is red; Studio mode lights up when on ---------- */
   .dock .ctl button { display:flex; align-items:center; justify-content:flex-start; gap:10px; height:32px; padding:0 14px; font-size:12.5px; font-weight:600; border-radius:10px; }
   .dock .ctl button::before { content:""; width:16px; height:16px; flex:none; background:currentColor; -webkit-mask:center/contain no-repeat; mask:center/contain no-repeat; }
+  #sendBtn[hidden], .dock .ctl button#sendBtn[hidden] { display:none !important; }
   #sendBtn::before { -webkit-mask-image:none; mask-image:none; width:9px; height:9px; margin:0 3.5px; border-radius:50%; }
   #moreBtn::before { -webkit-mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22black%22%3E%3Ccircle%20cx%3D%225%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3C/svg%3E"); mask-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22black%22%3E%3Ccircle%20cx%3D%225%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%2212%22%20r%3D%222%22/%3E%3C/svg%3E"); }
   #recBtn::before { -webkit-mask-image:none; mask-image:none; width:9px; height:9px; margin:0 3.5px; border-radius:50%; background:var(--red); }
@@ -713,7 +714,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
     <section class="dock narrow"><h2>Controls</h2>
       <div class="pad ctl">
         <button id="modeBtn" type="button" aria-pressed="true" title="Off (simple): one live picture, a click on a scene puts it on air. On: a Preview and a Program picture with a Transition button.">Studio mode: On</button>
-        <button id="sendBtn">Start streaming</button>
+        <button id="sendBtn" hidden>Start streaming</button>
         <button id="recBtn">Start recording</button>
         <button id="vcBtn" hidden>Start virtual camera</button>
         <button id="moreBtn" type="button" aria-pressed="false" title="Show or hide the extra tools (Transitions)">More tools</button>
@@ -918,6 +919,8 @@ function save() {
     try { const r = await fetch('/api/studio', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((x) => x.json()); if (r.rev) lastRev = r.rev; } catch {}
   }, 300);
 }
+// the Multiview puts a scene on air straight away (same as clicking it here), instead of waiting for the next check
+window.__goScene = (name) => { if (!byName(name)) return false; editing = name; sel = ''; if (studio.current !== name) setCurrent(name); else renderAll(); return true; };
 function setCurrent(name, byPlan) { if (!byPlan && auto && auto.plan.takeover !== false) autoStop('You changed the scene, so the plan stopped.'); studio.current = name; dirtyCurrent = true; try { trTell(); } catch {} save(); renderAll(); }
 
 // ---------------- media ----------------
@@ -1250,6 +1253,13 @@ function drawWords(c, l) {
   const size = l.size || 60, w = l.w || SW, al = l.align || 'left';
   c.font = `bold ${size}px ${fontOf(l)}`; c.textBaseline = 'top'; c.textAlign = al === 'centre' ? 'center' : al;
   const ax = al === 'centre' ? l.x + w / 2 : al === 'right' ? l.x + w : l.x;
+  if (l.back) { // a box behind the words, with its own opacity (the words stay solid)
+    const lines = String(l.text || '').split('\n'), pad = size * 0.3;
+    const tw = Math.min(w, Math.max(size * 0.5, ...lines.map((t) => c.measureText(t).width)));
+    const bx = (al === 'centre' ? ax - tw / 2 : al === 'right' ? ax - tw : ax) - pad, by = l.y - pad * 0.35, bw = tw + pad * 2, bh = lines.length * size * 1.2 + pad * 0.7;
+    c.save(); c.globalAlpha *= (l.backOp == null ? 100 : l.backOp) / 100; c.fillStyle = l.backColor || '#000000';
+    c.beginPath(); if (c.roundRect) c.roundRect(bx, by, bw, bh, size * 0.18); else c.rect(bx, by, bw, bh); c.fill(); c.restore();
+  }
   if (l.shadow) { c.shadowColor = 'rgba(0,0,0,0.6)'; c.shadowBlur = size * 0.18; c.shadowOffsetY = size * 0.06; }
   String(l.text || '').split('\n').forEach((t, i) => {
     const ty = l.y + i * size * 1.2;
@@ -1630,15 +1640,21 @@ setInterval(() => {
 }, 500);
 
 // ---------------- sound ----------------
-let actx = null, master = null, dest = null;
+let actx = null, master = null, dest = null, masterLim = null;
 const asrc = new Map();   // audio source id -> { gain, gate, an, stream }
 const streams = new Map(); // device id -> MediaStream
 function ensureAudio() {
   if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
-  actx = new AudioContext(); master = actx.createGain(); dest = actx.createMediaStreamDestination(); master.connect(dest);
+  // 48 kHz: the rate the stream and recording use (no extra resampling)
+  try { actx = new AudioContext({ sampleRate: 48000 }); } catch { actx = new AudioContext(); }
+  master = actx.createGain(); dest = actx.createMediaStreamDestination();
+  // safety limiter on the final mix: when inputs add up past 0 dB the encoder would clip them (crackly, distorted sound).
+  // It only acts on the loudest peaks, just under 0 dB; normal sound passes unchanged.
+  masterLim = actx.createDynamicsCompressor(); masterLim.threshold.value = -1.5; masterLim.knee.value = 0; masterLim.ratio.value = 20; masterLim.attack.value = 0.001; masterLim.release.value = 0.1;
+  master.connect(masterLim); masterLim.connect(dest);
   // everything you hear in your headphones goes through monBus (its volume is the headphone volume);
   // wholeMon lets you hear the whole stream instead of single inputs
-  monBus = actx.createGain(); monBus.connect(actx.destination); wholeMon = actx.createGain(); wholeMon.gain.value = 0; master.connect(wholeMon); wholeMon.connect(monBus);
+  monBus = actx.createGain(); monBus.connect(actx.destination); wholeMon = actx.createGain(); wholeMon.gain.value = 0; masterLim.connect(wholeMon); wholeMon.connect(monBus);
   applyMonitorMix();
   setMonitorDevice(monDev);
   syncAudio();
@@ -1682,6 +1698,14 @@ async function openStream(id) {
   const p = navigator.mediaDevices.getUserMedia({ audio: { deviceId: id ? { exact: id } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
   streams.set(key, p); p.catch(() => streams.delete(key)); return p;
 }
+// a short, plain reason when an input cannot be opened
+function audioWhy(e) {
+  const t = String((e && (e.name + ' ' + e.message)) || e || '');
+  if (/NotAllowed|Permission/i.test(t)) return 'Blocked. Allow the microphone for Multistream in your computer\'s privacy settings.';
+  if (/NotFound|Requested device/i.test(t)) return 'Not found. Plug it in again.';
+  if (/NotReadable|Could not start|in use|busy|Timeout/i.test(t)) return 'In use by another program.';
+  return 'Could not open it.';
+}
 async function syncAudio() {
   if (!actx) return;
   for (const a of studio.audio) {
@@ -1707,7 +1731,8 @@ async function syncAudio() {
       n.mon.gain.value = 0; n.gain.connect(n.mon); n.mon.connect(monBus || actx.destination);
       asrc.set(a.id, n);
       const id = pickDevice('audio', a.label, a.device);
-      try { const st = a.kind === 'desktop' ? await openDesktopAudio() : await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = ''; } catch (e) { n.err = e.message; }
+      if (a.device === 'none' && a.kind !== 'desktop') { n.err = ''; continue; } // nothing chosen yet: nothing is opened or heard
+      try { const st = a.kind === 'desktop' ? await openDesktopAudio() : await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = ''; } catch (e) { n.err = audioWhy(e); }
     }
     n.gain.gain.setTargetAtTime(a.muted ? 0 : (a.vol == null ? 1 : a.vol), actx.currentTime, 0.02);
     if (n.mono) { n.mono.channelCount = a.mono ? 1 : 2; n.bal.pan.setTargetAtTime(Math.max(-1, Math.min(1, a.bal || 0)), actx.currentTime, 0.02); }
@@ -1862,9 +1887,9 @@ function renderAudio() {
     const sl = document.createElement('select');
     if (a.kind === 'desktop') { sl.add(new Option('The sound this computer plays', '')); sl.disabled = true; }
     else {
-      sl.add(new Option('Default input', ''));
+      sl.add(new Option('No audio selected', 'none')); sl.add(new Option('Default input', ''));
       devices.audio.forEach((x) => sl.add(new Option(x.label || 'Input', x.deviceId)));
-      sl.value = pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
+      sl.value = a.device === 'none' ? 'none' : pickDevice('audio', a.label, a.device); sl.onchange = () => { a.device = sl.value; a.label = ''; save(); syncAudio(); };
     }
     const fx = document.createElement('div'); fx.className = 'fxbody';
     const props = document.createElement('div'); props.className = 'fxbody';
@@ -1922,20 +1947,22 @@ function openListen(a, anchor) {
     + '<div class="cd"><div class="r"><span class="l">Headphones</span><select class="hpd"></select></div>'
     + '<div class="r"><span class="l">What I hear</span><div class="sg"><button type="button" data-w="0">This sound</button><button type="button" data-w="1">Whole stream</button></div></div>'
     + '<div class="rf"><span class="l">Headphone volume</span><div class="vr"><input type="range" min="0" max="100" step="1"><b></b></div></div></div>'
+    + '<div class="wn dflt" hidden><span>⚠</span><span>Headphones is set to Default output. If this computer\'s sound goes to the speakers or the sound desk, the sound will loop back (echo, feedback, distortion). Pick your headphones above.</span></div>'
     + '<div class="wn"><span>⚠</span><span>Bluetooth headphones can be a little behind. Wired is best for checking sound.</span></div>';
   p.querySelector('.ti b').textContent = a.name;
   const paint = () => {
     const onNow = isHeard(a); p.classList.toggle('on', onNow);
     p.querySelector('.ti small').textContent = onNow ? '● Only you can hear this' : 'Off - you are not listening to this';
     p.querySelector('.tgl').setAttribute('aria-pressed', String(onNow));
+    p.querySelector('.wn.dflt').hidden = !(onNow && !monDev);
     p.querySelectorAll('[data-w]').forEach((b) => b.classList.toggle('on', (b.dataset.w === '1') === monPref.whole));
   };
-  p.querySelector('.tgl').onclick = () => { a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); paint(); renderAudio(); };
+  p.querySelector('.tgl').onclick = () => { a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); paint(); renderAudio(); if (isHeard(a) && !monDev) flash('Listening goes to Default output. Pick your headphones, or the sound can loop back through the speakers.', false); };
   p.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => { monPref.whole = b.dataset.w === '1'; try { localStorage.setItem('ms_mon_whole', monPref.whole ? '1' : '0'); } catch {} applyMonitorMix(); paint(); }; });
   const sel = p.querySelector('.hpd'); sel.add(new Option('Default output', ''));
   (devices.out || []).forEach((x) => sel.add(new Option(x.label || 'Output', x.deviceId)));
   sel.value = [...sel.options].some((o) => o.value === monDev) ? monDev : '';
-  sel.onchange = () => { setMonitorDevice(sel.value); const mm = $('#monDev'); if (mm) mm.value = sel.value; };
+  sel.onchange = () => { setMonitorDevice(sel.value); const mm = $('#monDev'); if (mm) mm.value = sel.value; paint(); };
   const vr = p.querySelector('.vr input'), vb = p.querySelector('.vr b');
   vr.value = Math.round(monPref.vol * 100); vb.textContent = vr.value + '%';
   vr.oninput = () => { monPref.vol = vr.value / 100; vb.textContent = vr.value + '%'; try { localStorage.setItem('ms_mon_vol', String(monPref.vol)); } catch {} applyMonitorMix(); };
@@ -1952,7 +1979,7 @@ function openListen(a, anchor) {
 document.addEventListener('pointerdown', (e) => { if (lspEl && !lspEl.contains(e.target) && !e.target.closest('.lsn, .hbt button')) closeListen(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeListen(); });
 function addAudioInput(kind) {
-  const a = { id: uid(), name: kind === 'desktop' ? 'Computer sound' : 'Sound ' + (studio.audio.length + 1), device: '', label: '', vol: 1, muted: false };
+  const a = { id: uid(), name: kind === 'desktop' ? 'Computer sound' : 'Sound ' + (studio.audio.length + 1), device: kind === 'desktop' ? '' : 'none', label: '', vol: 1, muted: false };
   if (kind === 'desktop') a.kind = 'desktop';
   studio.audio.push(a); const s = byName(editing); if (s) (s.audio = s.audio || []).push(a.id);
   save(); renderAudio(); syncAudio();
@@ -2278,7 +2305,7 @@ function openAddSource() {
   let pick = 'camera', mode = 'new';
   const kindInfo = (t) => { for (const [, ks] of ADD_GROUPS) { const k = ks.find((x) => x[0] === t); if (k) return k; } return [t, t, '']; };
   const makeDraft = (t) => {
-    if (t === 'mic') return { mic: true, name: 'Microphone', device: '', vol: 0.8, nr: true, mono: false };
+    if (t === 'mic') return { mic: true, name: 'Microphone', device: 'none', vol: 0.8, nr: true, mono: false };
     if (t === 'pptx') { const l = newLayer('window'); l.name = 'PowerPoint slides'; return l; }
     if (t === 'card') { const l = newLayer('camera'); l.name = 'Video Capture Card'; l.card = true; return l; }
     const l = newLayer(t); l.name = kindInfo(t)[1]; return l;
@@ -2304,7 +2331,7 @@ function openAddSource() {
   let nameIn = null;
   const addNew = () => {
     if (pick === 'mic') {
-      const a = { id: uid(), name: (nameIn && nameIn.value.trim()) || 'Microphone', device: draft.device || '', label: '', vol: draft.vol, muted: false, mono: Boolean(draft.mono) };
+      const a = { id: uid(), name: (nameIn && nameIn.value.trim()) || 'Microphone', device: draft.device === 'none' ? 'none' : (draft.device || ''), label: '', vol: draft.vol, muted: false, mono: Boolean(draft.mono) };
       if (draft.nr) { const F = fxOf(a); F.gate = { on: true, thr: -50 }; }
       studio.audio.push(a); const sc = byName(editing); if (sc) (sc.audio = sc.audio || []).push(a.id);
       close(); save(); renderAudio(); syncAudio(); flash(a.name + ' added to the Audio Mixer.', true); return;
@@ -2330,15 +2357,16 @@ function openAddSource() {
     const st = box.querySelector('.as-st'), bars = box.querySelectorAll('.as-bars i');
     const start = async () => {
       stopMic(); ensureAudio();
-      try { micSt = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: draft.device ? { exact: draft.device } : undefined, noiseSuppression: Boolean(draft.nr), echoCancellation: false, autoGainControl: false } }); } catch { st.className = 'as-st wait'; st.textContent = 'This microphone could not be opened.'; return; }
+      if (draft.device === 'none') { st.className = 'as-st'; st.textContent = 'Choose a device to hear it.'; bars.forEach((b) => { b.style.width = '0%'; }); return; }
+      try { micSt = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: draft.device ? { exact: draft.device } : undefined, noiseSuppression: Boolean(draft.nr), echoCancellation: false, autoGainControl: false } }); } catch (e) { st.className = 'as-st wait'; st.textContent = audioWhy(e); return; }
       const src = actx.createMediaStreamSource(micSt); const sp2 = actx.createChannelSplitter(2); src.connect(sp2); micAn = [actx.createAnalyser(), actx.createAnalyser()]; sp2.connect(micAn[0], 0); sp2.connect(micAn[1], src.channelCount > 1 ? 1 : 0);
       const g = actx.createGain(); g.gain.value = draft.vol; src.connect(g); micHear = g;
       const buf = new Float32Array(2048);
-      const loop = () => { if (!micAn || !alive) return; const v = micAn.map((a) => peakOf(a, buf) + 20 * Math.log10(Math.max(0.001, draft.vol))); bars.forEach((b, k) => { b.style.width = meterPct(v[k]) + '%'; }); const top = Math.max(v[0], v[1]); st.className = 'as-st' + (top > -55 ? ' ok' : ''); st.textContent = top > -55 ? 'Sound is coming through · ' + lvlOf(top) : 'No sound yet. Speak or play something.'; micHear.gain.value = draft.vol; requestAnimationFrame(loop); };
+      const loop = () => { if (!micAn || !alive) return; const v = micAn.map((a) => peakOf(a, buf) + 20 * Math.log10(Math.max(0.001, draft.vol))); bars.forEach((b, k) => { b.style.width = meterPct(v[k]) + '%'; }); const top = Math.max(v[0], v[1]); st.className = 'as-st' + (top > -55 ? ' ok' : ''); st.textContent = top > -55 ? 'Sound is coming through · ' + lvlOf(top) : 'Listening...'; micHear.gain.value = draft.vol; requestAnimationFrame(loop); };
       loop();
     };
     hear.onclick = () => { if (!micHear) return; const on = hear.classList.toggle('on'); try { if (on) micHear.connect(actx.destination); else micHear.disconnect(actx.destination); } catch {} hear.textContent = on ? 'Stop listening' : 'Listen in headphones'; };
-    const dev = document.createElement('select'); dev.add(new Option('Default input', '')); devices.audio.forEach((x) => dev.add(new Option(x.label || 'Input', x.deviceId))); dev.value = draft.device || ''; dev.onchange = () => { draft.device = dev.value; start(); };
+    const dev = document.createElement('select'); dev.add(new Option('No audio selected', 'none')); dev.add(new Option('Default input', '')); devices.audio.forEach((x) => dev.add(new Option(x.label || 'Input', x.deviceId))); dev.value = draft.device === 'none' ? 'none' : (draft.device || ''); dev.onchange = () => { draft.device = dev.value; start(); };
     row(card, 'Device', dev);
     const vw = document.createElement('div'); vw.className = 'as-vol'; vw.innerHTML = '<span>🔈</span><input type="range" min="0" max="100" step="1"><span>🔊</span><b></b>'; const vi = vw.querySelector('input'); vi.value = Math.round(draft.vol * 100); vw.querySelector('b').textContent = vi.value + '%'; vi.oninput = () => { draft.vol = vi.value / 100; vw.querySelector('b').textContent = vi.value + '%'; };
     const vr = row(card, 'Volume', vw); vr.classList.add('col');
@@ -2535,6 +2563,11 @@ function renderProps(target, draft) {
     box.append(field('Outline', tick(l.outline, (v) => { l.outline = v; })));
     if (l.outline) box.append(field('Outline colour', swatches(['#000000', '#ffffff', '#3b6cff'], l.outlineColor || '#000000', (v) => { l.outlineColor = v; })));
     box.append(field('Shadow', tick(l.shadow, (v) => { l.shadow = v; })));
+    box.append(field('Background', tick(l.back, (v) => { l.back = v; })));
+    if (l.back) {
+      box.append(field('Background colour', swatches(['#000000', '#0a0e1f', '#3b6cff', '#ffffff', '#ef4444', '#22c55e'], l.backColor || '#000000', (v) => { l.backColor = v; })));
+      box.append(field('Background opacity', rng(0, 100, 1, l.backOp == null ? 100 : l.backOp, (v) => v + '%', (v) => { l.backOp = v; })));
+    }
   }
   if (l.type === 'duo') {
     // the layout as two pictures under the preview
@@ -4072,9 +4105,10 @@ async function poll() {
     const s = await fetch('/api/studio?rev=' + encodeURIComponent(lastRev || '')).then((r) => r.json());
     serverPreview = s.preview || '';
     if (!s.same && s.rev !== lastRev && !saveT && !drag) {
-      const wasEditing = editing;
+      const wasEditing = editing, wasCurrent = studio.current;
       studio = { scenes: s.scenes || [], audio: s.audio || [], current: s.current || '', shape: s.shape || 'landscape' }; lastRev = s.rev; applyShape(studio.shape); fillOld(studio); showColl();
-      editing = byName(wasEditing) ? wasEditing : studio.current;
+      // a scene put on air from the Multiview or the phone is also the one selected here
+      editing = byName(wasEditing) && studio.current === wasCurrent ? wasEditing : studio.current;
       renderAll();
     }
     if (!rec) return;
@@ -4159,6 +4193,9 @@ async function shots() {
 (async () => {
   studio = await fetch('/api/studio').then((r) => r.json()); lastRev = studio.rev;
   studio.audio = studio.audio || []; applyShape(studio.shape); showColl();
+  // listening in headphones starts off each time the app opens, so a forgotten "listen" can never loop the sound back at the next event.
+  // "Monitor only" inputs keep their setting: turning them off would put them into the stream.
+  { let ch = false; studio.audio.forEach((x) => { if (x.monitor === 'both') { x.monitor = 'off'; ch = true; } }); if (ch) setTimeout(save, 0); }
   // the Scene collections page can hand over an OBS file to import here (it needs the Production's OBS reader)
   try { const pend = localStorage.getItem('ms_pending_obs'); if (pend) { localStorage.removeItem('ms_pending_obs'); setTimeout(() => importObsText(pend), 800); } } catch {}
   if (!studio.scenes.length) {
