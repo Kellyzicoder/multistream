@@ -1678,15 +1678,35 @@ const wholeNow = () => monPref.whole || !videoHasSound();
 function applyMonitorMix() {
   if (!actx || !monBus) return;
   const any = studio.audio.some(isHeard), t = actx.currentTime, whole = wholeNow();
-  monBus.gain.setTargetAtTime(monPref.vol, t, 0.02);
+  monBus.gain.setTargetAtTime(monLost ? 0 : monPref.vol, t, 0.02);
   wholeMon.gain.setTargetAtTime(whole && any ? 1 : 0, t, 0.02);
   // an input set to "listen only" is not in the stream, so it is still played to you by itself
   for (const a of studio.audio) { const n = asrc.get(a.id); if (n && n.mon) n.mon.gain.setTargetAtTime(isHeard(a) && (!whole || a.monitor === 'only') ? 1 : 0, t, 0.02); }
 }
+let monLost = false; // the picked headphones were unplugged or switched off (Bluetooth)
 function setMonitorDevice(id) {
-  monDev = id || '';
+  monDev = id || ''; monLost = false;
   try { localStorage.setItem('ms_mondev', monDev); } catch {}
   if (actx && actx.setSinkId) actx.setSinkId(monDev || '').catch(() => {});
+  applyMonitorMix();
+}
+// Safe: when the headphones you picked go away (a Bluetooth headset turned off), Windows would play the sound on the
+// Default output (speakers, the sound desk) and it could loop into the stream. Instead the listening goes silent and
+// is turned off. The stream does not change. When the headphones come back, turn listening on again yourself.
+function checkMonitorDevice(quiet) {
+  if (!monDev || !devices.out) return;
+  const here = devices.out.some((d) => d.deviceId === monDev);
+  if (!here && !monLost) {
+    monLost = true;
+    try { if (actx && actx.setSinkId) actx.setSinkId({ type: 'none' }).catch(() => {}); } catch {}
+    let changed = false; studio.audio.forEach((a) => { if (a.monitor === 'both') { a.monitor = 'off'; changed = true; } });
+    if (changed) save();
+    applyMonitorMix(); syncAudio(); renderAudio(); closeListen();
+    if (!quiet) flash('Your headphones were disconnected, so listening stopped. Nothing plays on the speakers, and the stream is not changed.', false);
+  } else if (here && monLost) {
+    monLost = false; if (actx && actx.setSinkId) actx.setSinkId(monDev).catch(() => {}); applyMonitorMix();
+    if (!quiet) flash('Your headphones are back. Turn listening on again with the headphones button.', true);
+  }
 }
 // the sound this PC plays (Windows only; the app asks Windows for it)
 let desktopAudioP = null;
@@ -1919,7 +1939,7 @@ function renderAudio() {
     // to Default output and could loop back), the Listen window opens instead so you can pick them. Right-click opens it any time.
     lb.onclick = (e) => {
       e.stopPropagation();
-      if (!isHeard(a) && !monDev) { openListen(a, lb); flash('Pick your headphones first, then turn listening on.', false); return; }
+      if (!isHeard(a) && (!monDev || monLost)) { openListen(a, lb); flash(monLost ? 'Your headphones are not connected. Connect them or pick others.' : 'Pick your headphones first, then turn listening on.', false); return; }
       closeListen(); a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); renderAudio();
     };
     lb.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); openListen(a, lb); };
@@ -2151,6 +2171,15 @@ function openProjector(src, displayId) {
   projWins[src] = window.open('/projector.html?src=' + src + (displayId != null ? '&d=' + encodeURIComponent(displayId) : ''), '_blank', 'popup,width=960,height=540');
 }
 function closeCtx() { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } document.querySelectorAll('#mbar button.on').forEach((b) => b.classList.remove('on')); }
+// Delete a sound input for good: out of every scene and the mixer, and its sound is let go.
+async function removeAudioInput(a) {
+  if (!await msAsk('Delete "' + a.name + '"? It is taken out of every scene and the Audio Mixer.', { ok: 'Delete', danger: true })) return;
+  const n = asrc.get(a.id); if (n) { try { n.node && n.node.disconnect(); n.gain.disconnect(); n.gate.disconnect(); n.mon.disconnect(); } catch {} asrc.delete(a.id); }
+  studio.audio = studio.audio.filter((x) => x.id !== a.id); studio.scenes.forEach((sc) => { sc.audio = (sc.audio || []).filter((x) => x !== a.id); });
+  closeListen(); save(); syncAudio(); gateAudio(); renderAudio(); renderLayers();
+}
+// Like OBS: take a sound input out of the scene being edited only (it stays in the mixer and in other scenes)
+function audioOutOfScene(a) { const sc = byName(editing); if (!sc) return; sc.audio = (sc.audio || []).filter((x) => x !== a.id); save(); gateAudio(); renderAudio(); renderLayers(); }
 // the right-click menu on a sound input in the Audio Mixer
 function showAudioMenu(ev, a, nameEl, fx, inScene, props) {
   ev.preventDefault(); closeCtx();
@@ -2176,6 +2205,8 @@ function showAudioMenu(ev, a, nameEl, fx, inScene, props) {
   item('Filters', () => openAudioFilters(a));
   item('Properties', () => openTools(a, props, 'Properties'));
   item('Advanced Audio Properties...', () => openAdvancedAudio());
+  sep();
+  item('Delete', () => removeAudioInput(a));
   document.body.appendChild(m); ctxMenu = m;
   const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
   const first = m.querySelector('.ctxi'); if (first) first.focus();
@@ -2476,6 +2507,31 @@ function renderLayers() {
     });
     box.appendChild(d);
   }
+  // Like OBS: the sound inputs of this scene are sources in the list too. The eye mutes it; right-click to take it out of the
+  // scene or delete it.
+  studio.audio.filter((a) => (s.audio || []).includes(a.id)).forEach((a) => {
+    const d = document.createElement('div'); d.className = 'lyr aud' + (a.muted ? ' hid' : ''); d.dataset.audio = a.id;
+    const ti = document.createElement('span'); ti.className = 'tico'; ti.innerHTML = a.kind === 'desktop' ? SVG('<path d="M4 9v6h4l5 4V5L8 9z"/>') : SRC_ICON.mic; ti.title = 'Sound input';
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = a.name; n.title = a.name + ' (sound)';
+    const eye = eyeBtn(!a.muted, 'Mute or unmute', (v) => { a.muted = !v; save(); syncAudio(); renderAudio(); renderLayers(); });
+    const gap = lockBtn({}); gap.style.visibility = 'hidden'; gap.tabIndex = -1; d.append(ti, n, eye, gap); // lines up with the picture sources
+    d.addEventListener('contextmenu', (ev) => {
+      ev.preventDefault(); closeCtx();
+      const m = document.createElement('div'); m.className = 'ctxm'; m.setAttribute('role', 'menu');
+      const h = document.createElement('div'); h.className = 'ctxh'; h.textContent = a.name; m.appendChild(h);
+      const item = (t, run) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ctxi'; b.setAttribute('role', 'menuitem'); b.textContent = t; b.onclick = () => { closeCtx(); run(); }; m.appendChild(b); };
+      const sep = () => { const x = document.createElement('div'); x.className = 'ctxs'; m.appendChild(x); };
+      item(a.muted ? 'Unmute' : 'Mute', () => { a.muted = !a.muted; save(); syncAudio(); renderAudio(); renderLayers(); });
+      item('Filters', () => openAudioFilters(a));
+      item('Advanced Audio Properties...', () => openAdvancedAudio());
+      sep();
+      item('Remove from this scene', () => audioOutOfScene(a));
+      item('Delete', () => removeAudioInput(a));
+      document.body.appendChild(m); ctxMenu = m;
+      const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
+    });
+    box.appendChild(d);
+  });
   renderProps();
   // the source bar under the picture
   const cur = s.layers.find((x) => x.id === sel);
@@ -3169,7 +3225,7 @@ async function loadDevices(first = true) {
   devices.video = d.filter((x) => x.kind === 'videoinput' && !isOwnCam(x.label)); devices.audio = d.filter((x) => x.kind === 'audioinput'); devices.out = d.filter((x) => x.kind === 'audiooutput');
   cams.forEach((c, k) => { if (!c.ready) cams.delete(k); });
   asrc.forEach((n) => { if (n.err) n.dev = 'retry'; }); // an input that failed is tried again
-  fillMon(); renderAudio(); syncAudio();
+  fillMon(); renderAudio(); syncAudio(); checkMonitorDevice(first);
   if (!first) { flash('The list of cameras and sound inputs was updated.', true); renderProps(); }
 }
 // plug in a capture box (like the ATEM Mini) and it shows up here by itself
