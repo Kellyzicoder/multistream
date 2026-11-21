@@ -1914,8 +1914,15 @@ function renderAudio() {
       if (!sl.disabled) { l.textContent = 'Device'; w.append(l, sl); } else { l.textContent = 'This source has no device to choose.'; w.append(l); }
       props.appendChild(w); }
     const tb = document.createElement('button'); tb.type = 'button'; tb.className = 'sm'; tb.textContent = 'Filters'; tb.title = 'Add sound filters: low cut, EQ, noise gate, compressor, limiter'; tb.onclick = () => openAudioFilters(a);
-    const lb = document.createElement('button'); lb.type = 'button'; lb.className = 'sm lsn' + (isHeard(a) ? ' on' : ''); lb.title = 'Listen in headphones'; lb.setAttribute('aria-label', 'Listen to ' + a.name + ' in headphones');
-    lb.onclick = (e) => { e.stopPropagation(); openListen(a, lb); };
+    const lb = document.createElement('button'); lb.type = 'button'; lb.className = 'sm lsn' + (isHeard(a) ? ' on' : ''); lb.title = 'Listen in headphones: click to turn on or off. Right-click for headphones and volume.'; lb.setAttribute('aria-label', 'Listen to ' + a.name + ' in headphones');
+    // a click turns listening on or off straight away. The first time, when no headphones are picked yet (the sound would go
+    // to Default output and could loop back), the Listen window opens instead so you can pick them. Right-click opens it any time.
+    lb.onclick = (e) => {
+      e.stopPropagation();
+      if (!isHeard(a) && !monDev) { openListen(a, lb); flash('Pick your headphones first, then turn listening on.', false); return; }
+      closeListen(); a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); renderAudio();
+    };
+    lb.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); openListen(a, lb); };
     if (HZ) {
       // side to side: name and volume, then the two meters with the fader under them, then mute, listen and tools
       const left = document.createElement('div'); left.append(t, fd.read);
