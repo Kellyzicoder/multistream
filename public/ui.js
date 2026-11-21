@@ -145,6 +145,16 @@
       const b = document.createElement('button'); b.type = 'button'; b.className = 'ms-x'; b.textContent = '×'; b.title = 'Close'; b.setAttribute('aria-label', 'Close');
       b.onclick = (e) => { e.stopPropagation(); closeIt(card); };
       card.appendChild(b);
+      // the X must never sit on top of words or buttons (like "Show hidden sources"): if it does, the pop-up's content
+      // moves down a little, so the X has the top right corner to itself
+      requestAnimationFrame(() => {
+        const r = b.getBoundingClientRect(); if (!r.width) return;
+        const hit = [...card.querySelectorAll('*')].some((el) => {
+          if (el === b || b.contains(el) || el.contains(b) || (el.children.length && !/^(LABEL|BUTTON|INPUT|SELECT|TEXTAREA|H\d)$/.test(el.tagName))) return false;
+          const q = el.getBoundingClientRect(); return q.width > 0 && q.height > 0 && q.left < r.right && q.right > r.left && q.top < r.bottom && q.bottom > r.top;
+        });
+        if (hit) card.style.paddingTop = Math.max(parseFloat(getComputedStyle(card).paddingTop) || 0, r.bottom - card.getBoundingClientRect().top + 10) + 'px';
+      });
     });
   }
   let raf = 0; const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; scan(); }); };
