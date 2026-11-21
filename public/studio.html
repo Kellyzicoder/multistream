@@ -1652,6 +1652,8 @@ function ensureAudio() {
   if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
   // 48 kHz: the rate the stream and recording use (no extra resampling)
   try { actx = new AudioContext({ sampleRate: 48000 }); } catch { actx = new AudioContext(); }
+  // if Windows pauses the sound engine (a device was unplugged or changed), start it again, or every level freezes
+  actx.onstatechange = () => { if (actx.state !== 'running' && actx.state !== 'closed') setTimeout(() => { try { actx.resume(); } catch {} }, 300); };
   master = actx.createGain(); dest = actx.createMediaStreamDestination();
   // safety limiter on the final mix: when inputs add up past 0 dB the encoder would clip them (crackly, distorted sound).
   // It only acts on the loudest peaks, just under 0 dB; normal sound passes unchanged.
@@ -1762,7 +1764,17 @@ async function syncAudio() {
       asrc.set(a.id, n);
       const id = pickDevice('audio', a.label, a.device);
       if (a.device === 'none' && a.kind !== 'desktop') { n.err = ''; continue; } // nothing chosen yet: nothing is opened or heard
-      try { const st = a.kind === 'desktop' ? await openDesktopAudio() : await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = ''; } catch (e) { n.err = audioWhy(e); }
+      try {
+        const st = a.kind === 'desktop' ? await openDesktopAudio() : await openStream(id); n.node = actx.createMediaStreamSource(st); n.node.connect(n.delay); n.err = '';
+        // unplugged (or the sound card restarted): the old sound is gone for good, so the levels would stay stuck.
+        // Forget it and open the input again as soon as it is back.
+        st.getAudioTracks().forEach((tr) => tr.addEventListener('ended', () => {
+          if (a.kind === 'desktop') desktopAudioP = null; else streams.delete(id || 'default');
+          if (asrc.get(a.id) !== n) return;
+          n.dev = 'retry'; n.err = 'Disconnected. It comes back by itself when it is plugged in again.'; renderAudio();
+          setTimeout(syncAudio, 1000);
+        }));
+      } catch (e) { n.err = audioWhy(e); }
     }
     n.gain.gain.setTargetAtTime(a.muted ? 0 : (a.vol == null ? 1 : a.vol), actx.currentTime, 0.02);
     if (n.mono) { n.mono.channelCount = a.mono ? 1 : 2; n.bal.pan.setTargetAtTime(Math.max(-1, Math.min(1, a.bal || 0)), actx.currentTime, 0.02); }
