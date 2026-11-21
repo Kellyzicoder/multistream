@@ -299,6 +299,7 @@
   .segc button { padding:4px 10px; font-size:12px; border:0; border-radius:7px; background:transparent; color:var(--muted); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
   .segc button.on { background:var(--sel); color:var(--onsel); }
   /* ---------- Listen in headphones ---------- */
+  .lsp .r[hidden] { display:none !important; }
   .lsp { position:fixed; z-index:72; width:380px; max-width:calc(100vw - 24px); display:flex; flex-direction:column; gap:14px; padding:18px 18px 16px; border-radius:18px; background:rgba(20,26,54,.98); border:1px solid rgba(255,255,255,.14); box-shadow:0 24px 60px rgba(0,0,0,.55); color:var(--text); animation:lspIn .16s ease-out; }
   html.t-light .lsp { background:#fff; border-color:rgba(0,0,0,.12); }
   @keyframes lspIn { from { opacity:0; transform:translateY(6px); } }
@@ -1119,7 +1120,11 @@ if (window.msNative) window.msNative.onFrame((id, w, h, buf) => {
 const ipcams = new Map();
 function getIpcam(l) {
   let i = ipcams.get(l.url); if (i) return i;
-  i = new Image(); i.src = '/api/studio/ipcam?url=' + encodeURIComponent(l.url || ''); ipcams.set(l.url, i); return i;
+  i = new Image(); const via = (u) => '/api/studio/ipcam?url=' + encodeURIComponent(u || '');
+  // DroidCam: some versions want /video, the OBS version also takes /video/1280x720. If one does not work, the other is tried once.
+  const u0 = String(l.url || ''), alt = /\/video\/\d+x\d+\/?$/.test(u0) ? u0.replace(/\/video\/\d+x\d+\/?$/, '/video') : /:4747\/video\/?$/.test(u0) ? u0.replace(/\/video\/?$/, '/video/1280x720') : '';
+  if (alt) i.onerror = () => { i.onerror = null; i.src = via(alt); };
+  i.src = via(u0); ipcams.set(l.url, i); return i;
 }
 
 // ---------------- drawing ----------------
@@ -1663,15 +1668,20 @@ function ensureAudio() {
 let monDev = ''; try { monDev = localStorage.getItem('ms_mondev') || ''; } catch {}
 let monBus = null, wholeMon = null;
 const monPref = { whole: false, vol: 1 };
-try { monPref.whole = localStorage.getItem('ms_mon_whole') === '1'; const v = parseFloat(localStorage.getItem('ms_mon_vol')); if (v >= 0 && v <= 1) monPref.vol = v; } catch {}
+try { monPref.whole = localStorage.getItem('ms_mon_whole') !== '0'; const v = parseFloat(localStorage.getItem('ms_mon_vol')); if (v >= 0 && v <= 1) monPref.vol = v; } catch {}
 const isHeard = (a) => a.monitor === 'only' || a.monitor === 'both';
-// "Whole stream" plays the stream mix in your headphones when any input is set to listen; "This sound" plays only those inputs
+// "Whole stream" plays the stream mix in your headphones when any input is set to listen; "This sound" plays only those inputs.
+// The choice only matters when a video with sound is in the Production: with only sound inputs (like one sound desk), you
+// always hear the whole stream, and the choice is not shown.
+const videoHasSound = () => (studio.scenes || []).some((sc) => (sc.layers || []).some((l) => l.type === 'video' && !l.muted && (l.vol == null || l.vol > 0)));
+const wholeNow = () => monPref.whole || !videoHasSound();
 function applyMonitorMix() {
   if (!actx || !monBus) return;
-  const any = studio.audio.some(isHeard), t = actx.currentTime;
+  const any = studio.audio.some(isHeard), t = actx.currentTime, whole = wholeNow();
   monBus.gain.setTargetAtTime(monPref.vol, t, 0.02);
-  wholeMon.gain.setTargetAtTime(monPref.whole && any ? 1 : 0, t, 0.02);
-  for (const a of studio.audio) { const n = asrc.get(a.id); if (n && n.mon) n.mon.gain.setTargetAtTime(isHeard(a) && !monPref.whole ? 1 : 0, t, 0.02); }
+  wholeMon.gain.setTargetAtTime(whole && any ? 1 : 0, t, 0.02);
+  // an input set to "listen only" is not in the stream, so it is still played to you by itself
+  for (const a of studio.audio) { const n = asrc.get(a.id); if (n && n.mon) n.mon.gain.setTargetAtTime(isHeard(a) && (!whole || a.monitor === 'only') ? 1 : 0, t, 0.02); }
 }
 function setMonitorDevice(id) {
   monDev = id || '';
@@ -1843,7 +1853,7 @@ function openAdvancedAudio() {
     list.forEach((a) => {
       const r = document.createElement('div'); r.className = 'aa-r'; const F = fxOf(a);
       const nm = document.createElement('div'); nm.className = 'aa-n'; nm.innerHTML = '<b></b><i><s></s></i>'; nm.querySelector('b').textContent = a.name; if (a.muted) { const t = document.createElement('em'); t.textContent = 'Muted'; nm.querySelector('b').appendChild(t); }
-      const vol = document.createElement('span'); vol.className = 'aa-v'; const vi = document.createElement('input'); vi.type = 'number'; vi.step = '0.5'; vi.min = '-60'; vi.max = '12'; const db0 = a.vol > 0 ? 20 * Math.log10(a.vol) : -60; vi.value = (Math.round(db0 * 10) / 10).toFixed(1); vi.onchange = () => { const v = Math.max(-60, Math.min(12, Number(vi.value) || 0)); vi.value = v.toFixed(1); a.vol = v <= -60 ? 0 : Math.pow(10, v / 20); syncAudio(); renderAudio(); }; vol.append(vi, 'dB');
+      const vol = document.createElement('span'); vol.className = 'aa-v'; const vi = document.createElement('input'); vi.type = 'number'; vi.step = '1'; vi.min = '0'; vi.max = '398'; vi.value = String(Math.round((a.vol == null ? 1 : a.vol) * 100)); vi.title = '100% is the sound as it comes in. Up to 398% (the same as +12 dB).'; vi.onchange = () => { const v = Math.max(0, Math.min(398, Math.round(Number(vi.value) || 0))); vi.value = String(v); a.vol = v / 100; syncAudio(); renderAudio(); }; vol.append(vi, '%');
       const mono = document.createElement('input'); mono.type = 'checkbox'; mono.checked = Boolean(a.mono); mono.onchange = () => { a.mono = mono.checked; syncAudio(); };
       const bw = document.createElement('span'); bw.className = 'aa-bal'; const bal = document.createElement('input'); bal.type = 'range'; bal.min = '-100'; bal.max = '100'; bal.value = String(Math.round((a.bal || 0) * 100)); bal.title = 'Double-click for the middle'; bal.oninput = () => { let v = Number(bal.value); if (Math.abs(v) < 4) v = 0; a.bal = v / 100; syncAudio(); }; bal.ondblclick = () => { bal.value = '0'; a.bal = 0; syncAudio(); }; bw.append('L', bal, 'R');
       const dl = document.createElement('span'); dl.className = 'aa-v'; const di = document.createElement('input'); di.type = 'number'; di.min = '0'; di.max = '1000'; di.step = '10'; di.value = String(F.delay || 0); di.title = 'Raise it if the sound arrives before the picture'; di.onchange = () => { const v = Math.max(0, Math.min(1000, Number(di.value) || 0)); di.value = String(v); F.delay = v; syncAudio(); }; dl.append(di, 'ms');
@@ -1945,7 +1955,7 @@ function openListen(a, anchor) {
   p.innerHTML = '<div class="hd"><span class="ic">' + ICON_HP.replace('currentColor', '#fff') + '</span><div class="ti"><b>Listen in headphones</b><small></small></div><button type="button" class="tgl" aria-label="Listen on or off"></button></div>'
     + '<div class="lv"><i></i></div>'
     + '<div class="cd"><div class="r"><span class="l">Headphones</span><select class="hpd"></select></div>'
-    + '<div class="r"><span class="l">What I hear</span><div class="sg"><button type="button" data-w="0">This sound</button><button type="button" data-w="1">Whole stream</button></div></div>'
+    + '<div class="r wih"><span class="l">What I hear</span><div class="sg"><button type="button" data-w="0">This sound</button><button type="button" data-w="1">Whole stream</button></div></div>'
     + '<div class="rf"><span class="l">Headphone volume</span><div class="vr"><input type="range" min="0" max="100" step="1"><b></b></div></div></div>'
     + '<div class="wn dflt" hidden><span>⚠</span><span>Headphones is set to Default output. If this computer\'s sound goes to the speakers or the sound desk, the sound will loop back (echo, feedback, distortion). Pick your headphones above.</span></div>'
     + '<div class="wn"><span>⚠</span><span>Bluetooth headphones can be a little behind. Wired is best for checking sound.</span></div>';
@@ -1955,7 +1965,8 @@ function openListen(a, anchor) {
     p.querySelector('.ti small').textContent = onNow ? '● Only you can hear this' : 'Off - you are not listening to this';
     p.querySelector('.tgl').setAttribute('aria-pressed', String(onNow));
     p.querySelector('.wn.dflt').hidden = !(onNow && !monDev);
-    p.querySelectorAll('[data-w]').forEach((b) => b.classList.toggle('on', (b.dataset.w === '1') === monPref.whole));
+    p.querySelector('.wih').hidden = !videoHasSound();
+    p.querySelectorAll('[data-w]').forEach((b) => b.classList.toggle('on', (b.dataset.w === '1') === wholeNow()));
   };
   p.querySelector('.tgl').onclick = () => { a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); paint(); renderAudio(); if (isHeard(a) && !monDev) flash('Listening goes to Default output. Pick your headphones, or the sound can loop back through the speakers.', false); };
   p.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => { monPref.whole = b.dataset.w === '1'; try { localStorage.setItem('ms_mon_whole', monPref.whole ? '1' : '0'); } catch {} applyMonitorMix(); paint(); }; });
@@ -2223,6 +2234,7 @@ const SRC_ICON = {
   ipcam: SVG('<rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/>'),
   color: SVG('<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>'),
 };
+SRC_ICON.droidcam = SRC_ICON.ipcam; SRC_ICON.ndi = SRC_ICON.camera;
 const LOCK_ON = SVG('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>');
 const LOCK_OFF = SVG('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/>');
 // a padlock button: closed = the item cannot be moved by accident, open = it can
@@ -2295,7 +2307,7 @@ function showSourceMenu(ev, l, nameEl) {
 // Add a source: the kinds in groups on the left; on the right a live preview and its settings,
 // then Reset, Cancel and Add source at the bottom. A source already in another scene can be added as a copy.
 const ADD_GROUPS = [
-  ['Cameras and screens', [['camera', 'Camera', 'A webcam or USB camera'], ['card', 'Video capture card', 'A capture card or box: Blackmagic, ATEM Mini, Elgato'], ['ipcam', 'Phone camera', 'A phone camera app on the Wi-Fi'], ['screen', 'Whole screen', 'Show a display, like slides'], ['window', 'One window', 'Just one program, like ProPresenter'], ['duo', 'Speaker + screen', 'A camera and a screen side by side']]],
+  ['Cameras and screens', [['camera', 'Camera', 'A webcam or USB camera'], ['card', 'Video capture card', 'A capture card or box: Blackmagic, ATEM Mini, Elgato'], ['ipcam', 'Phone camera', 'A phone camera app on the Wi-Fi'], ['droidcam', 'DroidCam', 'The DroidCam phone app, over Wi-Fi'], ['ndi', 'NDI source', 'A camera or computer sending NDI on the network'], ['screen', 'Whole screen', 'Show a display, like slides'], ['window', 'One window', 'Just one program, like ProPresenter'], ['duo', 'Speaker + screen', 'A camera and a screen side by side']]],
   ['Pictures and video', [['image', 'Picture', 'A logo, poster or overlay'], ['pptx', 'PowerPoint slides', 'The slideshow window'], ['video', 'Video file', 'Announcements or an intro'], ['browser', 'Web page (lyrics, slides)', 'Lyrics, slides or a website'], ['color', 'Colour', 'A plain background']]],
   ['Text', [['text', 'Text', 'Any words on screen'], ['lower', 'Name bar', "A speaker's name and role"], ['timer', 'Countdown', 'Before you start'], ['clock', 'Clock', 'The time now']]],
   ['Sound', [['mic', 'Microphone', 'A microphone or sound desk']]],
@@ -2308,6 +2320,8 @@ function openAddSource() {
     if (t === 'mic') return { mic: true, name: 'Microphone', device: 'none', vol: 0.8, nr: true, mono: false };
     if (t === 'pptx') { const l = newLayer('window'); l.name = 'PowerPoint slides'; return l; }
     if (t === 'card') { const l = newLayer('camera'); l.name = 'Video Capture Card'; l.card = true; return l; }
+    if (t === 'droidcam') { const l = newLayer('ipcam'); l.name = 'DroidCam'; l.droid = true; return l; }
+    if (t === 'ndi') { const l = newLayer('camera'); l.name = 'NDI source'; l.ndi = true; const d = devices.video.find((x) => /\bndi\b/i.test(x.label)); if (d) { l.device = d.deviceId; l.label = d.label; } else l.label = 'NDI'; return l; }
     const l = newLayer(t); l.name = kindInfo(t)[1]; return l;
   };
   let draft = makeDraft(pick); addDraft = draft.mic ? null : draft;
@@ -2386,7 +2400,7 @@ function openAddSource() {
     head.querySelector('.as-ic').innerHTML = SRC_ICON[pick] || SRC_ICON.window || ''; head.querySelector('b').textContent = k[1];
     main.textContent = '';
     // the same kind already in other scenes: "Use one you have"
-    const want = pick === 'pptx' ? 'window' : pick === 'card' ? 'camera' : pick;
+    const want = pick === 'pptx' ? 'window' : pick === 'card' || pick === 'ndi' ? 'camera' : pick === 'droidcam' ? 'ipcam' : pick;
     const seen = new Set(), have = [];
     if (pick !== 'mic') studio.scenes.forEach((sc) => (sc.layers || []).forEach((l) => { if (l.type !== want || s.layers.some((x) => x.id === l.id)) return; const key = (l.name || '') + '|' + (l.url || l.src || l.device || l.text || ''); if (seen.has(key)) return; seen.add(key); have.push({ l, scene: sc.name }); }));
     if (have.length) {
@@ -2406,9 +2420,9 @@ function openAddSource() {
     nameIn = document.createElement('input'); nameIn.type = 'text'; nameIn.value = draft.name || k[1]; nameIn.onkeydown = (e) => { if (e.key === 'Enter') addNew(); };
     row(card, 'Name', nameIn);
     if (pick === 'mic') { micPane(colL, card); return; }
-    if (pick === 'ipcam') {
+    if (pick === 'ipcam' || pick === 'droidcam') {
       const c = document.createElement('div'); c.className = 'as-phone'; c.innerHTML = '<span class="as-tag">Connect a phone</span><b>Use a camera app on the phone</b><ol></ol>';
-      ['Put the phone on the same Wi-Fi as this computer.', 'Install a camera app like DroidCam or IP Webcam (Android), or EpocCam (iPhone).', 'Open it. It shows an address like http://192.168.1.20:4747.', 'Type that address in Address, with /video at the end.'].forEach((t) => { const li = document.createElement('li'); li.textContent = t; c.querySelector('ol').appendChild(li); });
+      (pick === 'droidcam' ? ['Put the phone on the same Wi-Fi as this computer.', 'Open the DroidCam app on the phone. It shows a WiFi IP like 192.168.1.20 and a port, 4747.', 'Type it in Phone address like this: http://192.168.1.20:4747/video', 'The phone sends to one app at a time, so close DroidCam in OBS first.'] : ['Put the phone on the same Wi-Fi as this computer.', 'Install a camera app like DroidCam or IP Webcam (Android), or EpocCam (iPhone).', 'Open it. It shows an address like http://192.168.1.20:4747.', 'Type that address in Address, with /video at the end.']).forEach((t) => { const li = document.createElement('li'); li.textContent = t; c.querySelector('ol').appendChild(li); });
       colL.appendChild(c);
       const st = document.createElement('p'); st.className = 'as-st wait'; st.textContent = 'Waiting for a phone... (same Wi-Fi as this computer)'; colL.appendChild(st);
     } else {
@@ -2419,7 +2433,7 @@ function openAddSource() {
     const set = document.createElement('div'); set.className = 'as-set'; card.appendChild(set); renderProps(set, draft);
     // long notes and the picture tools go under the preview, so the settings stay short
     if (pick === 'duo') { const lr = [...card.querySelectorAll('.f')].find((r) => /^Layout/.test(r.textContent)); if (lr) { const bs = [...lr.querySelectorAll('button')]; const cap = document.createElement('div'); cap.className = 'as-capl'; cap.textContent = 'Layout'; const g = document.createElement('div'); g.className = 'duo-ly'; bs.forEach((b) => { const c = document.createElement('button'); c.type = 'button'; c.className = 'dl' + (b.classList.contains('on') || b.getAttribute('aria-pressed') === 'true' ? ' on' : ''); c.innerHTML = '<span class="dlp ' + (/big/i.test(b.textContent) ? 'big' : 'side') + '"><i></i><i></i></span><b></b>'; c.querySelector('b').textContent = b.textContent; c.onclick = () => { b.click(); draw(); }; g.appendChild(c); }); lr.hidden = true; colL.append(cap, g); } }
-    if (pick === 'ipcam') set.querySelectorAll(':scope > ol, :scope > .note, :scope > p').forEach((n) => n.remove()), colL.querySelectorAll(':scope > .note, :scope > ol, :scope > details').forEach((n) => n.remove());
+    if (pick === 'ipcam' || pick === 'droidcam') set.querySelectorAll(':scope > ol, :scope > .note, :scope > p').forEach((n) => n.remove()), colL.querySelectorAll(':scope > .note, :scope > ol, :scope > details').forEach((n) => n.remove());
   }
   draw(); document.body.appendChild(m); if (nameIn) { nameIn.focus(); nameIn.select(); }
 }
@@ -2602,6 +2616,7 @@ function renderProps(target, draft) {
     const sl = document.createElement('select'); sl.add(new Option('First camera', ''));
     devices.video.forEach((x) => sl.add(new Option(x.label || 'Camera', x.deviceId)));
     sl.title = 'ATEM Mini or a capture box: plug its USB cable into this computer, then choose it here. It appears by itself within a few seconds.';
+    if (l.ndi) { const cn = document.createElement('p'); cn.className = 'note'; cn.textContent = devices.video.some((x) => /\bndi\b/i.test(x.label)) ? 'Choose the NDI camera under Device. To change which NDI source it shows, right-click the NDI Webcam Input icon by the clock (Windows) and pick another.' : 'NDI is not showing yet. Install the free NDI Tools from ndi.video, open NDI Webcam Input (Windows) or NDI Virtual Input (Mac), and pick your NDI source from its icon by the clock. It then shows under Device here.'; box.append(cn); }
     if (l.card) { const cn = document.createElement('p'); cn.className = 'note'; cn.textContent = 'Plug the card or box into this computer, then choose it under Device. Only one app can use a capture card at a time, so close other apps that show it.'; box.append(cn); }
     sl.value = pickDevice('video', l.label, l.device); sl.onchange = () => { l.device = sl.value; l.label = sl.value ? sl.options[sl.selectedIndex].text : ''; save(); }; box.append(field('Device', sl));
     const rs = document.createElement('select'); [['auto', 'Automatic (best)'], ['2160', '3840 × 2160 (4K)'], ['1440', '2560 × 1440'], ['1080', '1920 × 1080'], ['720', '1280 × 720']].forEach(([v, t]) => rs.add(new Option(t, v)));
