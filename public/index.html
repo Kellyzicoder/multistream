@@ -2269,6 +2269,11 @@ window.askText = (title, value, hint) => new Promise((ok) => {
     if (r && r.error) alert((site === 'youtube' ? 'YouTube' : 'Facebook') + ': ' + r.error);
     else if (r && r.thumbnailError) thMsg((site === 'youtube' ? 'YouTube did not take the thumbnail: ' + thWhy(r.thumbnailError) : 'Facebook did not take the thumbnail: ' + r.thumbnailError));
   }
+  // Start streaming pressed on the Production page: always ask for a title first when there is none, then the normal steps.
+  window.msStartFromProduction = () => {
+    if (!(st && st.obsLive) && !$('#glTitle').value.trim() && !(titles && Object.values(titles).some((o) => o && o.t))) { openDetails(true); return; }
+    $('#sbBtn').click();
+  };
   $('#sbBtn').onclick = async () => {
     const sb = $('#sbBtn');
     if (st && st.obsLive) {

@@ -161,3 +161,19 @@
   new MutationObserver(later).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class', 'open'] });
   later();
 })();
+
+// ---------------- 4. Smooth opening for pop-ups, menus and pages ----------------
+// Pop-ups fade in and grow a little; pages and tabs fade in. Uses opacity and "scale" only, so pop-ups that are centred
+// with "transform" stay centred. Turned off when the computer asks for less motion.
+(() => {
+  const st = document.createElement('style');
+  st.textContent = `
+    @keyframes msPop { from { opacity:0; scale:.96; } to { opacity:1; scale:1; } }
+    @keyframes msFade { from { opacity:0; } to { opacity:1; } }
+    .overlay:not([hidden]) > .modal, .overlay:not([hidden]) > .swin, .modal > .dlg, .mdl > div, .ms-box > .c, .lsp, dialog[open],
+    .ctxm, .pop:not([hidden]), body.sd-open #glDetails, body.tr-open .trdock { animation: msPop .18s cubic-bezier(.2,.8,.2,1); }
+    .overlay:not([hidden]), #sdBack:not([hidden]), .xpage:not([hidden]), .app:not([hidden]), #crView:not([hidden]), .sp.on, .sp:not([hidden]) { animation: msFade .2s ease-out; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }
+  `;
+  (document.head || document.documentElement).appendChild(st);
+})();
