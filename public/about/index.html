@@ -1,42 +1,121 @@
 <!doctype html>
-<!-- The public About page of the Multistream website (what the app does). Plain page, no app code. -->
+<!--
+  The public Multistream website (multistream-three.vercel.app/about/): download page, what the app does, setup help and feedback.
+  Google's sign-in review uses this page as the app's home page: keep the "How Multistream uses your YouTube account" part
+  and the link to /privacy/. Downloads point at the newest release files on GitHub (v3-latest), so this page never needs
+  changing when a new version comes out. Feedback opens a GitHub issue with the answers filled in (no database).
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Multistream – stream your service everywhere at once</title>
-<meta name="description" content="Multistream is a free desktop app for churches: make the picture in the Studio and go live on YouTube, Facebook, Instagram and more at the same time.">
+<title>Multistream – stream everywhere at once</title>
+<meta name="description" content="Multistream is a free desktop app for Windows and Mac: build your picture in Production and go live on YouTube, Facebook, Instagram and more at the same time.">
 <link rel="icon" href="/favicon.svg">
 <style>
-  :root { color-scheme: dark; }
-  body { margin:0; color:#eef1f8; font:16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: radial-gradient(700px 520px at 72% 10%, rgba(59,108,255,.35), transparent 70%), radial-gradient(640px 520px at 20% 95%, rgba(168,85,247,.25), transparent 70%), #0a0e1f; min-height:100vh; }
-  main { max-width:960px; margin:0 auto; padding:56px 24px 64px; }
-  .brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:17px; }
-  .brand svg { width:26px; height:32px; color:#3b6cff; }
-  h1 { font-size:46px; line-height:1.1; margin:40px 0 14px; letter-spacing:-.5px; }
-  .lead { font-size:18px; color:#cdd3e4; max-width:640px; margin:0 0 28px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:14px; margin:36px 0; }
-  .card { padding:20px; border-radius:20px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); }
-  .card b { display:block; font-size:16px; margin-bottom:6px; } .card span { color:#a3abc4; font-size:14px; }
-  h2 { font-size:22px; margin:40px 0 10px; } p, li { color:#cdd3e4; } a { color:#9db6ff; }
-  .btns { display:flex; gap:10px; flex-wrap:wrap; } .btn { display:inline-block; padding:11px 20px; border-radius:999px; background:#3b6cff; color:#fff; text-decoration:none; font-weight:600; } .btn.ghost { background:rgba(255,255,255,.08); color:#eef1f8; }
-  footer { margin-top:48px; padding-top:20px; border-top:1px solid rgba(255,255,255,.1); color:#8a93ad; font-size:14px; display:flex; gap:18px; flex-wrap:wrap; }
+  :root { color-scheme: dark; --bg:#0a0e1f; --text:#eef1f8; --soft:#cdd3e4; --dim:#a3abc4; --blue:#3b6cff; --card:rgba(255,255,255,.07); --line:rgba(255,255,255,.12); }
+  * { box-sizing:border-box; }
+  body { margin:0; color:var(--text); font:16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: radial-gradient(700px 520px at 72% 6%, rgba(59,108,255,.35), transparent 70%), radial-gradient(640px 520px at 15% 60%, rgba(168,85,247,.22), transparent 70%), var(--bg); min-height:100vh; }
+  main { max-width:1000px; margin:0 auto; padding:28px max(20px, env(safe-area-inset-right, 0px)) 64px max(20px, env(safe-area-inset-left, 0px)); }
+  nav { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:17px; color:var(--text); text-decoration:none; }
+  .brand svg { width:26px; height:32px; color:var(--blue); }
+  nav .links { display:flex; gap:18px; flex-wrap:wrap; font-size:15px; } nav .links a { color:var(--soft); text-decoration:none; } nav .links a:hover { color:#fff; }
+  h1 { font-size:clamp(34px, 6vw, 52px); line-height:1.08; margin:56px 0 14px; letter-spacing:-.6px; text-wrap:balance; }
+  .lead { font-size:18px; color:var(--soft); max-width:640px; margin:0 0 28px; }
+  h2 { font-size:26px; margin:64px 0 12px; letter-spacing:-.3px; text-wrap:balance; } h3 { font-size:17px; margin:0 0 6px; }
+  p, li { color:var(--soft); } a { color:#9db6ff; }
+  .dl { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:14px; max-width:720px; }
+  .dlc { padding:22px; border-radius:20px; background:var(--card); border:1px solid var(--line); display:flex; flex-direction:column; gap:10px; }
+  .dlc.mine { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue), 0 18px 50px rgba(59,108,255,.25); }
+  .dlc .os { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; } .dlc .os svg { width:24px; height:24px; }
+  .dlc small { color:var(--dim); font-size:13px; } .tag { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#fff; background:var(--blue); border-radius:999px; padding:2px 8px; margin-left:auto; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 20px; border-radius:999px; background:var(--blue); color:#fff; text-decoration:none; border:0; font:inherit; font-weight:600; cursor:pointer; }
+  .btn:hover { filter:brightness(1.08); }
+  .meta { margin-top:14px; font-size:14px; color:var(--dim); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); gap:14px; margin-top:18px; }
+  .card { padding:20px; border-radius:20px; background:var(--card); border:1px solid var(--line); min-width:0; }
+  .card span { color:var(--dim); font-size:14px; }
+  .steps { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:14px; }
+  .steps ol { margin:8px 0 0; padding-left:20px; } .steps li { margin:4px 0; font-size:15px; }
+  table { width:100%; border-collapse:collapse; font-size:15px; } td, th { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--dim); font-weight:600; width:34%; }
+  .tw { overflow-x:auto; border-radius:16px; background:var(--card); border:1px solid var(--line); }
+  form { display:grid; gap:12px; max-width:640px; padding:22px; border-radius:20px; background:var(--card); border:1px solid var(--line); }
+  label { display:grid; gap:6px; font-size:14px; font-weight:600; color:var(--soft); }
+  input, select, textarea { font:inherit; color:var(--text); background:rgba(0,0,0,.25); border:1px solid var(--line); border-radius:12px; padding:10px 12px; width:100%; }
+  textarea { min-height:120px; resize:vertical; } .row2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; }
+  .note { font-size:13px; color:var(--dim); margin:0; }
+  footer { margin-top:64px; padding-top:20px; border-top:1px solid var(--line); color:#8a93ad; font-size:14px; display:flex; gap:18px; flex-wrap:wrap; }
 </style>
 </head>
 <body>
 <main>
-  <div class="brand"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="#ff4d5a"/></svg>Multistream</div>
-  <h1>Stream your service everywhere at once</h1>
-  <p class="lead">Multistream is a free desktop app for Windows and Mac, made for churches. Make the picture in the Studio (cameras, slides, name bars, countdowns) and go live on YouTube, Facebook, Instagram and more at the same time, from one computer.</p>
-  <div class="btns"><a class="btn" href="https://github.com/Kellyzicoder/multistream/releases/tag/v3-latest">Download</a><a class="btn ghost" href="/">Try the demo</a></div>
+  <nav>
+    <a class="brand" href="/about/"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="#ff4d5a"/></svg>Multistream</a>
+    <div class="links"><a href="#download">Download</a><a href="#features">Features</a><a href="#help">Install help</a><a href="#feedback">Feedback</a><a href="/privacy/">Privacy</a></div>
+  </nav>
 
-  <div class="grid">
-    <div class="card"><b>Go live on every channel</b><span>One button starts the stream on YouTube, Facebook and any site that takes a stream key.</span></div>
-    <div class="card"><b>A full Studio</b><span>Scenes, cameras, screens, slides, name bars, countdowns, a sound mixer and transitions.</span></div>
-    <div class="card"><b>Live chat and numbers</b><span>See YouTube and Facebook comments, viewers and likes in one place while you are live.</span></div>
-    <div class="card"><b>Recordings</b><span>Save the service on the computer and, if you want, upload it to YouTube when it ends.</span></div>
-  </div>
+  <h1>Stream everywhere at once</h1>
+  <p class="lead">Multistream is a free desktop app for Windows and Mac. Build your picture in Production (cameras, screens, slides, name bars, countdowns) and go live on YouTube, Facebook, Instagram and more at the same time, from one computer. Made for churches, events and teams.</p>
+
+  <section id="download" aria-label="Download">
+    <div class="dl">
+      <div class="dlc" data-os="win">
+        <div class="os"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10 4.5v7H3zM11 4.4 21 3v8.5H11zM3 12.5h7v7l-7-1zM11 12.5h10V21l-10-1.4z"/></svg>Windows<span class="tag" hidden>Your computer</span></div>
+        <small>Windows 10 or 11, 64-bit</small>
+        <a class="btn" href="https://github.com/Kellyzicoder/multistream/releases/download/v3-latest/Multistream-Setup.exe">Download for Windows</a>
+      </div>
+      <div class="dlc" data-os="mac">
+        <div class="os"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.6 0-3 .9-3.8 2.3-1.6 2.8-.4 6.9 1.2 9.2.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.8-2.2.9-1.3 1.3-2.5 1.3-2.6-.1 0-2.5-1-2.5-3.7zM14.2 5.6c.6-.8 1.1-1.8 1-2.9-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-1 2.8 1 .1 2-.5 2.7-1.3z"/></svg>Mac<span class="tag" hidden>Your computer</span></div>
+        <small>Mac with Apple silicon (M1 or newer)</small>
+        <a class="btn" href="https://github.com/Kellyzicoder/multistream/releases/download/v3-latest/Multistream-Mac-arm64.dmg">Download for Mac</a>
+      </div>
+    </div>
+    <p class="meta">Always the newest version. The app also tells you when a new one is ready. <a href="https://github.com/Kellyzicoder/multistream/releases/tag/v3-latest">What's new</a> · <a href="/">Try the demo in your browser</a></p>
+  </section>
+
+  <section id="features" aria-label="Features">
+    <h2>What it does</h2>
+    <div class="grid">
+      <div class="card"><h3>Go live on every channel</h3><span>One button starts the stream on YouTube, Facebook and any site that takes a stream key. Each channel runs on its own, so one dropping does not stop the others.</span></div>
+      <div class="card"><h3>Production</h3><span>Scenes and sources like OBS: cameras, capture cards, screens, windows, pictures, videos, text with a background, name bars and countdowns, with transitions.</span></div>
+      <div class="card"><h3>Sound mixer</h3><span>Bring in your sound desk, set levels in percent, listen in headphones, and a built-in limiter keeps the stream from crackling.</span></div>
+      <div class="card"><h3>Multiview</h3><span>See every scene at once on a second screen and switch with one click.</span></div>
+      <div class="card"><h3>Recordings</h3><span>Record on the computer and, if you want, upload to YouTube when the stream ends. Finished files can go to a Done folder.</span></div>
+      <div class="card"><h3>Virtual camera</h3><span>Send the Production picture into Zoom or Teams as a webcam (Windows).</span></div>
+    </div>
+  </section>
+
+  <section id="help" aria-label="Install help">
+    <h2>Install help</h2>
+    <p>Multistream is free and not yet signed by Microsoft or Apple, so the first time you open it your computer asks if you are sure. This is normal.</p>
+    <div class="steps">
+      <div class="card"><h3>Windows</h3><ol><li>Open <b>Multistream-Setup.exe</b>.</li><li>If a blue "Windows protected your PC" box shows, press <b>More info</b>, then <b>Run anyway</b>.</li><li>Multistream opens by itself when it is installed.</li></ol></div>
+      <div class="card"><h3>Mac</h3><ol><li>Open the <b>.dmg</b> and drag Multistream into Applications.</li><li>The first time, right-click Multistream in Applications and choose <b>Open</b>, then <b>Open</b> again.</li><li>After that it opens normally.</li></ol></div>
+    </div>
+    <h2>What you need</h2>
+    <div class="tw"><table>
+      <tr><th>Computer</th><td>Windows 10 or 11 (64-bit), or a Mac with Apple silicon</td></tr>
+      <tr><th>Graphics</th><td>A graphics card helps for long streams; without one the processor does the work</td></tr>
+      <tr><th>Internet</th><td>Upload speed of at least 5 Mbit/s for each channel you go live on</td></tr>
+      <tr><th>Accounts</th><td>Sign in to YouTube or Facebook in the app, or paste a stream key for any other site</td></tr>
+    </table></div>
+  </section>
+
+  <section id="feedback" aria-label="Feedback">
+    <h2>Send feedback</h2>
+    <p>Found a problem or have an idea? Tell us. Your answers open as a new post on GitHub (a free account is needed, and posts there are public), so please do not include stream keys or passwords.</p>
+    <form id="fb">
+      <div class="row2">
+        <label>What is it about?<select id="fbKind"><option value="Problem">Something is not working</option><option value="Idea">An idea or a wish</option><option value="Question">A question</option></select></label>
+        <label>Your computer<select id="fbOs"><option>Windows</option><option>Mac</option></select></label>
+      </div>
+      <label>Short title<input id="fbTitle" maxlength="120" required placeholder="For example: the sound is quiet in the recording"></label>
+      <label>Tell us more<textarea id="fbBody" maxlength="4000" required placeholder="What did you do, what happened, and what did you expect?"></textarea></label>
+      <div><button class="btn" type="submit">Continue on GitHub</button></div>
+    </form>
+  </section>
 
   <h2>How Multistream uses your YouTube account</h2>
   <p>When you connect YouTube, Multistream asks Google for permission to manage your YouTube account. It uses that permission only to:</p>
@@ -48,7 +127,26 @@
   </ul>
   <p>Your sign-in is kept encrypted on your own computer. It is never sent to a Multistream server and never shared. Read the full <a href="/privacy/">privacy policy</a>.</p>
 
-  <footer><span>Multistream</span><a href="/privacy/">Privacy policy</a><a href="mailto:kelvinmensah2017@gmail.com">Contact</a></footer>
+  <footer><span>Multistream</span><a href="/privacy/">Privacy policy</a><a href="https://github.com/Kellyzicoder/multistream">Source code</a><a href="#feedback">Feedback</a></footer>
 </main>
+<script>
+  // Highlights the download for the visitor's computer.
+  (() => {
+    const ua = navigator.userAgent || '', mac = /Mac/i.test(ua) && !/iPhone|iPad/i.test(ua), win = /Windows/i.test(ua);
+    const pick = mac ? 'mac' : win ? 'win' : '';
+    if (!pick) return;
+    const c = document.querySelector('.dlc[data-os="' + pick + '"]'); c.classList.add('mine'); c.querySelector('.tag').hidden = false;
+    document.querySelector('#fbOs').value = mac ? 'Mac' : 'Windows';
+  })();
+  // Feedback: opens a new GitHub issue with the answers filled in. Nothing is sent anywhere else.
+  document.querySelector('#fb').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const kind = document.querySelector('#fbKind').value, os = document.querySelector('#fbOs').value;
+    const title = '[' + kind + '] ' + document.querySelector('#fbTitle').value.trim();
+    const body = document.querySelector('#fbBody').value.trim() + '\n\n---\nComputer: ' + os + '\nSent from the Multistream website';
+    const url = 'https://github.com/Kellyzicoder/multistream/issues/new?title=' + encodeURIComponent(title) + '&body=' + encodeURIComponent(body);
+    window.open(url, '_blank', 'noopener');
+  });
+</script>
 </body>
 </html>
