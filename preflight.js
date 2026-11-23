@@ -1,10 +1,12 @@
 // "Check everything" before the service. Each check says ok / warn / bad / skip and why, in plain words.
 // It only looks. It changes nothing.
 
+// Stops a check that takes too long and reports it.
 function withTimeout(promise, ms) {
   return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('It took too long to answer')), ms))]);
 }
 
+// Runs all the pre-service checks for one channel or the whole setup.
 async function runPreflight(d) {
   const out = [];
   const add = (id, label, state, detail) => out.push({ id, label, state, detail });

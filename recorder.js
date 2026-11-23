@@ -4,7 +4,9 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+// Pads a number to two digits (for dates).
 function two(n) { return String(n).padStart(2, '0'); }
+// Makes the date and time part of a recording file name.
 function stamp(d = new Date()) {
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}`;
 }

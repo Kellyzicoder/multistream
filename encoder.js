@@ -3,6 +3,7 @@
 // Every card encoder is TESTED with a 1 frame encode first, so a listed-but-broken one is skipped.
 const { spawn } = require('child_process');
 
+// The graphics card encoders we know about, with the ffmpeg name for each.
 const ENCODERS = {
   nvenc: { id: 'h264_nvenc', name: 'NVIDIA graphics card', args: (k, g) => ['-c:v', 'h264_nvenc', '-preset', 'p4', '-tune', 'll', '-rc', 'cbr', '-b:v', k, '-maxrate', k, '-bufsize', k, '-g', g] },
   qsv: { id: 'h264_qsv', name: 'Intel graphics', args: (k, g) => ['-c:v', 'h264_qsv', '-preset', 'veryfast', '-b:v', k, '-maxrate', k, '-g', g] },
@@ -10,8 +11,10 @@ const ENCODERS = {
   videotoolbox: { id: 'h264_videotoolbox', name: 'Mac graphics', args: (k, g) => ['-c:v', 'h264_videotoolbox', '-realtime', '1', '-b:v', k, '-maxrate', k, '-g', g] },
   software: { id: 'libx264', name: 'processor (x264)', args: (k, g) => ['-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency', '-b:v', k, '-maxrate', k, '-bufsize', String(parseInt(k, 10) * 2) + 'k', '-g', g, '-keyint_min', g, '-sc_threshold', '0'] },
 };
+// The order to try the encoders in, for each computer system.
 const ORDER = { win32: ['nvenc', 'qsv', 'amf'], darwin: ['videotoolbox'], linux: ['nvenc', 'qsv'] };
 
+// Runs ffmpeg with some arguments and waits for the result (with a time limit).
 function run(ffmpeg, args, ms) {
   return new Promise((resolve) => {
     let out = '';
@@ -40,6 +43,7 @@ async function detectEncoder(ffmpeg, platform = process.platform, forced = proce
   return soft;
 }
 
+// The ffmpeg video settings for the chosen encoder (quality, bitrate, keyframes).
 function videoArgs(key, kbps = 4500, gop = 60) {
   const e = ENCODERS[key] || ENCODERS.software;
   return e.args(kbps + 'k', String(gop));
