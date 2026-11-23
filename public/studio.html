@@ -1667,7 +1667,9 @@ function ensureAudio() {
   syncAudio();
 }
 // where "monitor" sound is heard (your headphones). Not the stream: only you hear it.
-let monDev = ''; try { monDev = localStorage.getItem('ms_mondev') || ''; } catch {}
+// 'none' = No sound (the default for a new install: nothing plays until you pick headphones); '' = Default output
+let monDev = 'none'; try { const sv = localStorage.getItem('ms_mondev'); if (sv !== null) monDev = sv; } catch {}
+const noHeadphones = () => !monDev || monDev === 'none' || monLost; // nothing to listen on
 let monBus = null, wholeMon = null;
 const monPref = { whole: false, vol: 1 };
 try { monPref.whole = localStorage.getItem('ms_mon_whole') !== '0'; const v = parseFloat(localStorage.getItem('ms_mon_vol')); if (v >= 0 && v <= 1) monPref.vol = v; } catch {}
@@ -1680,7 +1682,7 @@ const wholeNow = () => monPref.whole || !videoHasSound();
 function applyMonitorMix() {
   if (!actx || !monBus) return;
   const any = studio.audio.some(isHeard), t = actx.currentTime, whole = wholeNow();
-  monBus.gain.setTargetAtTime(monLost ? 0 : monPref.vol, t, 0.02);
+  monBus.gain.setTargetAtTime(monLost || monDev === 'none' ? 0 : monPref.vol, t, 0.02);
   wholeMon.gain.setTargetAtTime(whole && any ? 1 : 0, t, 0.02);
   // an input set to "listen only" is not in the stream, so it is still played to you by itself
   for (const a of studio.audio) { const n = asrc.get(a.id); if (n && n.mon) n.mon.gain.setTargetAtTime(isHeard(a) && (!whole || a.monitor === 'only') ? 1 : 0, t, 0.02); }
@@ -1689,14 +1691,14 @@ let monLost = false; // the picked headphones were unplugged or switched off (Bl
 function setMonitorDevice(id) {
   monDev = id || ''; monLost = false;
   try { localStorage.setItem('ms_mondev', monDev); } catch {}
-  if (actx && actx.setSinkId) actx.setSinkId(monDev || '').catch(() => {});
+  if (actx && actx.setSinkId) actx.setSinkId(monDev === 'none' ? { type: 'none' } : (monDev || '')).catch(() => {});
   applyMonitorMix();
 }
 // Safe: when the headphones you picked go away (a Bluetooth headset turned off), Windows would play the sound on the
 // Default output (speakers, the sound desk) and it could loop into the stream. Instead the listening goes silent and
 // is turned off. The stream does not change. When the headphones come back, turn listening on again yourself.
 function checkMonitorDevice(quiet) {
-  if (!monDev || !devices.out) return;
+  if (!monDev || monDev === 'none' || !devices.out) return;
   const here = devices.out.some((d) => d.deviceId === monDev);
   if (!here && !monLost) {
     monLost = true;
@@ -1952,7 +1954,7 @@ function renderAudio() {
     // to Default output and could loop back), the Listen window opens instead so you can pick them. Right-click opens it any time.
     lb.onclick = (e) => {
       e.stopPropagation();
-      if (!isHeard(a) && (!monDev || monLost)) { openListen(a, lb); flash(monLost ? 'Your headphones are not connected. Connect them or pick others.' : 'Pick your headphones first, then turn listening on.', false); return; }
+      if (!isHeard(a) && noHeadphones()) { openListen(a, lb); flash(monLost ? 'Your headphones are not connected. Connect them or pick others.' : 'Pick your headphones first (or it stays silent), then turn listening on.', false); return; }
       closeListen(); a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); renderAudio();
     };
     lb.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); openListen(a, lb); };
@@ -2008,11 +2010,11 @@ function openListen(a, anchor) {
     p.querySelector('.wih').hidden = !videoHasSound();
     p.querySelectorAll('[data-w]').forEach((b) => b.classList.toggle('on', (b.dataset.w === '1') === wholeNow()));
   };
-  p.querySelector('.tgl').onclick = () => { a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); paint(); renderAudio(); if (isHeard(a) && !monDev) flash('Listening goes to Default output. Pick your headphones, or the sound can loop back through the speakers.', false); };
+  p.querySelector('.tgl').onclick = () => { a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); paint(); renderAudio(); if (isHeard(a) && noHeadphones()) flash('Listening goes to Default output. Pick your headphones, or the sound can loop back through the speakers.', false); };
   p.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => { monPref.whole = b.dataset.w === '1'; try { localStorage.setItem('ms_mon_whole', monPref.whole ? '1' : '0'); } catch {} applyMonitorMix(); paint(); }; });
-  const sel = p.querySelector('.hpd'); sel.add(new Option('Default output', ''));
+  const sel = p.querySelector('.hpd'); sel.add(new Option('No sound', 'none')); sel.add(new Option('Default output', ''));
   (devices.out || []).forEach((x) => sel.add(new Option(x.label || 'Output', x.deviceId)));
-  sel.value = [...sel.options].some((o) => o.value === monDev) ? monDev : '';
+  sel.value = [...sel.options].some((o) => o.value === monDev) ? monDev : 'none';
   sel.onchange = () => { setMonitorDevice(sel.value); const mm = $('#monDev'); if (mm) mm.value = sel.value; paint(); };
   const vr = p.querySelector('.vr input'), vb = p.querySelector('.vr b');
   vr.value = Math.round(monPref.vol * 100); vb.textContent = vr.value + '%';
@@ -3949,9 +3951,9 @@ function lockOut() {
   $('#outKbps').onchange = () => { OUT.kbps = Math.min(60000, Math.max(1000, Math.round(Number($('#outKbps').value)) || OUT.kbps)); $('#outKbps').value = OUT.kbps; saveOut(); };
 })();
 function fillMon() {
-  const m = $('#monDev'); m.textContent = ''; m.add(new Option('Default output', ''));
+  const m = $('#monDev'); m.textContent = ''; m.add(new Option('No sound', 'none')); m.add(new Option('Default output', ''));
   (devices.out || []).forEach((x) => { if (x.deviceId !== 'default' && x.deviceId !== 'communications') m.add(new Option(x.label || 'Output', x.deviceId)); });
-  m.value = [...m.options].some((o) => o.value === monDev) ? monDev : '';
+  m.value = [...m.options].some((o) => o.value === monDev) ? monDev : 'none';
 }
 $('#monDev').onchange = () => setMonitorDevice($('#monDev').value);
 let spane = 'general';
