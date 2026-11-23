@@ -647,9 +647,10 @@ app.put('/api/recording', (req, res) => {
 });
 app.post('/api/recording/open', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
-  try { fs.mkdirSync(REC_DIR, { recursive: true }); } catch {}
-  if (!openFolderHook) return res.json({ error: 'Open this folder yourself: ' + REC_DIR });
-  openFolderHook(REC_DIR);
+  const dir = req.body && req.body.folder === 'done' ? DONE_DIR : REC_DIR;
+  try { fs.mkdirSync(dir, { recursive: true }); } catch {}
+  if (!openFolderHook) return res.json({ error: 'Open this folder yourself: ' + dir });
+  openFolderHook(dir);
   res.json({ ok: true });
 });
 

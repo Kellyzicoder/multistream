@@ -300,6 +300,11 @@
   .segc button.on { background:var(--sel); color:var(--onsel); }
   /* ---------- Listen in headphones ---------- */
   .lsp .r[hidden] { display:none !important; }
+  .lsp .wsel { min-width:140px; padding:6px 8px; border-radius:8px; }
+  /* Transitions is a button now: its panel opens over the page, and stays closed until you press it */
+  body:not(.tr-open) .trdock { display:none !important; }
+  body.tr-open .trdock { display:block !important; position:fixed; z-index:60; top:120px; right:28px; width:300px; max-height:70vh; overflow:auto; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+  .trx { float:right; background:none; border:0; color:inherit; font-size:20px; line-height:1; cursor:pointer; padding:0 4px; }
   .lsp { position:fixed; z-index:72; width:380px; max-width:calc(100vw - 24px); display:flex; flex-direction:column; gap:14px; padding:18px 18px 16px; border-radius:18px; background:rgba(20,26,54,.98); border:1px solid rgba(255,255,255,.14); box-shadow:0 24px 60px rgba(0,0,0,.55); color:var(--text); animation:lspIn .16s ease-out; }
   html.t-light .lsp { background:#fff; border-color:rgba(0,0,0,.12); }
   @keyframes lspIn { from { opacity:0; transform:translateY(6px); } }
@@ -702,11 +707,11 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
         <button id="srcDel" title="Remove source">Remove</button>
       </div>
     </section>
-    <section class="dock wide"><h2 class="mxh">Audio Mixer<span class="mxl" role="group" aria-label="Meter layout"><button type="button" data-mxl="h" title="Side to side" aria-label="Side to side meters"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M4 8h16M4 16h11"/></svg></button><button type="button" data-mxl="v" title="Up and down" aria-label="Up and down meters"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8 20V4M16 20V9"/></svg></button></span><button id="advAudio" type="button" class="hb2 wide" title="Volume, mono, balance, sync offset and monitoring for every sound input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/></svg>Advanced</button></h2>
+    <section class="dock wide"><h2 class="mxh">Audio Mixer<span class="mxl" role="group" aria-label="Meter layout"><button type="button" data-mxl="h" title="Side to side" aria-label="Side to side meters"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M4 8h16M4 16h11"/></svg></button><button type="button" data-mxl="v" title="Up and down" aria-label="Up and down meters"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M8 20V4M16 20V9"/></svg></button></span><button id="advAudio" type="button" class="hb2 wide" title="Volume, mono, balance, sync offset and monitoring for every sound input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/></svg>Advanced</button><button id="trOpen" type="button" class="hb2 wide" title="How the picture changes when you press Transition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="8" height="14" rx="1.5"/><rect x="13" y="5" width="8" height="14" rx="1.5"/></svg>Transitions</button></h2>
       <div class="list" id="audio"></div>
       <div class="tb" hidden><div class="menu"><button id="addAudio" title="Add sound input">Add</button><div class="pop pop-up" id="audPop" hidden><button class="mi" data-addaudio="mic">Sound input<small>A microphone, mixer or the ATEM</small></button><button class="mi" data-addaudio="desktop" id="desktopAudioItem" hidden>Computer sound<small>What this PC plays (Windows)</small></button></div></div><span class="note" id="audNote"></span></div>
     </section>
-    <section class="dock narrow"><h2>Transitions</h2>
+    <section class="dock narrow trdock" aria-label="Transitions"><h2>Transitions<button type="button" class="trx" id="trClose" aria-label="Close" title="Close">×</button></h2>
       <div class="pad trp">
         <label class="lbl">Type <select id="trType"><option value="cut">Cut</option><option value="fade">Dissolve (fade)</option><option value="slide">Slide</option><option value="circle">Circle wipe</option><option value="line">Line wipe</option><option value="colour">Colour wipe</option><option value="flow">Flow</option><option value="stack">Stack</option><option value="zoom">Zoom</option><option value="dip">Dip to black</option></select></label>
         <label class="lbl">Duration <span class="trms"><input id="trMs" type="number" min="50" max="5000" step="50" aria-label="Duration in milliseconds"> ms</span></label>
@@ -1677,6 +1682,9 @@ const isHeard = (a) => a.monitor === 'only' || a.monitor === 'both';
 // "Whole stream" plays the stream mix in your headphones when any input is set to listen; "This sound" plays only those inputs.
 // The choice only matters when a video with sound is in the Production: with only sound inputs (like one sound desk), you
 // always hear the whole stream, and the choice is not shown.
+$('#trOpen').onclick = (e) => { e.stopPropagation(); document.body.classList.toggle('tr-open'); };
+$('#trClose').onclick = () => document.body.classList.remove('tr-open');
+document.addEventListener('pointerdown', (e) => { if (document.body.classList.contains('tr-open') && !e.target.closest('.trdock,#trOpen')) document.body.classList.remove('tr-open'); });
 const videoHasSound = () => (studio.scenes || []).some((sc) => (sc.layers || []).some((l) => l.type === 'video' && !l.muted && (l.vol == null || l.vol > 0)));
 const wholeNow = () => monPref.whole || !videoHasSound();
 function applyMonitorMix() {
@@ -1997,7 +2005,7 @@ function openListen(a, anchor) {
   p.innerHTML = '<div class="hd"><span class="ic">' + ICON_HP.replace('currentColor', '#fff') + '</span><div class="ti"><b>Listen in headphones</b><small></small></div><button type="button" class="tgl" aria-label="Listen on or off"></button></div>'
     + '<div class="lv"><i></i></div>'
     + '<div class="cd"><div class="r"><span class="l">Headphones</span><select class="hpd"></select></div>'
-    + '<div class="r wih"><span class="l">What I hear</span><div class="sg"><button type="button" data-w="0">This sound</button><button type="button" data-w="1">Whole stream</button></div></div>'
+    + '<div class="r wih"><span class="l">What I hear</span><select class="wsel" aria-label="What I hear"><option value="0">This sound</option><option value="1">Whole stream</option></select></div>'
     + '<div class="rf"><span class="l">Headphone volume</span><div class="vr"><input type="range" min="0" max="100" step="1"><b></b></div></div></div>'
     + '<div class="wn dflt" hidden><span>⚠</span><span>Headphones is set to Default output. If this computer\'s sound goes to the speakers or the sound desk, the sound will loop back (echo, feedback, distortion). Pick your headphones above.</span></div>'
     + '<div class="wn"><span>⚠</span><span>Bluetooth headphones can be a little behind. Wired is best for checking sound.</span></div>';
@@ -2008,10 +2016,10 @@ function openListen(a, anchor) {
     p.querySelector('.tgl').setAttribute('aria-pressed', String(onNow));
     p.querySelector('.wn.dflt').hidden = !(onNow && !monDev);
     p.querySelector('.wih').hidden = !videoHasSound();
-    p.querySelectorAll('[data-w]').forEach((b) => b.classList.toggle('on', (b.dataset.w === '1') === wholeNow()));
+    p.querySelector('.wsel').value = wholeNow() ? '1' : '0';
   };
   p.querySelector('.tgl').onclick = () => { a.monitor = isHeard(a) ? 'off' : 'both'; save(); syncAudio(); paint(); renderAudio(); if (isHeard(a) && noHeadphones()) flash('Listening goes to Default output. Pick your headphones, or the sound can loop back through the speakers.', false); };
-  p.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => { monPref.whole = b.dataset.w === '1'; try { localStorage.setItem('ms_mon_whole', monPref.whole ? '1' : '0'); } catch {} applyMonitorMix(); paint(); }; });
+  p.querySelector('.wsel').onchange = (e) => { monPref.whole = e.target.value === '1'; try { localStorage.setItem('ms_mon_whole', monPref.whole ? '1' : '0'); } catch {} applyMonitorMix(); paint(); };
   const sel = p.querySelector('.hpd'); sel.add(new Option('No sound', 'none')); sel.add(new Option('Default output', ''));
   (devices.out || []).forEach((x) => sel.add(new Option(x.label || 'Output', x.deviceId)));
   sel.value = [...sel.options].some((o) => o.value === monDev) ? monDev : 'none';
