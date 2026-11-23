@@ -267,7 +267,6 @@
   .rzx { top:10px; bottom:10px; right:0; width:7px; cursor:col-resize; border-radius:999px; } .rzy { left:10px; right:10px; bottom:0; height:7px; cursor:row-resize; border-radius:999px; }
   @media (max-width:1000px) { .split, .rz { display:none; } }
   /* ---------- Studio Mode off: only the live picture ---------- */
-  body:not(.more) .dock:has(#trType) { display:none; }
   body.single .stage > .mid, body.single .stage > .screen:last-child { display:none; }
   body.single .stage > .screen:first-child { max-width:min(100%, calc((100vh - 360px) * 16 / 9)); margin:0 auto; }
   body.single #ev { border-color:var(--red); box-shadow:0 0 0 1px var(--red), 0 0 40px rgba(255,77,90,.3), 0 14px 44px rgba(0,0,0,.45); }
@@ -313,7 +312,8 @@
   /* Transitions is a button now: its panel opens over the page, and stays closed until you press it */
   body:not(.tr-open) .trdock { display:none !important; }
   body.tr-open .trdock { display:block !important; position:fixed; z-index:60; top:120px; right:28px; width:300px; max-height:70vh; overflow:auto; box-shadow:0 18px 50px rgba(0,0,0,.5); }
-  .trx { float:right; background:none; border:0; color:inherit; font-size:20px; line-height:1; cursor:pointer; padding:0 4px; }
+  .trdock h2 { display:flex; align-items:center; justify-content:space-between; }
+  .trx { float:none; background:none; border:0; color:inherit; font-size:20px; line-height:1; cursor:pointer; padding:0 4px; }
   .lsp { position:fixed; z-index:72; width:380px; max-width:calc(100vw - 24px); display:flex; flex-direction:column; gap:14px; padding:18px 18px 16px; border-radius:18px; background:rgba(20,26,54,.98); border:1px solid rgba(255,255,255,.14); box-shadow:0 24px 60px rgba(0,0,0,.55); color:var(--text); animation:lspIn .16s ease-out; }
   html.t-light .lsp { background:#fff; border-color:rgba(0,0,0,.12); }
   @keyframes lspIn { from { opacity:0; transform:translateY(6px); } }
@@ -484,6 +484,8 @@ html.a-calm body { background:var(--bg) !important; }
   .dock .ctl { padding:10px 12px !important; gap:6px !important; }
   .dock .ctl button { height:32px; padding:0 16px; border-radius:10px; border:0; background:rgba(255,255,255,.08); color:var(--text); font-size:13px; font-weight:600; box-shadow:none; }
   #sendBtn:not(.stop) { background:rgba(255,255,255,.08); color:var(--text); } #sendBtn:not(.stop)::before { background:#ff4d5a; }
+  #goBtn::before { -webkit-mask-image:none; mask-image:none; width:9px; height:9px; margin:0 3.5px; border-radius:50%; background:#ff4d5a; }
+  #goBtn.stop { background:var(--sel) !important; border-color:var(--sel) !important; color:var(--onsel) !important; } #goBtn.stop::before { border-radius:2px; background:var(--onsel); }
   .dock .ctl button.stop { font-weight:700; } #modeBtn.on { background:var(--sel); color:var(--onsel); font-weight:700; box-shadow:0 0 0 2px color-mix(in srgb, var(--sel) 35%, transparent); }
   html.t-light .dock .ctl button { background:rgba(0,0,0,.06); }
   .status { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:40; border-radius:999px !important; padding:8px 16px !important; background:rgba(20,26,54,.95) !important; border:1px solid var(--gl-line) !important; box-shadow:0 10px 30px rgba(0,0,0,.4); font-size:12.5px !important; pointer-events:none; }
@@ -730,9 +732,9 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
       <div class="pad ctl">
         <button id="modeBtn" type="button" aria-pressed="true" title="Off (simple): one live picture, a click on a scene puts it on air. On: a Preview and a Program picture with a Transition button.">Studio mode: On</button>
         <button id="sendBtn" hidden>Start streaming</button>
+        <button id="goBtn" type="button" title="Go live on the channels that are on. Asks for a title first if there is none.">Start streaming</button>
         <button id="recBtn">Start recording</button>
         <button id="vcBtn" hidden>Start virtual camera</button>
-        <button id="moreBtn" type="button" aria-pressed="false" title="Show or hide the extra tools (Transitions)">More tools</button>
         <button id="setBtn">Settings</button>
       </div>
     </section>
@@ -2190,10 +2192,6 @@ $('#modeBtn').onclick = () => {
   studioMode = !studioMode; try { localStorage.setItem('ms_studiomode', studioMode ? '1' : '0'); } catch {}
   applyMode(); if (!studioMode) editing = studio.current || editing; renderAll();
 };
-let moreOn = false; try { moreOn = localStorage.getItem('ms_more') === '1'; } catch {}
-function applyMore() { document.body.classList.toggle('more', moreOn); const m = $('#moreBtn'); m.setAttribute('aria-pressed', String(moreOn)); m.classList.toggle('on', moreOn); m.textContent = moreOn ? 'Fewer tools' : 'More tools'; }
-$('#moreBtn').onclick = () => { moreOn = !moreOn; try { localStorage.setItem('ms_more', moreOn ? '1' : '0'); } catch {} applyMore(); };
-applyMore();
 applyMode();
 // right-click on the Preview or Program picture (like OBS projectors): show it full screen on a display, or in its own window
 let ctxMenu = null;
@@ -3333,7 +3331,7 @@ const vcv = document.createElement('canvas'); vcv.width = 1280; vcv.height = 720
 async function startSend() {
   wantSend = true; deadTicks = 0;
   setProgramSize(...outSize(OUT.h)); setFps(OUT.fps); lockOut();
-  $('#sendBtn').textContent = 'Stop streaming'; $('#sendBtn').className = 'stop'; $('#liveTag').hidden = false; liveT0 = liveT0 || Date.now();
+  $('#sendBtn').textContent = 'Stop streaming'; $('#sendBtn').className = 'stop'; $('#goBtn').textContent = 'Stop streaming'; $('#goBtn').classList.add('stop'); $('#liveTag').hidden = false; liveT0 = liveT0 || Date.now();
   await connectSend();
 }
 // The OBS engine makes and sends the video itself, and this page only says start and stop. If the engine is not
@@ -3404,7 +3402,7 @@ function stopSend() {
   autoRanPlan = null;
   dropSend();
   setProgramSize(...idleSize()); setFps(recW && OUT.fps === 60 ? 60 : 30); lockOut();
-  $('#sendBtn').textContent = 'Start streaming'; $('#sendBtn').className = ''; $('#liveTag').hidden = true; liveT0 = 0;
+  $('#sendBtn').textContent = 'Start streaming'; $('#sendBtn').className = ''; $('#goBtn').textContent = 'Start streaming'; $('#goBtn').classList.remove('stop'); $('#liveTag').hidden = true; liveT0 = 0;
 }
 // Theme and main colour (the same setting as the Stream page: Settings, Appearance). White is one of the colours.
 (function () {
@@ -3435,6 +3433,9 @@ async function endLives() {
     await Promise.all(ends);
   } catch {}
 }
+// The Production's Start streaming button uses the same steps as the Livestream page (title check, private test, auto start).
+// It always asks for a title first when there is none. Outside the main window (test only) it starts the stream directly.
+$('#goBtn').onclick = () => { let go = null; try { go = window.parent !== window && window.parent.msStartFromProduction; } catch {} if (go) go(); else $('#sendBtn').click(); };
 $('#sendBtn').onclick = async () => {
   if (wantSend) {
     if (askStop && !await msAsk('Stop streaming now? The live ends on every channel.')) return;
