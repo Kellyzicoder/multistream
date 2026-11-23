@@ -5,6 +5,7 @@ const { spawn, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
+// Finds the folder that holds the virtual camera helper (vcam.exe).
 function findDir() {
   const tries = [process.env.MULTISTREAM_VCAM, process.resourcesPath && path.join(process.resourcesPath, 'vcam'), path.join(__dirname, 'vcam', 'win')];
   return tries.filter(Boolean).find((d) => { try { return fs.existsSync(path.join(d, 'vcam.exe')); } catch { return false; } }) || '';
@@ -13,6 +14,7 @@ function findDir() {
 // The camera driver's id (softcam) and the folder version. A new version goes in its own folder, so a copy that
 // Zoom or Teams has open is never in the way, and nobody has to close Zoom first.
 const CLSID = '{AEF3B972-5FA5-4647-9571-358EB472BC9E}';
+// The version of the virtual camera. Change it when the driver changes so old installs are replaced.
 const CAMERA_VERSION = 'v2';
 
 // Is Multistream Camera already added to Windows (this version)? Then Start virtual camera needs no permission box.
@@ -27,6 +29,7 @@ function registered(platform = process.platform) {
   } catch { return false; }
 }
 
+// Creates the virtual camera controller: start, stop, state.
 function createVcam({ ffmpeg, platform = process.platform, dir = findDir(), exe, exeArgs, logoPath } = {}) {
   const helper = exe || (dir && path.join(dir, 'vcam.exe'));
   const available = Boolean(helper) && (platform === 'win32' || Boolean(exe));

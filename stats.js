@@ -118,6 +118,7 @@ function readAmfValue(b, o) {
   if (t === 2) { const n = b.readUInt16BE(o + 1); return [b.toString('utf8', o + 3, o + 3 + n), o + 3 + n]; }
   throw new Error('stop'); // a kind of value we do not need
 }
+// Reads the picture and sound details from an FLV stream header.
 function readMetaData(body) {
   const out = {};
   try {
@@ -135,8 +136,11 @@ function readMetaData(body) {
   } catch {}
   return out;
 }
+// The video codec numbers in an FLV header, with their names.
 const VIDEO_CODECS = { 7: 'h264', 12: 'hevc' }, FOURCC = { avc1: 'h264', hvc1: 'hevc', av01: 'av1', vp09: 'vp9' };
+// The sound codec numbers in an FLV header, with their names.
 const AUDIO_CODECS = { 2: 'mp3', 10: 'aac', 11: 'speex' };
+// Turns the FLV header details into the info the dashboard shows.
 function makeFlvInfo(info) {
   let buf = Buffer.alloc(0), gotHeader = false, meta = {};
   const fill = () => {

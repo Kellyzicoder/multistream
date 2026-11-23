@@ -22,7 +22,9 @@ const secret = require('./secret');
 // exactly as it is in the file and written back unchanged, so it is never wiped. It is only replaced when you
 // type a new one (or remove it on purpose).
 const keptSealed = new Map(); // name -> the encrypted text from the file
+// Opens a saved secret (a login or stream key). If it cannot be opened on this computer, it is kept sealed so nothing is lost.
 function openKept(name, v) { const o = secret.open(v); if (o === null) { keptSealed.set(name, v); return ''; } keptSealed.delete(name); return o || ''; }
+// Seals a secret before it is written to disk. A value that could not be opened earlier is kept as it was.
 function sealKept(name, v) { if (v) { keptSealed.delete(name); return secret.seal(v); } return keptSealed.get(name) || ''; }
 const { detectEncoder } = require('./encoder');
 const outargs = require('./outargs');
@@ -65,6 +67,7 @@ try {
     { id: crypto.randomUUID(), name: 'Facebook', url: '', key: '', enabled: true },
   ];
 }
+// Writes the saved settings (channels, options) to disk.
 function save() {
   // stream keys are saved encrypted (see secret.js)
   fs.writeFileSync(DATA_FILE, JSON.stringify(destinations.map((d) => ({ ...d, key: sealKept('dest:' + d.id, d.key) })), null, 2), { mode: 0o600 });
@@ -84,6 +87,7 @@ const recorder = createRecorder({ ffmpeg: FFMPEG, input: HUB_IN, dir: REC_DIR, f
 let openFolderHook = null;
 let showFileHook = null; // shows one file in the folder (Explorer or Finder)
 let trashHook = null; // puts a file in the Recycle Bin (it can be taken back out)
+// The recording status the Recordings page shows.
 const recView = () => ({ ...recorder.state(), auto: recCfg.auto, remux: recCfg.remux !== false });
 
 // ---- chat (read only) ----
@@ -116,11 +120,14 @@ const destStats = new Map(); // id -> { kbps, speed }  (what we are really sendi
 const ALERT_GROUPS = ['stream', 'studio'];
 const alertNow = { stream: new Map(), studio: new Map() }; // source -> { source, text, at, ok }
 const alertClients = new Map(); // client { send(text) } -> group
+// Only the known alert groups (for example the stream or the recording) are accepted.
 const alertGroup = (g) => (ALERT_GROUPS.includes(g) ? g : 'stream');
+// Sends an alert to every window that listens for that group.
 function alertBroadcast(group, msg) {
   const data = JSON.stringify(msg);
   for (const [c, g] of alertClients) if (g === group) { try { c.send(data); } catch {} }
 }
+// Shows an alert (a message) in the app. Errors are put into plain words first.
 function sendAlert(group, source, text, ok = false) {
   if (!ok) text = /^(could not upload|connected, but|the video stopped)/i.test(String(text)) ? String(text) : plain(text);
   const a = { group, source, text, at: Date.now(), ok };
@@ -132,10 +139,12 @@ function resolveAlert(group, source, text) {
   const a = alertNow[group].get(source);
   if (a && !a.ok) sendAlert(group, source, text, true);
 }
+// Removes the current alerts of one group.
 function clearAlerts(group) {
   alertNow[group].clear();
   alertBroadcast(group, { clear: true, group });
 }
+// Adds a window that wants live alerts.
 function addAlertClient(client, group) {
   alertClients.set(client, group);
   for (const a of alertNow[group].values()) { try { client.send(JSON.stringify(a)); } catch {} }
@@ -151,9 +160,12 @@ function hideKey(text, key) {
 
 // ---- Stream health: what happened while live, reconnects and how long each channel has been live ----
 const healthLog = []; // { t, text } newest last
+// Adds a line to the health log (the last 60 lines are kept).
 function logHealth(text, kind) { healthLog.push({ t: Date.now(), text, kind: kind || '' }); if (healthLog.length > 60) healthLog.shift(); }
+// How many times each channel has been started again after it dropped.
 const reconnects = new Map(); // id -> times a channel dropped and was started again
 const liveSince = new Map(); // id -> when it went live
+// Sets the state of one channel (on, live, error...) and tells the windows.
 function setStatus(id, state, message = '') {
   if (state === 'error') message = plain(message || 'The connection to the site dropped.');
   const before = (status.get(id) || {}).state;
@@ -175,6 +187,7 @@ let monitor = null;
 let lastDropTotal = 0; // dropped frames so far, so each second's new drops can be drawn
 let noSignalSent = false; // so the "no video" alert is sent once, not every second
 
+// Clears the signal numbers (bitrate, dropped frames) when the stream stops.
 function resetSignal() {
   signal.startedAt = 0;
   signal.video = null;
@@ -186,6 +199,7 @@ function resetSignal() {
   signal.keyframe = null;
 }
 
+// Starts checking the outgoing video while live (the signal numbers).
 function startMonitor() {
   if (monitor || !obsLive) return;
   resetSignal();
@@ -233,6 +247,7 @@ function startMonitor() {
   monitor = m;
 }
 
+// Stops the signal check.
 function stopMonitor() {
   if (!monitor) return;
   const m = monitor;
@@ -247,6 +262,7 @@ const autoRetry = createAutoRetry({
   onGiveUp: (id, reason, max) => setStatus(id, 'error', `${plain(reason).replace(/\.$/, '')}. Could not reconnect after ${max} tries. Press Restart.`),
 });
 
+// Builds the full address a channel sends to: its server address plus its stream key.
 function targetOf(d) {
   return `${d.url.replace(/\/+$/, '')}/${d.key}`;
 }
@@ -259,6 +275,7 @@ function waitingForLive(d) {
   if (d.fbPage) return !session.fbAlso.some((a) => a.destId === d.id) && 'Facebook';
   return false;
 }
+// Starts sending the video to one channel (one ffmpeg process per channel).
 function startDestination(d) {
   if (!obsLive || !d.enabled || procs.has(d.id)) return;
   if (waitingForLive(d)) { setStatus(d.id, 'starting', 'Making the live on ' + waitingForLive(d) + '…'); return; }
@@ -339,6 +356,7 @@ function startDestination(d) {
   });
 }
 
+// Stops one channel. Cancels any automatic restart for it first.
 function stopDestination(id, nextState = 'off') {
   autoRetry.cancel(id);
   const p = procs.get(id);
@@ -350,6 +368,7 @@ function stopDestination(id, nextState = 'off') {
   setStatus(id, nextState);
 }
 
+// Stops every channel and the signal check.
 function stopAll() {
   stopMonitor();
   chat.stop();
@@ -398,11 +417,14 @@ function feedHub(stdout) {
 // http://127.0.0.1:PORT/api/youtube/callback on this computer (a small listener opens for that only).
 // In test mode (node server.js) the page is opened at http://localhost:PORT on this computer.
 const okHost = (req) => [`127.0.0.1:${DASHBOARD_PORT}`, `localhost:${DASHBOARD_PORT}`].includes(String(req.headers.host || '').toLowerCase());
+// Checks that a request came from this app, not from another website.
 const okOrigin = (req) => { const o = req.headers.origin; return !o || o === `http://127.0.0.1:${DASHBOARD_PORT}` || o === `http://localhost:${DASHBOARD_PORT}`; };
+// True when the request comes from this computer's app. Changes are only allowed from here.
 const isLocal = (req) => Boolean(req.socket && req.socket.inApp) || (STANDALONE && okHost(req) && okOrigin(req));
 // the phone-control password from older versions is not needed any more
 try { fs.unlinkSync(path.join(DATA_DIR, 'settings.json')); } catch {}
 
+// Makes a small plain page (used for sign-in results and messages).
 function simplePage(title, body) {
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Multistream</title>
 <style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0c110e;color:#eef4f0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:16px}
@@ -416,6 +438,7 @@ const app = express();
 // YouTube sign-in: Google sends your browser back to this computer once. A small listener opens
 // for that only, on this computer only, and closes again after sign-in (or after 5 minutes).
 let loginServer = null, loginTimer = null;
+// Starts a short-lived local listener that receives the sign-in result from Google or Facebook.
 function openLoginListener() {
   if (loginServer) return;
   const s = http.createServer(app);
@@ -424,6 +447,7 @@ function openLoginListener() {
   loginServer = s;
   clearTimeout(loginTimer); loginTimer = setTimeout(closeLoginListener, 5 * 60 * 1000);
 }
+// Stops that sign-in listener.
 function closeLoginListener() {
   clearTimeout(loginTimer);
   const s = loginServer; loginServer = null;
@@ -456,6 +480,7 @@ try {
   console.warn('flv.js was not found. The video preview will be off until you run: npm install');
 }
 
+// The channel information that is safe to show in the windows (no secrets).
 function publicView(d) {
   return {
     id: d.id,
@@ -475,6 +500,7 @@ function publicView(d) {
 // Dismiss on any page clears the alert on every page
 app.post('/api/alerts/clear', (req, res) => { clearAlerts(alertGroup(req.query.group)); res.json({ ok: true }); });
 
+// Live alerts: a connection that stays open and pushes new alerts to the window.
 app.get('/api/alerts', (req, res) => {
   res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
   res.flushHeaders();
@@ -485,6 +511,7 @@ app.get('/api/alerts', (req, res) => {
   req.on('close', () => alertClients.delete(client));
 });
 
+// The main status the Livestream page reads: channels, live state and signal.
 app.get('/api/state', (req, res) => {
   res.json({
     obsLive,
@@ -512,6 +539,7 @@ app.get('/api/state', (req, res) => {
 
 // how busy this computer is (all cores), measured between two readings
 let cpuPrev = os.cpus().map((c) => c.times);
+// How busy the processor is, as a percent.
 function cpuPercent() {
   const now = os.cpus().map((c) => c.times);
   let idle = 0, total = 0;
@@ -521,6 +549,7 @@ function cpuPercent() {
 }
 // graphics card load (NVIDIA cards: nvidia-smi comes with the driver). Other cards: not shown.
 let gpu = { pct: null, at: 0, none: false };
+// Reads the graphics card load (asks the NVIDIA tool at most every 4 seconds).
 function readGpu() {
   if (gpu.none || Date.now() - gpu.at < 4000) return; gpu.at = Date.now();
   try {
@@ -531,6 +560,7 @@ function readGpu() {
 }
 // internet upload test: sends 15 MB to Cloudflare's speed test and times it (about 2 to 10 seconds)
 let netTest = { mbps: null, at: 0, running: false, error: '' };
+// Runs an internet speed test for the health page.
 app.post('/api/health/speedtest', async (req, res) => {
   if (netTest.running) return res.json(netTest);
   if (obsLive) return res.status(400).json({ error: 'Test the internet before going live, so the test does not slow the stream' });
@@ -546,6 +576,7 @@ app.post('/api/health/speedtest', async (req, res) => {
   } catch (e) { netTest = { ...netTest, running: false, error: 'Could not test the internet: ' + e.message }; }
   res.json(netTest);
 });
+// Health numbers for the health page: processor, graphics card, disk and network.
 app.get('/api/health', (req, res) => {
   readGpu();
   const chans = destinations.map((d) => {
@@ -573,6 +604,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Returns the live chat messages newer than the one given.
 app.get('/api/chat', (req, res) => res.json(chat.view(req.query.after)));
 
 // ---- End live (the button that turns Go live back off) ----
@@ -591,6 +623,7 @@ app.post('/api/youtube/end', async (req, res) => {
   session.youtube = '';
   res.json({ ok: true, warning });
 });
+// Ends the Facebook live video.
 app.post('/api/facebook/end', async (req, res) => {
   if (!session.facebook) return res.status(400).json({ error: 'There is no Facebook live to end' });
   const d = fbDestination();
@@ -631,13 +664,16 @@ app.get('/api/preflight', async (req, res) => {
 
 // ---- Recording routes ----
 app.get('/api/recording', (req, res) => res.json({ ...recView(), files: recorder.list() }));
+// Starts a recording while the stream is live.
 app.post('/api/recording/start', (req, res) => {
   if (!obsLive) return res.status(400).json({ error: 'Start Streaming in the Studio first' });
   const r = recorder.start();
   if (r.error) return res.status(500).json({ error: r.error });
   res.json(recView());
 });
+// Stops the recording.
 app.post('/api/recording/stop', async (req, res) => { await recorder.stop(); res.json(recView()); });
+// Saves the recording settings (auto upload, MP4 copy).
 app.put('/api/recording', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const b = req.body || {};
@@ -645,6 +681,7 @@ app.put('/api/recording', (req, res) => {
   try { fs.writeFileSync(REC_FILE, JSON.stringify(recCfg)); } catch {}
   res.json(recView());
 });
+// Opens the recordings folder, or the Done folder, in Explorer or Finder.
 app.post('/api/recording/open', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   const dir = req.body && req.body.folder === 'done' ? DONE_DIR : REC_DIR;
@@ -658,11 +695,15 @@ app.post('/api/recording/open', (req, res) => {
 const UP_FILE = path.join(DATA_DIR, 'uploads.json');
 let upCfg = { auto: false, privacy: 'unlisted', after: 'keep', done: {}, titles: {} }; // done: file name -> { id, privacy, at }; titles: file name -> the stream title when it was recorded
 try { upCfg = { ...upCfg, ...JSON.parse(fs.readFileSync(UP_FILE, 'utf8')) }; } catch {}
+// Saves the upload settings to disk.
 const saveUp = () => { try { fs.writeFileSync(UP_FILE, JSON.stringify(upCfg, null, 2)); } catch {} };
+// Progress of recordings being converted or uploaded, by file name.
 const recJobs = new Map(); // file name -> { kind: 'mp4' | 'upload', pct, error }
 const upQueue = [];
 const durCache = new Map(); // name|size -> seconds
+// Turns a file name into a full path inside the recordings folder. Only video file names are accepted.
 const recPath = (name) => { const n = path.basename(String(name || '')); if (!/\.(mkv|mp4|mov)$/i.test(n)) return ''; const f = path.join(REC_DIR, n); return fs.existsSync(f) ? f : ''; };
+// Works out how long a recording is.
 function recDuration(f, size) {
   const k = f + '|' + size; if (durCache.has(k)) return durCache.get(k);
   durCache.set(k, null);
@@ -671,6 +712,7 @@ function recDuration(f, size) {
   p.on('close', () => { const m = /Duration:\s*(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(err); durCache.set(k, m ? Number(m[1]) * 3600 + Number(m[2]) * 60 + Math.round(Number(m[3])) : null); });
   return null;
 }
+// Lists the recordings in the recordings folder.
 function recList() {
   let names = []; try { names = fs.readdirSync(REC_DIR).filter((n) => /\.(mkv|mp4|mov)$/i.test(n)); } catch {}
   return names.map((n) => { const f = path.join(REC_DIR, n); let st; try { st = fs.statSync(f); } catch { return null; }
@@ -679,6 +721,7 @@ function recList() {
     return { name: n, title, size: st.size, at: st.mtimeMs, secs: recDuration(f, st.size), hasMp4, job: recJobs.get(n) || null, youtube: upCfg.done[n] || null, queued: upQueue.includes(n) };
   }).filter(Boolean).sort((a, b) => b.at - a.at);
 }
+// Free disk space on the recordings drive.
 function freeSpace() { try { const s = fs.statfsSync(REC_DIR); return s.bavail * s.bsize; } catch { return null; } }
 // a recording has finished: like OBS's "Automatically remux to MP4", an MP4 copy is made (same quality, takes a moment;
 // the .mkv stays, as in OBS), then it is uploaded if that is switched on
@@ -686,12 +729,14 @@ function recordingSaved(name) {
   const up = () => { if (upCfg.auto && yt.refreshToken) queueUpload(name); };
   if (recCfg.remux !== false && /\.mkv$/i.test(name)) remux(name, up); else up();
 }
+// Puts a recording in the queue to upload.
 function queueUpload(name) {
   const j = recJobs.get(name);
   if (upQueue.includes(name) || (j && j.kind === 'upload' && !j.error)) return; // an upload that failed can be tried again
   upQueue.push(name); logHealth('Recording ' + name + ' will be uploaded to YouTube.'); runUploads();
 }
 let uploading = false;
+// Uploads the queued recordings one at a time.
 async function runUploads() {
   if (uploading) return; uploading = true;
   try {
@@ -745,7 +790,9 @@ async function ytUpload(file, name, privacy, onPct) {
     throw new Error('The upload did not finish');
   } finally { try { fs.closeSync(fd); } catch {} }
 }
+// The recordings and upload settings for the Recordings page.
 app.get('/api/recordings', (req, res) => res.json({ folder: REC_DIR, free: freeSpace(), auto: upCfg.auto, privacy: upCfg.privacy, after: upCfg.after || 'keep', canTrash: Boolean(trashHook), youtube: Boolean(yt.refreshToken), files: recList() }));
+// Saves the upload settings from the Recordings page.
 app.put('/api/recordings', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const b = req.body || {};
@@ -757,6 +804,7 @@ app.put('/api/recordings', (req, res) => {
 // Tidy up a recording without leaving the app: move it into a "Done" folder inside the recordings folder, or put it in the Recycle Bin
 // (so it can still be taken back). Never while it is still being written, uploaded or copied.
 const DONE_DIR = path.join(REC_DIR, 'Done');
+// Moves a recording to the Done folder, or puts it in the Recycle Bin.
 async function tidyRecording(name, how) {
   const f = recPath(name); if (!f) return 'That recording was not found';
   if (recJobs.get(name) && !recJobs.get(name).error) return 'Wait until its upload or MP4 copy is finished';
@@ -784,6 +832,7 @@ function remux(name, then) {
   p.on('error', (e) => { job.error = e.message; });
   p.on('close', (code) => { if (code === 0) recJobs.delete(name); else { job.error = 'Could not make the MP4'; try { fs.unlinkSync(out); } catch {} } if (then) then(); });
 }
+// Recording actions: play, show in folder, tidy up (Done or Recycle Bin), remux.
 app.post('/api/recordings/:act', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   const act = req.params.act;
@@ -803,13 +852,16 @@ const AS_FILE = path.join(DATA_DIR, 'autostart.json');
 let asPlan = { on: false, name: 'My plan', ask: true, offAfter: false, onMissing: 'skip', takeover: true, steps: [] };
 try { asPlan = { ...asPlan, ...JSON.parse(fs.readFileSync(AS_FILE, 'utf8')) }; } catch {}
 let asRun = { running: false }, asRunAt = 0, asCmd = '';
+// Checks one step of an auto-start plan and keeps only valid parts.
 const cleanStep = (x) => {
   if (!x || typeof x !== 'object') return null;
   if (x.type === 'video') return { type: 'video', file: String(x.file || '').slice(0, 500), url: String(x.url || '').slice(0, 500), name: String(x.name || '').slice(0, 120), loop: Boolean(x.loop), vol: Math.max(0, Math.min(100, Number(x.vol) || 0)), end: x.end === 'wait' ? 'wait' : 'next', secs: Math.max(0, Number(x.secs) || 0), optional: Boolean(x.optional), on: x.on !== false };
   if (x.type === 'scene') return { type: 'scene', scene: String(x.scene || '').slice(0, 80), how: ['now', 'for', 'until', 'next'].includes(x.how) ? x.how : 'now', secs: Math.max(1, Math.min(3600, Number(x.secs) || 10)), at: /^\d{1,2}:\d{2}$/.test(String(x.at)) ? String(x.at) : '10:00', tr: ['fade', 'cut', 'slide', 'dip'].includes(x.tr) ? x.tr : 'fade', optional: Boolean(x.optional), on: x.on !== false };
   return null;
 };
+// The auto-start plan and what it is doing right now.
 app.get('/api/autostart', (req, res) => res.json({ ...asPlan, run: Date.now() - asRunAt < 3000 ? asRun : { running: false } }));
+// Saves the auto-start plan.
 app.put('/api/autostart', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const b = req.body || {};
@@ -831,6 +883,7 @@ app.put('/api/autostart/run', (req, res) => {
   const cmd = asCmd; asCmd = '';
   res.json({ cmd });
 });
+// Lets the Livestream page say next or stop to the auto-start plan.
 app.post('/api/autostart/cmd', (req, res) => { const c = (req.body || {}).cmd; if (c === 'next' || c === 'stop') asCmd = c; res.json({ ok: true }); });
 
 // ---- Title and thumbnail for Go live ----
@@ -843,10 +896,12 @@ const THUMBS = { 'image/png': path.join(DATA_DIR, 'thumbnail.png'), 'image/jpeg'
 try { fs.writeFileSync(GL_FILE, JSON.stringify({ title: '', description: '' }, null, 2)); } catch {}
 for (const f of Object.values(THUMBS)) { try { fs.unlinkSync(f); } catch {} }
 const GL_BOOT = Date.now().toString(36); // the page uses this to clear its own per-channel titles once per start
+// The thumbnail picked for the stream, if there is one.
 function thumbFile() {
   for (const [type, file] of Object.entries(THUMBS)) if (fs.existsSync(file)) return { type, file };
   return null;
 }
+// Reads the title and description from the Livestream page and checks them.
 function goLiveTitle(req) {
   const body = req.body || {};
   const t = String(body.title || '').trim().slice(0, 100); // YouTube allows 100 characters
@@ -879,6 +934,7 @@ app.get('/api/analytics', async (req, res) => {
     res.json(j);
   } catch (e) { res.status(502).json({ error: e && e.name === 'AbortError' ? 'The dashboard did not answer' : 'Could not reach the dashboard' }); }
 });
+// Live numbers (viewers, comments) for the Livestream page. Refreshed at most every 25 seconds.
 app.get('/api/live/stats', async (req, res) => {
   if (Date.now() - liveStats.at > 25000) {
     liveStats.at = Date.now();
@@ -918,7 +974,9 @@ app.post('/api/golive/title', async (req, res) => {
   if (errs.length) return res.json({ error: errs.join(' · ') });
   res.json({ ok: true });
 });
+// The title, description and thumbnail for the next stream.
 app.get('/api/golive', (req, res) => res.json({ title: gl.title, description: gl.description || '', hasThumbnail: Boolean(thumbFile()), boot: GL_BOOT }));
+// Saves a new thumbnail for the stream.
 app.put('/api/golive/thumbnail', express.raw({ type: '*/*', limit: '10mb' }), (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const b = req.body;
@@ -944,10 +1002,15 @@ async function thumbToLive() {
 // ---- Saved stream details: a title, a description and a thumbnail picture to use again another time ----
 const SAVED_DIR = path.join(DATA_DIR, 'saved-details'), SAVED_FILE = path.join(SAVED_DIR, 'saved.json');
 let savedGl = []; try { savedGl = JSON.parse(fs.readFileSync(SAVED_FILE, 'utf8')) || []; } catch {}
+// Finds the saved thumbnail file for a saved title (png or jpg).
 const savedThumb = (id) => ['png', 'jpg'].map((x) => path.join(SAVED_DIR, id + '.' + x)).find((f) => fs.existsSync(f)) || '';
+// Writes the saved titles to disk.
 function writeSaved() { try { fs.mkdirSync(SAVED_DIR, { recursive: true }); fs.writeFileSync(SAVED_FILE, JSON.stringify(savedGl, null, 2)); } catch {} }
+// The saved titles the windows can show (without file names).
 const savedView = () => savedGl.map((x) => ({ id: x.id, name: x.name, title: x.title, desc: x.desc || '', hasThumb: Boolean(savedThumb(x.id)) }));
+// The list of saved titles and their thumbnails.
 app.get('/api/golive/saved', (req, res) => res.json({ list: savedView() }));
+// Adds or changes a saved title.
 app.post('/api/golive/saved', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   const b = req.body || {}, title = String(b.title || '').trim().slice(0, 100), desc = String(b.desc || '').trim().slice(0, 5000);
@@ -976,18 +1039,22 @@ app.post('/api/golive/saved/:id/use', async (req, res) => {
   }
   res.json({ ok: true, title: x.title, desc: x.desc || '', hasThumb: Boolean(f), error });
 });
+// Deletes a saved title and its thumbnail.
 app.delete('/api/golive/saved/:id', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   const id = req.params.id; savedGl = savedGl.filter((x) => x.id !== id);
   ['png', 'jpg'].forEach((x) => { try { fs.rmSync(path.join(SAVED_DIR, id + '.' + x), { force: true }); } catch {} });
   writeSaved(); res.json({ ok: true, list: savedView() });
 });
+// The thumbnail of a saved title.
 app.get('/api/golive/saved/:id/thumb', (req, res) => { const f = /^[\w-]{1,40}$/.test(req.params.id) ? savedThumb(req.params.id) : ''; f ? res.sendFile(f) : res.status(404).end(); });
+// Removes the current stream thumbnail.
 app.delete('/api/golive/thumbnail', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   for (const f of Object.values(THUMBS)) { try { fs.rmSync(f, { force: true }); } catch {} }
   res.json({ ok: true });
 });
+// The current stream thumbnail picture.
 app.get('/api/golive/thumbnail', (req, res) => {
   const t = thumbFile();
   t ? res.sendFile(t.file) : res.status(404).end();
@@ -1008,10 +1075,12 @@ try {
   try { fb.known = typeof fb.known === 'string' && fb.known ? JSON.parse(openKept('fb.known', fb.known) || '[]') : []; } catch { fb.known = []; }
   if (!Array.isArray(fb.known)) fb.known = [];
 } catch {}
+// Saves the Facebook settings (tokens are encrypted).
 function saveFb() {
   fs.writeFileSync(FB_FILE, JSON.stringify({ ...fb, token: sealKept('fb.token', fb.token), also: sealKept('fb.also', JSON.stringify(fb.also || [])), known: sealKept('fb.known', JSON.stringify(fb.known || [])) }, null, 2), { mode: 0o600 });
 }
 const GRAPH = 'https://graph.facebook.com/v26.0';
+// The Facebook account info the windows can show (no full tokens).
 function fbView() {
   return { granted: fb.granted || null, pageId: fb.pageId, pageName: fb.pageName, hasToken: Boolean(fb.token), tokenEnd: fb.token ? fb.token.slice(-4) : '', appId: fb.appId || '', hasClientToken: Boolean(fb.clientToken),
     also: (fb.also || []).map((p) => ({ pageId: p.pageId, pageName: p.pageName, on: p.on !== false, title: p.title || '', description: p.description || '' })) };
@@ -1020,7 +1089,9 @@ function fbView() {
 // Needs only the Meta app ID and its client token (both are meant to be inside apps; no app secret).
 // The sign-in gives a token for about 60 days; the Page tokens taken from it do not run out by themselves.
 let fbLogin = null; // while waiting: { code, until }; after: { pages: [{ id, name, access_token }] }
+// The Facebook app details (ID and token), from settings or the environment.
 const fbApp = () => ({ id: String(fb.appId || process.env.MS_FB_APP_ID || '').trim(), ct: String(fb.clientToken || process.env.MS_FB_CLIENT_TOKEN || '').trim() });
+// Saves the Facebook app ID and secret used for sign-in.
 app.put('/api/facebook/app', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const appId = String((req.body || {}).appId || '').trim(), ct = String((req.body || {}).clientToken || '').trim();
@@ -1029,6 +1100,7 @@ app.put('/api/facebook/app', (req, res) => {
   fb = { ...fb, appId, clientToken: ct || fb.clientToken || '' }; saveFb();
   res.json(fbView());
 });
+// Starts Facebook sign-in.
 app.post('/api/facebook/login', async (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Sign in on the main computer' });
   const a = fbApp();
@@ -1045,6 +1117,7 @@ app.post('/api/facebook/login', async (req, res) => {
     res.json({ userCode: j.user_code, uri: j.verification_uri || 'https://www.facebook.com/device', interval: Number(j.interval) || 5, expires: Number(j.expires_in) || 420 });
   } catch { res.status(502).json({ error: 'Could not reach Facebook. Check the internet connection.' }); }
 });
+// Facebook sign-in callback: receives the code and finishes sign-in.
 app.get('/api/facebook/login', async (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Sign in on the main computer' });
   if (!fbLogin) return res.json({ idle: true });
@@ -1118,6 +1191,7 @@ app.post('/api/facebook/pages/:id', async (req, res) => {
 function fbDestination() {
   return destinations.find((d) => /facebook/i.test(d.name) && !d.fbPage);
 }
+// Makes the channel entry for an extra Facebook Page.
 function fbAlsoDestination(p) {
   let d = destinations.find((x) => x.fbPage === p.pageId);
   if (!d) { d = { id: crypto.randomUUID(), name: 'Facebook: ' + (p.pageName || p.pageId), url: '', key: '', enabled: true, fbPage: p.pageId }; destinations.push(d); save(); }
@@ -1155,6 +1229,7 @@ async function fbNewLive(pageId, token, status, title, description) {
   } catch {}
   return { id: j.id || '', url: addr.slice(0, idx), key: addr.slice(idx + 1) + (query ? '?' + query : ''), link };
 }
+// Starts the live video on an extra Facebook Page.
 async function fbStartAlso(p) {
   const m = session.fbMeta || { status: 'LIVE_NOW', title: 'Live', description: '' };
   // this Page's own title and description, if it has them (otherwise the same as the main Page)
@@ -1168,6 +1243,7 @@ async function fbStartAlso(p) {
   startDestination(pd);
   fbSetThumbnail(l.id, p.token).catch((e) => logHealth('Facebook (' + (p.pageName || p.pageId) + ') did not take the thumbnail: ' + e.message));
 }
+// Ends the live video on an extra Facebook Page.
 async function fbEndAlso(pageId) {
   const a = session.fbAlso.find((x) => x.pageId === pageId);
   if (!a) return '';
@@ -1188,6 +1264,7 @@ async function fbSetThumbnail(liveId, token) {
   const k = await r.json().catch(() => ({}));
   if (!r.ok || k.error) throw new Error((k.error && k.error.message) || 'Facebook did not take the thumbnail');
 }
+// Asks Facebook to end a live video.
 async function fbEndLive(id, token) {
   const r = await fetch(`${GRAPH}/${id}`, { method: 'POST', body: new URLSearchParams({ access_token: token, end_live_video: 'true' }) });
   const j = await r.json().catch(() => ({}));
@@ -1202,10 +1279,12 @@ function addDestination(name) {
   return d;
 }
 
+// The Facebook settings for the windows (no secrets).
 app.get('/api/facebook', (req, res) => {
   res.json(fbView());
 });
 
+// Saves the Facebook settings (title, Page choice).
 app.put('/api/facebook', async (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change this on the main computer' });
   const pageId = String((req.body || {}).pageId || '').trim();
@@ -1288,6 +1367,7 @@ app.delete('/api/facebook/also/:pageId', async (req, res) => {
   res.json({ ok: true, warning });
 });
 
+// Creates the Facebook live video and starts sending to it.
 app.post('/api/facebook/live', async (req, res) => {
   if (!obsLive) return res.status(400).json({ error: 'Start Streaming in the Studio first' });
   if (!fb.token || !fb.pageId) return res.status(400).json({ error: 'Add the Facebook Page first' });
@@ -1328,6 +1408,7 @@ try {
   yt.clientSecret = openKept('yt.clientSecret', yt.clientSecret);
   yt.refreshToken = openKept('yt.refreshToken', yt.refreshToken);
 } catch {}
+// Saves the YouTube settings (secrets are encrypted).
 function saveYt() {
   fs.writeFileSync(YT_FILE, JSON.stringify({ ...yt, clientSecret: sealKept('yt.clientSecret', yt.clientSecret), refreshToken: sealKept('yt.refreshToken', yt.refreshToken) }, null, 2), { mode: 0o600 });
 }
@@ -1335,13 +1416,17 @@ const YT_REDIRECT = `http://127.0.0.1:${DASHBOARD_PORT}/api/youtube/callback`;
 const YT_SCOPE = 'https://www.googleapis.com/auth/youtube';
 let ytLoginState = '', ytVerifier = '';
 let ytAccess = { token: '', expires: 0 };
+// The YouTube info the windows can show (no secrets).
 function ytView() {
   return { hasClient: Boolean(yt.clientId && yt.clientSecret), connected: Boolean(yt.refreshToken), channelTitle: yt.channelTitle };
 }
+// The YouTube channel entry in the channel list.
 function ytDestination() {
   return destinations.find((d) => /youtube/i.test(d.name));
 }
+// Removes characters that could break a page or a title.
 const noTags = (s) => String(s).replace(/[<>&"']/g, '');
+// Asks Google for an access token with the given settings.
 async function googleToken(params) {
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -1351,12 +1436,14 @@ async function googleToken(params) {
   if (!r.ok) throw new Error(j.error_description || j.error || 'Google did not accept the login');
   return j;
 }
+// A YouTube access token, refreshed when it is about to expire.
 async function ytAccessToken() {
   if (ytAccess.token && Date.now() < ytAccess.expires - 60000) return ytAccess.token;
   const j = await googleToken({ grant_type: 'refresh_token', refresh_token: yt.refreshToken });
   ytAccess = { token: j.access_token, expires: Date.now() + (j.expires_in || 3600) * 1000 };
   return ytAccess.token;
 }
+// Makes a request to the YouTube API with the access token.
 async function ytApi(method, endpoint, query, body) {
   const r = await fetch(`https://www.googleapis.com/youtube/v3/${endpoint}?${new URLSearchParams(query)}`, {
     method,
@@ -1368,6 +1455,7 @@ async function ytApi(method, endpoint, query, body) {
   return j;
 }
 
+// The YouTube settings for the windows (no secrets).
 app.get('/api/youtube', (req, res) => {
   res.json(ytView());
 });
@@ -1385,6 +1473,7 @@ app.put('/api/youtube/client', (req, res) => {
   res.json(ytView());
 });
 
+// Starts YouTube (Google) sign-in.
 app.get('/api/youtube/login', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   if (!yt.clientId) return res.status(400).json({ error: 'Choose the file from Google first' });
@@ -1428,6 +1517,7 @@ app.get('/api/youtube/callback', async (req, res) => {
   closeLoginListener();
 });
 
+// Sets the thumbnail of a YouTube video.
 async function ytSetThumbnail(videoId) {
   const t = thumbFile();
   if (!t) return;
@@ -1441,6 +1531,7 @@ async function ytSetThumbnail(videoId) {
     throw new Error((j.error && j.error.message) || 'YouTube did not accept the thumbnail');
   }
 }
+// Creates the YouTube live broadcast and starts sending to it.
 app.post('/api/youtube/live', async (req, res) => {
   if (!obsLive) return res.status(400).json({ error: 'Start Streaming in the Studio first' });
   if (!yt.refreshToken) return res.status(400).json({ error: 'Connect YouTube first' });
@@ -1501,7 +1592,9 @@ app.post('/api/youtube/live', async (req, res) => {
 
 // A channel's address must be an rtmp:// or rtmps:// server (or empty, to fill in later).
 const okStreamUrl = (u) => u === '' || /^rtmps?:\/\/[^\s/]+(\/[^\s]*)?$/i.test(u);
+// The host name (like youtube.com) of an address. Empty if the address is not valid.
 const hostOf = (u) => { try { return new URL(u).host.toLowerCase(); } catch { return ''; } };
+// Adds a new channel.
 app.post('/api/destinations', (req, res) => {
   const { name, url, key, cap1080 } = req.body || {};
   if (!name) return res.status(400).json({ error: 'Name is needed' });
@@ -1514,6 +1607,7 @@ app.post('/api/destinations', (req, res) => {
   res.json(publicView(d));
 });
 
+// Changes a channel's settings.
 app.put('/api/destinations/:id', (req, res) => {
   const d = destinations.find((x) => x.id === req.params.id);
   if (!d) return res.status(404).json({ error: 'Not found' });
@@ -1540,6 +1634,7 @@ app.put('/api/destinations/:id', (req, res) => {
   res.json(publicView(d));
 });
 
+// Starts a channel again by hand.
 app.post('/api/destinations/:id/restart', (req, res) => {
   const d = destinations.find((x) => x.id === req.params.id);
   if (!d) return res.status(404).json({ error: 'Not found' });
@@ -1548,6 +1643,7 @@ app.post('/api/destinations/:id/restart', (req, res) => {
   res.json(publicView(d));
 });
 
+// Removes a channel and stops it.
 app.delete('/api/destinations/:id', (req, res) => {
   stopDestination(req.params.id);
   status.delete(req.params.id);
@@ -1573,7 +1669,9 @@ const COLL_DIR = path.join(DATA_DIR, 'collections');
 const COLL_FILE = path.join(DATA_DIR, 'collections.json');
 let coll = { current: 'Main' };
 try { coll = { ...coll, ...JSON.parse(fs.readFileSync(COLL_FILE, 'utf8')) }; } catch {}
+// The file for one scene collection.
 const collPath = (name) => path.join(COLL_DIR, encodeURIComponent(name) + '.json');
+// The names of the saved scene collections.
 const collNames = () => {
   let n = []; try { n = fs.readdirSync(COLL_DIR).filter((f) => f.endsWith('.json')).map((f) => decodeURIComponent(f.slice(0, -5))); } catch {}
   if (!n.includes(coll.current)) n.push(coll.current);
@@ -1594,7 +1692,9 @@ function applyOnly(only) {
   });
   save();
 }
+// All scene collections, the current one first.
 const allCollections = () => { const out = [collOf(studio)]; for (const n of collNames()) { if (n === coll.current) continue; try { out.push(JSON.parse(fs.readFileSync(collPath(n), 'utf8'))); } catch {} } return out; };
+// Called when the scene collection changes. Set at start-up.
 let collHook = () => {};
 try {
   // a picture or video used in any scene collection is kept
@@ -1609,11 +1709,14 @@ let studioRev = 1;
 // Saving is joined up: dragging an item sends many changes a second, but the file is written once, half a second after the last one
 // (and once more when the app closes). The new file is written beside the old one and swapped in, so a power cut cannot leave half a file.
 let studioTimer = null;
+// Writes the Studio scenes to disk now.
 function writeStudioNow() {
   clearTimeout(studioTimer); studioTimer = null;
   try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(STUDIO_FILE + '.tmp', JSON.stringify(studio)); fs.renameSync(STUDIO_FILE + '.tmp', STUDIO_FILE); } catch {}
 }
+// Saves the Studio scenes after half a second, so quick changes are written once.
 function saveStudio() { studioRev++; if (!studioTimer) studioTimer = setTimeout(writeStudioNow, 500); }
+// Writes the Studio scenes one last time when the app closes.
 process.on('exit', () => { if (studioTimer) writeStudioNow(); });
 // ?rev=N: when nothing changed since N, a short answer (the Studio asks often)
 app.get('/api/studio', (req, res) => {
@@ -1632,11 +1735,13 @@ app.get('/api/collections', (req, res) => {
   });
   res.json({ current: coll.current, list });
 });
+// Gives the file of a scene collection (for export).
 app.get('/api/collections/file', (req, res) => {
   const n = String(req.query.name || '');
   if (n === coll.current) return res.json({ multistream: 'scene collection', name: n, ...collOf(studio) });
   try { res.json({ multistream: 'scene collection', name: n, ...collOf(JSON.parse(fs.readFileSync(collPath(n), 'utf8'))) }); } catch { res.status(404).json({ error: 'Not found' }); }
 });
+// Creates, renames or switches scene collections.
 app.post('/api/collections', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Change scene collections on the main computer' });
   const b = req.body || {}, act = String(b.do || ''), name = String(b.name || '').trim().slice(0, 60);
@@ -1678,6 +1783,7 @@ app.post('/api/collections', (req, res) => {
   } catch (e) { return res.status(500).json({ error: e.message }); }
   res.json({ ok: true, current: coll.current, names: collNames(), rev: studioRev });
 });
+// Replaces the Studio scenes (sent from the Production page).
 app.put('/api/studio', (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Edit scenes on the main computer' });
   const b = req.body || {};
@@ -1687,12 +1793,14 @@ app.put('/api/studio', (req, res) => {
   saveStudio();
   res.json({ ok: true, rev: studioRev });
 });
+// Adds a scene.
 app.post('/api/studio/scene', (req, res) => {
   const name = String((req.body || {}).name || '');
   if (!studio.scenes.some((s) => s.name === name)) return res.status(404).json({ error: 'No such scene' });
   studio.current = name; saveStudio();
   res.json({ ok: true });
 });
+// Adds or changes a source (layer) in a scene.
 app.post('/api/studio/layer', (req, res) => {
   const b = req.body || {};
   const sc = studio.scenes.find((x) => x.name === b.scene);
@@ -1701,6 +1809,7 @@ app.post('/api/studio/layer', (req, res) => {
   l.visible = !!b.visible; saveStudio();
   res.json({ ok: true });
 });
+// Saves an image or video used by a source.
 app.put('/api/studio/asset/:name', express.raw({ type: '*/*', limit: '30mb' }), (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Local only' });
   const n = path.basename(req.params.name).replace(/[^\w.\- ]/g, '_');
@@ -1708,6 +1817,7 @@ app.put('/api/studio/asset/:name', express.raw({ type: '*/*', limit: '30mb' }), 
   try { fs.mkdirSync(ASSET_DIR, { recursive: true }); fs.writeFileSync(path.join(ASSET_DIR, n), req.body); } catch (e) { return res.status(500).json({ error: e.message }); }
   res.json({ ok: true, url: '/api/studio/asset/' + encodeURIComponent(n) });
 });
+// Gives a saved image or video used by a source.
 app.get('/api/studio/asset/:name', (req, res) => {
   const f = path.join(ASSET_DIR, path.basename(req.params.name));
   if (!MEDIA_EXT.test(f)) return res.status(404).end();
@@ -1725,6 +1835,7 @@ function studioFileOf(o) {
   if (m) { try { return path.join(ASSET_DIR, path.basename(decodeURIComponent(m[1]))); } catch { return ''; } }
   return '';
 }
+// Lists sources whose files are missing.
 app.get('/api/studio/missing', (req, res) => {
   if (!isLocal(req)) return res.status(403).end();
   const out = [];
@@ -1741,6 +1852,7 @@ app.get('/api/studio/missing', (req, res) => {
   res.json({ missing: out });
 });
 
+// Gives a file the Studio asked for.
 app.get('/api/studio/file', (req, res) => {
   if (!isLocal(req)) return res.status(403).end();
   const p = String((req.query || {}).p || '');
@@ -1763,6 +1875,7 @@ app.get('/api/studio/ipcam', (req, res) => {
 // The Studio only draws these while a Multiview is looking (it asks `watching` in the answer), so a Studio that is
 // sending, recording and running the virtual camera does not also draw pictures nobody sees.
 let studioShots = { at: 0, prog: '', pv: '', thumbs: {}, tv: 0, watched: 0 };
+// Saves screenshots used as picture sources.
 app.put('/api/studio/shots', (req, res) => {
   if (!isLocal(req)) return res.status(403).end();
   const b = req.body || {};
@@ -1781,9 +1894,12 @@ app.get('/api/studio/shots', (req, res) => {
   const tv = Number((req.query || {}).tv);
   res.json({ alive: Date.now() - studioShots.at < 5000, prog: studioShots.prog, pv: studioShots.pv, tv: studioShots.tv, rev: studioRev, thumbs: tv === studioShots.tv ? undefined : studioShots.thumbs });
 });
+// Sets which scene the Production shows in preview.
 app.post('/api/studio/preview', (req, res) => { studio.preview = String((req.body || {}).name || ''); studioRev++; res.json({ ok: true }); });
+// The ffmpeg process for the Production picture, when one is running.
 let studioFf = null;
 const studioInfo = { sending: false, error: '' };
+// The Production status (live, recording, sizes).
 app.get('/api/studio/status', (req, res) => res.json(studioInfo));
 
 // the dashboard's video preview: a copy from the hub, inside the app
@@ -1833,7 +1949,9 @@ studioRecWss.on('connection', (w, req) => {
 });
 // ---- Virtual camera (Zoom etc.) ----
 const vcam = createVcam({ ffmpeg: FFMPEG });
+// The virtual camera status.
 app.get('/api/vcam', (req, res) => res.json(vcam.state()));
+// Installs the virtual camera driver (Windows).
 app.post('/api/vcam/install', async (req, res) => {
   if (!isLocal(req)) return res.status(403).json({ error: 'Do this on the main computer' });
   res.json(await vcam.install(Boolean((req.body || {}).remove)));
@@ -1877,6 +1995,7 @@ studioWss.on('connection', (w, req) => {
 // a new secret name each time). ffmpeg only passes it on (no second encode) into the same hub as the Studio's
 // video, so every channel gets it the same way as before.
 let engineIn = null; // { want, ff, port, key }
+// Finds a free network port (used by a helper server).
 function freePort() {
   return new Promise((resolve, reject) => {
     const srv = require('net').createServer();
@@ -1884,6 +2003,7 @@ function freePort() {
     srv.listen(0, '127.0.0.1', () => { const { port } = srv.address(); srv.close(() => resolve(port)); });
   });
 }
+// Starts sending the Production picture into the OBS engine.
 async function engineIngest(o) {
   engineIngestStop();
   const port = await freePort();
@@ -1911,6 +2031,7 @@ async function engineIngest(o) {
   await new Promise((r) => setTimeout(r, 400)); // ffmpeg is listening before the engine knocks
   return { server: `rtmp://127.0.0.1:${port}/live`, key, w: out.w, h: out.h, fps: out.fps, kbps: out.kbps };
 }
+// Stops the engine input.
 function engineIngestStop() {
   const me = engineIn;
   engineIn = null;
@@ -1926,10 +2047,12 @@ function engineIngestStop() {
 // It hands out the graphics page, one graphic's settings, and the pictures and videos those graphics use.
 let ovServer = null, ovBase = '';
 const ovToken = crypto.randomBytes(16).toString('hex');
+// Finds a source by its id in any scene.
 function findLayer(id) {
   for (const sc of studio.scenes || []) for (const l of sc.layers || []) if (l.id === id) return l;
   return null;
 }
+// The address of the overlay page server. Started once.
 function overlayBase() {
   if (ovServer) return Promise.resolve(ovBase);
   return new Promise((resolve, reject) => {
@@ -1983,6 +2106,7 @@ function openPipe(p, toWindow) {
   setImmediate(() => target.emit('connection', w, { url, socket: { remoteAddress: '127.0.0.1' }, headers: {} }));
   return w;
 }
+// Stops everything when the app closes: channels, recording and servers.
 function shutdown() {
   stopAll();
   engineIngestStop();

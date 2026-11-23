@@ -2,10 +2,14 @@
 // This only READS. Nothing here posts, deletes or replies. Chat text is shown as plain text, never run.
 // YouTube is asked no faster than every 6 seconds (each ask costs 5 of the 10,000 daily quota units).
 
+// The most chat messages kept.
 const MAX = 200;
+// YouTube chat is asked for at most every 6 seconds (the daily quota is limited).
 const YT_MIN_MS = 6000;
+// Facebook comments are asked for at most every 4 seconds.
 const FB_EVERY_MS = 4000;
 
+// Creates the chat reader that keeps the latest messages.
 function createChat({ ytList, fbList }) {
   let seq = 0;
   let messages = [];

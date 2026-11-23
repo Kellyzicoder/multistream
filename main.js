@@ -16,8 +16,10 @@ try { const old = path.join(app.getPath('appData'), 'Multistream 3'); if (fs.exi
 const { spawn } = require('child_process');
 const { Readable } = require('stream');
 
+// The address the app's own pages load from. No local server is used.
 const HOME = 'app://multistream';
 
+// The main app window.
 let win = null;
 let relay = null; // the server module, once started
 
@@ -25,13 +27,17 @@ let relay = null; // the server module, once started
 const isAppUrl = (u) => typeof u === 'string' && (u === HOME || u.startsWith(HOME + '/'));
 // a message from a window is only answered when it comes from one of the app's own pages
 function fromApp(e) { try { return isAppUrl(e.senderFrame && e.senderFrame.url); } catch { return false; } }
+// Registers a message from a window that expects an answer. Only the app's own windows are allowed.
 const handleIpc = (name, fn) => ipcMain.handle(name, (e, ...a) => (fromApp(e) ? fn(e, ...a) : undefined));
+// Registers a message from a window that does not need an answer. Only the app's own windows are allowed.
 const onIpc = (name, fn) => ipcMain.on(name, (e, ...a) => { if (fromApp(e)) fn(e, ...a); });
 handleIpc('ms-version', () => app.getVersion());
 // Web pages used as Production sources (like a lyrics site) run in their own separate space: no camera,
 // microphone or screen, no pop-ups, and they cannot reach the app's pages or settings.
 const WEB_SOURCES = 'persist:web-sources';
+// The session used by web-page sources (the browser sources in the Production).
 let webSes = null;
+// Makes the session for web-page sources, so their pages are kept apart from the app.
 function webSourcesSession() {
   if (webSes) return webSes;
   webSes = session.fromPartition(WEB_SOURCES);
@@ -71,6 +77,7 @@ app.on('web-contents-created', (e, contents) => {
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true, stream: true, codeCache: true } },
 ]);
+// Answers requests for the app's pages (app://multistream/...) from the files in the app.
 function serveApp(ses) {
   ses.protocol.handle('app', async (request) => {
     const u = new URL(request.url);
@@ -95,6 +102,7 @@ function ffmpegPath() {
   return p;
 }
 
+// Creates the main app window.
 function createWindow() {
   win = new BrowserWindow({
     width: 1100,
@@ -147,8 +155,11 @@ function createWindow() {
 // the Production makes the video itself, as before.
 // (MULTISTREAM_ENGINE=off or =on changes this, for tests and for help with problems.)
 let engineMod = null;
+// Loads the OBS engine module the first time it is needed.
 const engine = () => engineMod || (engineMod = require('./engine'));
+// The file where the engine settings are kept.
 const engineFile = () => path.join(app.getPath('userData'), 'engine-settings.json');
+// True when the OBS engine is switched on.
 function engineOn() {
   if (process.env.MULTISTREAM_ENGINE === 'off') return false;
   if (process.env.MULTISTREAM_ENGINE === 'on') return true;
@@ -167,6 +178,7 @@ function startEngineFirst() {
   if (!engineOn() || !engine().available() || engine().isStarted()) return;
   if (!engine().start()) console.error('Engine: could not start, the Production makes the video itself');
 }
+// Starts the OBS engine.
 async function startEngine() {
   if (!engine().isStarted()) return;
   await engine().askMacCamera();
@@ -178,18 +190,21 @@ async function startEngine() {
 // the engine gets the same scenes. Only the facts it needs are sent: where each file is on this computer,
 // and which screen (by its place in the list of screens).
 let engineTimer = null, engineRev = -1, engineTrans = { type: 'fade', ms: 500 }, screenIds = [], screenAt = 0;
+// The order of the screens, for picking the right one for the engine.
 async function screenOrder() {
   if (Date.now() - screenAt < 10000) return screenIds;
   try { screenIds = (await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } })).map((s) => s.id); } catch (e) {}
   screenAt = Date.now();
   return screenIds;
 }
+// Builds the engine's scene file from the Production scenes.
 function engineFile_(l, assets) {
   if (l.file && path.isAbsolute(l.file)) return l.file;
   const m = /^\/api\/studio\/asset\/(.+)$/.exec(l.url || '');
   if (m) { try { return path.join(assets, path.basename(decodeURIComponent(m[1]))); } catch (e) { return ''; } }
   return '';
 }
+// Sends the Production scenes and settings to the engine.
 async function engineSend(force) {
   if (!relay || !relay.studioNow || !engine().isStarted()) return;
   const now = relay.studioNow();
@@ -215,6 +230,7 @@ async function engineSend(force) {
   try { ov = relay.overlayBase ? await relay.overlayBase() : ''; } catch (e) {}
   engine().sync({ w, h, scenes, audio: st.audio || [], current: String(st.current || ''), trans: engineTrans, ov });
 }
+// Keeps the engine in step with the Production (turned on or off).
 function engineFollow(on) {
   if (engineTimer) { clearInterval(engineTimer); engineTimer = null; }
   engineRev = -1;
@@ -266,6 +282,7 @@ handleIpc('ms-engine-trans', (e, t) => {
   engineSend(true).catch(() => {});
   return true;
 });
+// The engine status the windows can show.
 function engineState() {
   return { available: engine().available(), on: engineOn(), started: engine().isStarted() };
 }
@@ -309,6 +326,7 @@ handleIpc('ms-open-dashboard', () => {
 // the screens that are connected (for showing the Multiview or a Preview/Program picture full screen on one of them)
 const displayList = () => { const main = screen.getPrimaryDisplay().id; return screen.getAllDisplays().map((d, i) => ({ id: d.id, n: i + 1, label: d.label || '', w: d.size.width, h: d.size.height, main: d.id === main })); };
 handleIpc('ms-displays', () => { try { return displayList(); } catch { return []; } });
+// Finds a screen by its id. Null when none is given.
 const displayById = (id) => (id == null || id === '' ? null : screen.getAllDisplays().find((d) => String(d.id) === String(id)) || null);
 // window.open of /projector.html (a picture of the Preview or Program): a normal window, or full screen on the chosen display
 function projectorOptions(url) {
@@ -319,9 +337,11 @@ function projectorOptions(url) {
   else Object.assign(o, { width: 960, height: 540 });
   return { action: 'allow', overrideBrowserWindowOptions: o };
 }
+// The pop-out Multiview window, when it is open.
 let crWin = null;
 handleIpc('ms-open-cr', (e, displayId) => openMultiview(displayId));
 let crNext = null;
+// Opens the Multiview in its own window, on the chosen screen.
 function openMultiview(displayId) {
   const d = displayById(displayId);
   if (crWin && !crWin.isDestroyed()) crWin.close();
@@ -379,6 +399,7 @@ handleIpc('ms-browser-close', (e, id) => { const b = browsers.get(id); if (b) { 
 const pipes = new Map();
 // One listener per window (not one per pipe) closes that window's pipes when the window goes away.
 const pipeWatch = new Set();
+// Closes the data pipes of a window that was closed.
 function closePipesOf(senderId) {
   for (const [key, w] of pipes) if (key.startsWith(senderId + ':')) { pipes.delete(key); w.windowClosed(); }
 }
@@ -425,6 +446,7 @@ handleIpc('ms-pick-screen', async (e, id, name, kind) => {
   picked = { id: String(id || ''), name: String(name || ''), kind: String(kind || 'screen') };
   try { return { found: Boolean(await findSource(picked)) }; } catch { return { found: false }; }
 });
+// Lets the Production pick a screen to show (screen capture).
 function setupScreenCapture(ses) {
   ses.setDisplayMediaRequestHandler(async (req, cb) => {
     try {
@@ -441,13 +463,16 @@ function setupScreenCapture(ses) {
 // Windows: the app downloads the new version by itself and asks to restart.
 // Mac and Linux: the app only tells you a new version is ready and opens the download page.
 const RELEASE_PAGE = 'https://github.com/Kellyzicoder/multistream/releases/tag/v3-latest';
+// Where the app looks for the newest version.
 const VERSION_URL = 'https://github.com/Kellyzicoder/multistream/releases/download/v3-latest/version.json';
+// True when version a is newer than version b.
 function isNewer(a, b) {
   const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
   for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); }
   return false;
 }
 let askedVersion = '';
+// Checks for a newer version and shows a message if there is one.
 async function checkDownloadMessage() {
   try {
     const r = await electronNet.fetch(VERSION_URL);
@@ -464,6 +489,7 @@ async function checkDownloadMessage() {
     if (pick.response === 0) shell.openExternal(RELEASE_PAGE);
   } catch {}
 }
+// Starts checking for updates (once at start-up, then regularly).
 function startUpdates() {
   if (!app.isPackaged) return;
   if (process.platform === 'win32') {
@@ -498,7 +524,9 @@ const openSettingsPane = (pane) => {
   const w = focusedWin() || win; if (!w || w.isDestroyed()) return;
   w.webContents.executeJavaScript(`(function(){if(window.msOpenSettings){window.msOpenSettings(${JSON.stringify(pane)});return true;}const b=document.querySelector('#setBtn');if(b)b.click();return false;})()`).catch(() => {});
 };
+// Clicks a button inside a window (used by the menu items).
 const clickIn = (w, sel) => { if (w && !w.isDestroyed()) w.webContents.executeJavaScript(`(function(){const b=document.querySelector(${JSON.stringify(sel)});if(b)b.click();})()`).catch(() => {}); };
+// Opens a folder in Explorer or Finder, making it first if it does not exist.
 const openFolder = (dir) => { try { fs.mkdirSync(dir, { recursive: true }); } catch {} shell.openPath(dir); };
 // Remux: copy recordings into MP4 files without encoding again (fast, same quality), like OBS
 async function remuxRecordings() {
@@ -527,6 +555,7 @@ async function collDo(act, name) {
   if (!ok) { dialog.showMessageBox(w, { type: 'info', message: 'Open the Production first', detail: 'Scene collections are changed in the Production.' }); return; }
   w.focus(); w.webContents.executeJavaScript(`window.msColl(${JSON.stringify(act)}, ${JSON.stringify(name || '')})`).catch(() => {});
 }
+// Builds the top menu of the app (File, Edit, View, Settings, Help).
 function buildMenu() {
   let ds = []; try { ds = displayList(); } catch {}
   let cl = { current: '', names: [] }; try { if (relay && relay.collections) cl = relay.collections(); } catch {}
@@ -575,8 +604,10 @@ function buildMenu() {
   ];
   return Menu.buildFromTemplate(template);
 }
+// Puts the menu on the app.
 const setMenu = () => { try { Menu.setApplicationMenu(buildMenu()); } catch (e) { console.error('Menu:', e && e.message); } };
 
+// Starts the app: the windows, the servers and the menu.
 async function start() {
   try {
     // where saved destinations and keys live: the user's own app-data folder

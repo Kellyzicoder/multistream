@@ -1,6 +1,7 @@
 // Demo mode for the Vercel preview. There is no relay behind a preview link, so this fakes a few answers
 // so the pages can be looked at. Nothing here runs in the real app.
 window.DEMO = /\.vercel\.app$/i.test(location.hostname) || /[?&]demo\b/.test(location.search);
+// Fake answers for the demo page, so it can be looked at without the app.
 window.demoApi = function (url, method) {
   const t0 = Date.now() - 25 * 60 * 1000;
   const scenes = ['Countdown', 'Welcome', 'EasyWorship', 'Camera', 'Scripture Lowerthird', 'Standby', 'Offering', 'Zoom Iphone', 'Backup Screen'];
@@ -50,7 +51,9 @@ window.demoApi = function (url, method) {
 
 // pictures for the demo Multiview: soft colours, like the design
 const DEMO_SC = ['Countdown', 'Welcome', 'Camera', 'Scripture Lowerthird', 'Offering', 'Backup Screen', 'Worship Lyrics', 'Announcements'];
+// Pictures already made for the demo, so each is made once.
 const DEMO_PICS = {};
+// Makes a picture for the demo page.
 function demoPic(i) {
   if (DEMO_PICS[i]) return DEMO_PICS[i];
   const c = document.createElement('canvas'); c.width = 320; c.height = 180; const x = c.getContext('2d');

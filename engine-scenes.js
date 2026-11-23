@@ -7,9 +7,11 @@
 // Sound inputs (microphones, the computer's sound) are put in the scenes that use them, so a scene's sound is
 // only heard while that scene is on air, the same as in the Studio.
 
+// Source types the engine draws itself. Other types are still drawn by the Production for now.
 const NATIVE = new Set(['camera', 'screen', 'window', 'image', 'video', 'color', 'browser', 'ipcam', 'text', 'lower', 'timer', 'clock']);
 // drawn by the app's graphics page (public/engine-overlay.html) inside the engine's web page source
 const GFX = new Set(['text', 'lower', 'timer', 'clock']);
+// The address of the graphics page (only this computer can reach it).
 let ov = ''; // where the graphics page is (a listener only this computer can reach)
 
 // Speaker + screen: the same layout as the Studio's drawDuo(), made of a background, the screen and the camera
@@ -32,26 +34,39 @@ function expand(layers, W) {
   return out;
 }
 
+// Maps the Production transition names to the engine's transitions.
 const TRANS = { cut: 'cut_transition', fade: 'fade_transition', slide: 'slide_transition', dip: 'fade_to_color_transition' };
 const PROGRAM = 'Multistream Program'; // the name the preview box shows
 // the engine's own numbers (its names for them only exist while it is being built)
 const BOUNDS = { none: 0, stretch: 1, inside: 2, outside: 3 };
+// Where a source is placed in its box (centre, or top left).
 const ALIGN = { center: 0, topLeft: 5 };
 
+// The engine module, set by init().
 let osn = null;
+// The source types the engine supports on this computer.
 let types = [];
 let cameras = null;       // [{ name, value }] found once
+// The engine inputs (cameras, pictures and so on), by key.
 const inputs = new Map(); // key -> { input, used }
+// The engine scenes, by the Production scene name.
 const scenes = new Map(); // studio scene name -> { scene, items: [{ id, key, item }] }
+// The current engine transition.
 let transition = null;
+// The name of the current transition type.
 let transType = '';
+// The scene that is on air now.
 let onAir = '';
+// The size of the picture in pixels.
 let size = [1920, 1080];
 let last = null;          // the last data, so changed settings can be put back after a picture loads
 
+// True on the Mac.
 const mac = () => process.platform === 'darwin';
+// True when the engine supports a source type.
 const has = (t) => types.includes(t);
 
+// Sets up the scene builder with the engine module.
 function init(engine) {
   osn = engine;
   try { types = osn.InputFactory.types() || []; } catch (e) { types = []; }
@@ -68,7 +83,9 @@ function listOf(input, names) {
   }
   return null;
 }
+// Cleans a device name so the same device matches in the list.
 const clean = (s) => String(s || '').toLowerCase().replace(/\([0-9a-f]{4}:[0-9a-f]{4}\)/g, '').replace(/\s+/g, ' ').trim();
+// Picks the right device from a list of devices.
 function pickItem(items, want, index) {
   const ok = items.filter((i) => i.value !== '' && i.value !== null && i.value !== undefined);
   if (!ok.length) return null;
@@ -82,7 +99,9 @@ function pickItem(items, want, index) {
 }
 
 const step = process.env.MULTISTREAM_ENGINE_LOG === '1' ? (m) => console.log('[engine] step: ' + m + ' ' + Date.now() % 100000) : () => {};
+// The engine's camera source type on this computer.
 function cameraType() { return mac() ? (has('av_capture_input') ? 'av_capture_input' : 'macos_avcapture') : 'dshow_input'; }
+// The cameras found on this computer, found once.
 function cameraList() {
   if (cameras) return cameras;
   cameras = [];
@@ -114,6 +133,7 @@ function keyOf(l) {
   if (l.type === 'ipcam') return 'ipcam|' + (l.url || '');
   return '';
 }
+// Turns a web colour into the number the engine uses.
 function colorInt(hex) {
   const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ''));
   const v = m ? m[1] : '000000';
@@ -123,11 +143,13 @@ function colorInt(hex) {
 
 // ---- sound inputs ----
 function micType() { return mac() ? 'coreaudio_input_capture' : 'wasapi_input_capture'; }
+// The engine's screen capture source type on this computer.
 function deskType() {
   if (!mac()) return 'wasapi_output_capture';
   return has('sck_audio_capture') ? 'sck_audio_capture' : 'coreaudio_output_capture';
 }
 let mics = null;
+// The sound devices found on this computer, found once.
 function micList() {
   if (mics) return mics;
   mics = [];
@@ -140,7 +162,9 @@ function micList() {
   if (probe) try { probe.release(); } catch (e) {}
   return mics;
 }
+// The key for a sound input, so the same input is not added twice.
 function audioKey(a) { return a.kind === 'desktop' ? 'desktop' : 'mic|' + clean(a.label); }
+// Finds the engine sound input for a Production sound input.
 function audioFor(a) {
   const key = audioKey(a);
   let s = inputs.get(key);
@@ -166,6 +190,7 @@ function audioFor(a) {
   return s.input ? { key, input: s.input } : null;
 }
 
+// Creates an engine input for one Production source.
 function makeInput(l, name) {
   const mk = (type, settings) => { step('make ' + type + ' ' + name); const r = osn.InputFactory.create(type, name, settings || {}); step('made ' + name); return r; };
   if (GFX.has(l.type)) {
@@ -225,6 +250,7 @@ function makeInput(l, name) {
 }
 
 let n = 0;
+// Gets or makes the engine input for a Production source.
 function inputFor(l) {
   const key = keyOf(l);
   if (!key) return null;
@@ -290,6 +316,7 @@ function sceneFor(name) {
   return s;
 }
 
+// Builds one engine scene from a Production scene.
 function buildScene(sc, audio) {
   const s = sceneFor(sc.name);
   const want = [];
@@ -323,6 +350,7 @@ function buildScene(sc, audio) {
   s.used = true;
 }
 
+// Sets the transition the engine uses when the scene changes.
 function setTransition(kind) {
   const type = TRANS[kind] || TRANS.fade;
   if (transition && transType === type) return false;
@@ -342,6 +370,7 @@ function setTransition(kind) {
   return true; // the preview box has to be made again (it shows the transition by name)
 }
 
+// Changes the picture size of the engine.
 function resize(w, h, video) {
   if (w === size[0] && h === size[1]) return false;
   size = [w, h];
@@ -400,6 +429,7 @@ function refresh() {
   });
 }
 
+// Removes every scene and input from the engine.
 function clear() {
   scenes.forEach((sc) => {
     sc.items.forEach((it) => { try { it.item.remove(); } catch (e) {} });
