@@ -1106,13 +1106,14 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
 <header class="top">
   <h1 class="pgt" id="pageTitle">Livestream</h1><span class="hl-badge" id="pageBadge" hidden></span><span class="mv-chip" id="mvShape" hidden></span>
   <span class="sp"></span>
-  <span class="gl-acts" id="rcActs" hidden><span class="rc-where" id="rcWhere"></span><button type="button" class="hb pl" id="rcOpen">Open folder</button><button type="button" class="hb pl" id="rcRemux">Remux to MP4</button></span>
+  <span class="gl-acts" id="rcActs" hidden><span class="rc-where" id="rcWhere"></span><button type="button" class="hb pl" id="rcOpen">Open folder</button><button type="button" class="hb pl" id="rcDone" title="Recordings that you moved to the Done folder">Done folder</button><button type="button" class="hb pl" id="rcRemux">Remux to MP4</button></span>
   <span class="gl-acts" id="anActs" hidden><span class="rc-where" id="anAddr"></span><button type="button" class="hb pl" id="anEdit">Change address</button><button type="button" class="hb pl" id="anOpen">Open in browser</button></span>
   <span class="gl-acts" id="mvActs" hidden><span class="mv-menuw"><button type="button" class="hb pl" id="mvMenuB" aria-haspopup="menu" aria-expanded="false" title="Change the view"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:currentColor;vertical-align:-3px;margin-right:6px"><rect x="3" y="4" width="18" height="10" rx="2"/><rect x="3" y="16" width="5" height="4" rx="1"/><rect x="9.5" y="16" width="5" height="4" rx="1"/><rect x="16" y="16" width="5" height="4" rx="1"/></svg>View</button><div class="mv-menu" id="mvMenu" role="menu" hidden></div></span><button type="button" class="hb pl" id="mvWin">New window</button></span>
   <span class="gl-acts" id="scActs" hidden><button type="button" class="hb pl" id="scObs">Import from OBS</button><button type="button" class="hb pl" id="scImp">Import file</button><button type="button" class="hb sb" id="scNew">+ New collection</button></span>
   <span class="gl-acts" id="glActs">
     <button type="button" class="hb" id="glUpd" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Update title for all channels</button>
     <button type="button" class="hb" id="ptBtn" title="Private test: only you can see the live" hidden>Private test: on</button>
+    <button type="button" class="hb pl" id="sdBtn" title="Title, description and thumbnail for the stream">Title &amp; thumbnail</button>
     <button type="button" class="hb as-tg" id="asBtn" title="Auto start: what happens when you press Start streaming"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Auto start: Off</span></button>
     <button type="button" class="hb sb" id="sbBtn"><i></i><span>Start streaming</span></button>
   </span>
@@ -1176,7 +1177,6 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
       </details>
       </div>
     </section>
-    <button type="button" class="sd-btn" id="sdBtn" title="Title, description and thumbnail for the stream">Title &amp; thumbnail</button>
     <section class="card cht" id="chatCard" aria-label="Live chat" hidden>
       <div class="chs-h"><button type="button" class="cht-b" id="chatBack" title="Back to the channels" aria-label="Back to the channels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><span class="chs-t">Live chat</span><span class="grow"></span><span class="cnt" id="chatCnt"></span></div>
       <div class="chat" id="chatList" role="log" aria-live="polite"><p class="none" id="chatNone">YouTube and Facebook comments show here while you're live. You can read them, but not reply.</p></div>
@@ -2815,6 +2815,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   }
   async function tick() { try { data = await api('/api/recordings'); } catch { return; } draw(); }
   $('#rcOpen').onclick = () => api('/api/recording/open', 'POST').then((r) => { if (r && r.error) alert(r.error); });
+  $('#rcDone').onclick = () => api('/api/recording/open', 'POST', { folder: 'done' }).then((r) => { if (r && r.error) alert(r.error); });
   $('#rcRemux').onclick = async () => { if (!await msAsk('Copy every MKV recording to an MP4 (same quality, the MKV is kept)?')) return; api('/api/recordings/mp4-all', 'POST').then(tick); };
   $('#rcAuto').onclick = () => api('/api/recordings', 'PUT', { auto: !$('#rcAuto').classList.contains('on') }).then(tick);
   $('#rcPriv').onchange = () => api('/api/recordings', 'PUT', { privacy: $('#rcPriv').value }).then(tick);
