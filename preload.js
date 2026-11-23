@@ -1,9 +1,11 @@
 // Gives the studio page the few things a normal web page cannot do: web-page sources and picking a screen.
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
+// Listeners that get each picture frame sent to the Production.
 const frameCbs = new Set();
 ipcRenderer.on('ms-frame', (e, id, w, h, buf) => frameCbs.forEach((cb) => cb(id, w, h, buf)));
 // pipes to the app (instead of WebSockets on localhost)
 const pipeCbs = new Map();
+// A counter that gives each data pipe a number.
 let pipeN = 0;
 ipcRenderer.on('ms-pipe-ev', (e, id, type, data) => { const cb = pipeCbs.get(id); if (cb) { if (type === 'close') pipeCbs.delete(id); cb(type, data); } });
 // only the app's own pages get these helpers (not a website shown inside a page, like the live dashboard)

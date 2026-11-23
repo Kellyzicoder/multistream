@@ -1,3 +1,5 @@
+# Builds the Windows and Mac apps on every push. On v3 the release is published only when the tests pass.
+# Mac builds can be cancelled by GitHub; re-run the failed jobs if that happens.
 name: Build apps
 
 on:

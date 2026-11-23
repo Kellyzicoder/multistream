@@ -5,6 +5,7 @@ const http = require('http');
 const { Readable, PassThrough } = require('stream');
 const { EventEmitter } = require('events');
 
+// A fake connection object, so a window request can be handled without a real network socket.
 function fakeSocket() {
   const s = new PassThrough();
   s.remoteAddress = '127.0.0.1';

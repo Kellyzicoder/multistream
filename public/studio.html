@@ -1,4 +1,13 @@
 <!doctype html>
+<!--
+  Production page: scenes, sources, the audio mixer, transitions, Listen (headphones) and Advanced audio.
+  Scenes are saved through /api/studio (server.js). Video is shown on the page and sent to the app (preload.js pipes),
+  or drawn by the OBS engine when it is on (engine.js, engine-scenes.js).
+  Audio is one Web Audio graph: actx, per-input nodes (asrc), masterLim (limiter), monBus (headphones).
+  Key functions: syncAudio (builds the audio graph), gateAudio (mutes), applyMonitorMix (what the headphones hear),
+  checkMonitorDevice (headphones unplugged), openListen (Listen window), renderAudio (mixer), renderLayers (sources),
+  audioWhy (plain error text), showColl (scene collections).
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8">

@@ -6,9 +6,12 @@
 // and the frames since the last keyframe, so its picture starts clean straight away.
 const { EventEmitter } = require('events');
 
+// A taker this far behind is dropped (it starts again by itself).
 const MAX_BACKLOG = 24 * 1024 * 1024; // a taker this far behind (about 20 s at 9 Mbit) is dropped (it starts again by itself)
+// The most frames kept from the last keyframe, for a late taker.
 const MAX_GOP_TAGS = 3000;
 
+// Creates the video hub: one source in, many takers out.
 function createHub() {
   const ev = new EventEmitter();
   let live = false;

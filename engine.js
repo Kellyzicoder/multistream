@@ -7,10 +7,14 @@ const path = require('path');
 const { app } = require('electron');
 const scenes = require('./engine-scenes');
 
+// The OBS engine, once loaded. False when it is not installed.
 let osn = null; // the engine, once loaded (false if it is not installed)
+// Mac only: the piece that puts the engine's picture on top of the window.
 let nwr = null; // Mac only: puts the engine's picture on top of the window
+// True once the engine has been started.
 let started = false;
 let video = null;
+// The timer that refreshes the engine's picture.
 let refreshTimer = null;
 // MULTISTREAM_ENGINE_LOG=1: write each step to the log (to find where it stops, if it ever does)
 const step = process.env.MULTISTREAM_ENGINE_LOG === '1' ? (m) => console.log('[engine] step: ' + m + ' ' + Date.now() % 100000) : () => {};
@@ -21,6 +25,7 @@ function enginePath(name) {
   return path.join(__dirname, 'node_modules', name);
 }
 
+// Loads the OBS engine module. Returns false if it is not installed.
 function load() {
   if (osn !== null) return osn;
   try {
@@ -35,10 +40,12 @@ function load() {
   return osn;
 }
 
+// True when the engine is installed and can be used.
 function available() {
   return Boolean(load());
 }
 
+// Starts the engine: the video, the displays and the scenes.
 function start() {
   if (started) return true;
   if (!load()) return false;
@@ -109,15 +116,18 @@ const displays = new Map(); // key -> { key, id, win, src, name, rect, macSurfac
 // pictures are tiny and cost almost nothing; they all go when the engine stops.
 let dn = 0;
 
+// The name a source gets inside the engine.
 function sourceName(src) {
   if (src && src.scene) return scenes.sceneName(src.scene) || '';
   return scenes.programName();
 }
 
+// Mac: takes a display out of the window.
 function macOff(d) {
   if (d.macSurface && nwr) { try { nwr.destroyWindow(d.id); nwr.destroyIOSurface(d.id); } catch (e) {} }
   d.macSurface = false;
 }
+// Moves a display out of the way (hidden, not removed).
 function park(d) {
   if (d.hidden) return;
   d.hidden = true;
@@ -129,6 +139,7 @@ function park(d) {
   } catch (e) {}
 }
 
+// Places a display (the picture box) at the right size and spot.
 function placeDisplay(d) {
   const { win, rect, id } = d;
   const zoom = win.webContents.getZoomFactor ? win.webContents.getZoomFactor() : 1;
@@ -158,6 +169,7 @@ function placeDisplay(d) {
   }
 }
 
+// Shows a display (a picture box) on the window at the given place.
 function showDisplay(win, key, rect, src) {
   if (!started || !win || win.isDestroyed()) return false;
   let d = displays.get(key);
@@ -188,15 +200,18 @@ function showDisplay(win, key, rect, src) {
   }
 }
 
+// Hides one display by its key.
 function hideDisplay(key) {
   const d = displays.get(key);
   if (!d || !osn) return;
   park(d);
 }
+// Hides every display.
 function hideAll() { displays.forEach((d) => macOff(d)); displays.clear(); }
 
 // the Go Live preview (kept for the Go Live page)
 function showPreview(win, rect) { return showDisplay(win, 'golive', rect, 'program'); }
+// Hides the Livestream preview picture.
 function hidePreview() { hideDisplay('golive'); }
 
 // The Studio's scenes, sources and the scene on air (see engine-scenes.js)
@@ -222,7 +237,9 @@ function sync(data) {
 // own receiver on this computer. From there the app sends it to every channel, as before (so a channel that needs
 // a smaller copy, like Facebook, still gets one).
 let stream = null;
+// The encoder that makes the stream video.
 let encoder = null;
+// Whether the stream is being sent, and any error.
 let sendState = { sending: false, error: '', encoder: '' };
 
 // the best way to make video on this computer: its video chip first, the processor (x264) last.
@@ -265,6 +282,7 @@ function startStream(out) {
   return { ok: false, error: lastError };
 }
 
+// Starts sending the stream with the chosen output.
 function startWith(id, out, fps) {
   const kbps = Math.max(500, Math.min(50000, Number(out.kbps) || 6000));
   const settings = { rate_control: 'CBR', bitrate: kbps, keyint_sec: 2, profile: 'high' };
@@ -305,6 +323,7 @@ function startWith(id, out, fps) {
   stream.start();
 }
 
+// Stops sending the stream.
 function stopStream() {
   if (stream) {
     try { stream.stop(true); } catch (e) {}
@@ -319,8 +338,10 @@ function stopStream() {
 // The engine records the same picture and sound to a file, with its own video maker (so the file can be a
 // higher quality than the stream). o: { dir, base (file name without .mkv), w, h, fps, kbps }
 let rec = null;
+// The encoder for the recording.
 let recEncoder = null;
 let recDone = null; // waits for the file to be finished
+// Starts recording with the chosen settings.
 function startRecord(o) {
   if (!started) return { ok: false, error: 'The engine is not on' };
   if (rec) return { ok: false, error: 'Already recording' };
@@ -366,6 +387,7 @@ function startRecord(o) {
   }
   return { ok: false, error: lastError };
 }
+// Stops the recording without saving it properly (used on an error).
 function dropRecord() {
   if (rec) { try { osn.AdvancedRecordingFactory.destroy(rec); } catch (e) {} rec = null; }
   if (recEncoder) { try { recEncoder.release(); } catch (e) {} recEncoder = null; }
@@ -380,12 +402,14 @@ async function stopRecord() {
   return r;
 }
 
+// Whether the stream and the recording are on.
 function streamState() {
   let stats = {};
   if (stream) { try { stats = { kbps: Math.round(stream.kbitsPerSec || 0), dropped: stream.droppedFrames || 0, frames: stream.totalFrames || 0 }; } catch (e) {} }
   return { ...sendState, active: Boolean(stream), ...stats };
 }
 
+// Stops the stream and the recording.
 function stop() {
   if (rec) { try { rec.stop(true); } catch (e) {} dropRecord(); }
   stopStream();

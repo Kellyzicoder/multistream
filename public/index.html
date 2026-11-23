@@ -1,4 +1,12 @@
 <!doctype html>
+<!--
+  Main app page: Livestream, Multiview, Recordings, Settings and Help. One page; showPage() switches between them.
+  Side menu: #sideNav buttons with data-page. Livestream = 'dash' (channels, Start streaming, Auto start, Title & thumbnail).
+  Multiview = 'cr' (pop-out window uses the #control-room hash; the main window uses #multiview).
+  Settings and Help are overlays. Help topics are the TOPICS array (search index below them).
+  Scripts: ui.js (popup close buttons, styled selects, alerts), then the inline script at the bottom.
+  All data goes through api(url, method, body) to the routes in server.js.
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8">
