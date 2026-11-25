@@ -41,6 +41,14 @@
   .steps ol { margin:8px 0 0; padding-left:20px; } .steps li { margin:4px 0; font-size:15px; }
   table { width:100%; border-collapse:collapse; font-size:15px; } td, th { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--dim); font-weight:600; width:34%; }
   .tw { overflow-x:auto; border-radius:16px; background:var(--card); border:1px solid var(--line); }
+  .demo { display:grid; gap:14px; }
+  .demo-main { border-radius:20px; overflow:hidden; border:1px solid var(--line); background:#05070f; box-shadow:0 24px 60px rgba(0,0,0,.35); }
+  .demo-main img { display:block; width:100%; height:auto; }
+  .demo-tabs { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:10px; }
+  .demo-tab { text-align:left; display:flex; flex-direction:column; gap:4px; padding:14px 16px; border-radius:14px; background:var(--card); border:1px solid var(--line); color:var(--soft); font:inherit; cursor:pointer; }
+  .demo-tab b { color:var(--text); font-size:15px; } .demo-tab span { font-size:13px; color:var(--dim); }
+  .demo-tab.on { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue); }
+  .demo-tab:hover { border-color:var(--blue); }
   form { display:grid; gap:12px; max-width:640px; padding:22px; border-radius:20px; background:var(--card); border:1px solid var(--line); }
   label { display:grid; gap:6px; font-size:14px; font-weight:600; color:var(--soft); }
   input, select, textarea { font:inherit; color:var(--text); background:rgba(0,0,0,.25); border:1px solid var(--line); border-radius:12px; padding:10px 12px; width:100%; }
@@ -53,11 +61,32 @@
 <main>
   <nav>
     <a class="brand" href="/about/"><svg viewBox="20 16 60 76" fill="none" aria-hidden="true"><path d="M31 59V28L50 47L69 28V59" stroke="currentColor" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/><circle cx="50" cy="85" r="6" fill="#ff4d5a"/></svg>Multistream</a>
-    <div class="links"><a href="#download">Download</a><a href="#features">Features</a><a href="#help">Install help</a><a href="#feedback">Feedback</a><a href="/privacy/">Privacy</a></div>
+    <div class="links"><a href="#demo">Demo</a><a href="#download">Download</a><a href="#features">Features</a><a href="#help">Install help</a><a href="#feedback">Feedback</a><a href="/privacy/">Privacy</a></div>
   </nav>
 
   <h1>Stream everywhere at once</h1>
   <p class="lead">Multistream is a free desktop app for Windows and Mac. Build your picture in Production (cameras, screens, slides, name bars, countdowns) and go live on YouTube, Facebook, Instagram and more at the same time, from one computer. Made for churches, events and teams.</p>
+
+  <section id="demo" aria-label="See how it looks">
+    <h2>See how it looks</h2>
+    <p>A quick look at the app before you download it.</p>
+    <div class="demo">
+      <div class="demo-main">
+        <img id="demoImg" src="demo/livestream.jpg" alt="The Livestream page: one button to go live on every channel at once">
+      </div>
+      <div class="demo-tabs" role="tablist" aria-label="Screens">
+        <button type="button" class="demo-tab on" role="tab" aria-selected="true" data-img="demo/livestream.jpg" data-alt="The Livestream page: one button to go live on every channel at once">
+          <b>Livestream</b><span>Go live on every channel with one button</span>
+        </button>
+        <button type="button" class="demo-tab" role="tab" aria-selected="false" data-img="demo/production.jpg" data-alt="Production: a camera and a name bar built into one scene, ready to go live">
+          <b>Production</b><span>Build your scene: camera, name bar, sources and sound</span>
+        </button>
+        <button type="button" class="demo-tab" role="tab" aria-selected="false" data-img="demo/add-source.jpg" data-alt="Adding a camera as a source, with a live preview">
+          <b>Add a source</b><span>Cameras, screens, slides, pictures and sound, with a live preview</span>
+        </button>
+      </div>
+    </div>
+  </section>
 
   <section id="download" aria-label="Download">
     <div class="dl">
@@ -72,7 +101,7 @@
         <a class="btn" href="https://github.com/Kellyzicoder/multistream/releases/download/v3-latest/Multistream-Mac-arm64.dmg">Download for Mac</a>
       </div>
     </div>
-    <p class="meta">Always the newest version. The app also tells you when a new one is ready. <a href="https://github.com/Kellyzicoder/multistream/releases/tag/v3-latest">What's new</a> · <a href="/">Try the demo in your browser</a></p>
+    <p class="meta">Always the newest version. The app also tells you when a new one is ready. <a href="https://github.com/Kellyzicoder/multistream/releases/tag/v3-latest">What's new</a> · <a href="#demo">See how it looks</a></p>
   </section>
 
   <section id="features" aria-label="Features">
@@ -130,6 +159,12 @@
   <footer><span>Multistream</span><a href="/privacy/">Privacy policy</a><a href="https://github.com/Kellyzicoder/multistream">Source code</a><a href="#feedback">Feedback</a></footer>
 </main>
 <script>
+  // Demo: tapping a tab swaps the big screenshot. Real screenshots of the actual app, not mockups.
+  document.querySelectorAll('.demo-tab').forEach((t) => t.addEventListener('click', () => {
+    document.querySelectorAll('.demo-tab').forEach((x) => { x.classList.remove('on'); x.setAttribute('aria-selected', 'false'); });
+    t.classList.add('on'); t.setAttribute('aria-selected', 'true');
+    const img = document.querySelector('#demoImg'); img.src = t.dataset.img; img.alt = t.dataset.alt;
+  }));
   // Highlights the download for the visitor's computer.
   (() => {
     const ua = navigator.userAgent || '', mac = /Mac/i.test(ua) && !/iPhone|iPad/i.test(ua), win = /Windows/i.test(ua);

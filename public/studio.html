@@ -2512,7 +2512,8 @@ function renderLayers() {
   $('#evT').textContent = studioMode ? 'Preview' : 'Live';
   $('#hint').textContent = sel ? 'Drag to move. Drag a corner or edge to resize. Hold Alt and drag an edge to crop.' : (studioMode ? 'Pick a scene, then press Transition to put it on air. Click an item in the Preview to move it.' : 'Click a scene to put it on air. Click an item in the picture to move it.');
   if (!s) { box.appendChild(emptyPanel('Start here', 'Click + to make your first scene. A scene is one screen layout, like "Welcome" or "Sermon".', 'Add a scene', () => $('#addScene').click())); $('#propsBox').hidden = true; return; }
-  if (!s.layers.length) box.appendChild(emptyPanel('Next: add a source', 'A source is what people see: your camera, your screen, a picture or words.', 'Add a source', () => openAddSource()));
+  const hasAudioHere = studio.audio.some((a) => (s.audio || []).includes(a.id));
+  if (!s.layers.length && !hasAudioHere) box.appendChild(emptyPanel('Next: add a source', 'A source is what people see: your camera, your screen, a picture or words.', 'Add a source', () => openAddSource()));
   for (let i = s.layers.length - 1; i >= 0; i--) {
     const l = s.layers[i];
     const d = document.createElement('div'); d.className = 'lyr' + (l.id === sel ? ' on' : '');
