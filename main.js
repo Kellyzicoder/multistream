@@ -433,17 +433,22 @@ handleIpc('ms-sources', async (e, kind) => {
 });
 handleIpc('ms-screens', async () => (await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 0, height: 0 } })).map((s) => ({ id: s.id, name: s.name })));
 // kind: 'screen', 'window' or 'audio' (the sound this PC plays)
-// Finds what was asked for: the exact one, else one with the same name. A window that is gone is NOT swapped for a screen.
+// Finds what was asked for: the exact one, else one with the same name, else (for a screen) the one in the same
+// position in the list as last time. Unplugging and plugging a monitor back in can give it a new id, which used
+// to make this fall back to the first screen (often the laptop's own, not the one the person chose); keeping its
+// place in the list means a second monitor is found again even after that.
 async function findSource(p) {
   const list = await desktopCapturer.getSources({ types: [p.kind === 'window' ? 'window' : 'screen'], thumbnailSize: { width: 0, height: 0 } });
   let pick = list.find((s) => s.id === p.id);
   if (!pick && p.name) pick = list.find((s) => s.name.toLowerCase().includes(p.name.toLowerCase()));
+  if (!pick && p.kind !== 'window' && Number.isInteger(p.idx) && p.idx >= 0 && p.idx < list.length) pick = list[p.idx];
   if (!pick && p.kind !== 'window') pick = list[0];
   return pick || null;
 }
 // The page says what it is about to ask for, and hears at once if it is not there (so it can say so clearly).
-handleIpc('ms-pick-screen', async (e, id, name, kind) => {
-  picked = { id: String(id || ''), name: String(name || ''), kind: String(kind || 'screen') };
+// idx is the screen's position in the list at the time it was chosen, used to find it again if its id changes.
+handleIpc('ms-pick-screen', async (e, id, name, kind, idx) => {
+  picked = { id: String(id || ''), name: String(name || ''), kind: String(kind || 'screen'), idx: Number.isInteger(idx) ? idx : -1 };
   try { return { found: Boolean(await findSource(picked)) }; } catch { return { found: false }; }
 });
 // Lets the Production pick a screen to show (screen capture).
