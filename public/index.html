@@ -812,6 +812,10 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
   .sd .t2 { border-radius:12px; padding:11px 14px; font-size:14px; background:rgba(5,8,20,.45); border:1px solid var(--gl-line); }
   .sd-f { grid-template-columns:1fr 1.2fr; }
   .sd-pre-row { display:flex; align-items:center; gap:10px; } .sd-pre-row .fl { margin:0; }
+  /* Save at the bottom of Title & thumbnail: saves and closes the window */
+  .sd-save { display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:auto; padding:14px 0 2px; position:sticky; bottom:-2px; z-index:2; background:linear-gradient(rgba(14,18,42,0), rgba(14,18,42,.96) 35%); }
+  .sd-save .btn-save { padding:10px 26px; border:0; border-radius:12px; background:var(--accent, #3b6cff); color:#fff; font:inherit; font-weight:700; cursor:pointer; } .sd-save .btn-save:hover { filter:brightness(1.08); }
+  .sd-ok { color:#4ade80; font-weight:600; font-size:14px; }
   .sd-pre button { padding:7px 14px; font-size:12.5px; font-weight:600; border:0; background:transparent; color:var(--soft); } .sd-pre button.on { background:var(--blue); } .sd-pre button.add { border:1px dashed var(--gl-line); }
   /* channels */
   .chs { padding:18px 14px 16px; border-radius:26px; display:flex; flex-direction:column; gap:8px; }
@@ -1219,6 +1223,7 @@ try { if (sessionStorage.getItem('ms_welcomed') !== '1' && location.hash !== '#c
           <div class="gt"><label class="fl" for="glDesc" id="glDescL">Description</label><textarea class="t2" id="glDesc" rows="2" maxlength="5000" placeholder="What is this stream about?"></textarea></div>
         </div>
         <div class="sd-pre-row"><span class="fl">Saved:</span><span class="sd-pre" id="presets" aria-label="Saved details"></span></div>
+        <div class="sd-save"><span class="sd-ok" id="sdOk" role="status" hidden>Saved</span><button type="button" class="btn-save" id="sdSave">Save and close</button></div>
       </div>
       <label class="tm" id="tmBox" hidden><span class="sw"><input type="checkbox" id="fbTest" checked><span></span></span><span><b>Private test</b><small id="tmState"></small></span></label>
     </section>
@@ -3342,6 +3347,12 @@ function openDetails(need) {
 }
 function closeDetails() { document.body.classList.remove('sd-open'); $('#sdBack').hidden = true; $('#glTitle').closest('.gt').classList.remove('need'); $('#sdNeed').hidden = true; }
 $('#sdBtn').onclick = () => openDetails(false);
+// Save: what you type is already kept as you type; this makes it clear, shows "Saved" and closes the window.
+$('#sdSave').onclick = () => {
+  $('#glTitle').dispatchEvent(new Event('input')); $('#glDesc').dispatchEvent(new Event('input'));
+  const ok = $('#sdOk'); ok.hidden = false; clearTimeout(ok.t);
+  ok.t = setTimeout(() => { ok.hidden = true; closeDetails(); }, 700);
+};
 $('#sdX').onclick = closeDetails; $('#sdBack').onclick = closeDetails;
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('sd-open')) closeDetails(); });
 $('#glTitle').addEventListener('input', () => { $('#glTitle').closest('.gt').classList.remove('need'); $('#sdNeed').hidden = true; });
