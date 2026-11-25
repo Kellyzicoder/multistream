@@ -41,14 +41,22 @@
   .steps ol { margin:8px 0 0; padding-left:20px; } .steps li { margin:4px 0; font-size:15px; }
   table { width:100%; border-collapse:collapse; font-size:15px; } td, th { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; } th { color:var(--dim); font-weight:600; width:34%; }
   .tw { overflow-x:auto; border-radius:16px; background:var(--card); border:1px solid var(--line); }
-  .demo { display:grid; gap:14px; }
-  .demo-main { border-radius:20px; overflow:hidden; border:1px solid var(--line); background:#05070f; box-shadow:0 24px 60px rgba(0,0,0,.35); }
-  .demo-main img { display:block; width:100%; height:auto; }
+  .demo { display:grid; gap:16px; }
+  .demo [hidden] { display:none !important; }
+  .demo-switch { display:flex; gap:10px; flex-wrap:wrap; }
+  .demo-switch button { padding:11px 20px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--soft); font:inherit; font-weight:600; cursor:pointer; }
+  .demo-switch button.on { background:var(--blue); color:#fff; border-color:var(--blue); }
+  .demo-switch button:hover { border-color:var(--blue); }
+  .demo-main { padding:12px; border-radius:22px; overflow:hidden; border:1px solid var(--line); background:#05070f; box-shadow:0 24px 60px rgba(0,0,0,.35); }
+  .demo-main img, .demo-main iframe { display:block; width:100%; border-radius:12px; }
+  .demo-main img { height:auto; }
+  .demo-main iframe { aspect-ratio:16/10; border:0; background:#05070f; }
   .demo-tabs { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:10px; }
-  .demo-tab { text-align:left; display:flex; flex-direction:column; gap:4px; padding:14px 16px; border-radius:14px; background:var(--card); border:1px solid var(--line); color:var(--soft); font:inherit; cursor:pointer; }
+  .demo-tab { text-align:left; display:flex; flex-direction:column; gap:4px; padding:16px 18px; border-radius:14px; background:var(--card); border:1px solid var(--line); color:var(--soft); font:inherit; cursor:pointer; }
   .demo-tab b { color:var(--text); font-size:15px; } .demo-tab span { font-size:13px; color:var(--dim); }
   .demo-tab.on { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue); }
   .demo-tab:hover { border-color:var(--blue); }
+  .demo-live-note { font-size:13px; color:var(--dim); margin:0; }
   form { display:grid; gap:12px; max-width:640px; padding:22px; border-radius:20px; background:var(--card); border:1px solid var(--line); }
   label { display:grid; gap:6px; font-size:14px; font-weight:600; color:var(--soft); }
   input, select, textarea { font:inherit; color:var(--text); background:rgba(0,0,0,.25); border:1px solid var(--line); border-radius:12px; padding:10px 12px; width:100%; }
@@ -71,10 +79,15 @@
     <h2>See how it looks</h2>
     <p>A quick look at the app before you download it.</p>
     <div class="demo">
+      <div class="demo-switch" role="tablist" aria-label="Demo type">
+        <button type="button" id="demoShotsBtn" class="on" role="tab" aria-selected="true">Screenshots</button>
+        <button type="button" id="demoLiveBtn" role="tab" aria-selected="false">Try it live</button>
+      </div>
       <div class="demo-main">
         <img id="demoImg" src="demo/livestream.jpg" alt="The Livestream page: one button to go live on every channel at once">
+        <iframe id="demoFrame" title="Multistream, running live in demo mode" hidden loading="lazy"></iframe>
       </div>
-      <div class="demo-tabs" role="tablist" aria-label="Screens">
+      <div class="demo-tabs" id="demoTabs" role="tablist" aria-label="Screens">
         <button type="button" class="demo-tab on" role="tab" aria-selected="true" data-img="demo/livestream.jpg" data-alt="The Livestream page: one button to go live on every channel at once">
           <b>Livestream</b><span>Go live on every channel with one button</span>
         </button>
@@ -85,6 +98,7 @@
           <b>Add a source</b><span>Cameras, screens, slides, pictures and sound, with a live preview</span>
         </button>
       </div>
+      <p class="demo-live-note" id="demoLiveNote" hidden>This is the real app, running in demo mode. Nothing you do here is saved, and it is not connected to any real YouTube, Facebook or Instagram account.</p>
     </div>
   </section>
 
@@ -165,6 +179,23 @@
     t.classList.add('on'); t.setAttribute('aria-selected', 'true');
     const img = document.querySelector('#demoImg'); img.src = t.dataset.img; img.alt = t.dataset.alt;
   }));
+  // Screenshots vs. the real running app (same demo mode as the main site link), loaded only once it is picked.
+  (() => {
+    const shotsBtn = document.querySelector('#demoShotsBtn'), liveBtn = document.querySelector('#demoLiveBtn');
+    const img = document.querySelector('#demoImg'), frame = document.querySelector('#demoFrame');
+    const tabs = document.querySelector('#demoTabs'), note = document.querySelector('#demoLiveNote');
+    liveBtn.addEventListener('click', () => {
+      if (!frame.src) frame.src = '/?demo';
+      liveBtn.classList.add('on'); liveBtn.setAttribute('aria-selected', 'true');
+      shotsBtn.classList.remove('on'); shotsBtn.setAttribute('aria-selected', 'false');
+      img.hidden = true; frame.hidden = false; tabs.hidden = true; note.hidden = false;
+    });
+    shotsBtn.addEventListener('click', () => {
+      shotsBtn.classList.add('on'); shotsBtn.setAttribute('aria-selected', 'true');
+      liveBtn.classList.remove('on'); liveBtn.setAttribute('aria-selected', 'false');
+      img.hidden = false; frame.hidden = true; tabs.hidden = false; note.hidden = true;
+    });
+  })();
   // Highlights the download for the visitor's computer.
   (() => {
     const ua = navigator.userAgent || '', mac = /Mac/i.test(ua) && !/iPhone|iPad/i.test(ua), win = /Windows/i.test(ua);
