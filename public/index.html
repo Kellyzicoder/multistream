@@ -2035,7 +2035,7 @@ window.askText = (title, value, hint) => new Promise((ok) => {
   function studio() {
     if (studioFrame) return studioFrame;
     const f = document.createElement('iframe');
-    f.src = '/studio.html?embed=1'; f.title = 'Production';
+    f.src = '/studio.html?embed=1' + (window.DEMO ? '&demo' : ''); f.title = 'Production';
     f.allow = 'camera; microphone; display-capture; autoplay; fullscreen; clipboard-read; clipboard-write';
     $('#studioView').appendChild(f); studioFrame = f; return f;
   }

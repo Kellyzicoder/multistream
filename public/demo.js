@@ -26,7 +26,12 @@ window.demoApi = function (url, method) {
   else if (p === '/api/obs/thumbs' || p === '/api/obs/shots') out = {};
   else if (p === '/api/obs/levels') out = { levels: {}, muted: {} };
   else if (p === '/api/studio/shots') out = { alive: true, rev: 1, prog: demoPic(3), thumbs: Object.fromEntries(DEMO_SC.map((n, i) => [n, demoPic(i)])) };
-  else if (p === '/api/studio') out = { scenes: DEMO_SC.map((name) => ({ name, layers: [] })), current: 'Camera', rev: 1 };
+  else if (p === '/api/studio') out = { scenes: DEMO_SC.map((name, i) => ({ name, layers: [
+    { id: 'demobg' + i, type: 'color', color: DEMO_COLS[i % DEMO_COLS.length][0], x: 0, y: 0, w: 1920, h: 1080, fit: 'stretch', visible: true },
+    { id: 'demotx' + i, type: 'text', text: name, size: 100, color: '#ffffff', x: 120, y: 860, w: 1680, h: 160, fit: 'stretch', visible: true },
+  ] })), current: 'Camera', rev: 1 };
+  else if (p === '/api/studio/missing') out = { missing: [] };
+  else if (p === '/api/studio/status') out = { encoder: 'Hardware (demo)' };
   else if (p === '/api/facebook') out = base.facebook;
   else if (p === '/api/youtube') out = base.youtube;
   else if (p === '/api/preflight') out = { at: Date.now(), results: [{ id: 'yt', label: 'YouTube', state: 'ok', detail: 'Connected: Favourite Child Church - HQ.' }, { id: 'fb', label: 'Facebook', state: 'bad', detail: 'Facebook said: (#190) Error validating access token. You may need a new token (Settings, then Facebook).' }, { id: 'sig', label: 'OBS signal', state: 'ok', detail: 'Video is arriving at 4.5 Mbps.' }, { id: 'key', label: 'Keyframe', state: 'warn', detail: 'Every 3.5 seconds. 2 is best. In OBS: Settings, Output, Keyframe Interval, 2.' }, { id: 'disk', label: 'Space for recording', state: 'ok', detail: '46.6 GB free. An hour of recording is about 2 GB.' }] };
@@ -51,6 +56,19 @@ window.demoApi = function (url, method) {
 
 // pictures for the demo Multiview: soft colours, like the design
 const DEMO_SC = ['Countdown', 'Welcome', 'Camera', 'Scripture Lowerthird', 'Offering', 'Backup Screen', 'Worship Lyrics', 'Announcements'];
+const DEMO_COLS = [['#1d2a5e', '#0e1430'], ['#14363a', '#1d2a5e'], ['#262a63', '#3a1f5e'], ['#3a2a14', '#1c1430'], ['#123a33', '#0e1a30'], ['#2a2a35', '#14141c'], ['#1f3a5e', '#2a1440'], ['#3a1430', '#14203a']];
+// The Production page (studio.html) fetches /api/studio etc. directly instead of going through the api() helper
+// above, so on a demo page it would otherwise hit the network and fail. This makes fetch() answer those the
+// same fake way, without having to change every place studio.html calls fetch.
+if (window.DEMO) {
+  const realFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (!/^\/api\//.test(url)) return realFetch(input, init);
+    const method = (init && init.method) || 'GET';
+    return window.demoApi(url, method).then((data) => new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+  };
+}
 // Pictures already made for the demo, so each is made once.
 const DEMO_PICS = {};
 // Makes a picture for the demo page.
