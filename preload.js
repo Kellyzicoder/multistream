@@ -32,7 +32,7 @@ if (location.protocol === 'app:') contextBridge.exposeInMainWorld('msNative', {
   platform: process.platform,
   screens: () => ipcRenderer.invoke('ms-screens'),
   sources: (kind) => ipcRenderer.invoke('ms-sources', kind),
-  pickScreen: (id, name, kind) => ipcRenderer.invoke('ms-pick-screen', id, name, kind),
+  pickScreen: (id, name, kind, idx) => ipcRenderer.invoke('ms-pick-screen', id, name, kind, idx),
   // the OBS engine (always on when this copy of the app has it)
   engineState: () => ipcRenderer.invoke('ms-engine-state'),
   enginePreview: (rect) => ipcRenderer.invoke('ms-engine-preview', rect),

@@ -196,7 +196,7 @@
   .ch { border-radius:16px; background:var(--gl2); border-color:var(--gl-line); } .chip { border-radius:999px; }
   .mi, button.mi { border-radius:12px; } button.mi { background:transparent; box-shadow:none; border:0; backdrop-filter:none; -webkit-backdrop-filter:none; }
   .stage canvas.v, canvas.v { border-radius:20px; border:2px solid var(--gl-line); box-shadow:0 14px 44px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.2); }
-  #cv.live { border-color:var(--red); box-shadow:0 0 0 1px var(--red), 0 0 40px rgba(255,77,90,.35), 0 14px 44px rgba(0,0,0,.45); }
+  #cv.live { border-color:var(--red); box-shadow:0 0 0 3px var(--red), 0 0 40px rgba(255,77,90,.5), 0 14px 44px rgba(0,0,0,.45); }
   .mt { border-radius:999px; } .air { border-radius:999px; }
   input[type=range] { padding:0; background:transparent; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; border:0; }
   input[type=checkbox] { backdrop-filter:none; -webkit-backdrop-filter:none; box-shadow:none; }
@@ -269,7 +269,7 @@
   /* ---------- Studio Mode off: only the live picture ---------- */
   body.single .stage > .mid, body.single .stage > .screen:last-child { display:none; }
   body.single .stage > .screen:first-child { max-width:min(100%, calc((100vh - 360px) * 16 / 9)); margin:0 auto; }
-  body.single #ev { border-color:var(--red); box-shadow:0 0 0 1px var(--red), 0 0 40px rgba(255,77,90,.3), 0 14px 44px rgba(0,0,0,.45); }
+  body.single #ev { border-color:var(--red); box-shadow:0 0 0 3px var(--red), 0 0 40px rgba(255,77,90,.5), 0 14px 44px rgba(0,0,0,.45); }
   /* ---------- right-click menu on the pictures ---------- */
   .ctxm { position:fixed; z-index:70; min-width:250px; max-width:340px; padding:6px; border-radius:16px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); box-shadow:var(--gl-sh), inset 0 1px 0 var(--gl-hi); }
   .ctxh { padding:6px 10px 4px; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
@@ -377,6 +377,13 @@
   .as-grid button { display:flex; flex-direction:column; align-items:center; gap:6px; padding:14px 8px; border-radius:12px; }
   .as-grid button svg { width:26px; height:26px; } .as-grid button span { font-size:12px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .as-vis { margin-right:auto; }
+  /* a real thumbnail of each screen, so it is easy to see which one is which before picking it */
+  .as-scr-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:10px; max-height:40vh; overflow:auto; }
+  .as-scr { display:flex; flex-direction:column; gap:6px; padding:6px; border-radius:12px; background:rgba(255,255,255,.04); border:2px solid transparent; }
+  .as-scr:hover { border-color:rgba(59,108,255,.4); }
+  .as-scr.on { border-color:var(--sel); background:rgba(59,108,255,.14); }
+  .as-scr img, .as-scr-ph { width:100%; aspect-ratio:16/9; object-fit:cover; border-radius:8px; background:#000; display:block; }
+  .as-scr span { font-size:12px; text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   /* ---------- Auto start bar (while the plan runs) ---------- */
   .asbar { position:fixed; left:50%; top:12px; transform:translateX(-50%); z-index:60; width:min(860px, calc(100vw - 40px)); display:flex; flex-direction:column; gap:14px; padding:14px 18px; border-radius:18px; background:rgba(20,26,54,.97); border:1px solid rgba(59,108,255,.4); box-shadow:0 10px 30px rgba(0,0,0,.45); font-size:13px; color:var(--text); animation:lspIn .2s ease-out; }
   .asbar[hidden] { display:none; } .as-r1 { display:flex; align-items:center; gap:12px; } .as-r1 .sp { flex:1; } .as-r1 b { font-size:15px; }
@@ -472,8 +479,8 @@ html.a-calm body { background:var(--bg) !important; }
   .upper { gap:16px; } .upper .sdock { min-width:0; }
   .upper .stage { border-radius:20px; background:var(--gl); -webkit-backdrop-filter:var(--gl-blur); backdrop-filter:var(--gl-blur); border:1px solid var(--gl-line); padding:0 22px; gap:18px; }
   .stage .screen .cap { font-size:12px; color:#cdd3e4; margin-bottom:8px; } .stage .screen .cap span { color:#cdd3e4; } .livetag { color:#ff6b74; }
-  .stage canvas.v { border-radius:14px; border:2px solid var(--sel); } .stage .screen + .mid + .screen canvas.v { border-color:#ff4d5a; }
-  body.single .stage canvas.v { border-color:#ff4d5a; }
+  .stage canvas.v { border-radius:14px; border:2px solid var(--sel); } .stage .screen + .mid + .screen canvas.v { border-width:3px; border-color:#ff4d5a; box-shadow:0 0 0 3px rgba(255,77,90,.5), 0 0 28px rgba(255,77,90,.55); }
+  body.single .stage canvas.v { border-width:3px; border-color:#ff4d5a; box-shadow:0 0 0 3px rgba(255,77,90,.5), 0 0 28px rgba(255,77,90,.55); }
   /* each picture box is exactly the picture's shape, as big as fits, in the middle (sized by fitStage) */
   .stage canvas.v, html.tall .stage canvas.v { flex:none; align-self:center; max-height:none; max-width:none; margin:0; }
   body.single .stage > .screen:first-child { max-width:none; }
@@ -695,10 +702,10 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
   <div class="stage">
     <div class="screen"><div class="cap"><span id="evT">Preview</span> <span id="editName"></span></div><canvas id="ev" class="v" width="960" height="540"></canvas></div>
     <div class="mid">
-      <button id="transBtn" class="trans" title="Put the Preview scene on air (Program)">Transition</button>
+      <button id="transBtn" class="trans" title="Put the Preview scene on air (Live)">Transition</button>
       <p class="note" id="hint">Pick a scene, then press Transition to put it on air.</p>
     </div>
-    <div class="screen"><div class="cap">Program <span id="airName"></span> <b class="livetag" id="liveTag" hidden>● LIVE</b></div><canvas id="cv" class="v" width="1280" height="720"></canvas></div>
+    <div class="screen"><div class="cap">Live <span id="airName"></span> <b class="livetag" id="liveTag" hidden>● LIVE</b></div><canvas id="cv" class="v" width="1280" height="720"></canvas></div>
   </div>
   <div class="split v" id="splitR" title="Drag to make the right panels wider or narrower" hidden></div><aside class="sdock" id="dockR" aria-label="Panels on the right"></aside></div>
   <!-- the source bar under the picture, like OBS: what you can do with the source you picked -->
@@ -730,7 +737,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
     </section>
     <section class="dock narrow"><h2>Controls</h2>
       <div class="pad ctl">
-        <button id="modeBtn" type="button" aria-pressed="true" title="Off (simple): one live picture, a click on a scene puts it on air. On: a Preview and a Program picture with a Transition button.">Studio mode: On</button>
+        <button id="modeBtn" type="button" aria-pressed="true" title="Off (simple): one live picture, a click on a scene puts it on air. On: a Preview and a Live picture with a Transition button.">Studio mode: On</button>
         <button id="sendBtn" hidden>Start streaming</button>
         <button id="goBtn" type="button" title="Go live on the channels that are on. Asks for a title first if there is none.">Start streaming</button>
         <button id="recBtn">Start recording</button>
@@ -774,7 +781,7 @@ try { if (!window.msNative && window.parent !== window && window.parent.msNative
           <div class="f"><label>Stopping the stream</label><label class="chk"><input type="checkbox" id="optConfirm"> Confirm before stopping the stream</label></div>
           <div class="f"><label>Panels</label><span><button id="resetLayout" type="button">Reset panels</button> <span class="note">Drag a panel by its title to move it. Drag it up to float it; drop it on the bottom row to put it back.</span></span></div>
           <h3>Scenes and windows</h3>
-          <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes from OBS...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Program picture in its own window, for a second screen or projector">Preview window</button></div>
+          <div class="row"><button id="impBtn" title="In OBS: Scene Collection, then Export">Import Scenes from OBS...</button><button id="keysBtn">Shortcuts</button><button id="projBtn" title="The Live picture in its own window, for a second screen or projector">Preview window</button></div>
         </section>
         <section class="sp" data-sp="channels">
           <h3>Where your video goes</h3>
@@ -1086,7 +1093,7 @@ function getCapture(l) {
   c = { v: document.createElement('video'), ready: false }; c.v.muted = true; caps.set(key, c);
   serial(async () => {
     try {
-      if (window.msNative) { const r = await window.msNative.pickScreen(l.display || '', l.winName || '', l.type === 'window' ? 'window' : 'screen'); if (r && r.found === false) throw new Error('not found'); }
+      if (window.msNative) { const r = await window.msNative.pickScreen(l.display || '', l.winName || '', l.type === 'window' ? 'window' : 'screen', l.dispIdx); if (r && r.found === false) throw new Error('not found'); }
       const st = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: false });
       c.st = st; c.v.srcObject = st; await c.v.play(); c.ready = true;
       st.getVideoTracks()[0].onended = () => { caps.delete(key); }; // the window was closed: look for it again
@@ -2244,7 +2251,7 @@ function showAudioMenu(ev, a, nameEl, fx, inScene, props) {
 async function showViewMenu(ev, src) {
   ev.preventDefault(); closeCtx();
   let ds = []; try { if (window.msNative && window.msNative.displays) ds = await window.msNative.displays(); } catch {}
-  const name = src === 'preview' ? (studioMode ? 'Preview' : 'Live') : 'Program';
+  const name = src === 'preview' ? (studioMode ? 'Preview' : 'Live') : 'Live';
   const m = document.createElement('div'); m.className = 'ctxm'; m.setAttribute('role', 'menu');
   const head = document.createElement('div'); head.className = 'ctxh'; head.textContent = name; m.appendChild(head);
   const item = (t, run, sub) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ctxi'; b.setAttribute('role', 'menuitem'); b.textContent = t; if (sub) { const s = document.createElement('small'); s.textContent = sub; b.appendChild(s); } b.onclick = () => { closeCtx(); run(); }; m.appendChild(b); };
@@ -2254,8 +2261,8 @@ async function showViewMenu(ev, src) {
   if (src !== 'preview' || studioMode) {
     sep();
     if (studioMode && editing && editing !== studio.current) item('Put the Preview scene on air (Transition)', () => $('#transBtn').click());
-    item(studioMode ? 'Studio Mode: turn off (live picture only)' : 'Studio Mode: turn on (Preview and Program)', () => $('#modeBtn').click());
-  } else { sep(); item('Studio Mode: turn on (Preview and Program)', () => $('#modeBtn').click()); }
+    item(studioMode ? 'Studio Mode: turn off (live picture only)' : 'Studio Mode: turn on (Preview and Live)', () => $('#modeBtn').click());
+  } else { sep(); item('Studio Mode: turn on (Preview and Live)', () => $('#modeBtn').click()); }
   document.body.appendChild(m); ctxMenu = m;
   const r = m.getBoundingClientRect(); m.style.left = Math.max(4, Math.min(ev.clientX, innerWidth - r.width - 4)) + 'px'; m.style.top = Math.max(4, Math.min(ev.clientY, innerHeight - r.height - 4)) + 'px';
   const first = m.querySelector('.ctxi'); if (first) first.focus();
@@ -2809,30 +2816,56 @@ function renderProps(target, draft) {
   }
   if (l.type === 'screen' || l.type === 'window') {
     const win = l.type === 'window';
-    const sl = document.createElement('select');
     let list = [];
-    const fill = async () => {
-      if (!window.msNative) return;
-      list = await window.msNative.sources(win ? 'window' : 'screen').catch(() => []);
-      // Do not rebuild the list while it is open or when nothing changed: the open list points at the old items, so a click on one did nothing and it jumped back to the first screen
-      const sig = list.map((x) => x.id + '~' + x.name).join('|') + '#' + (l.display || '') + '#' + (l.winName || '');
-      if (sl.dataset.sig === sig && sl.options.length) return; sl.dataset.sig = sig;
-      const keep = sl.value; sl.textContent = ''; sl.add(new Option(win ? 'Pick a window...' : 'First screen', ''));
-      if (win && l.winName && !list.some((x) => x.id === l.display)) sl.add(new Option('Saved: ' + l.winName, '__saved'));
-      list.forEach((x) => sl.add(new Option(x.name, x.id)));
-      sl.value = list.some((x) => x.id === l.display) ? l.display : (win && l.winName ? '__saved' : keep || '');
-    };
-    sl.onchange = () => {
-      if (sl.value === '__saved') return;
+    const switchCap = (display, winName, idx) => {
       const old = caps.get(capKey(l)); if (old) { try { old.st && old.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(capKey(l)); }
-      l.display = sl.value; l.winName = win && sl.value ? sl.options[sl.selectedIndex].text : '';
-      save();
+      l.display = display; l.winName = winName; l.dispIdx = idx; save();
     };
-    sl.onfocus = fill; sl.onmousedown = () => { fill(); }; fill();
-    box.append(field(win ? 'Window' : 'Screen', sl));
+    if (win) {
+      const sl = document.createElement('select');
+      const fill = async () => {
+        if (!window.msNative) return;
+        list = await window.msNative.sources('window').catch(() => []);
+        // Do not rebuild the list while it is open or when nothing changed: the open list points at the old items, so a click on one did nothing and it jumped back to the first screen
+        const sig = list.map((x) => x.id + '~' + x.name).join('|') + '#' + (l.display || '') + '#' + (l.winName || '');
+        if (sl.dataset.sig === sig && sl.options.length) return; sl.dataset.sig = sig;
+        const keep = sl.value; sl.textContent = ''; sl.add(new Option('Pick a window...', ''));
+        if (l.winName && !list.some((x) => x.id === l.display)) sl.add(new Option('Saved: ' + l.winName, '__saved'));
+        list.forEach((x) => sl.add(new Option(x.name, x.id)));
+        sl.value = list.some((x) => x.id === l.display) ? l.display : (l.winName ? '__saved' : keep || '');
+      };
+      sl.onchange = () => { if (sl.value === '__saved') return; switchCap(sl.value, sl.value ? sl.options[sl.selectedIndex].text : '', -1); };
+      sl.onfocus = fill; sl.onmousedown = () => { fill(); }; fill();
+      box.append(field('Window', sl));
+      const h = document.createElement('p'); h.className = 'note'; h.textContent = 'Open the program first (for example the lyrics or slides), then pick it here. If you close it and open it again, the Production finds it again by its name.'; left.append(h);
+    } else {
+      // a real thumbnail for each screen (not just a name like "Display 1"), so it is easy to tell which is which;
+      // clicking one picks it and keeps this window open, so the preview on the left updates before you press OK
+      const grid = document.createElement('div'); grid.className = 'as-scr-grid';
+      const note = document.createElement('p'); note.className = 'note'; note.hidden = true;
+      const fill = async () => {
+        if (!window.msNative) return;
+        list = await window.msNative.sources('screen').catch(() => []);
+        const sig = list.map((x) => x.id + '~' + x.name).join('|') + '#' + (l.display || '');
+        if (grid.dataset.sig === sig && grid.childElementCount) return; grid.dataset.sig = sig;
+        grid.textContent = '';
+        if (!list.length) { note.hidden = false; note.textContent = 'No screens found.'; return; }
+        note.hidden = true;
+        const matched = list.some((x) => x.id === l.display);
+        list.forEach((x, i) => {
+          const on = matched ? x.id === l.display : (l.display ? i === (Number.isInteger(l.dispIdx) ? l.dispIdx : 0) : i === 0);
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'as-scr' + (on ? ' on' : '');
+          b.innerHTML = x.thumb ? '<img src="' + x.thumb + '" alt="">' : '<span class="as-scr-ph"></span>';
+          const sp = document.createElement('span'); sp.textContent = x.name || ('Screen ' + (i + 1)); b.appendChild(sp);
+          b.onclick = () => { switchCap(x.id, '', i); grid.querySelectorAll('.as-scr').forEach((bb) => bb.classList.remove('on')); b.classList.add('on'); };
+          grid.appendChild(b);
+        });
+      };
+      fill();
+      box.append(field('Screen', grid), note);
+    }
     // Whole screen or one app: switching changes the kind of source
-    box.append(field('What to capture', seg([['screen', 'Whole screen'], ['window', 'One app only']], l.type, (v) => { if (v === l.type) return; const old = caps.get(capKey(l)); if (old) { try { old.st && old.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(capKey(l)); } l.type = v; l.display = ''; l.winName = ''; if (draft && /^(Whole screen|One window|Screen|Window)$/.test(l.name || '')) l.name = v === 'window' ? 'One window' : 'Whole screen'; })));
-    if (win) { const h = document.createElement('p'); h.className = 'note'; h.textContent = 'Open the program first (for example the lyrics or slides), then pick it here. If you close it and open it again, the Production finds it again by its name.'; left.append(h); }
+    box.append(field('What to capture', seg([['screen', 'Whole screen'], ['window', 'One app only']], l.type, (v) => { if (v === l.type) return; const old = caps.get(capKey(l)); if (old) { try { old.st && old.st.getTracks().forEach((t) => t.stop()); } catch {} caps.delete(capKey(l)); } l.type = v; l.display = ''; l.winName = ''; delete l.dispIdx; if (draft && /^(Whole screen|One window|Screen|Window)$/.test(l.name || '')) l.name = v === 'window' ? 'One window' : 'Whole screen'; })));
   }
 }
 // "Use the camera's sound": the camera's own microphone (same device) is added to the Audio Mixer, or taken out again
